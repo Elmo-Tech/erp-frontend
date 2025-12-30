@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 	authors: [{ name: "Elmo ERP Team" }],
 	creator: "Elmo ERP",
 	publisher: "Elmo ERP",
-	metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+	metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://elmo-erp.elmotechsoft.online"),
 	openGraph: {
 		type: "website",
 		locale: "en_US",
