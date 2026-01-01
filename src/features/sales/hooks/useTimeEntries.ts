@@ -104,6 +104,22 @@ export const useStartTimer = () => {
 			queryClient.invalidateQueries({
 				queryKey: timeEntryKeys.byUser(newTimeEntry.userId),
 			});
+
+			// If this is a task timer, invalidate task queries for consistency
+			if (newTimeEntry.trackableType.toLowerCase() === "task") {
+				// Import task keys dynamically to avoid circular dependency
+				const taskKeys = {
+					all: ["tasks"] as const,
+					lists: () => [...taskKeys.all, "list"] as const,
+					details: () => [...taskKeys.all, "detail"] as const,
+					detail: (id: number) => [...taskKeys.details(), id] as const,
+				};
+
+				// Invalidate the specific task for consistency
+				queryClient.invalidateQueries({
+					queryKey: taskKeys.detail(newTimeEntry.trackableId),
+				});
+			}
 		},
 		onError: (error) => {
 			console.error("Failed to start timer:", error);
@@ -136,6 +152,27 @@ export const useStopTimer = () => {
 			queryClient.invalidateQueries({
 				queryKey: timeEntryKeys.byUser(stoppedTimeEntry.userId),
 			});
+
+			// If this was a task timer, invalidate task queries to refresh totalTimeSpent
+			if (stoppedTimeEntry.trackableType.toLowerCase() === "task") {
+				// Import task keys dynamically to avoid circular dependency
+				const taskKeys = {
+					all: ["tasks"] as const,
+					lists: () => [...taskKeys.all, "list"] as const,
+					details: () => [...taskKeys.all, "detail"] as const,
+					detail: (id: number) => [...taskKeys.details(), id] as const,
+				};
+
+				// Invalidate the specific task to refresh totalTimeSpent
+				queryClient.invalidateQueries({
+					queryKey: taskKeys.detail(stoppedTimeEntry.trackableId),
+				});
+
+				// Invalidate task lists to ensure consistency
+				queryClient.invalidateQueries({
+					queryKey: taskKeys.lists(),
+				});
+			}
 		},
 		onError: (error) => {
 			console.error("Failed to stop timer:", error);

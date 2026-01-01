@@ -100,7 +100,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ className = "", compac
 				trackableType: trackableTypeMap[type],
 			});
 
-			// Update store
+			// Update store after successful API call
 			startStoreTimer(type, id, name);
 		} catch (error) {
 			console.error("Failed to start timer:", error);
@@ -112,6 +112,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ className = "", compac
 	const handleStop = async () => {
 		try {
 			await stopTimerMutation.mutateAsync();
+			// Update store after successful API call
 			stopStoreTimer();
 		} catch (error) {
 			console.error("Failed to stop timer:", error);

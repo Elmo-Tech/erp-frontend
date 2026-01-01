@@ -1,0 +1,7 @@
+/**
+ * Dashboard Types Index
+ * Re-exports all dashboard type definitions
+ */
+
+export * from "./task";
+export * from "./attendance";
