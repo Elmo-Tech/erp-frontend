@@ -1,7 +1,5 @@
 /**
- * Dashboard API Index
- * Re-exports all dashboard API functions
+ * Dashboard API exports
  */
 
-export * from "./tasks";
-export * from "./attendance";
+export { dashboardStatsApi } from "./stats";

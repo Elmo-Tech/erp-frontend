@@ -8,7 +8,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuthStore } from "@/store/authStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
-import { TimerWidget } from "@/components/TimerWidget";
+import { CompactTimerWidget } from "@/components/TimerWidget";
+import Link from "next/link";
 
 export function Navbar() {
 	const { user, role } = useAuthStore();
@@ -54,8 +55,8 @@ export function Navbar() {
 
 			{/* Right side */}
 			<div className="flex items-center gap-3">
-				{/* Timer Widget */}
-				<TimerWidget />
+				{/* Timer Widget - Compact version for navbar */}
+				<CompactTimerWidget />
 
 				{/* Theme Toggle */}
 				<ThemeToggle />
@@ -102,13 +103,17 @@ export function Navbar() {
 							</div>
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem>
-							<User className="mr-2 h-4 w-4" />
-							Profile
+						<DropdownMenuItem asChild>
+							<Link href="/dashboard/profile">
+								<User className="mr-2 h-4 w-4" />
+								Profile
+							</Link>
 						</DropdownMenuItem>
-						<DropdownMenuItem>
-							<Settings className="mr-2 h-4 w-4" />
-							Settings
+						<DropdownMenuItem asChild>
+							<Link href="/dashboard/settings">
+								<Settings className="mr-2 h-4 w-4" />
+								Settings
+							</Link>
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem

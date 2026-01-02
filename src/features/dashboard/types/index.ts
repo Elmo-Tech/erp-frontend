@@ -5,3 +5,4 @@
 
 export * from "./task";
 export * from "./attendance";
+export * from "./stats";

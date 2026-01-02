@@ -9,3 +9,6 @@ export * from "./useTaskTree";
 
 // Attendance hooks
 export * from "./useAttendance";
+
+// Dashboard stats hooks
+export * from "./useDashboardStats";
