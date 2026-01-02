@@ -198,3 +198,45 @@ export const useRefreshAttendance = () => {
 		queryClient.invalidateQueries({ queryKey: attendanceKeys.today() });
 	};
 };
+
+/**
+ * Attendance history record type
+ */
+export interface AttendanceHistoryRecord {
+	attendanceId: number;
+	date: string;
+	clockIn: string | null;
+	clockOut: string | null;
+	workedDuration: string;
+	idleDuration: string;
+	lateMinutes: number;
+}
+
+/**
+ * Attendance history response type
+ */
+export interface AttendanceHistoryResponse {
+	records: AttendanceHistoryRecord[];
+	pagination: {
+		total: number;
+		currentPage: number;
+		perPage: number;
+		totalPages: number;
+	};
+}
+
+/**
+ * Hook to fetch attendance history
+ * Requirement 14.1: Display attendance history
+ */
+export const useAttendanceHistory = (page: number = 1, perPage: number = 10) => {
+	return useQuery<AttendanceHistoryResponse, Error>({
+		queryKey: [...attendanceKeys.history(), page, perPage],
+		queryFn: async () => {
+			const response = await attendanceApi.getAttendanceHistory(page, perPage);
+			return response;
+		},
+		staleTime: 5 * 60 * 1000, // 5 minutes
+		gcTime: 10 * 60 * 1000, // 10 minutes
+	});
+};

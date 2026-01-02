@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, FileText, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileText, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
@@ -56,10 +56,16 @@ const navItems: NavItem[] = [
 		permission: "manage_users",
 	},
 	{
+		title: "Admin",
+		href: "/dashboard/admin",
+		icon: BarChart3,
+		permission: "view_admin_stats",
+	},
+	{
 		title: "Roles & Permissions",
-		href: "/dashboard/roles",
+		href: "/dashboard/admin/roles",
 		icon: Shield,
-		roles: ["super-admin", "admin"],
+		permission: "manage_roles",
 	},
 	{
 		title: "Settings",

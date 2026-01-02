@@ -377,3 +377,87 @@ export interface PermissionCheckResult {
 	hasPermission: boolean;
 	permissions: UserPermission[];
 }
+
+// ============================================================================
+// User Management Types (CRUD)
+// ============================================================================
+
+/**
+ * User data for management
+ */
+export interface User {
+	userId: number;
+	name: string;
+	email: string;
+	emailVerifiedAt?: string | null;
+	skills: string[];
+	roles: string[];
+	isActive: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
+/**
+ * Pagination metadata for users
+ */
+export interface UserPagination {
+	total: number;
+	count: number;
+	perPage: number;
+	currentPage: number;
+	totalPages: number;
+}
+
+/**
+ * Response structure for users list endpoint
+ * GET /api/v1/admin/users/manage
+ */
+export interface UsersListResponse {
+	users: User[];
+	pagination: UserPagination;
+}
+
+/**
+ * Filters for users list queries
+ */
+export interface UsersFilters {
+	search?: string;
+	role?: string;
+	isActive?: boolean;
+	sort?: string;
+	page?: number;
+	perPage?: number;
+}
+
+/**
+ * Payload for creating a new user
+ */
+export interface CreateUserPayload {
+	name: string;
+	email: string;
+	password: string;
+	password_confirmation: string;
+	skills?: string[];
+	roles?: string[];
+	isActive?: boolean;
+}
+
+/**
+ * Payload for updating a user
+ */
+export interface UpdateUserPayload {
+	name?: string;
+	email?: string;
+	password?: string;
+	password_confirmation?: string;
+	skills?: string[];
+	roles?: string[];
+	isActive?: boolean;
+}
+
+/**
+ * Payload for assigning roles to a user
+ */
+export interface AssignRolesPayload {
+	roles: string[];
+}

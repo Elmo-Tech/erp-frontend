@@ -1,10 +1,32 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
+import { LeadKanban } from "@/features/sales/components/LeadKanban";
+import { QuotationBuilder } from "@/features/sales/components/QuotationBuilder";
+import { Lead } from "@/features/sales/types/lead";
 
 export default function SalesPage() {
+	const [activeTab, setActiveTab] = useState("leads");
+	const [showQuotationBuilder, setShowQuotationBuilder] = useState(false);
+	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+	const handleLeadClick = (lead: Lead) => {
+		setSelectedLead(lead);
+	};
+
+	const handleCreateQuotation = () => {
+		setShowQuotationBuilder(true);
+	};
+
+	const handleQuotationSuccess = () => {
+		setShowQuotationBuilder(false);
+		setActiveTab("quotations");
+	};
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
@@ -12,46 +34,57 @@ export default function SalesPage() {
 					<h1 className="text-2xl font-bold">Sales</h1>
 					<p className="text-muted-foreground">Manage leads and quotations</p>
 				</div>
-				<Button>
+				<Button onClick={handleCreateQuotation}>
 					<Plus className="mr-2 h-4 w-4" />
-					New Lead
+					New Quotation
 				</Button>
 			</div>
 
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-				<Card>
-					<CardHeader>
-						<CardTitle>Leads</CardTitle>
-						<CardDescription>Manage potential clients</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<p className="text-3xl font-bold">12</p>
-						<p className="text-sm text-muted-foreground">Active leads</p>
-					</CardContent>
-				</Card>
+			<Tabs
+				value={activeTab}
+				onValueChange={setActiveTab}
+			>
+				<TabsList>
+					<TabsTrigger value="leads">Leads Pipeline</TabsTrigger>
+					<TabsTrigger value="quotations">Quotations</TabsTrigger>
+				</TabsList>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Quotations</CardTitle>
-						<CardDescription>Sent proposals</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<p className="text-3xl font-bold">8</p>
-						<p className="text-sm text-muted-foreground">Pending quotations</p>
-					</CardContent>
-				</Card>
+				<TabsContent
+					value="leads"
+					className="mt-6"
+				>
+					<LeadKanban
+						onLeadClick={handleLeadClick}
+						onCreateLead={() => {}}
+					/>
+				</TabsContent>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Conversion Rate</CardTitle>
-						<CardDescription>Lead to contract ratio</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<p className="text-3xl font-bold">67%</p>
-						<p className="text-sm text-muted-foreground">This month</p>
-					</CardContent>
-				</Card>
-			</div>
+				<TabsContent
+					value="quotations"
+					className="mt-6"
+				>
+					<QuotationBuilder
+						initialData={selectedLead ? { leadId: selectedLead.leadId } : undefined}
+						onSuccess={handleQuotationSuccess}
+					/>
+				</TabsContent>
+			</Tabs>
+
+			{/* Quotation Builder Dialog */}
+			<Dialog
+				open={showQuotationBuilder}
+				onOpenChange={setShowQuotationBuilder}
+			>
+				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>Create New Quotation</DialogTitle>
+					</DialogHeader>
+					<QuotationBuilder
+						onSuccess={handleQuotationSuccess}
+						onCancel={() => setShowQuotationBuilder(false)}
+					/>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

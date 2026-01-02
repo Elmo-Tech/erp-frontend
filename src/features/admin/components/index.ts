@@ -13,3 +13,6 @@ export { UserPerformanceList } from "./UserPerformanceList";
 export { InternalCostManager } from "./InternalCostManager";
 export { QualityDashboard } from "./QualityDashboard";
 export { AuditLogViewer } from "./AuditLogViewer";
+export { UsersManagement } from "./UsersManagement";
+export { UsersTable } from "./UsersTable";
+export { UserFormDialog } from "./UserFormDialog";

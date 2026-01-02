@@ -5,6 +5,7 @@
 
 export * from "./useAdminStats";
 export * from "./useAuditLogs";
+export * from "./useUsers";
 
 // Export roles hooks
 export { useRoles, useRole, useCreateRole, useUpdateRole, useDeleteRole, useUsersWithCosts, useUpdateInternalCost, useBulkUpdateInternalCosts, usePrefetchRole, roleKeys, userCostKeys } from "./useRoles";
