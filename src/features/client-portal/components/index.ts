@@ -12,3 +12,6 @@ export * from "./ApproveUIButton";
 export * from "./ClientDashboard";
 export * from "./ClientProjectView";
 export * from "./ClientInvoiceList";
+
+// Column definitions
+export * from "./columns";

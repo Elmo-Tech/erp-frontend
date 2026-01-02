@@ -4,3 +4,6 @@ export { ProjectDetails } from "./ProjectDetails";
 export { WikiViewer } from "./WikiViewer";
 export { WikiList } from "./WikiList";
 export { HistoryLog } from "./HistoryLog";
+
+// Column definitions
+export * from "./columns";
