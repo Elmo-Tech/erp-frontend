@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { Loader2 } from "lucide-react";
 
+// TODO: Add splash screen
+
 export default function Home() {
 	const router = useRouter();
 	const { isAuthenticated, role } = useAuthStore();
