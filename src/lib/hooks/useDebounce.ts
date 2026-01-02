@@ -5,7 +5,8 @@ import { useCallback, useRef, useEffect, useState } from "react";
 /**
  * Returns a debounced version of the callback function
  */
-export function useDebouncedCallback<T extends (...args: unknown[]) => void>(callback: T, delay: number): (...args: Parameters<T>) => void {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function useDebouncedCallback<T extends (...args: any[]) => void>(callback: T, delay: number): (...args: Parameters<T>) => void {
 	const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const callbackRef = useRef(callback);
 
