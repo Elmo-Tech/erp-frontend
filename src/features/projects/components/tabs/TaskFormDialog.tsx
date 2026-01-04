@@ -38,9 +38,10 @@ interface TaskFormDialogProps {
 	onOpenChange: (open: boolean) => void;
 	task?: Task | null;
 	defaultType?: TaskType;
+	parentTask?: Task | null; // Parent task for getting team members
 }
 
-export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, defaultType = TaskType.MAIN }: TaskFormDialogProps) {
+export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, defaultType = TaskType.MAIN, parentTask }: TaskFormDialogProps) {
 	const isEditing = !!task;
 	const { data: membersData } = useProjectMembers(projectId);
 	const { data: tags } = useTags();
@@ -120,16 +121,44 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 		label: TaskPriorityLabels[priority],
 	}));
 
-	const assigneeOptions = useMemo(
-		() => [
-			{ value: "none", label: "Unassigned" },
-			...(membersData?.members?.map((member) => ({
-				value: member.userId.toString(),
-				label: member.user?.name || "Unknown",
-			})) || []),
-		],
-		[membersData]
-	);
+	const assigneeOptions = useMemo(() => {
+		const options = [{ value: "none", label: "Unassigned" }];
+
+		// For Main Tasks: use project members
+		// For Weekly/Subtasks: use teamAssignees from parent task
+		if (defaultType === TaskType.MAIN) {
+			// Use project members for Main Tasks
+			if (membersData?.members) {
+				options.push(
+					...membersData.members.map((member) => ({
+						value: member.userId.toString(),
+						label: member.user?.name || "Unknown",
+					}))
+				);
+			}
+		} else {
+			// For Weekly/Subtasks, use teamAssignees from parent
+			const teamAssignees = parentTask?.teamAssignees || parentTask?.assignees || [];
+			if (teamAssignees.length > 0) {
+				options.push(
+					...teamAssignees.map((assignee) => ({
+						value: assignee.userId.toString(),
+						label: assignee.user?.name || "Unknown",
+					}))
+				);
+			} else if (membersData?.members) {
+				// Fallback to project members if no team assignees
+				options.push(
+					...membersData.members.map((member) => ({
+						value: member.userId.toString(),
+						label: member.user?.name || "Unknown",
+					}))
+				);
+			}
+		}
+
+		return options;
+	}, [defaultType, membersData, parentTask]);
 
 	const parseAssignedTo = (value: string | undefined): number | null => {
 		if (!value || value === "none") return null;

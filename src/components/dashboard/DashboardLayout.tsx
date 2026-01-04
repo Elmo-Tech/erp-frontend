@@ -5,6 +5,8 @@ import { Sidebar } from "./Sidebar";
 import { Navbar } from "./Navbar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useSidebarStore } from "@/store/sidebarStore";
+import { useTimerSocketInit } from "@/hooks/useTimerSocket";
+import { useNotificationSocketInit } from "@/hooks/useNotificationSocket";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
@@ -15,6 +17,10 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, allowedRoles, requiredPermission }: DashboardLayoutProps) {
 	const { isCollapsed } = useSidebarStore();
+
+	// Initialize WebSocket connections
+	useTimerSocketInit();
+	useNotificationSocketInit();
 
 	return (
 		<ProtectedRoute

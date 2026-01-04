@@ -1,0 +1,107 @@
+/**
+ * Employee Types
+ * Type definitions for employee management
+ */
+
+export interface Employee {
+	userId: number;
+	name: string;
+	email: string;
+	avatar: string;
+	isActive: boolean;
+	role: string;
+	workHoursPerDay: number;
+	workStartTime: string;
+	expectedClockOut: string | null;
+	graceDaysAllowed: number;
+	graceDaysUsed: number;
+	graceDaysRemaining: number;
+	totalPoints: number;
+	skills: string[];
+	salary: number | null;
+	totalDeductions: number | null;
+	internalHourlyCost: number | null;
+	createdAt: string;
+}
+
+export interface EmployeeFilters {
+	search?: string;
+	isActive?: boolean;
+	page?: number;
+	perPage?: number;
+}
+
+export interface EmployeePagination {
+	total: number;
+	count: number;
+	perPage: number;
+	currentPage: number;
+	totalPages: number;
+}
+
+export interface EmployeeListResponse {
+	employees: Employee[];
+	pagination: EmployeePagination;
+}
+
+export interface CreateEmployeePayload {
+	name: string;
+	email: string;
+	password: string;
+	role?: string;
+	isActive?: boolean;
+	salary?: number;
+	workHoursPerDay?: number;
+	workStartTime?: string;
+	graceDaysAllowed?: number;
+	internalHourlyCost?: number;
+	skills?: string[];
+}
+
+export interface UpdateEmployeePayload {
+	name?: string;
+	email?: string;
+	password?: string;
+	role?: string;
+	isActive?: boolean;
+	salary?: number;
+	workHoursPerDay?: number;
+	workStartTime?: string;
+	graceDaysAllowed?: number;
+	internalHourlyCost?: number;
+	skills?: string[];
+	avatar?: string;
+}
+
+export interface EmployeePerformance {
+	employee: {
+		userId: number;
+		name: string;
+		email: string;
+		avatar: string;
+	};
+	period: {
+		year: number;
+		month: number;
+	};
+	attendance: {
+		totalDays: number;
+		totalLateMinutes: number;
+		totalIdleMinutes: number;
+		graceDaysUsed: number;
+		graceDaysRemaining: number;
+	};
+	deductions: {
+		totalMinutes: number;
+		totalAmount: number;
+	};
+	performance: {
+		pointsEarned: number;
+		totalPoints: number;
+		projectsWorkedOn: number;
+		projects: Array<{
+			projectId: number;
+			title: string;
+		}>;
+	};
+}

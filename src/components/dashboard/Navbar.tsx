@@ -1,15 +1,15 @@
 "use client";
 
-import { Bell, Search, LogOut, User, Settings, Menu } from "lucide-react";
+import { LogOut, User, Settings, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuthStore } from "@/store/authStore";
 import { useSidebarStore } from "@/store/sidebarStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
-import { CompactTimerWidget } from "@/components/TimerWidget";
+import { NavbarTimer } from "@/components/NavbarTimer";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 import Link from "next/link";
 
 export function Navbar() {
@@ -57,34 +57,26 @@ export function Navbar() {
 				</Button>
 
 				{/* Search */}
-				<div className="relative hidden md:block">
+				{/* <div className="relative hidden md:block">
 					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					<Input
 						type="search"
 						placeholder="Search..."
 						className="w-64 pl-9 lg:w-80"
 					/>
-				</div>
+				</div> */}
 			</div>
 
 			{/* Right side */}
 			<div className="flex items-center gap-3">
 				{/* Timer Widget - Compact version for navbar */}
-				<CompactTimerWidget />
+				<NavbarTimer />
 
 				{/* Theme Toggle */}
 				<ThemeToggle />
 
 				{/* Notifications */}
-				<Button
-					variant="ghost"
-					size="icon"
-					className="relative h-9 w-9"
-				>
-					<Bell className="h-4 w-4" />
-					<span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">3</span>
-					<span className="sr-only">Notifications</span>
-				</Button>
+				<NotificationDropdown />
 
 				{/* User Menu */}
 				<DropdownMenu>

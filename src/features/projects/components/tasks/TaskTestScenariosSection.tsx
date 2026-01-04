@@ -8,12 +8,14 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FormDialog, FormInput, FormTextarea } from "@/components/shared";
-import { Task, TaskTestScenario, TestScenarioStatus } from "@/features/dashboard/types/task";
+import { Task, TaskTestScenario, TestScenarioStatus, TaskType } from "@/features/dashboard/types/task";
 import { useAddTestScenario, useCompleteTestScenario, useVerifyTestScenario } from "@/features/dashboard/hooks/useTasks";
-import { Plus, Check, X, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Plus, Check, X, Clock, CheckCircle2, XCircle, AlertCircle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 const addScenarioSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -69,6 +71,13 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 	const addScenario = useAddTestScenario();
 	const completeScenario = useCompleteTestScenario();
 	const verifyScenario = useVerifyTestScenario();
+	const { canVerifyTestScenarios } = usePermissions();
+
+	// Test scenarios can only be added to Weekly tasks
+	// Subtasks can have scenarios added by assignees but not edited
+	const canAddScenarios = task.type === TaskType.WEEKLY;
+	const isSubtask = task.type === TaskType.SUBTASK;
+	const isMainTask = task.type === TaskType.MAIN;
 
 	const addForm = useForm<AddScenarioFormData>({
 		resolver: zodResolver(addScenarioSchema),
@@ -118,6 +127,18 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 
 	const passedCount = scenarios.filter((s) => s.status === TestScenarioStatus.PASSED).length;
 
+	// Main tasks don't have test scenarios
+	if (isMainTask) {
+		return (
+			<div className="space-y-4">
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>Test scenarios are defined on Weekly Tasks. Main tasks organize the overall work structure.</AlertDescription>
+				</Alert>
+			</div>
+		);
+	}
+
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
@@ -129,15 +150,25 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 						</p>
 					)}
 				</div>
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => setShowAddDialog(true)}
-				>
-					<Plus className="h-4 w-4 mr-1" />
-					Add Test
-				</Button>
+				{(canAddScenarios || isSubtask) && (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => setShowAddDialog(true)}
+					>
+						<Plus className="h-4 w-4 mr-1" />
+						Add Test
+					</Button>
+				)}
 			</div>
+
+			{/* Info for subtasks */}
+			{isSubtask && (
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>You can add personal test scenarios for this subtask. Main test scenarios are defined on the Weekly Task.</AlertDescription>
+				</Alert>
+			)}
 
 			{scenarios.length === 0 ? (
 				<div className="text-center py-8 text-muted-foreground">

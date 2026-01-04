@@ -42,12 +42,13 @@ export const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onUpdate, classN
 
 	// Hooks
 	const updateTaskMutation = useUpdateTask();
-	const { isRunning, entityType, entityId } = useTimerStore();
+	const { activeTimer } = useTimerStore();
 	const startTimerMutation = useStartTimer();
 	const stopTimerMutation = useStopTimer();
 
 	// Check if timer is running for this task
-	const isTimerRunningForTask = isRunning && entityType === "task" && entityId === task.taskId;
+	const isRunning = activeTimer?.isActive ?? false;
+	const isTimerRunningForTask = isRunning && activeTimer?.trackableType === "task" && activeTimer?.trackableId === task.taskId;
 
 	// Format time display
 	const formatTime = (minutes: number): string => {

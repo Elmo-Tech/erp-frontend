@@ -49,14 +49,14 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 			open={open}
 			onOpenChange={onOpenChange}
 		>
-			<SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col">
+			<SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col h-full overflow-hidden">
 				{isLoading ? (
 					<div className="flex items-center justify-center h-full">
 						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
 					</div>
 				) : task ? (
-					<>
-						<SheetHeader className="p-6 pb-0">
+					<div className="flex flex-col h-full overflow-hidden">
+						<SheetHeader className="p-6 pb-0 shrink-0">
 							<div className="flex items-start justify-between gap-4">
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-2 mb-2">
@@ -94,10 +94,12 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 							</div>
 						</SheetHeader>
 
-						{/* Timer Widget */}
-						<div className="px-6 py-4">
-							<TaskTimerWidget task={task} />
-						</div>
+						{/* Timer Widget - Only show for leaf tasks (no children) */}
+						{task.canStartTimer && (
+							<div className="px-6 py-4">
+								<TaskTimerWidget task={task} />
+							</div>
+						)}
 
 						{/* Quick Stats */}
 						<div className="px-6 grid grid-cols-3 gap-4">
@@ -142,16 +144,16 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 						<Tabs
 							value={activeTab}
 							onValueChange={setActiveTab}
-							className="flex-1 flex flex-col min-h-0"
+							className="flex-1 flex flex-col min-h-0 overflow-hidden"
 						>
-							<TabsList className="mx-6 grid grid-cols-4">
+							<TabsList className="mx-6 grid grid-cols-4 shrink-0">
 								<TabsTrigger value="details">Details</TabsTrigger>
 								<TabsTrigger value="assignees">Team ({task.assignees?.length || 0})</TabsTrigger>
 								<TabsTrigger value="tests">Tests ({testScenarios?.length || 0})</TabsTrigger>
 								<TabsTrigger value="activity">Activity</TabsTrigger>
 							</TabsList>
 
-							<ScrollArea className="flex-1">
+							<ScrollArea className="flex-1 h-full">
 								<TabsContent
 									value="details"
 									className="p-6 pt-4 m-0"
@@ -263,7 +265,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 								</TabsContent>
 							</ScrollArea>
 						</Tabs>
-					</>
+					</div>
 				) : (
 					<div className="flex items-center justify-center h-full text-muted-foreground">Task not found</div>
 				)}

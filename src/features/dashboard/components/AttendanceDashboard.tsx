@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Clock, LogIn, LogOut, Timer, AlertCircle, CheckCircle2, Loader2, Coffee, Play } from "lucide-react";
+import { Clock, LogIn, LogOut, AlertCircle, CheckCircle2, Loader2, Coffee, Play } from "lucide-react";
 import { useAttendanceStatus, useClockOut } from "../hooks/useAttendance";
 import { useTimerStore } from "@/store/timerStore";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,8 @@ export const AttendanceDashboard: React.FC<AttendanceDashboardProps> = ({ classN
 	const { summary, isLoading, error, refetch, isClocked, isClockedOut, hasActiveTimer } = useAttendanceStatus();
 
 	const clockOutMutation = useClockOut();
-	const { isRunning: timerIsRunning } = useTimerStore();
+	const { activeTimer } = useTimerStore();
+	const timerIsRunning = activeTimer?.isActive ?? false;
 
 	// Handle manual clock out
 	const handleClockOut = async () => {
@@ -175,7 +176,7 @@ export const AttendanceDashboard: React.FC<AttendanceDashboardProps> = ({ classN
 			<CardHeader className="pb-3">
 				<CardTitle className="flex items-center gap-2 text-base">
 					<Clock className="h-4 w-4 text-muted-foreground" />
-					Today's Attendance
+					Today&apos;s Attendance
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">

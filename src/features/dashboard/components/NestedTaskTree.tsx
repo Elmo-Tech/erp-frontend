@@ -20,6 +20,7 @@ interface NestedTaskTreeProps {
 	projectId: number;
 	onTaskSelect: (task: Task) => void;
 	selectedTaskId?: number;
+	highlightedTaskId?: number | null;
 	className?: string;
 }
 
@@ -28,6 +29,7 @@ interface TaskNodeProps {
 	level: number;
 	onTaskSelect: (task: Task) => void;
 	selectedTaskId?: number;
+	highlightedTaskId?: number | null;
 	expandedTasks: Set<number>;
 	onToggleExpand: (taskId: number) => void;
 }
@@ -77,35 +79,42 @@ const TimeSpentIndicator: React.FC<{ minutes: number }> = ({ minutes }) => {
  * TaskNode component for rendering individual task items
  * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
  */
-const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selectedTaskId, expandedTasks, onToggleExpand }) => {
+const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selectedTaskId, highlightedTaskId, expandedTasks, onToggleExpand }) => {
 	const isExpanded = expandedTasks.has(task.taskId);
 	const isSelected = selectedTaskId === task.taskId;
-	const { entityId, entityType, isRunning } = useTimerStore();
-	const isTimerActive = isRunning && entityType === "task" && entityId === task.taskId;
+	const isHighlighted = highlightedTaskId === task.taskId;
+	const { activeTimer } = useTimerStore();
+	const isTimerActive = activeTimer?.isActive && activeTimer?.trackableType === "task" && activeTimer?.trackableId === task.taskId;
 
-	// Check if task has children (either loaded or potentially has children)
-	const hasChildren = task.children && task.children.length > 0;
+	// Check if task has preloaded children or API says it has children
+	const hasPreloadedChildren = task.children && task.children.length > 0;
+	const apiSaysHasChildren = task.hasChildren === true;
 
-	// Use lazy loading hook for children
+	// Use lazy loading hook for children - fetch when expanded
 	const {
 		data: childrenData,
 		isLoading: isLoadingChildren,
 		error: childrenError,
-	} = useTaskChildren(task.taskId, isExpanded && !hasChildren) as {
+	} = useTaskChildren(task.taskId, isExpanded && !hasPreloadedChildren) as {
 		data: TaskChildrenResponse | undefined;
 		isLoading: boolean;
 		error: Error | null;
 	};
 
 	// Get children from either preloaded data or lazy-loaded data
-	const children = hasChildren ? task.children || [] : childrenData?.children || [];
+	const children = hasPreloadedChildren ? task.children || [] : childrenData?.children || [];
 	const hasAnyChildren = children.length > 0;
 
+	// Check if task could potentially have children
+	// Use API hasChildren flag, or check task type
+	const canHaveChildren = apiSaysHasChildren || task.type === "main" || task.type === "weekly";
+
 	const handleToggleExpand = useCallback(() => {
-		if (hasAnyChildren || isLoadingChildren) {
+		// Allow toggle if task can have children (even if not loaded yet)
+		if (canHaveChildren || hasAnyChildren || isLoadingChildren) {
 			onToggleExpand(task.taskId);
 		}
-	}, [hasAnyChildren, isLoadingChildren, onToggleExpand, task.taskId]);
+	}, [canHaveChildren, hasAnyChildren, isLoadingChildren, onToggleExpand, task.taskId]);
 
 	const handleTaskClick = useCallback(() => {
 		onTaskSelect(task);
@@ -115,7 +124,13 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selected
 		<div className="select-none">
 			{/* Task Item */}
 			<div
-				className={cn("group flex items-center gap-2 rounded-md p-2 hover:bg-accent/50 transition-colors cursor-pointer", isSelected && "bg-accent", isTimerActive && "ring-2 ring-blue-500/50 bg-blue-50 dark:bg-blue-950/20")}
+				id={`task-${task.taskId}`}
+				className={cn(
+					"group flex items-center gap-2 rounded-md p-2 hover:bg-accent/50 transition-colors cursor-pointer",
+					isSelected && "bg-accent",
+					isTimerActive && "ring-2 ring-blue-500/50 bg-blue-50 dark:bg-blue-950/20",
+					isHighlighted && "ring-2 ring-yellow-500 bg-yellow-50 dark:bg-yellow-950/30 animate-pulse"
+				)}
 				style={{ paddingLeft: `${level * 20 + 8}px` }}
 				onClick={handleTaskClick}
 			>
@@ -129,11 +144,11 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selected
 						e.stopPropagation();
 						handleToggleExpand();
 					}}
-					disabled={!hasAnyChildren && !isLoadingChildren}
+					disabled={!canHaveChildren && !hasAnyChildren && !isLoadingChildren}
 				>
 					{isLoadingChildren ? (
 						<div className="size-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-					) : hasAnyChildren ? (
+					) : canHaveChildren || hasAnyChildren ? (
 						isExpanded ? (
 							<ChevronDownIcon className="size-4" />
 						) : (
@@ -202,6 +217,7 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selected
 							level={level + 1}
 							onTaskSelect={onTaskSelect}
 							selectedTaskId={selectedTaskId}
+							highlightedTaskId={highlightedTaskId}
 							expandedTasks={expandedTasks}
 							onToggleExpand={onToggleExpand}
 						/>
@@ -219,10 +235,20 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selected
  * NestedTaskTree component for displaying hierarchical task structure
  * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
  */
-export const NestedTaskTree: React.FC<NestedTaskTreeProps> = ({ projectId, onTaskSelect, selectedTaskId, className }) => {
+export const NestedTaskTree: React.FC<NestedTaskTreeProps> = ({ projectId, onTaskSelect, selectedTaskId, highlightedTaskId, className }) => {
 	const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
 
 	const { rootTasks, isLoadingRootTasks, rootTasksError, prefetchChildren } = useTaskTree(projectId);
+
+	// Auto-scroll to highlighted task
+	React.useEffect(() => {
+		if (highlightedTaskId) {
+			const element = document.getElementById(`task-${highlightedTaskId}`);
+			if (element) {
+				element.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
+		}
+	}, [highlightedTaskId]);
 
 	const handleToggleExpand = useCallback(
 		(taskId: number) => {
@@ -338,6 +364,7 @@ export const NestedTaskTree: React.FC<NestedTaskTreeProps> = ({ projectId, onTas
 						level={0}
 						onTaskSelect={onTaskSelect}
 						selectedTaskId={selectedTaskId}
+						highlightedTaskId={highlightedTaskId}
 						expandedTasks={expandedTasks}
 						onToggleExpand={handleToggleExpand}
 					/>

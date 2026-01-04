@@ -75,8 +75,9 @@ export const useProjectTasks = (projectId: number, page = 1, perPage = 15, enabl
 		queryKey: [...taskKeys.projectTasks(projectId), page, perPage],
 		queryFn: () => tasksApi.getProjectTasks(projectId, page, perPage),
 		enabled: enabled && !!projectId,
-		staleTime: 5 * 60 * 1000,
+		staleTime: 30 * 1000, // 30 seconds - refresh more frequently
 		gcTime: 10 * 60 * 1000,
+		refetchOnWindowFocus: true,
 	});
 };
 

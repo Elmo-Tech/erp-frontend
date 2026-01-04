@@ -7,9 +7,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Task, TaskActivity } from "@/features/dashboard/types/task";
 import { useAddComment } from "@/features/dashboard/hooks/useTasks";
-import { MessageSquare, Clock, UserPlus, UserMinus, CheckCircle2, XCircle, Play, Square, Tag, AlertCircle, Send, Lock } from "lucide-react";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
+import { MessageSquare, Clock, UserPlus, UserMinus, CheckCircle2, XCircle, Play, Square, Tag, AlertCircle, Send, Lock, Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -57,6 +59,19 @@ export function TaskActivitySection({ task, activities }: TaskActivitySectionPro
 	const [isInternal, setIsInternal] = useState(false);
 
 	const addComment = useAddComment();
+	const { canViewInternalNotes } = usePermissions();
+
+	// Only users with view_internal_notes permission can see activity log
+	if (!canViewInternalNotes) {
+		return (
+			<div className="space-y-4">
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>Activity log is only visible to team leads and reviewers.</AlertDescription>
+				</Alert>
+			</div>
+		);
+	}
 
 	const handleSubmitComment = async () => {
 		if (!comment.trim()) return;

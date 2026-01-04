@@ -63,12 +63,6 @@ const navGroups: NavGroup[] = [
 				permission: "view_projects",
 			},
 			{
-				title: "Tasks",
-				href: "/dashboard/tasks",
-				icon: FileText,
-				permission: "view_tasks",
-			},
-			{
 				title: "Wiki",
 				href: "/dashboard/wiki",
 				icon: BookOpen,
@@ -80,16 +74,16 @@ const navGroups: NavGroup[] = [
 		title: "HR & Time",
 		items: [
 			{
+				title: "Employees",
+				href: "/dashboard/admin/employees",
+				icon: Users,
+				permission: "manage_employees",
+			},
+			{
 				title: "Attendance",
 				href: "/dashboard/attendance",
 				icon: Clock,
 				permission: "view_attendance",
-			},
-			{
-				title: "Users",
-				href: "/dashboard/admin/users",
-				icon: Users,
-				permission: "manage_users",
 			},
 		],
 	},

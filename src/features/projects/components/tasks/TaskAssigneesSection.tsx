@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { FormDialog, FormSelect, FormSwitch } from "@/components/shared";
-import { Task, AssigneeRole, AssigneeRoleLabels, TaskAssignee } from "@/features/dashboard/types/task";
+import { Task, AssigneeRole, AssigneeRoleLabels, TaskAssignee, TaskType } from "@/features/dashboard/types/task";
 import { useAddAssignee, useRemoveAssignee } from "@/features/dashboard/hooks/useTasks";
 import { useProjectMembers } from "../../hooks/useProjectMembers";
-import { Plus, X, Crown, Code, Eye } from "lucide-react";
+import { Plus, X, Crown, Code, Eye, Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const addAssigneeSchema = z.object({
 	userId: z.string().min(1, "Please select a member"),
@@ -52,6 +53,11 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 	const addAssignee = useAddAssignee();
 	const removeAssignee = useRemoveAssignee();
 
+	// All task types can have assignees edited now
+	// For Weekly/Subtasks, only team members from Main Task can be assigned
+	const canEditAssignees = true;
+	const isMainTask = task.type === TaskType.MAIN;
+
 	const form = useForm<AddAssigneeFormData>({
 		resolver: zodResolver(addAssigneeSchema),
 		defaultValues: {
@@ -63,8 +69,28 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 
 	const assignees = task.assignees || [];
 
-	// Filter out already assigned users
-	const availableMembers = membersData?.members?.filter((member) => !assignees.some((a) => a.userId === member.userId)) || [];
+	// Get available members based on task type
+	// For Main Tasks: use project members
+	// For Weekly/Subtasks: use teamAssignees from API (Main Task's team)
+	const getAvailableMembers = () => {
+		const currentAssigneeIds = assignees.map((a) => a.userId);
+
+		if (isMainTask) {
+			// For Main Tasks, use project members
+			return membersData?.members?.filter((member) => !currentAssigneeIds.includes(member.userId)) || [];
+		} else {
+			// For Weekly/Subtasks, use teamAssignees from API
+			const teamAssignees = task.teamAssignees || [];
+			return teamAssignees
+				.filter((a) => !currentAssigneeIds.includes(a.userId))
+				.map((a) => ({
+					userId: a.userId,
+					user: a.user,
+				}));
+		}
+	};
+
+	const availableMembers = getAvailableMembers();
 
 	const memberOptions = availableMembers.map((member) => ({
 		value: member.userId.toString(),
@@ -115,19 +141,30 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				<h4 className="text-sm font-medium">Team Members</h4>
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => setShowAddDialog(true)}
-				>
-					<Plus className="h-4 w-4 mr-1" />
-					Add
-				</Button>
+				{canEditAssignees && (
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => setShowAddDialog(true)}
+					>
+						<Plus className="h-4 w-4 mr-1" />
+						Add
+					</Button>
+				)}
 			</div>
+
+			{/* Info notice for non-main tasks */}
+			{!isMainTask && (
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>You can assign team members from the main task&apos;s team. Add members to the main task first to expand the available team.</AlertDescription>
+				</Alert>
+			)}
 
 			{assignees.length === 0 ? (
 				<div className="text-center py-8 text-muted-foreground">
 					<p className="text-sm">No team members assigned yet</p>
+					{!isMainTask && <p className="text-xs mt-1">Select from the main task&apos;s team members</p>}
 				</div>
 			) : (
 				<div className="space-y-4">
@@ -148,6 +185,7 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 											assignee={assignee}
 											onRemove={() => handleRemoveAssignee(assignee.userId)}
 											isRemoving={removeAssignee.isPending}
+											canRemove={canEditAssignees}
 										/>
 									))}
 								</div>
@@ -197,7 +235,7 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 	);
 }
 
-function AssigneeCard({ assignee, onRemove, isRemoving }: { assignee: TaskAssignee; onRemove: () => void; isRemoving: boolean }) {
+function AssigneeCard({ assignee, onRemove, isRemoving, canRemove }: { assignee: TaskAssignee; onRemove: () => void; isRemoving: boolean; canRemove: boolean }) {
 	const RoleIcon = roleIcons[assignee.role];
 
 	return (
@@ -235,14 +273,16 @@ function AssigneeCard({ assignee, onRemove, isRemoving }: { assignee: TaskAssign
 					</div>
 				</div>
 			</div>
-			<Button
-				variant="ghost"
-				size="icon"
-				onClick={onRemove}
-				disabled={isRemoving}
-			>
-				<X className="h-4 w-4" />
-			</Button>
+			{canRemove && (
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={onRemove}
+					disabled={isRemoving}
+				>
+					<X className="h-4 w-4" />
+				</Button>
+			)}
 		</div>
 	);
 }

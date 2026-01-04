@@ -11,7 +11,7 @@ interface FormInputProps<T extends FieldValues> {
 	label?: string;
 	placeholder?: string;
 	description?: string;
-	type?: "text" | "email" | "password" | "number" | "tel" | "url" | "date";
+	type?: "text" | "email" | "password" | "number" | "tel" | "url" | "date" | "time";
 	disabled?: boolean;
 	className?: string;
 	inputClassName?: string;
