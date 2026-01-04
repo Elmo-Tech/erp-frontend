@@ -164,12 +164,12 @@ export const AdminDashboard: React.FC = () => {
 	}
 
 	// Calculate completion rate
-	const totalProjects = data.activeProjects + data.completedProjects;
-	const completionRate = totalProjects > 0 ? (data.completedProjects / totalProjects) * 100 : 0;
+	const totalProjects = (data.activeProjects || 0) + (data.completedProjects || 0);
+	const completionRate = totalProjects > 0 ? ((data.completedProjects || 0) / totalProjects) * 100 : 0;
 
 	// Determine profit trend
-	const profitTrend = data.totalProfit > 0 ? "up" : data.totalProfit < 0 ? "down" : "neutral";
-	const marginTrend = data.overallMargin > 10 ? "up" : data.overallMargin < 5 ? "down" : "neutral";
+	const profitTrend = (data.totalProfit || 0) > 0 ? "up" : (data.totalProfit || 0) < 0 ? "down" : "neutral";
+	const marginTrend = (data.overallMargin || 0) > 10 ? "up" : (data.overallMargin || 0) < 5 ? "down" : "neutral";
 
 	return (
 		<div className="container mx-auto p-6 space-y-6">
@@ -184,7 +184,7 @@ export const AdminDashboard: React.FC = () => {
 				{/* Requirement 14.1: Display total revenue */}
 				<MetricCard
 					title="Total Revenue"
-					value={`$${data.totalRevenue.toLocaleString()}`}
+					value={`$${(data.totalRevenue || 0).toLocaleString()}`}
 					subtitle="Sum of project budgets"
 					icon={<DollarSign className="h-4 w-4" />}
 				/>
@@ -194,16 +194,16 @@ export const AdminDashboard: React.FC = () => {
 					<>
 						<MetricCard
 							title="Total Profit"
-							value={`$${data.totalProfit.toLocaleString()}`}
+							value={`$${(data.totalProfit || 0).toLocaleString()}`}
 							subtitle="Revenue minus costs"
 							icon={<Target className="h-4 w-4" />}
 							trend={profitTrend}
-							trendValue={`${data.overallMargin.toFixed(1)}% margin`}
+							trendValue={`${(data.overallMargin || 0).toFixed(1)}% margin`}
 						/>
 
 						<MetricCard
 							title="Profit Margin"
-							value={`${data.overallMargin.toFixed(1)}%`}
+							value={`${(data.overallMargin || 0).toFixed(1)}%`}
 							subtitle="Overall profitability"
 							icon={<BarChart3 className="h-4 w-4" />}
 							trend={marginTrend}
@@ -215,8 +215,8 @@ export const AdminDashboard: React.FC = () => {
 				{/* Requirement 14.3: Display active projects count and completion rate */}
 				<MetricCard
 					title="Active Projects"
-					value={data.activeProjects}
-					subtitle={`${data.completedProjects} completed`}
+					value={data.activeProjects || 0}
+					subtitle={`${data.completedProjects || 0} completed`}
 					icon={<Activity className="h-4 w-4" />}
 					trendValue={`${completionRate.toFixed(1)}% completion rate`}
 				/>
@@ -236,13 +236,13 @@ export const AdminDashboard: React.FC = () => {
 						<div className="space-y-2">
 							<div className="flex justify-between text-sm">
 								<span>Utilization Rate</span>
-								<span className="font-medium">{data.teamUtilization.toFixed(1)}%</span>
+								<span className="font-medium">{(data.teamUtilization || 0).toFixed(1)}%</span>
 							</div>
 							<Progress
-								value={data.teamUtilization}
+								value={data.teamUtilization || 0}
 								className="h-2"
 							/>
-							<p className="text-xs text-muted-foreground">{data.teamUtilization >= 80 ? "High utilization" : data.teamUtilization >= 60 ? "Good utilization" : "Low utilization"}</p>
+							<p className="text-xs text-muted-foreground">{(data.teamUtilization || 0) >= 80 ? "High utilization" : (data.teamUtilization || 0) >= 60 ? "Good utilization" : "Low utilization"}</p>
 						</div>
 					</CardContent>
 				</Card>
@@ -258,11 +258,13 @@ export const AdminDashboard: React.FC = () => {
 					<CardContent>
 						<div className="space-y-2">
 							<div className="text-2xl font-bold flex items-center gap-2">
-								{data.qualityScore.toFixed(1)}
-								<Badge variant={data.qualityScore >= 8 ? "default" : data.qualityScore >= 6 ? "secondary" : "destructive"}>{data.qualityScore >= 8 ? "Excellent" : data.qualityScore >= 6 ? "Good" : "Needs Improvement"}</Badge>
+								{(data.qualityScore || 0).toFixed(1)}
+								<Badge variant={(data.qualityScore || 0) >= 8 ? "default" : (data.qualityScore || 0) >= 6 ? "secondary" : "destructive"}>
+									{(data.qualityScore || 0) >= 8 ? "Excellent" : (data.qualityScore || 0) >= 6 ? "Good" : "Needs Improvement"}
+								</Badge>
 							</div>
 							<Progress
-								value={data.qualityScore * 10}
+								value={(data.qualityScore || 0) * 10}
 								className="h-2"
 							/>
 							<p className="text-xs text-muted-foreground">Based on bug bounce rates and task completion</p>
@@ -282,11 +284,11 @@ export const AdminDashboard: React.FC = () => {
 						<div className="space-y-3">
 							<div className="flex justify-between items-center">
 								<span className="text-sm">Active</span>
-								<Badge variant="secondary">{data.activeProjects}</Badge>
+								<Badge variant="secondary">{data.activeProjects || 0}</Badge>
 							</div>
 							<div className="flex justify-between items-center">
 								<span className="text-sm">Completed</span>
-								<Badge variant="default">{data.completedProjects}</Badge>
+								<Badge variant="default">{data.completedProjects || 0}</Badge>
 							</div>
 							<div className="flex justify-between items-center">
 								<span className="text-sm">Total</span>

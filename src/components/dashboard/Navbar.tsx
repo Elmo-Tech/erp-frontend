@@ -1,18 +1,20 @@
 "use client";
 
-import { Bell, Search, LogOut, User, Settings } from "lucide-react";
+import { Bell, Search, LogOut, User, Settings, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuthStore } from "@/store/authStore";
+import { useSidebarStore } from "@/store/sidebarStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
 import { CompactTimerWidget } from "@/components/TimerWidget";
 import Link from "next/link";
 
 export function Navbar() {
 	const { user, role } = useAuthStore();
+	const { toggleMobileOpen } = useSidebarStore();
 	const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
 	const getInitials = (name: string) => {
@@ -40,9 +42,21 @@ export function Navbar() {
 	};
 
 	return (
-		<header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-6 backdrop-blur supports-backdrop-filter:bg-background/60">
-			{/* Search */}
-			<div className="flex items-center gap-4">
+		<header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 lg:px-6 backdrop-blur supports-backdrop-filter:bg-background/60">
+			{/* Left side - Mobile menu + Search */}
+			<div className="flex items-center gap-3">
+				{/* Mobile menu button */}
+				<Button
+					variant="ghost"
+					size="icon"
+					onClick={toggleMobileOpen}
+					className="h-9 w-9 lg:hidden"
+				>
+					<Menu className="h-5 w-5" />
+					<span className="sr-only">Toggle menu</span>
+				</Button>
+
+				{/* Search */}
 				<div className="relative hidden md:block">
 					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 					<Input

@@ -64,10 +64,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 			<div className="bg-background border border-border rounded-lg p-3 shadow-lg">
 				<p className="font-medium text-foreground mb-2">{label}</p>
 				<div className="space-y-1 text-sm">
-					<p className="text-blue-600">Budget: ${data.budget.toLocaleString()}</p>
-					<p className="text-orange-600">Actual Cost: ${data.actualCost.toLocaleString()}</p>
-					<p className={data.isProfitable ? "text-green-600" : "text-red-600"}>Profit: ${data.profit.toLocaleString()}</p>
-					<p className={data.isProfitable ? "text-green-600" : "text-red-600"}>Margin: {data.profitMargin.toFixed(1)}%</p>
+					<p className="text-blue-600">Budget: ${Number(data.budget || 0).toLocaleString()}</p>
+					<p className="text-orange-600">Actual Cost: ${Number(data.actualCost || 0).toLocaleString()}</p>
+					<p className={data.isProfitable ? "text-green-600" : "text-red-600"}>Profit: ${Number(data.profit || 0).toLocaleString()}</p>
+					<p className={data.isProfitable ? "text-green-600" : "text-red-600"}>Margin: {Number(data.profitMargin || 0).toFixed(1)}%</p>
 				</div>
 			</div>
 		);
@@ -93,13 +93,13 @@ export const ProfitChart: React.FC<ProfitChartProps> = ({ filters, height = 400,
 			.slice(0, maxProjects) // Limit number of projects for readability
 			.map(
 				(project: ProfitabilityData): ChartDataPoint => ({
-					name: project.title.length > 20 ? `${project.title.substring(0, 20)}...` : project.title,
-					budget: project.budget,
-					actualCost: project.totalCost,
-					profit: project.profit,
-					profitMargin: project.profitMargin,
-					isProfitable: project.profit >= 0,
-					projectId: project.projectId,
+					name: (project.title || "Untitled").length > 20 ? `${(project.title || "Untitled").substring(0, 20)}...` : project.title || "Untitled",
+					budget: project.budget || 0,
+					actualCost: project.totalCost || 0,
+					profit: project.profit || 0,
+					profitMargin: project.profitMargin || 0,
+					isProfitable: (project.profit || 0) >= 0,
+					projectId: project.projectId || 0,
 				})
 			);
 	}, [data?.projects, maxProjects]);

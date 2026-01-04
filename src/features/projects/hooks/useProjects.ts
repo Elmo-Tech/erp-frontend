@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectsApi } from "../api/projects";
-import { Project, CreateProjectPayload, UpdateProjectPayload, ProjectFilters, ProjectListResponse } from "../types/project";
+import { Project, CreateProjectPayload, CreateDirectProjectPayload, UpdateProjectPayload, ProjectFilters, ProjectListResponse } from "../types/project";
 import { projectHistoryKeys } from "./useProjectHistory";
+import { clientKeys } from "@/features/clients/hooks/useClients";
 
 /**
  * TanStack Query hooks for project management
@@ -59,6 +60,32 @@ export const useCreateProject = () => {
 
 			// Add the new project to the cache
 			queryClient.setQueryData(projectKeys.detail(newProject.projectId), newProject);
+		},
+		onError: (error) => {
+			console.error("Failed to create project:", error);
+		},
+	});
+};
+
+/**
+ * Hook to create a new project directly for a client (without quotation)
+ */
+export const useCreateDirectProject = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<Project, Error, CreateDirectProjectPayload>({
+		mutationFn: projectsApi.createDirect,
+		onSuccess: (newProject) => {
+			// Invalidate and refetch projects list
+			queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+
+			// Add the new project to the cache
+			queryClient.setQueryData(projectKeys.detail(newProject.projectId), newProject);
+
+			// Invalidate client details to refresh projects list
+			if (newProject.clientId) {
+				queryClient.invalidateQueries({ queryKey: clientKeys.detail(newProject.clientId) });
+			}
 		},
 		onError: (error) => {
 			console.error("Failed to create project:", error);

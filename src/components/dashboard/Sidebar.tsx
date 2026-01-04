@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, FileText, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileText, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
+import { useSidebarStore } from "@/store/sidebarStore";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -18,79 +19,150 @@ interface NavItem {
 	roles?: string[];
 }
 
-const navItems: NavItem[] = [
+interface NavGroup {
+	title: string;
+	items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
 	{
-		title: "Dashboard",
-		href: "/dashboard",
-		icon: LayoutDashboard,
+		title: "Overview",
+		items: [
+			{
+				title: "Dashboard",
+				href: "/dashboard",
+				icon: LayoutDashboard,
+				permission: "view_dashboard",
+			},
+		],
 	},
 	{
-		title: "Sales",
-		href: "/dashboard/sales",
-		icon: TrendingUp,
+		title: "Sales & CRM",
+		items: [
+			{
+				title: "Clients",
+				href: "/dashboard/clients",
+				icon: Building2,
+				permission: "view_clients",
+			},
+			{
+				title: "Sales",
+				href: "/dashboard/sales",
+				icon: TrendingUp,
+				permission: "view_leads",
+			},
+		],
 	},
 	{
-		title: "Projects",
-		href: "/dashboard/projects",
-		icon: FolderKanban,
+		title: "Project Management",
+		items: [
+			{
+				title: "Projects",
+				href: "/dashboard/projects",
+				icon: FolderKanban,
+				permission: "view_projects",
+			},
+			{
+				title: "Tasks",
+				href: "/dashboard/tasks",
+				icon: FileText,
+				permission: "view_tasks",
+			},
+			{
+				title: "Wiki",
+				href: "/dashboard/wiki",
+				icon: BookOpen,
+				permission: "view_wiki",
+			},
+		],
 	},
 	{
-		title: "Tasks",
-		href: "/dashboard/tasks",
-		icon: FileText,
+		title: "HR & Time",
+		items: [
+			{
+				title: "Attendance",
+				href: "/dashboard/attendance",
+				icon: Clock,
+				permission: "view_attendance",
+			},
+			{
+				title: "Users",
+				href: "/dashboard/admin/users",
+				icon: Users,
+				permission: "manage_users",
+			},
+		],
 	},
 	{
-		title: "Attendance",
-		href: "/dashboard/attendance",
-		icon: Clock,
-	},
-	{
-		title: "Wiki",
-		href: "/dashboard/wiki",
-		icon: BookOpen,
-	},
-	{
-		title: "Users",
-		href: "/dashboard/users",
-		icon: Users,
-		permission: "manage_users",
-	},
-	{
-		title: "Admin",
-		href: "/dashboard/admin",
-		icon: BarChart3,
-		permission: "view_admin_stats",
-	},
-	{
-		title: "Roles & Permissions",
-		href: "/dashboard/admin/roles",
-		icon: Shield,
-		permission: "manage_roles",
-	},
-	{
-		title: "Settings",
-		href: "/dashboard/settings",
-		icon: Settings,
+		title: "Administration",
+		items: [
+			{
+				title: "Reports",
+				href: "/dashboard/admin",
+				icon: BarChart3,
+				permission: "view_admin_stats",
+			},
+			{
+				title: "Roles & Permissions",
+				href: "/dashboard/admin/roles",
+				icon: Shield,
+				permission: "manage_roles",
+			},
+			{
+				title: "Settings",
+				href: "/dashboard/settings",
+				icon: Settings,
+			},
+		],
 	},
 ];
 
 export function Sidebar() {
-	const [collapsed, setCollapsed] = useState(false);
+	const { isCollapsed, isMobileOpen, toggleCollapsed, closeMobile } = useSidebarStore();
 	const pathname = usePathname();
 	const { role, hasPermission } = useAuthStore();
 
-	const filteredNavItems = navItems.filter((item) => {
-		if (item.permission && !hasPermission(item.permission)) return false;
-		if (item.roles && role && !item.roles.includes(role)) return false;
-		return true;
-	});
+	useEffect(() => {
+		closeMobile();
+	}, [pathname, closeMobile]);
+
+	// Check if a nav item is active
+	const isItemActive = (href: string) => {
+		// Exact match for dashboard home
+		if (href === "/dashboard") {
+			return pathname === "/dashboard";
+		}
+		// For other routes, check if pathname starts with href
+		return pathname === href || pathname.startsWith(`${href}/`);
+	};
+
+	// Filter items based on permissions
+	const filterItems = (items: NavItem[]) => {
+		return items.filter((item) => {
+			if (item.permission && !hasPermission(item.permission)) return false;
+			if (item.roles && role && !item.roles.includes(role)) return false;
+			return true;
+		});
+	};
+
+	const showCollapsed = isCollapsed && !isMobileOpen;
 
 	return (
 		<TooltipProvider delayDuration={0}>
-			<aside className={cn("fixed left-0 top-0 z-40 flex h-screen flex-col border-r bg-sidebar transition-all duration-300", collapsed ? "w-16" : "w-64")}>
+			{/* Mobile Overlay */}
+			{isMobileOpen && (
+				<div
+					className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+					onClick={closeMobile}
+				/>
+			)}
+
+			<aside
+				className={cn("fixed left-0 top-0 z-50 flex h-screen flex-col border-r bg-sidebar transition-all duration-300", "lg:translate-x-0", isCollapsed ? "lg:w-[70px]" : "lg:w-64", isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full")}
+			>
 				{/* Logo */}
 				<div className="flex h-16 items-center justify-between border-b px-4">
-					{!collapsed && (
+					{(!isCollapsed || isMobileOpen) && (
 						<Link
 							href="/dashboard"
 							className="flex items-center gap-2"
@@ -105,7 +177,7 @@ export function Sidebar() {
 							<span className="text-lg font-semibold">Elmo ERP</span>
 						</Link>
 					)}
-					{collapsed && (
+					{isCollapsed && !isMobileOpen && (
 						<Link
 							href="/dashboard"
 							className="mx-auto"
@@ -119,12 +191,20 @@ export function Sidebar() {
 							/>
 						</Link>
 					)}
-					{!collapsed && (
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={closeMobile}
+						className="h-8 w-8 lg:hidden"
+					>
+						<X className="h-4 w-4" />
+					</Button>
+					{!isCollapsed && (
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => setCollapsed(!collapsed)}
-							className="h-8 w-8"
+							onClick={toggleCollapsed}
+							className="hidden h-8 w-8 lg:flex"
 						>
 							<ChevronLeft className="h-4 w-4" />
 						</Button>
@@ -132,12 +212,12 @@ export function Sidebar() {
 				</div>
 
 				{/* Expand button when collapsed */}
-				{collapsed && (
-					<div className="flex justify-center py-2 border-b">
+				{isCollapsed && (
+					<div className="hidden lg:flex justify-center py-2 border-b">
 						<Button
 							variant="ghost"
 							size="icon"
-							onClick={() => setCollapsed(false)}
+							onClick={toggleCollapsed}
 							className="h-8 w-8"
 						>
 							<ChevronRight className="h-4 w-4" />
@@ -146,45 +226,64 @@ export function Sidebar() {
 				)}
 
 				{/* Navigation */}
-				<nav className="flex-1 space-y-1 overflow-y-auto p-2">
-					{filteredNavItems.map((item) => {
-						const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-						const Icon = item.icon;
+				<nav className="flex-1 overflow-y-auto py-4">
+					{navGroups.map((group) => {
+						const filteredItems = filterItems(group.items);
+						if (filteredItems.length === 0) return null;
 
-						const linkContent = (
-							<Link
-								href={item.href}
-								className={cn(
-									"flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-									isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent/50",
-									collapsed && "justify-center px-2"
-								)}
+						return (
+							<div
+								key={group.title}
+								className="mb-6"
 							>
-								<Icon className="h-5 w-5 shrink-0" />
-								{!collapsed && <span>{item.title}</span>}
-							</Link>
+								{/* Group Header */}
+								{!showCollapsed && <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.title}</h3>}
+								{showCollapsed && <div className="h-px bg-border mx-3 mb-2" />}
+
+								{/* Group Items */}
+								<div className="space-y-1 px-3">
+									{filteredItems.map((item) => {
+										const isActive = isItemActive(item.href);
+										const Icon = item.icon;
+
+										const linkContent = (
+											<Link
+												href={item.href}
+												className={cn(
+													"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+													isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+													showCollapsed && "justify-center px-2"
+												)}
+											>
+												<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary-foreground")} />
+												{!showCollapsed && <span>{item.title}</span>}
+											</Link>
+										);
+
+										if (showCollapsed) {
+											return (
+												<Tooltip key={item.href}>
+													<TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+													<TooltipContent
+														side="right"
+														className="font-medium"
+													>
+														{item.title}
+													</TooltipContent>
+												</Tooltip>
+											);
+										}
+
+										return <div key={item.href}>{linkContent}</div>;
+									})}
+								</div>
+							</div>
 						);
-
-						if (collapsed) {
-							return (
-								<Tooltip key={item.href}>
-									<TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-									<TooltipContent
-										side="right"
-										className="font-medium"
-									>
-										{item.title}
-									</TooltipContent>
-								</Tooltip>
-							);
-						}
-
-						return <div key={item.href}>{linkContent}</div>;
 					})}
 				</nav>
 
 				{/* Footer */}
-				<div className="border-t p-4">{!collapsed && <p className="text-xs text-muted-foreground text-center">© 2024 Elmo ERP</p>}</div>
+				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2025 Elmo ERP</p>}</div>
 			</aside>
 		</TooltipProvider>
 	);

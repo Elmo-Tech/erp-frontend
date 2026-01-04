@@ -4,27 +4,49 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
-import { LeadKanban } from "@/features/sales/components/LeadKanban";
-import { QuotationBuilder } from "@/features/sales/components/QuotationBuilder";
-import { Lead } from "@/features/sales/types/lead";
+import { Plus, UserPlus } from "lucide-react";
+import { LeadKanban, LeadFormDialog, QuotationBuilder, QuotationsTable } from "@/features/sales/components";
+import { Lead, LeadStatus } from "@/features/sales/types/lead";
+import { Quotation } from "@/features/sales/types/quotation";
 
 export default function SalesPage() {
 	const [activeTab, setActiveTab] = useState("leads");
 	const [showQuotationBuilder, setShowQuotationBuilder] = useState(false);
+	const [showLeadForm, setShowLeadForm] = useState(false);
 	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+	const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
+	const [defaultLeadStatus, setDefaultLeadStatus] = useState<LeadStatus | undefined>();
 
 	const handleLeadClick = (lead: Lead) => {
 		setSelectedLead(lead);
+		setShowLeadForm(true);
+	};
+
+	const handleCreateLead = (status?: LeadStatus) => {
+		setSelectedLead(null);
+		setDefaultLeadStatus(status);
+		setShowLeadForm(true);
 	};
 
 	const handleCreateQuotation = () => {
+		setSelectedQuotation(null);
+		setShowQuotationBuilder(true);
+	};
+
+	const handleEditQuotation = (quotation: Quotation) => {
+		setSelectedQuotation(quotation);
 		setShowQuotationBuilder(true);
 	};
 
 	const handleQuotationSuccess = () => {
 		setShowQuotationBuilder(false);
-		setActiveTab("quotations");
+		setSelectedQuotation(null);
+	};
+
+	const handleLeadFormClose = () => {
+		setShowLeadForm(false);
+		setSelectedLead(null);
+		setDefaultLeadStatus(undefined);
 	};
 
 	return (
@@ -34,10 +56,19 @@ export default function SalesPage() {
 					<h1 className="text-2xl font-bold">Sales</h1>
 					<p className="text-muted-foreground">Manage leads and quotations</p>
 				</div>
-				<Button onClick={handleCreateQuotation}>
-					<Plus className="mr-2 h-4 w-4" />
-					New Quotation
-				</Button>
+				<div className="flex gap-2">
+					<Button
+						variant="outline"
+						onClick={() => handleCreateLead()}
+					>
+						<UserPlus className="mr-2 h-4 w-4" />
+						New Lead
+					</Button>
+					<Button onClick={handleCreateQuotation}>
+						<Plus className="mr-2 h-4 w-4" />
+						New Quotation
+					</Button>
+				</div>
 			</div>
 
 			<Tabs
@@ -55,7 +86,7 @@ export default function SalesPage() {
 				>
 					<LeadKanban
 						onLeadClick={handleLeadClick}
-						onCreateLead={() => {}}
+						onCreateLead={handleCreateLead}
 					/>
 				</TabsContent>
 
@@ -63,23 +94,48 @@ export default function SalesPage() {
 					value="quotations"
 					className="mt-6"
 				>
-					<QuotationBuilder
-						initialData={selectedLead ? { leadId: selectedLead.leadId } : undefined}
-						onSuccess={handleQuotationSuccess}
+					<QuotationsTable
+						onAdd={handleCreateQuotation}
+						onEdit={handleEditQuotation}
 					/>
 				</TabsContent>
 			</Tabs>
+
+			{/* Lead Form Dialog */}
+			<LeadFormDialog
+				open={showLeadForm}
+				onOpenChange={handleLeadFormClose}
+				lead={selectedLead}
+				defaultStatus={defaultLeadStatus}
+			/>
 
 			{/* Quotation Builder Dialog */}
 			<Dialog
 				open={showQuotationBuilder}
 				onOpenChange={setShowQuotationBuilder}
 			>
-				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+				<DialogContent className="max-w-4xl! max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
-						<DialogTitle>Create New Quotation</DialogTitle>
+						<DialogTitle>{selectedQuotation ? "Edit Quotation" : "Create New Quotation"}</DialogTitle>
 					</DialogHeader>
 					<QuotationBuilder
+						initialData={
+							selectedQuotation
+								? {
+										quotationId: selectedQuotation.quotationId,
+										leadId: selectedQuotation.leadId,
+										frontendHours: selectedQuotation.estimations.frontendHours,
+										backendHours: selectedQuotation.estimations.backendHours,
+										uiUxHours: selectedQuotation.estimations.uiUxHours,
+										testingHours: selectedQuotation.estimations.testingHours,
+										pmHours: selectedQuotation.estimations.pmHours,
+										hourlyRate: selectedQuotation.hourlyRate,
+										discountPercentage: selectedQuotation.discountPercentage,
+										currency: selectedQuotation.currency,
+										status: selectedQuotation.status,
+								  }
+								: undefined
+						}
 						onSuccess={handleQuotationSuccess}
 						onCancel={() => setShowQuotationBuilder(false)}
 					/>

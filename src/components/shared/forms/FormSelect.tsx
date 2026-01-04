@@ -39,7 +39,7 @@ export function FormSelect<T extends FieldValues>({ control, name, label, placeh
 						disabled={disabled}
 					>
 						<FormControl>
-							<SelectTrigger>
+							<SelectTrigger className="w-full">
 								<SelectValue placeholder={placeholder} />
 							</SelectTrigger>
 						</FormControl>

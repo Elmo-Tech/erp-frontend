@@ -1,13 +1,26 @@
 /**
  * Tasks Hooks
  * TanStack Query hooks for task management with recursive hierarchy
- *
- * Requirements: 10.3
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tasksApi } from "../api/tasks";
-import { Task, TaskListResponse, CreateTaskPayload, UpdateTaskPayload, TaskFilters } from "../types/task";
+import {
+	Task,
+	TaskListResponse,
+	CreateTaskPayload,
+	UpdateTaskPayload,
+	TaskFilters,
+	Tag,
+	TaskAssignee,
+	AddAssigneePayload,
+	TaskTestScenario,
+	AddTestScenarioPayload,
+	VerifyTestScenarioPayload,
+	TaskActivity,
+	AddCommentPayload,
+	UserPointsSummary,
+} from "../types/task";
 
 /**
  * Query keys for consistent cache management
@@ -20,38 +33,67 @@ export const taskKeys = {
 	detail: (id: number) => [...taskKeys.details(), id] as const,
 	children: () => [...taskKeys.all, "children"] as const,
 	taskChildren: (id: number) => [...taskKeys.children(), id] as const,
+	projectTasks: (projectId: number) => [...taskKeys.all, "project", projectId] as const,
+	tags: () => ["tags"] as const,
+	testScenarios: (taskId: number) => [...taskKeys.all, "test-scenarios", taskId] as const,
+	activities: (taskId: number) => [...taskKeys.all, "activities", taskId] as const,
+	pointsSummary: (projectId: number) => [...taskKeys.all, "points-summary", projectId] as const,
 };
+
+// ============ Task CRUD Hooks ============
 
 /**
  * Hook to fetch all tasks with optional filtering and pagination
- * Requirement 10.3: Frontend hooks for task operations
  */
 export const useTasks = (filters?: TaskFilters) => {
 	return useQuery<TaskListResponse, Error>({
 		queryKey: taskKeys.list(filters),
 		queryFn: () => tasksApi.getTasks(filters),
-		staleTime: 5 * 60 * 1000, // 5 minutes
-		gcTime: 10 * 60 * 1000, // 10 minutes
+		staleTime: 5 * 60 * 1000,
+		gcTime: 10 * 60 * 1000,
 	});
 };
 
 /**
  * Hook to fetch a single task by ID
- * Requirement 10.3: Frontend hooks for task operations
  */
 export const useTask = (id: number, enabled = true) => {
 	return useQuery<Task, Error>({
 		queryKey: taskKeys.detail(id),
 		queryFn: () => tasksApi.getTask(id),
 		enabled: enabled && !!id,
-		staleTime: 5 * 60 * 1000, // 5 minutes
-		gcTime: 10 * 60 * 1000, // 10 minutes
+		staleTime: 5 * 60 * 1000,
+		gcTime: 10 * 60 * 1000,
+	});
+};
+
+/**
+ * Hook to fetch tasks for a specific project
+ */
+export const useProjectTasks = (projectId: number, page = 1, perPage = 15, enabled = true) => {
+	return useQuery<TaskListResponse, Error>({
+		queryKey: [...taskKeys.projectTasks(projectId), page, perPage],
+		queryFn: () => tasksApi.getProjectTasks(projectId, page, perPage),
+		enabled: enabled && !!projectId,
+		staleTime: 5 * 60 * 1000,
+		gcTime: 10 * 60 * 1000,
+	});
+};
+
+/**
+ * Hook to fetch task children for lazy loading
+ */
+export const useTaskChildren = (taskId: number, enabled = true) => {
+	return useQuery<Task[], Error>({
+		queryKey: taskKeys.taskChildren(taskId),
+		queryFn: () => tasksApi.getTaskChildren(taskId),
+		enabled: enabled && !!taskId,
+		staleTime: 5 * 60 * 1000,
 	});
 };
 
 /**
  * Hook to create a new task
- * Requirement 10.3: Frontend hooks for task operations
  */
 export const useCreateTask = () => {
 	const queryClient = useQueryClient();
@@ -59,26 +101,19 @@ export const useCreateTask = () => {
 	return useMutation<Task, Error, CreateTaskPayload>({
 		mutationFn: tasksApi.createTask,
 		onSuccess: (newTask) => {
-			// Invalidate and refetch tasks list
 			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-
-			// Add the new task to the cache
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(newTask.projectId) });
 			queryClient.setQueryData(taskKeys.detail(newTask.taskId), newTask);
 
-			// If task has a parent, invalidate parent's children cache
 			if (newTask.parentId) {
 				queryClient.invalidateQueries({ queryKey: taskKeys.taskChildren(newTask.parentId) });
 			}
-		},
-		onError: (error) => {
-			console.error("Failed to create task:", error);
 		},
 	});
 };
 
 /**
  * Hook to update an existing task
- * Requirement 10.3: Frontend hooks for task operations
  */
 export const useUpdateTask = () => {
 	const queryClient = useQueryClient();
@@ -86,13 +121,10 @@ export const useUpdateTask = () => {
 	return useMutation<Task, Error, { id: number; payload: UpdateTaskPayload }>({
 		mutationFn: ({ id, payload }) => tasksApi.updateTask(id, payload),
 		onSuccess: (updatedTask, variables) => {
-			// Update the specific task in cache
 			queryClient.setQueryData(taskKeys.detail(updatedTask.taskId), updatedTask);
-
-			// Invalidate lists to ensure consistency
 			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(updatedTask.projectId) });
 
-			// If parent changed, invalidate both old and new parent children
 			const oldTask = queryClient.getQueryData<Task>(taskKeys.detail(variables.id));
 			if (oldTask?.parentId !== updatedTask.parentId) {
 				if (oldTask?.parentId) {
@@ -102,51 +134,182 @@ export const useUpdateTask = () => {
 					queryClient.invalidateQueries({ queryKey: taskKeys.taskChildren(updatedTask.parentId) });
 				}
 			}
-
-			// If task has children and time was updated, invalidate parent hierarchy
-			if (updatedTask.totalTimeSpent !== oldTask?.totalTimeSpent && updatedTask.parentId) {
-				queryClient.invalidateQueries({ queryKey: taskKeys.detail(updatedTask.parentId) });
-			}
-		},
-		onError: (error) => {
-			console.error("Failed to update task:", error);
 		},
 	});
 };
 
 /**
  * Hook to delete a task
- * Requirement 10.3: Frontend hooks for task operations
  */
 export const useDeleteTask = () => {
 	const queryClient = useQueryClient();
 
-	return useMutation<void, Error, number>({
-		mutationFn: tasksApi.deleteTask,
-		onSuccess: (_, deletedId) => {
-			// Get task data before removal to handle parent invalidation
-			const deletedTask = queryClient.getQueryData<Task>(taskKeys.detail(deletedId));
-
-			// Remove the task from cache
-			queryClient.removeQueries({ queryKey: taskKeys.detail(deletedId) });
-
-			// Invalidate lists to ensure consistency
+	return useMutation<void, Error, { id: number; projectId: number }>({
+		mutationFn: ({ id }) => tasksApi.deleteTask(id),
+		onSuccess: (_, { id, projectId }) => {
+			const deletedTask = queryClient.getQueryData<Task>(taskKeys.detail(id));
+			queryClient.removeQueries({ queryKey: taskKeys.detail(id) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(projectId) });
 
-			// If task had a parent, invalidate parent's children cache
 			if (deletedTask?.parentId) {
 				queryClient.invalidateQueries({ queryKey: taskKeys.taskChildren(deletedTask.parentId) });
 			}
 		},
-		onError: (error) => {
-			console.error("Failed to delete task:", error);
+	});
+};
+
+// ============ Tags Hooks ============
+
+/**
+ * Hook to fetch all available tags
+ */
+export const useTags = () => {
+	return useQuery<Tag[], Error>({
+		queryKey: taskKeys.tags(),
+		queryFn: tasksApi.getTags,
+		staleTime: 30 * 60 * 1000, // 30 minutes - tags don't change often
+		gcTime: 60 * 60 * 1000,
+	});
+};
+
+// ============ Assignee Hooks ============
+
+/**
+ * Hook to add an assignee to a task
+ */
+export const useAddAssignee = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<TaskAssignee, Error, { taskId: number; payload: AddAssigneePayload }>({
+		mutationFn: ({ taskId, payload }) => tasksApi.addAssignee(taskId, payload),
+		onSuccess: (_, { taskId }) => {
+			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
 		},
 	});
 };
 
 /**
- * Hook to prefetch a task (useful for hover states or navigation)
- * Requirement 10.3: Frontend hooks for task operations
+ * Hook to remove an assignee from a task
+ */
+export const useRemoveAssignee = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, { taskId: number; userId: number }>({
+		mutationFn: ({ taskId, userId }) => tasksApi.removeAssignee(taskId, userId),
+		onSuccess: (_, { taskId }) => {
+			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
+		},
+	});
+};
+
+// ============ Test Scenario Hooks ============
+
+/**
+ * Hook to fetch test scenarios for a task
+ */
+export const useTestScenarios = (taskId: number, enabled = true) => {
+	return useQuery<TaskTestScenario[], Error>({
+		queryKey: taskKeys.testScenarios(taskId),
+		queryFn: () => tasksApi.getTestScenarios(taskId),
+		enabled: enabled && !!taskId,
+		staleTime: 5 * 60 * 1000,
+	});
+};
+
+/**
+ * Hook to add a test scenario to a task
+ */
+export const useAddTestScenario = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<TaskTestScenario, Error, { taskId: number; payload: AddTestScenarioPayload }>({
+		mutationFn: ({ taskId, payload }) => tasksApi.addTestScenario(taskId, payload),
+		onSuccess: (_, { taskId }) => {
+			queryClient.invalidateQueries({ queryKey: taskKeys.testScenarios(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+		},
+	});
+};
+
+/**
+ * Hook to mark a test scenario as completed
+ */
+export const useCompleteTestScenario = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<TaskTestScenario, Error, { scenarioId: number; taskId: number }>({
+		mutationFn: ({ scenarioId }) => tasksApi.completeTestScenario(scenarioId),
+		onSuccess: (_, { taskId }) => {
+			queryClient.invalidateQueries({ queryKey: taskKeys.testScenarios(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
+		},
+	});
+};
+
+/**
+ * Hook to verify a test scenario
+ */
+export const useVerifyTestScenario = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<TaskTestScenario, Error, { scenarioId: number; taskId: number; payload: VerifyTestScenarioPayload }>({
+		mutationFn: ({ scenarioId, payload }) => tasksApi.verifyTestScenario(scenarioId, payload),
+		onSuccess: (_, { taskId }) => {
+			queryClient.invalidateQueries({ queryKey: taskKeys.testScenarios(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
+		},
+	});
+};
+
+// ============ Activity & Comment Hooks ============
+
+/**
+ * Hook to fetch activities for a task
+ */
+export const useTaskActivities = (taskId: number, enabled = true) => {
+	return useQuery<TaskActivity[], Error>({
+		queryKey: taskKeys.activities(taskId),
+		queryFn: () => tasksApi.getActivities(taskId),
+		enabled: enabled && !!taskId,
+		staleTime: 2 * 60 * 1000, // 2 minutes - activities change more frequently
+	});
+};
+
+/**
+ * Hook to add a comment to a task
+ */
+export const useAddComment = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<TaskActivity, Error, { taskId: number; payload: AddCommentPayload }>({
+		mutationFn: ({ taskId, payload }) => tasksApi.addComment(taskId, payload),
+		onSuccess: (_, { taskId }) => {
+			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
+		},
+	});
+};
+
+// ============ Points Summary Hook ============
+
+/**
+ * Hook to fetch user points summary for a project
+ */
+export const usePointsSummary = (projectId: number, enabled = true) => {
+	return useQuery<UserPointsSummary[], Error>({
+		queryKey: taskKeys.pointsSummary(projectId),
+		queryFn: () => tasksApi.getPointsSummary(projectId),
+		enabled: enabled && !!projectId,
+		staleTime: 5 * 60 * 1000,
+	});
+};
+
+/**
+ * Hook to prefetch a task
  */
 export const usePrefetchTask = () => {
 	const queryClient = useQueryClient();
@@ -155,7 +318,7 @@ export const usePrefetchTask = () => {
 		queryClient.prefetchQuery({
 			queryKey: taskKeys.detail(id),
 			queryFn: () => tasksApi.getTask(id),
-			staleTime: 5 * 60 * 1000, // 5 minutes
+			staleTime: 5 * 60 * 1000,
 		});
 	};
 };

@@ -14,3 +14,6 @@ export { useProjectWikis, useProjectWiki, useCreateProjectWiki, useUpdateProject
 
 // Project history hooks
 export { useProjectHistory, usePrefetchProjectHistory, useInvalidateProjectHistory, projectHistoryKeys } from "./useProjectHistory";
+
+// Project members hooks
+export { useProjectMembers, useAddProjectMember, useUpdateProjectMember, useRemoveProjectMember, projectMemberKeys } from "./useProjectMembers";

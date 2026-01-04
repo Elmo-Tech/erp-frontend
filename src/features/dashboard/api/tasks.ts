@@ -1,12 +1,25 @@
 /**
  * Tasks API
  * API functions for task management with recursive hierarchy
- *
- * Requirements: 10.3, 12.4
  */
 
 import api from "@/lib/axios";
-import { Task, TaskListResponse, TaskChildrenResponse, TaskFilters, CreateTaskPayload, UpdateTaskPayload } from "../types/task";
+import {
+	Task,
+	TaskListResponse,
+	TaskFilters,
+	CreateTaskPayload,
+	UpdateTaskPayload,
+	Tag,
+	TaskAssignee,
+	AddAssigneePayload,
+	TaskTestScenario,
+	AddTestScenarioPayload,
+	VerifyTestScenarioPayload,
+	TaskActivity,
+	AddCommentPayload,
+	UserPointsSummary,
+} from "../types/task";
 
 /**
  * API functions for task operations
@@ -14,7 +27,6 @@ import { Task, TaskListResponse, TaskChildrenResponse, TaskFilters, CreateTaskPa
 export const tasksApi = {
 	/**
 	 * Get all tasks with optional filtering and pagination
-	 * Requirement 10.3: GET /api/v1/tasks endpoint to list tasks with filtering
 	 */
 	getTasks: async (filters?: TaskFilters): Promise<TaskListResponse> => {
 		const params = new URLSearchParams();
@@ -32,8 +44,17 @@ export const tasksApi = {
 		if (filters?.status) {
 			params.append("filter[status]", filters.status);
 		}
+		if (filters?.type) {
+			params.append("filter[type]", filters.type);
+		}
+		if (filters?.priority) {
+			params.append("filter[priority]", filters.priority);
+		}
 		if (filters?.assignedTo) {
 			params.append("filter[assignedTo]", filters.assignedTo.toString());
+		}
+		if (filters?.tagId) {
+			params.append("filter[tagId]", filters.tagId.toString());
 		}
 		if (filters?.search) {
 			params.append("filter[search]", filters.search);
@@ -54,7 +75,6 @@ export const tasksApi = {
 
 	/**
 	 * Get a single task by ID
-	 * Requirement 10.3: GET /api/v1/tasks/{id} endpoint to retrieve a single task
 	 */
 	getTask: async (id: number): Promise<Task> => {
 		const response = await api.get<{ data: Task }>(`/tasks/${id}`);
@@ -63,7 +83,6 @@ export const tasksApi = {
 
 	/**
 	 * Create a new task
-	 * Requirement 10.3: POST /api/v1/tasks endpoint to create a new task
 	 */
 	createTask: async (payload: CreateTaskPayload): Promise<Task> => {
 		const response = await api.post<{ data: Task }>("/tasks", payload);
@@ -72,7 +91,6 @@ export const tasksApi = {
 
 	/**
 	 * Update an existing task
-	 * Requirement 10.3: PUT /api/v1/tasks/{id} endpoint to update a task
 	 */
 	updateTask: async (id: number, payload: UpdateTaskPayload): Promise<Task> => {
 		const response = await api.put<{ data: Task }>(`/tasks/${id}`, payload);
@@ -81,7 +99,6 @@ export const tasksApi = {
 
 	/**
 	 * Delete a task
-	 * Requirement 10.3: DELETE /api/v1/tasks/{id} endpoint to delete a task
 	 */
 	deleteTask: async (id: number): Promise<void> => {
 		await api.delete(`/tasks/${id}`);
@@ -89,10 +106,106 @@ export const tasksApi = {
 
 	/**
 	 * Get children of a specific task for lazy loading
-	 * Requirement 12.4: GET /api/v1/tasks/{id}/children endpoint for lazy loading children
 	 */
-	getTaskChildren: async (id: number): Promise<TaskChildrenResponse> => {
-		const response = await api.get<{ data: TaskChildrenResponse }>(`/tasks/${id}/children`);
+	getTaskChildren: async (id: number): Promise<Task[]> => {
+		const response = await api.get<{ data: Task[] }>(`/tasks/${id}/children`);
+		return response.data.data;
+	},
+
+	/**
+	 * Get tasks for a specific project
+	 */
+	getProjectTasks: async (projectId: number, page = 1, perPage = 15): Promise<TaskListResponse> => {
+		const response = await api.get<{ data: TaskListResponse }>(`/projects/${projectId}/tasks?page=${page}&perPage=${perPage}`);
+		return response.data.data;
+	},
+
+	// ============ Tags ============
+
+	/**
+	 * Get all available tags
+	 */
+	getTags: async (): Promise<Tag[]> => {
+		const response = await api.get<{ data: Tag[] }>("/tags");
+		return response.data.data;
+	},
+
+	// ============ Assignees ============
+
+	/**
+	 * Add an assignee to a task
+	 */
+	addAssignee: async (taskId: number, payload: AddAssigneePayload): Promise<TaskAssignee> => {
+		const response = await api.post<{ data: TaskAssignee }>(`/tasks/${taskId}/assignees`, payload);
+		return response.data.data;
+	},
+
+	/**
+	 * Remove an assignee from a task
+	 */
+	removeAssignee: async (taskId: number, userId: number): Promise<void> => {
+		await api.delete(`/tasks/${taskId}/assignees/${userId}`);
+	},
+
+	// ============ Test Scenarios ============
+
+	/**
+	 * Get test scenarios for a task
+	 */
+	getTestScenarios: async (taskId: number): Promise<TaskTestScenario[]> => {
+		const response = await api.get<{ data: TaskTestScenario[] }>(`/tasks/${taskId}/test-scenarios`);
+		return response.data.data;
+	},
+
+	/**
+	 * Add a test scenario to a task
+	 */
+	addTestScenario: async (taskId: number, payload: AddTestScenarioPayload): Promise<TaskTestScenario> => {
+		const response = await api.post<{ data: TaskTestScenario }>(`/tasks/${taskId}/test-scenarios`, payload);
+		return response.data.data;
+	},
+
+	/**
+	 * Mark a test scenario as completed by developer
+	 */
+	completeTestScenario: async (scenarioId: number): Promise<TaskTestScenario> => {
+		const response = await api.post<{ data: TaskTestScenario }>(`/test-scenarios/${scenarioId}/complete`);
+		return response.data.data;
+	},
+
+	/**
+	 * Verify a test scenario by reviewer
+	 */
+	verifyTestScenario: async (scenarioId: number, payload: VerifyTestScenarioPayload): Promise<TaskTestScenario> => {
+		const response = await api.post<{ data: TaskTestScenario }>(`/test-scenarios/${scenarioId}/verify`, payload);
+		return response.data.data;
+	},
+
+	// ============ Activities & Comments ============
+
+	/**
+	 * Get activity log for a task
+	 */
+	getActivities: async (taskId: number): Promise<TaskActivity[]> => {
+		const response = await api.get<{ data: TaskActivity[] }>(`/tasks/${taskId}/activities`);
+		return response.data.data;
+	},
+
+	/**
+	 * Add a comment to a task
+	 */
+	addComment: async (taskId: number, payload: AddCommentPayload): Promise<TaskActivity> => {
+		const response = await api.post<{ data: TaskActivity }>(`/tasks/${taskId}/comments`, payload);
+		return response.data.data;
+	},
+
+	// ============ Points Summary ============
+
+	/**
+	 * Get user points summary for a project
+	 */
+	getPointsSummary: async (projectId: number): Promise<UserPointsSummary[]> => {
+		const response = await api.get<{ data: UserPointsSummary[] }>(`/projects/${projectId}/points-summary`);
 		return response.data.data;
 	},
 };

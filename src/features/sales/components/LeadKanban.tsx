@@ -1,75 +1,141 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { DndContext, DragEndEvent, DragOverEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners } from "@dnd-kit/core";
-import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Users, AlertCircle } from "lucide-react";
 import { useLeads, useUpdateLead } from "../hooks/useLeads";
 import { Lead, LeadStatus } from "../types/lead";
 import { LeadCard } from "./LeadCard";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
-// Define the lead status columns and their display properties
 const LEAD_STATUS_COLUMNS: Array<{
 	status: LeadStatus;
 	title: string;
-	description: string;
 	color: string;
+	borderColor: string;
 	bgColor: string;
 }> = [
 	{
 		status: LeadStatus.NEW,
-		title: "New Leads",
-		description: "Recently captured leads",
+		title: "New",
 		color: "text-blue-600",
-		bgColor: "bg-blue-50 dark:bg-blue-950/20",
+		borderColor: "border-l-blue-500",
+		bgColor: "bg-blue-50/50 dark:bg-blue-950/20",
 	},
 	{
 		status: LeadStatus.CONTACTED,
 		title: "Contacted",
-		description: "Initial contact made",
 		color: "text-purple-600",
-		bgColor: "bg-purple-50 dark:bg-purple-950/20",
+		borderColor: "border-l-purple-500",
+		bgColor: "bg-purple-50/50 dark:bg-purple-950/20",
 	},
 	{
 		status: LeadStatus.QUALIFIED,
 		title: "Qualified",
-		description: "Potential confirmed",
-		color: "text-yellow-600",
-		bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
+		color: "text-amber-600",
+		borderColor: "border-l-amber-500",
+		bgColor: "bg-amber-50/50 dark:bg-amber-950/20",
 	},
 	{
 		status: LeadStatus.PROPOSAL,
 		title: "Proposal",
-		description: "Quotation sent",
 		color: "text-orange-600",
-		bgColor: "bg-orange-50 dark:bg-orange-950/20",
+		borderColor: "border-l-orange-500",
+		bgColor: "bg-orange-50/50 dark:bg-orange-950/20",
 	},
 	{
 		status: LeadStatus.NEGOTIATION,
 		title: "Negotiation",
-		description: "Terms discussion",
 		color: "text-indigo-600",
-		bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
+		borderColor: "border-l-indigo-500",
+		bgColor: "bg-indigo-50/50 dark:bg-indigo-950/20",
 	},
 	{
 		status: LeadStatus.WON,
 		title: "Won",
-		description: "Deal closed successfully",
 		color: "text-green-600",
-		bgColor: "bg-green-50 dark:bg-green-950/20",
+		borderColor: "border-l-green-500",
+		bgColor: "bg-green-50/50 dark:bg-green-950/20",
 	},
 	{
 		status: LeadStatus.LOST,
 		title: "Lost",
-		description: "Deal not successful",
 		color: "text-red-600",
-		bgColor: "bg-red-50 dark:bg-red-950/20",
+		borderColor: "border-l-red-500",
+		bgColor: "bg-red-50/50 dark:bg-red-950/20",
 	},
 ];
+
+// Droppable Column Component
+function DroppableColumn({ column, leads, activeId, onLeadClick, onCreateLead }: { column: (typeof LEAD_STATUS_COLUMNS)[0]; leads: Lead[]; activeId: string | null; onLeadClick?: (lead: Lead) => void; onCreateLead?: (status?: LeadStatus) => void }) {
+	const { setNodeRef, isOver } = useDroppable({
+		id: column.status,
+	});
+
+	return (
+		<Card
+			ref={setNodeRef}
+			className={cn("w-[300px] shrink-0 border-l-4 transition-all", column.borderColor, column.bgColor, isOver && "ring-2 ring-primary ring-offset-2")}
+		>
+			<CardHeader className="pb-3 space-y-2">
+				<div className="flex items-center justify-between">
+					<CardTitle className={cn("text-base font-semibold", column.color)}>{column.title}</CardTitle>
+					<Badge
+						variant="secondary"
+						className="font-medium"
+					>
+						{leads.length}
+					</Badge>
+				</div>
+				{onCreateLead && (
+					<Button
+						variant="ghost"
+						size="sm"
+						className="w-full justify-start text-muted-foreground hover:text-foreground"
+						onClick={() => onCreateLead(column.status)}
+					>
+						<Plus className="h-4 w-4 mr-2" />
+						Add Lead
+					</Button>
+				)}
+			</CardHeader>
+			<CardContent className="px-3 pb-3">
+				<ScrollArea className="h-[500px] pr-2">
+					<SortableContext
+						id={column.status}
+						items={leads.map((lead) => lead.leadId.toString())}
+						strategy={verticalListSortingStrategy}
+					>
+						<div className="space-y-3">
+							{leads.length === 0 ? (
+								<div className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-muted rounded-lg">
+									<Users className="h-8 w-8 text-muted-foreground/50 mb-2" />
+									<p className="text-sm text-muted-foreground">No leads</p>
+								</div>
+							) : (
+								leads.map((lead) => (
+									<LeadCard
+										key={lead.leadId}
+										lead={lead}
+										onClick={() => onLeadClick?.(lead)}
+										isDragging={activeId === lead.leadId.toString()}
+									/>
+								))
+							)}
+						</div>
+					</SortableContext>
+				</ScrollArea>
+			</CardContent>
+		</Card>
+	);
+}
 
 interface LeadKanbanProps {
 	onLeadClick?: (lead: Lead) => void;
@@ -77,28 +143,21 @@ interface LeadKanbanProps {
 	className?: string;
 }
 
-/**
- * LeadKanban component for visual lead pipeline management with drag-and-drop
- * Requirements: 10.1, 10.2, 10.3, 10.4 - Display columns, cards, drag-and-drop, API updates
- */
 export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLead, className = "" }) => {
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
 
-	// Fetch leads data
 	const { data: leadsResponse, isLoading, error } = useLeads();
 	const updateLeadMutation = useUpdateLead();
 
-	// Configure drag sensors
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
 			activationConstraint: {
-				distance: 8, // 8px movement required to start drag
+				distance: 8,
 			},
 		})
 	);
 
-	// Group leads by status
 	const leadsByStatus = useMemo(() => {
 		const grouped: Record<LeadStatus, Lead[]> = {
 			[LeadStatus.NEW]: [],
@@ -119,75 +178,77 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 		});
 
 		return grouped;
-	}, [leadsResponse?.leads]);
+	}, [leadsResponse]);
 
-	// Handle drag start
 	const handleDragStart = (event: DragStartEvent) => {
 		const { active } = event;
 		setActiveId(active.id as string);
-
-		// Find the dragged lead
 		const leadId = parseInt(active.id as string);
 		const lead = leadsResponse?.leads.find((l) => l.leadId === leadId);
 		setDraggedLead(lead || null);
 	};
 
-	// Handle drag end
 	const handleDragEnd = async (event: DragEndEvent) => {
 		const { active, over } = event;
-
 		setActiveId(null);
 		setDraggedLead(null);
 
 		if (!over) return;
 
 		const leadId = parseInt(active.id as string);
-		const newStatus = over.id as LeadStatus;
 
-		// Find the lead being moved
+		// Get the target status - could be a column or another lead
+		let newStatus: LeadStatus | null = null;
+
+		// Check if dropped on a column
+		if (Object.values(LeadStatus).includes(over.id as LeadStatus)) {
+			newStatus = over.id as LeadStatus;
+		} else {
+			// Dropped on another lead - find which column that lead is in
+			const targetLeadId = parseInt(over.id as string);
+			const targetLead = leadsResponse?.leads.find((l) => l.leadId === targetLeadId);
+			if (targetLead) {
+				newStatus = targetLead.status;
+			}
+		}
+
+		if (!newStatus) return;
+
 		const lead = leadsResponse?.leads.find((l) => l.leadId === leadId);
 		if (!lead || lead.status === newStatus) return;
 
 		try {
-			// Update lead status via API
 			await updateLeadMutation.mutateAsync({
 				id: leadId,
 				payload: { status: newStatus },
 			});
+			toast.success(`Lead moved to ${newStatus}`);
 		} catch (error) {
 			console.error("Failed to update lead status:", error);
-			// Error handling would show a toast notification here
+			toast.error("Failed to update lead status");
 		}
 	};
 
-	// Handle drag over (for visual feedback)
-	const handleDragOver = (event: DragOverEvent) => {
-		// Could add visual feedback here if needed
-	};
-
-	// Loading state
 	if (isLoading) {
 		return (
-			<div className={`space-y-4 ${className}`}>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+			<div className={cn("overflow-x-auto pb-4", className)}>
+				<div className="flex gap-4 min-w-max">
 					{LEAD_STATUS_COLUMNS.map((column) => (
 						<Card
 							key={column.status}
-							className="h-[600px]"
+							className="w-[300px] shrink-0"
 						>
 							<CardHeader className="pb-3">
-								<Skeleton className="h-6 w-24" />
-								<Skeleton className="h-4 w-32" />
+								<Skeleton className="h-5 w-20" />
+								<Skeleton className="h-4 w-12" />
 							</CardHeader>
-							<CardContent>
-								<div className="space-y-3">
-									{[1, 2, 3].map((i) => (
-										<Skeleton
-											key={i}
-											className="h-20 w-full"
-										/>
-									))}
-								</div>
+							<CardContent className="space-y-3">
+								{[1, 2, 3].map((i) => (
+									<Skeleton
+										key={i}
+										className="h-32 w-full"
+									/>
+								))}
 							</CardContent>
 						</Card>
 					))}
@@ -196,10 +257,9 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 		);
 	}
 
-	// Error state
 	if (error) {
 		return (
-			<div className={`flex items-center justify-center h-64 ${className}`}>
+			<div className={cn("flex items-center justify-center h-64", className)}>
 				<div className="text-center space-y-2">
 					<AlertCircle className="h-8 w-8 text-destructive mx-auto" />
 					<p className="text-sm text-muted-foreground">Failed to load leads</p>
@@ -208,121 +268,36 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 		);
 	}
 
-	// Empty state
-	if (!leadsResponse?.leads || leadsResponse.leads.length === 0) {
-		return (
-			<div className={`space-y-4 ${className}`}>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-					{LEAD_STATUS_COLUMNS.map((column) => (
-						<Card
-							key={column.status}
-							className="h-[600px]"
-						>
-							<CardHeader className="pb-3">
-								<CardTitle className={`text-sm ${column.color}`}>{column.title}</CardTitle>
-								<p className="text-xs text-muted-foreground">{column.description}</p>
-								<Badge
-									variant="secondary"
-									className="w-fit"
-								>
-									0 leads
-								</Badge>
-							</CardHeader>
-							<CardContent>
-								<div className="flex items-center justify-center h-40 border-2 border-dashed border-muted rounded-lg">
-									<div className="text-center space-y-2">
-										<Users className="h-6 w-6 text-muted-foreground mx-auto" />
-										<p className="text-xs text-muted-foreground">No leads yet</p>
-										{onCreateLead && (
-											<button
-												onClick={() => onCreateLead(column.status)}
-												className="text-xs text-primary hover:underline"
-											>
-												Add first lead
-											</button>
-										)}
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-					))}
-				</div>
-			</div>
-		);
-	}
-
 	return (
-		<div className={`space-y-4 ${className}`}>
+		<div className={cn("overflow-x-auto pb-4", className)}>
 			<DndContext
 				sensors={sensors}
 				collisionDetection={closestCorners}
 				onDragStart={handleDragStart}
-				onDragOver={handleDragOver}
 				onDragEnd={handleDragEnd}
 			>
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-					{LEAD_STATUS_COLUMNS.map((column) => {
-						const columnLeads = leadsByStatus[column.status] || [];
-
-						return (
-							<Card
-								key={column.status}
-								className={`h-[600px] ${column.bgColor} border-l-4 ${column.color.replace("text-", "border-")}`}
-							>
-								<CardHeader className="pb-3">
-									<CardTitle className={`text-sm ${column.color}`}>{column.title}</CardTitle>
-									<p className="text-xs text-muted-foreground">{column.description}</p>
-									<div className="flex items-center justify-between">
-										<Badge
-											variant="secondary"
-											className="w-fit"
-										>
-											{columnLeads.length} {columnLeads.length === 1 ? "lead" : "leads"}
-										</Badge>
-										{onCreateLead && (
-											<button
-												onClick={() => onCreateLead(column.status)}
-												className="p-1 hover:bg-background/50 rounded"
-												title={`Add lead to ${column.title}`}
-											>
-												<Plus className="h-4 w-4 text-muted-foreground" />
-											</button>
-										)}
-									</div>
-								</CardHeader>
-								<CardContent className="p-3">
-									<ScrollArea className="h-[480px]">
-										<SortableContext
-											id={column.status}
-											items={columnLeads.map((lead) => lead.leadId.toString())}
-											strategy={verticalListSortingStrategy}
-										>
-											<div className="space-y-3">
-												{columnLeads.map((lead) => (
-													<LeadCard
-														key={lead.leadId}
-														lead={lead}
-														onClick={() => onLeadClick?.(lead)}
-														isDragging={activeId === lead.leadId.toString()}
-													/>
-												))}
-											</div>
-										</SortableContext>
-									</ScrollArea>
-								</CardContent>
-							</Card>
-						);
-					})}
+				<div className="flex gap-4 min-w-max">
+					{LEAD_STATUS_COLUMNS.map((column) => (
+						<DroppableColumn
+							key={column.status}
+							column={column}
+							leads={leadsByStatus[column.status] || []}
+							activeId={activeId}
+							onLeadClick={onLeadClick}
+							onCreateLead={onCreateLead}
+						/>
+					))}
 				</div>
 
-				{/* Drag Overlay */}
 				<DragOverlay>
 					{draggedLead && (
-						<LeadCard
-							lead={draggedLead}
-							isDragging={true}
-							className="rotate-3 shadow-lg"
-						/>
+						<div className="w-[280px]">
+							<LeadCard
+								lead={draggedLead}
+								isDragging={true}
+								className="rotate-3 shadow-2xl"
+							/>
+						</div>
 					)}
 				</DragOverlay>
 			</DndContext>

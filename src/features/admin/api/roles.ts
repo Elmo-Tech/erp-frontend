@@ -18,8 +18,9 @@ export const rolesApi = {
 	 * Requirement 8.1: GET /api/v1/admin/roles endpoint to list all roles
 	 */
 	getAll: async (): Promise<RolesListResponse> => {
-		const response = await api.get<{ data: RolesListResponse }>("/admin/roles");
-		return response.data.data;
+		const response = await api.get<{ data: Role[] }>("/admin/roles");
+		// API returns array directly, wrap it in expected format
+		return { roles: response.data.data };
 	},
 
 	/**
@@ -64,6 +65,7 @@ export const rolesApi = {
 	 */
 	getPermissions: async (): Promise<Permission[]> => {
 		const response = await api.get<{ data: Permission[] }>("/admin/permissions");
+		// API returns array directly
 		return response.data.data;
 	},
 };

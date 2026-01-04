@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { Project, CreateProjectPayload, UpdateProjectPayload, ConvertQuotationPayload, ProjectListResponse, ProjectFilters } from "../types/project";
+import { Project, CreateProjectPayload, CreateDirectProjectPayload, UpdateProjectPayload, ConvertQuotationPayload, ProjectListResponse, ProjectFilters } from "../types/project";
 
 /**
  * API functions for project management
@@ -50,6 +50,14 @@ export const projectsApi = {
 	 */
 	create: async (payload: CreateProjectPayload): Promise<Project> => {
 		const response = await api.post<{ data: Project }>("/projects", payload);
+		return response.data.data;
+	},
+
+	/**
+	 * Create a new project directly for a client (without quotation)
+	 */
+	createDirect: async (payload: CreateDirectProjectPayload): Promise<Project> => {
+		const response = await api.post<{ data: Project }>("/projects/direct", payload);
 		return response.data.data;
 	},
 

@@ -12,12 +12,133 @@ import { useAuthStore } from "@/store/authStore";
  * Permission names used in the admin module
  */
 export const ADMIN_PERMISSIONS = {
-	VIEW_ADMIN_STATS: "view_admin_stats",
-	VIEW_INTERNAL_COSTS: "view_internal_costs",
+	// User Management
+	MANAGE_USERS: "manage_users",
+	VIEW_USERS: "view_users",
+	CREATE_USERS: "create_users",
+	EDIT_USERS: "edit_users",
+	DELETE_USERS: "delete_users",
+
+	// Role Management
 	MANAGE_ROLES: "manage_roles",
-	MANAGE_INTERNAL_COSTS: "manage_internal_costs",
-	VIEW_AUDIT_LOGS: "view_audit_logs",
+	VIEW_ROLES: "view_roles",
+	CREATE_ROLES: "create_roles",
+	EDIT_ROLES: "edit_roles",
+	DELETE_ROLES: "delete_roles",
+
+	// Client Management
+	MANAGE_CLIENTS: "manage_clients",
+	VIEW_CLIENTS: "view_clients",
+	CREATE_CLIENTS: "create_clients",
+	EDIT_CLIENTS: "edit_clients",
+	DELETE_CLIENTS: "delete_clients",
+
+	// Project Management
+	MANAGE_PROJECTS: "manage_projects",
+	VIEW_PROJECTS: "view_projects",
+	CREATE_PROJECTS: "create_projects",
+	EDIT_PROJECTS: "edit_projects",
+	DELETE_PROJECTS: "delete_projects",
+	APPROVE_PROJECT_UI: "approve_project_ui",
+
+	// Project Members
+	MANAGE_PROJECT_MEMBERS: "manage_project_members",
+	VIEW_PROJECT_MEMBERS: "view_project_members",
+	ADD_PROJECT_MEMBERS: "add_project_members",
+	REMOVE_PROJECT_MEMBERS: "remove_project_members",
+
+	// Project Files
+	MANAGE_PROJECT_FILES: "manage_project_files",
+	VIEW_PROJECT_FILES: "view_project_files",
+	UPLOAD_PROJECT_FILES: "upload_project_files",
+	DELETE_PROJECT_FILES: "delete_project_files",
+
+	// Project History
+	VIEW_PROJECT_HISTORY: "view_project_history",
+
+	// Task Management
+	MANAGE_TASKS: "manage_tasks",
+	VIEW_TASKS: "view_tasks",
+	CREATE_TASKS: "create_tasks",
+	EDIT_TASKS: "edit_tasks",
+	DELETE_TASKS: "delete_tasks",
 	VIEW_INTERNAL_NOTES: "view_internal_notes",
+	ASSIGN_TASKS: "assign_tasks",
+
+	// Test Scenarios
+	MANAGE_TEST_SCENARIOS: "manage_test_scenarios",
+	VIEW_TEST_SCENARIOS: "view_test_scenarios",
+	CREATE_TEST_SCENARIOS: "create_test_scenarios",
+	COMPLETE_TEST_SCENARIOS: "complete_test_scenarios",
+	VERIFY_TEST_SCENARIOS: "verify_test_scenarios",
+
+	// Sales - Leads
+	MANAGE_SALES: "manage_sales",
+	VIEW_LEADS: "view_leads",
+	CREATE_LEADS: "create_leads",
+	EDIT_LEADS: "edit_leads",
+	DELETE_LEADS: "delete_leads",
+
+	// Sales - Quotations
+	VIEW_QUOTATIONS: "view_quotations",
+	CREATE_QUOTATIONS: "create_quotations",
+	EDIT_QUOTATIONS: "edit_quotations",
+	DELETE_QUOTATIONS: "delete_quotations",
+	CALCULATE_QUOTATIONS: "calculate_quotations",
+
+	// Invoice Management
+	MANAGE_INVOICES: "manage_invoices",
+	VIEW_INVOICES: "view_invoices",
+	CREATE_INVOICES: "create_invoices",
+	EDIT_INVOICES: "edit_invoices",
+	DELETE_INVOICES: "delete_invoices",
+
+	// Wiki Management
+	MANAGE_WIKI: "manage_wiki",
+	VIEW_WIKI: "view_wiki",
+	CREATE_WIKI: "create_wiki",
+	EDIT_WIKI: "edit_wiki",
+	DELETE_WIKI: "delete_wiki",
+	VIEW_ENCRYPTED_CONTENT: "view_encrypted_content",
+
+	// Time Tracking
+	MANAGE_TIME_ENTRIES: "manage_time_entries",
+	VIEW_TIME_ENTRIES: "view_time_entries",
+	START_TIMER: "start_timer",
+	STOP_TIMER: "stop_timer",
+	VIEW_ALL_TIME_ENTRIES: "view_all_time_entries",
+
+	// Attendance
+	MANAGE_ATTENDANCE: "manage_attendance",
+	VIEW_ATTENDANCE: "view_attendance",
+	VIEW_ALL_ATTENDANCE: "view_all_attendance",
+	CLOCK_OUT: "clock_out",
+
+	// Dashboard
+	VIEW_DASHBOARD: "view_dashboard",
+	VIEW_DASHBOARD_OVERVIEW: "view_dashboard_overview",
+
+	// Reports & Analytics
+	VIEW_REPORTS: "view_reports",
+	VIEW_PROFITABILITY: "view_profitability",
+	VIEW_COST: "view_cost",
+	VIEW_QUALITY_METRICS: "view_quality_metrics",
+	VIEW_USER_PERFORMANCE: "view_user_performance",
+	VIEW_ATTENDANCE_ANALYTICS: "view_attendance_analytics",
+
+	// Admin Statistics
+	VIEW_ADMIN_STATS: "view_admin_stats",
+
+	// Financial Data
+	VIEW_INTERNAL_COSTS: "view_internal_costs",
+	MANAGE_INTERNAL_COSTS: "manage_internal_costs",
+
+	// Security & Audit
+	VIEW_AUDIT_LOGS: "view_audit_logs",
+
+	// Tags
+	MANAGE_TAGS: "manage_tags",
+	VIEW_TAGS: "view_tags",
 } as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];
@@ -78,12 +199,130 @@ export const usePermissions = () => {
 	 */
 	const adminPermissions = useMemo(
 		() => ({
-			canViewAdminStats: hasPermission(ADMIN_PERMISSIONS.VIEW_ADMIN_STATS),
-			canViewInternalCosts: hasPermission(ADMIN_PERMISSIONS.VIEW_INTERNAL_COSTS),
+			// User Management
+			canManageUsers: hasPermission(ADMIN_PERMISSIONS.MANAGE_USERS),
+			canViewUsers: hasPermission(ADMIN_PERMISSIONS.VIEW_USERS),
+			canCreateUsers: hasPermission(ADMIN_PERMISSIONS.CREATE_USERS),
+			canEditUsers: hasPermission(ADMIN_PERMISSIONS.EDIT_USERS),
+			canDeleteUsers: hasPermission(ADMIN_PERMISSIONS.DELETE_USERS),
+
+			// Role Management
 			canManageRoles: hasPermission(ADMIN_PERMISSIONS.MANAGE_ROLES),
-			canManageInternalCosts: hasPermission(ADMIN_PERMISSIONS.MANAGE_INTERNAL_COSTS),
-			canViewAuditLogs: hasPermission(ADMIN_PERMISSIONS.VIEW_AUDIT_LOGS),
+			canViewRoles: hasPermission(ADMIN_PERMISSIONS.VIEW_ROLES),
+
+			// Client Management
+			canManageClients: hasPermission(ADMIN_PERMISSIONS.MANAGE_CLIENTS),
+			canViewClients: hasPermission(ADMIN_PERMISSIONS.VIEW_CLIENTS),
+			canCreateClients: hasPermission(ADMIN_PERMISSIONS.CREATE_CLIENTS),
+			canEditClients: hasPermission(ADMIN_PERMISSIONS.EDIT_CLIENTS),
+			canDeleteClients: hasPermission(ADMIN_PERMISSIONS.DELETE_CLIENTS),
+
+			// Project Management
+			canManageProjects: hasPermission(ADMIN_PERMISSIONS.MANAGE_PROJECTS),
+			canViewProjects: hasPermission(ADMIN_PERMISSIONS.VIEW_PROJECTS),
+			canCreateProjects: hasPermission(ADMIN_PERMISSIONS.CREATE_PROJECTS),
+			canEditProjects: hasPermission(ADMIN_PERMISSIONS.EDIT_PROJECTS),
+			canDeleteProjects: hasPermission(ADMIN_PERMISSIONS.DELETE_PROJECTS),
+			canApproveProjectUI: hasPermission(ADMIN_PERMISSIONS.APPROVE_PROJECT_UI),
+
+			// Project Members
+			canManageProjectMembers: hasPermission(ADMIN_PERMISSIONS.MANAGE_PROJECT_MEMBERS),
+			canViewProjectMembers: hasPermission(ADMIN_PERMISSIONS.VIEW_PROJECT_MEMBERS),
+			canAddProjectMembers: hasPermission(ADMIN_PERMISSIONS.ADD_PROJECT_MEMBERS),
+			canRemoveProjectMembers: hasPermission(ADMIN_PERMISSIONS.REMOVE_PROJECT_MEMBERS),
+
+			// Project Files
+			canManageProjectFiles: hasPermission(ADMIN_PERMISSIONS.MANAGE_PROJECT_FILES),
+			canViewProjectFiles: hasPermission(ADMIN_PERMISSIONS.VIEW_PROJECT_FILES),
+			canUploadProjectFiles: hasPermission(ADMIN_PERMISSIONS.UPLOAD_PROJECT_FILES),
+			canDeleteProjectFiles: hasPermission(ADMIN_PERMISSIONS.DELETE_PROJECT_FILES),
+
+			// Project History
+			canViewProjectHistory: hasPermission(ADMIN_PERMISSIONS.VIEW_PROJECT_HISTORY),
+
+			// Task Management
+			canManageTasks: hasPermission(ADMIN_PERMISSIONS.MANAGE_TASKS),
+			canViewTasks: hasPermission(ADMIN_PERMISSIONS.VIEW_TASKS),
+			canCreateTasks: hasPermission(ADMIN_PERMISSIONS.CREATE_TASKS),
+			canEditTasks: hasPermission(ADMIN_PERMISSIONS.EDIT_TASKS),
+			canDeleteTasks: hasPermission(ADMIN_PERMISSIONS.DELETE_TASKS),
 			canViewInternalNotes: hasPermission(ADMIN_PERMISSIONS.VIEW_INTERNAL_NOTES),
+			canAssignTasks: hasPermission(ADMIN_PERMISSIONS.ASSIGN_TASKS),
+
+			// Test Scenarios
+			canManageTestScenarios: hasPermission(ADMIN_PERMISSIONS.MANAGE_TEST_SCENARIOS),
+			canViewTestScenarios: hasPermission(ADMIN_PERMISSIONS.VIEW_TEST_SCENARIOS),
+			canCreateTestScenarios: hasPermission(ADMIN_PERMISSIONS.CREATE_TEST_SCENARIOS),
+			canCompleteTestScenarios: hasPermission(ADMIN_PERMISSIONS.COMPLETE_TEST_SCENARIOS),
+			canVerifyTestScenarios: hasPermission(ADMIN_PERMISSIONS.VERIFY_TEST_SCENARIOS),
+
+			// Sales - Leads
+			canManageSales: hasPermission(ADMIN_PERMISSIONS.MANAGE_SALES),
+			canViewLeads: hasPermission(ADMIN_PERMISSIONS.VIEW_LEADS),
+			canCreateLeads: hasPermission(ADMIN_PERMISSIONS.CREATE_LEADS),
+			canEditLeads: hasPermission(ADMIN_PERMISSIONS.EDIT_LEADS),
+			canDeleteLeads: hasPermission(ADMIN_PERMISSIONS.DELETE_LEADS),
+
+			// Sales - Quotations
+			canViewQuotations: hasPermission(ADMIN_PERMISSIONS.VIEW_QUOTATIONS),
+			canCreateQuotations: hasPermission(ADMIN_PERMISSIONS.CREATE_QUOTATIONS),
+			canEditQuotations: hasPermission(ADMIN_PERMISSIONS.EDIT_QUOTATIONS),
+			canDeleteQuotations: hasPermission(ADMIN_PERMISSIONS.DELETE_QUOTATIONS),
+			canCalculateQuotations: hasPermission(ADMIN_PERMISSIONS.CALCULATE_QUOTATIONS),
+
+			// Invoice Management
+			canManageInvoices: hasPermission(ADMIN_PERMISSIONS.MANAGE_INVOICES),
+			canViewInvoices: hasPermission(ADMIN_PERMISSIONS.VIEW_INVOICES),
+			canCreateInvoices: hasPermission(ADMIN_PERMISSIONS.CREATE_INVOICES),
+			canEditInvoices: hasPermission(ADMIN_PERMISSIONS.EDIT_INVOICES),
+			canDeleteInvoices: hasPermission(ADMIN_PERMISSIONS.DELETE_INVOICES),
+
+			// Wiki Management
+			canManageWiki: hasPermission(ADMIN_PERMISSIONS.MANAGE_WIKI),
+			canViewWiki: hasPermission(ADMIN_PERMISSIONS.VIEW_WIKI),
+			canCreateWiki: hasPermission(ADMIN_PERMISSIONS.CREATE_WIKI),
+			canEditWiki: hasPermission(ADMIN_PERMISSIONS.EDIT_WIKI),
+			canDeleteWiki: hasPermission(ADMIN_PERMISSIONS.DELETE_WIKI),
+			canViewEncryptedContent: hasPermission(ADMIN_PERMISSIONS.VIEW_ENCRYPTED_CONTENT),
+
+			// Time Tracking
+			canManageTimeEntries: hasPermission(ADMIN_PERMISSIONS.MANAGE_TIME_ENTRIES),
+			canViewTimeEntries: hasPermission(ADMIN_PERMISSIONS.VIEW_TIME_ENTRIES),
+			canStartTimer: hasPermission(ADMIN_PERMISSIONS.START_TIMER),
+			canStopTimer: hasPermission(ADMIN_PERMISSIONS.STOP_TIMER),
+			canViewAllTimeEntries: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_TIME_ENTRIES),
+
+			// Attendance
+			canManageAttendance: hasPermission(ADMIN_PERMISSIONS.MANAGE_ATTENDANCE),
+			canViewAttendance: hasPermission(ADMIN_PERMISSIONS.VIEW_ATTENDANCE),
+			canViewAllAttendance: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_ATTENDANCE),
+			canClockOut: hasPermission(ADMIN_PERMISSIONS.CLOCK_OUT),
+
+			// Dashboard
+			canViewDashboard: hasPermission(ADMIN_PERMISSIONS.VIEW_DASHBOARD),
+			canViewDashboardOverview: hasPermission(ADMIN_PERMISSIONS.VIEW_DASHBOARD_OVERVIEW),
+
+			// Reports & Analytics
+			canViewReports: hasPermission(ADMIN_PERMISSIONS.VIEW_REPORTS),
+			canViewProfitability: hasPermission(ADMIN_PERMISSIONS.VIEW_PROFITABILITY),
+			canViewCost: hasPermission(ADMIN_PERMISSIONS.VIEW_COST),
+			canViewQualityMetrics: hasPermission(ADMIN_PERMISSIONS.VIEW_QUALITY_METRICS),
+			canViewUserPerformance: hasPermission(ADMIN_PERMISSIONS.VIEW_USER_PERFORMANCE),
+			canViewAttendanceAnalytics: hasPermission(ADMIN_PERMISSIONS.VIEW_ATTENDANCE_ANALYTICS),
+
+			// Admin Statistics
+			canViewAdminStats: hasPermission(ADMIN_PERMISSIONS.VIEW_ADMIN_STATS),
+
+			// Financial Data
+			canViewInternalCosts: hasPermission(ADMIN_PERMISSIONS.VIEW_INTERNAL_COSTS),
+			canManageInternalCosts: hasPermission(ADMIN_PERMISSIONS.MANAGE_INTERNAL_COSTS),
+
+			// Security & Audit
+			canViewAuditLogs: hasPermission(ADMIN_PERMISSIONS.VIEW_AUDIT_LOGS),
+
+			// Tags
+			canManageTags: hasPermission(ADMIN_PERMISSIONS.MANAGE_TAGS),
+			canViewTags: hasPermission(ADMIN_PERMISSIONS.VIEW_TAGS),
 		}),
 		[hasPermission]
 	);

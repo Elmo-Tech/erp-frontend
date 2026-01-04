@@ -18,15 +18,16 @@ interface FormDialogProps {
 	isSubmitDisabled?: boolean;
 	className?: string;
 	showFooter?: boolean;
-	size?: "sm" | "md" | "lg" | "xl" | "full";
+	size?: "sm" | "md" | "lg" | "xl" | "xxl" | "full";
 }
 
 const sizeClasses = {
-	sm: "max-w-sm",
-	md: "max-w-md",
-	lg: "max-w-lg",
-	xl: "max-w-xl",
-	full: "max-w-4xl",
+	sm: "max-w-sm!",
+	md: "max-w-md!",
+	lg: "max-w-lg!",
+	xl: "max-w-xl!",
+	xxl: "max-w-2xl!",
+	full: "max-w-4xl!",
 };
 
 export function FormDialog({ open, onOpenChange, title, description, children, onSubmit, submitLabel = "Save", cancelLabel = "Cancel", isLoading = false, isSubmitDisabled = false, className, showFooter = true, size = "lg" }: FormDialogProps) {

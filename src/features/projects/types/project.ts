@@ -20,6 +20,8 @@ export interface Project {
 	budget: number;
 	deadline: string | null;
 	uiApprovedAt: string | null;
+	progress?: number;
+	totalTimeSpent?: number;
 	client?: {
 		userId: number;
 		name: string;
@@ -29,10 +31,42 @@ export interface Project {
 		quotationId: number;
 		finalPrice: number;
 	};
+	members?: ProjectMember[];
+	files?: ProjectFile[];
 	createdAt: string;
 	updatedAt: string;
 	createdBy: number | null;
 	updatedBy: number | null;
+}
+
+export interface ProjectMember {
+	memberId: number;
+	projectId: number;
+	userId: number;
+	role: string;
+	user?: {
+		userId: number;
+		name: string;
+		email: string;
+		avatar?: string;
+	};
+	createdAt: string;
+}
+
+export interface ProjectFile {
+	fileId: number;
+	projectId: number;
+	name: string;
+	type: "file" | "link";
+	fileUrl?: string;
+	mimeType?: string;
+	size?: number;
+	description?: string;
+	category: string;
+	isClientVisible: boolean;
+	isDownloadable: boolean;
+	visibleToRoles?: string[];
+	createdAt: string;
 }
 
 export interface CreateProjectPayload {
@@ -40,6 +74,15 @@ export interface CreateProjectPayload {
 	title?: string;
 	description?: string;
 	deadline?: string;
+}
+
+export interface CreateDirectProjectPayload {
+	clientId: number;
+	title: string;
+	description?: string;
+	budget: number;
+	deadline?: string;
+	status?: ProjectStatus;
 }
 
 export interface UpdateProjectPayload {

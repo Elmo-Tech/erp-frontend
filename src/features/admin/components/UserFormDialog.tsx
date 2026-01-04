@@ -88,7 +88,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 
 	// Transform roles to checkbox options
 	const roleOptions =
-		rolesData?.roles.map((role) => ({
+		rolesData?.roles?.map((role) => ({
 			value: role.name,
 			label: role.name,
 		})) || [];
