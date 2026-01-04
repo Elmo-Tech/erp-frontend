@@ -283,7 +283,7 @@ export function Sidebar() {
 				</nav>
 
 				{/* Footer */}
-				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2025 Elmo ERP</p>}</div>
+				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2023 Elmo ERP</p>}</div>
 			</aside>
 		</TooltipProvider>
 	);

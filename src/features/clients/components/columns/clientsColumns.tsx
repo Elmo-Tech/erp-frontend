@@ -9,8 +9,8 @@ import { MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
 
 interface ClientsColumnsOptions {
 	onView: (client: Client) => void;
-	onEdit: (client: Client) => void;
-	onDelete: (client: Client) => void;
+	onEdit?: (client: Client) => void;
+	onDelete?: (client: Client) => void;
 }
 
 export function getClientsColumns({ onView, onEdit, onDelete }: ClientsColumnsOptions): Column<Client>[] {
@@ -65,17 +65,21 @@ export function getClientsColumns({ onView, onEdit, onDelete }: ClientsColumnsOp
 							<Eye className="h-4 w-4 mr-2" />
 							View
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => onEdit(client)}>
-							<Pencil className="h-4 w-4 mr-2" />
-							Edit
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							className="text-destructive"
-							onClick={() => onDelete(client)}
-						>
-							<Trash2 className="h-4 w-4 mr-2" />
-							Delete
-						</DropdownMenuItem>
+						{onEdit && (
+							<DropdownMenuItem onClick={() => onEdit(client)}>
+								<Pencil className="h-4 w-4 mr-2" />
+								Edit
+							</DropdownMenuItem>
+						)}
+						{onDelete && (
+							<DropdownMenuItem
+								className="text-destructive"
+								onClick={() => onDelete(client)}
+							>
+								<Trash2 className="h-4 w-4 mr-2" />
+								Delete
+							</DropdownMenuItem>
+						)}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			),

@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import api from "@/lib/axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { projectKeys } from "../../hooks/useProjects";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 interface FilesTabProps {
 	projectId: number;
@@ -25,6 +26,9 @@ export function FilesTab({ projectId, files, isLoading }: FilesTabProps) {
 	const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const queryClient = useQueryClient();
+
+	// Permission checks
+	const { canUploadProjectFiles, canDeleteProjectFiles } = usePermissions();
 
 	const handleDelete = async () => {
 		if (!fileToDelete) return;
@@ -118,13 +122,15 @@ export function FilesTab({ projectId, files, isLoading }: FilesTabProps) {
 								</>
 							)}
 						</DropdownMenuItem>
-						<DropdownMenuItem
-							onClick={() => setFileToDelete(file)}
-							className="text-destructive"
-						>
-							<Trash2 className="h-4 w-4 mr-2" />
-							Delete
-						</DropdownMenuItem>
+						{canDeleteProjectFiles && (
+							<DropdownMenuItem
+								onClick={() => setFileToDelete(file)}
+								className="text-destructive"
+							>
+								<Trash2 className="h-4 w-4 mr-2" />
+								Delete
+							</DropdownMenuItem>
+						)}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			),
@@ -144,13 +150,15 @@ export function FilesTab({ projectId, files, isLoading }: FilesTabProps) {
 					icon: FileText,
 					title: "No files yet",
 					description: "Upload files or add links to share with your team.",
-					action: { label: "Add File", onClick: () => setShowCreateDialog(true) },
+					action: canUploadProjectFiles ? { label: "Add File", onClick: () => setShowCreateDialog(true) } : undefined,
 				}}
 				headerActions={
-					<Button onClick={() => setShowCreateDialog(true)}>
-						<Plus className="h-4 w-4 mr-2" />
-						Add File
-					</Button>
+					canUploadProjectFiles ? (
+						<Button onClick={() => setShowCreateDialog(true)}>
+							<Plus className="h-4 w-4 mr-2" />
+							Add File
+						</Button>
+					) : undefined
 				}
 			/>
 

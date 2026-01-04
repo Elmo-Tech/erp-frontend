@@ -15,6 +15,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 const STATUS_OPTIONS = Object.values(TaskStatus).map((status) => ({
 	value: status,
@@ -45,6 +46,9 @@ export function TasksTab({ projectId }: TasksTabProps) {
 
 	const { data, isLoading, error } = useProjectTasks(projectId, page, 20);
 	const deleteTask = useDeleteTask();
+
+	// Permission checks
+	const { canCreateTasks, canEditTasks, canDeleteTasks, canAssignTasks } = usePermissions();
 
 	const handleSearch = (value: string) => {
 		setSearch(value);
@@ -101,16 +105,18 @@ export function TasksTab({ projectId }: TasksTabProps) {
 						{data?.pagination && <Badge variant="secondary">{data.pagination.total}</Badge>}
 					</h2>
 				</div>
-				<Button
-					onClick={() => {
-						setCreateParentId(null);
-						setCreateType(TaskType.MAIN);
-						setShowCreateDialog(true);
-					}}
-				>
-					<Plus className="h-4 w-4 mr-2" />
-					Add Main Task
-				</Button>
+				{canCreateTasks && (
+					<Button
+						onClick={() => {
+							setCreateParentId(null);
+							setCreateType(TaskType.MAIN);
+							setShowCreateDialog(true);
+						}}
+					>
+						<Plus className="h-4 w-4 mr-2" />
+						Add Main Task
+					</Button>
+				)}
 			</div>
 
 			{/* Filters */}
@@ -150,10 +156,12 @@ export function TasksTab({ projectId }: TasksTabProps) {
 					<ListTodo className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
 					<h3 className="text-lg font-medium">No tasks yet</h3>
 					<p className="text-muted-foreground mb-4">Create your first task to start tracking work</p>
-					<Button onClick={() => setShowCreateDialog(true)}>
-						<Plus className="h-4 w-4 mr-2" />
-						Create Task
-					</Button>
+					{canCreateTasks && (
+						<Button onClick={() => setShowCreateDialog(true)}>
+							<Plus className="h-4 w-4 mr-2" />
+							Create Task
+						</Button>
+					)}
 				</div>
 			) : (
 				<div className="space-y-2">
@@ -163,9 +171,12 @@ export function TasksTab({ projectId }: TasksTabProps) {
 							task={task}
 							level={0}
 							onSelect={handleSelectTask}
-							onEdit={handleEditTask}
-							onDelete={handleDeleteTask}
-							onCreateChild={handleCreateChild}
+							onEdit={canEditTasks ? handleEditTask : undefined}
+							onDelete={canDeleteTasks ? handleDeleteTask : undefined}
+							onCreateChild={canCreateTasks ? handleCreateChild : undefined}
+							canEdit={canEditTasks}
+							canDelete={canDeleteTasks}
+							canCreate={canCreateTasks}
 						/>
 					))}
 				</div>
@@ -240,12 +251,15 @@ interface TaskTreeItemProps {
 	task: Task;
 	level: number;
 	onSelect: (task: Task) => void;
-	onEdit: (task: Task) => void;
-	onDelete: (task: Task) => void;
-	onCreateChild: (parentTask: Task, type: TaskType) => void;
+	onEdit?: (task: Task) => void;
+	onDelete?: (task: Task) => void;
+	onCreateChild?: (parentTask: Task, type: TaskType) => void;
+	canEdit?: boolean;
+	canDelete?: boolean;
+	canCreate?: boolean;
 }
 
-function TaskTreeItem({ task, level, onSelect, onEdit, onDelete, onCreateChild }: TaskTreeItemProps) {
+function TaskTreeItem({ task, level, onSelect, onEdit, onDelete, onCreateChild, canEdit, canDelete, canCreate }: TaskTreeItemProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
 	const { data: children, isLoading: loadingChildren } = useTaskChildren(task.taskId, isExpanded);
 
@@ -367,43 +381,51 @@ function TaskTreeItem({ task, level, onSelect, onEdit, onDelete, onCreateChild }
 					</div>
 
 					{/* Actions */}
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-							>
-								<MoreHorizontal className="h-4 w-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuItem onClick={() => onEdit(task)}>
-								<Pencil className="h-4 w-4 mr-2" />
-								Edit
-							</DropdownMenuItem>
-							{task.type === TaskType.MAIN && (
-								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
-									<Plus className="h-4 w-4 mr-2" />
-									Add Weekly Task
-								</DropdownMenuItem>
-							)}
-							{task.type === TaskType.WEEKLY && (
-								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
-									<Plus className="h-4 w-4 mr-2" />
-									Add Subtask
-								</DropdownMenuItem>
-							)}
-							<DropdownMenuSeparator />
-							<DropdownMenuItem
-								onClick={() => onDelete(task)}
-								className="text-destructive"
-							>
-								<Trash2 className="h-4 w-4 mr-2" />
-								Delete
-							</DropdownMenuItem>
-						</DropdownMenuContent>
-					</DropdownMenu>
+					{(canEdit || canDelete || canCreate) && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-8 w-8"
+								>
+									<MoreHorizontal className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								{canEdit && onEdit && (
+									<DropdownMenuItem onClick={() => onEdit(task)}>
+										<Pencil className="h-4 w-4 mr-2" />
+										Edit
+									</DropdownMenuItem>
+								)}
+								{canCreate && onCreateChild && task.type === TaskType.MAIN && (
+									<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
+										<Plus className="h-4 w-4 mr-2" />
+										Add Weekly Task
+									</DropdownMenuItem>
+								)}
+								{canCreate && onCreateChild && task.type === TaskType.WEEKLY && (
+									<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
+										<Plus className="h-4 w-4 mr-2" />
+										Add Subtask
+									</DropdownMenuItem>
+								)}
+								{canDelete && onDelete && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onClick={() => onDelete(task)}
+											className="text-destructive"
+										>
+											<Trash2 className="h-4 w-4 mr-2" />
+											Delete
+										</DropdownMenuItem>
+									</>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
 				</div>
 
 				{/* Children - Pass the same handlers down */}
@@ -419,6 +441,9 @@ function TaskTreeItem({ task, level, onSelect, onEdit, onDelete, onCreateChild }
 									onEdit={onEdit}
 									onDelete={onDelete}
 									onCreateChild={onCreateChild}
+									canEdit={canEdit}
+									canDelete={canDelete}
+									canCreate={canCreate}
 								/>
 							))}
 						</div>

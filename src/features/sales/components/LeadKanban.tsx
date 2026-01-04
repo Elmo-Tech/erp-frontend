@@ -14,6 +14,7 @@ import { Lead, LeadStatus } from "../types/lead";
 import { LeadCard } from "./LeadCard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 const LEAD_STATUS_COLUMNS: Array<{
 	status: LeadStatus;
@@ -150,6 +151,9 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 	const { data: leadsResponse, isLoading, error } = useLeads();
 	const updateLeadMutation = useUpdateLead();
 
+	// Permission checks
+	const { canCreateLeads, canEditLeads } = usePermissions();
+
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
 			activationConstraint: {
@@ -273,8 +277,8 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 			<DndContext
 				sensors={sensors}
 				collisionDetection={closestCorners}
-				onDragStart={handleDragStart}
-				onDragEnd={handleDragEnd}
+				onDragStart={canEditLeads ? handleDragStart : undefined}
+				onDragEnd={canEditLeads ? handleDragEnd : undefined}
 			>
 				<div className="flex gap-4 min-w-max">
 					{LEAD_STATUS_COLUMNS.map((column) => (
@@ -284,7 +288,7 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 							leads={leadsByStatus[column.status] || []}
 							activeId={activeId}
 							onLeadClick={onLeadClick}
-							onCreateLead={onCreateLead}
+							onCreateLead={canCreateLeads ? onCreateLead : undefined}
 						/>
 					))}
 				</div>

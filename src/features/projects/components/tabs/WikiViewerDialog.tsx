@@ -15,9 +15,10 @@ interface WikiViewerDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onEdit?: () => void;
+	canViewEncrypted?: boolean;
 }
 
-export function WikiViewerDialog({ wiki, open, onOpenChange, onEdit }: WikiViewerDialogProps) {
+export function WikiViewerDialog({ wiki, open, onOpenChange, onEdit, canViewEncrypted = true }: WikiViewerDialogProps) {
 	const [showContent, setShowContent] = useState(false);
 	const [copied, setCopied] = useState(false);
 
@@ -68,7 +69,7 @@ export function WikiViewerDialog({ wiki, open, onOpenChange, onEdit }: WikiViewe
 
 				<div className="flex items-center justify-between pt-4 border-t">
 					<div className="flex gap-2">
-						{wiki.isEncrypted && (
+						{wiki.isEncrypted && canViewEncrypted && (
 							<Button
 								variant="outline"
 								size="sm"
@@ -87,11 +88,20 @@ export function WikiViewerDialog({ wiki, open, onOpenChange, onEdit }: WikiViewe
 								)}
 							</Button>
 						)}
+						{wiki.isEncrypted && !canViewEncrypted && (
+							<Badge
+								variant="secondary"
+								className="text-xs"
+							>
+								<Lock className="h-3 w-3 mr-1" />
+								No permission to view encrypted content
+							</Badge>
+						)}
 						<Button
 							variant="outline"
 							size="sm"
 							onClick={handleCopy}
-							disabled={wiki.isEncrypted && !showContent}
+							disabled={wiki.isEncrypted && (!showContent || !canViewEncrypted)}
 						>
 							{copied ? (
 								<>

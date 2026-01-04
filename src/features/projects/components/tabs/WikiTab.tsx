@@ -12,6 +12,7 @@ import { Plus, BookOpen, Eye, Pencil, Trash2, Lock, MoreHorizontal } from "lucid
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 interface WikiTabProps {
 	projectId: number;
@@ -25,6 +26,9 @@ export function WikiTab({ projectId }: WikiTabProps) {
 
 	const { data, isLoading, error } = useProjectWikis(projectId);
 	const deleteWiki = useDeleteProjectWiki();
+
+	// Permission checks
+	const { canCreateWiki, canEditWiki, canDeleteWiki, canViewEncryptedContent } = usePermissions();
 
 	const handleDelete = async () => {
 		if (!wikiToDelete) return;
@@ -83,17 +87,21 @@ export function WikiTab({ projectId }: WikiTabProps) {
 							<Eye className="h-4 w-4 mr-2" />
 							View
 						</DropdownMenuItem>
-						<DropdownMenuItem onClick={() => setWikiToEdit(wiki)}>
-							<Pencil className="h-4 w-4 mr-2" />
-							Edit
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							onClick={() => setWikiToDelete(wiki)}
-							className="text-destructive"
-						>
-							<Trash2 className="h-4 w-4 mr-2" />
-							Delete
-						</DropdownMenuItem>
+						{canEditWiki && (
+							<DropdownMenuItem onClick={() => setWikiToEdit(wiki)}>
+								<Pencil className="h-4 w-4 mr-2" />
+								Edit
+							</DropdownMenuItem>
+						)}
+						{canDeleteWiki && (
+							<DropdownMenuItem
+								onClick={() => setWikiToDelete(wiki)}
+								className="text-destructive"
+							>
+								<Trash2 className="h-4 w-4 mr-2" />
+								Delete
+							</DropdownMenuItem>
+						)}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			),
@@ -115,19 +123,21 @@ export function WikiTab({ projectId }: WikiTabProps) {
 					icon: BookOpen,
 					title: "No wiki entries",
 					description: "Create documentation and store credentials securely.",
-					action: { label: "Create Entry", onClick: () => setShowCreateDialog(true) },
+					action: canCreateWiki ? { label: "Create Entry", onClick: () => setShowCreateDialog(true) } : undefined,
 				}}
 				headerActions={
-					<Button onClick={() => setShowCreateDialog(true)}>
-						<Plus className="h-4 w-4 mr-2" />
-						Add Entry
-					</Button>
+					canCreateWiki ? (
+						<Button onClick={() => setShowCreateDialog(true)}>
+							<Plus className="h-4 w-4 mr-2" />
+							Add Entry
+						</Button>
+					) : undefined
 				}
 			/>
 
 			<WikiFormDialog
 				projectId={projectId}
-				open={showCreateDialog || !!wikiToEdit}
+				open={showCreateDialog || (!!wikiToEdit && canEditWiki)}
 				onOpenChange={(open: boolean) => {
 					if (!open) {
 						setShowCreateDialog(false);
@@ -141,10 +151,15 @@ export function WikiTab({ projectId }: WikiTabProps) {
 				wiki={wikiToView}
 				open={!!wikiToView}
 				onOpenChange={() => setWikiToView(null)}
-				onEdit={() => {
-					setWikiToEdit(wikiToView);
-					setWikiToView(null);
-				}}
+				onEdit={
+					canEditWiki
+						? () => {
+								setWikiToEdit(wikiToView);
+								setWikiToView(null);
+						  }
+						: undefined
+				}
+				canViewEncrypted={canViewEncryptedContent}
 			/>
 
 			<ConfirmDialog

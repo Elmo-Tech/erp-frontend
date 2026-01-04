@@ -11,6 +11,7 @@ import { ProjectMember, MemberRole, MEMBER_ROLES } from "../../types/projectMemb
 import { AddMemberDialog } from "./AddMemberDialog";
 import { Users, Plus, MoreHorizontal, UserMinus, Shield } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 interface TeamTabProps {
 	projectId: number;
@@ -23,6 +24,9 @@ export function TeamTab({ projectId }: TeamTabProps) {
 	const { data, isLoading, error } = useProjectMembers(projectId);
 	const removeMember = useRemoveProjectMember();
 	const updateMember = useUpdateProjectMember();
+
+	// Permission checks
+	const { canAddProjectMembers, canRemoveProjectMembers, canManageProjectMembers } = usePermissions();
 
 	const handleRemoveMember = async () => {
 		if (!memberToRemove) return;
@@ -83,36 +87,39 @@ export function TeamTab({ projectId }: TeamTabProps) {
 		{
 			key: "role",
 			header: "Role",
-			render: (member) => (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="h-auto p-0"
-						>
-							<Badge
-								variant={getRoleBadgeVariant(member.role)}
-								className="cursor-pointer"
+			render: (member) =>
+				canManageProjectMembers ? (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-auto p-0"
 							>
-								{MEMBER_ROLES.find((r) => r.value === member.role)?.label || member.role}
-							</Badge>
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="start">
-						{MEMBER_ROLES.map((role) => (
-							<DropdownMenuItem
-								key={role.value}
-								onClick={() => handleUpdateRole(member.memberId, role.value)}
-								disabled={member.role === role.value || updateMember.isPending}
-							>
-								<Shield className="h-4 w-4 mr-2" />
-								{role.label}
-							</DropdownMenuItem>
-						))}
-					</DropdownMenuContent>
-				</DropdownMenu>
-			),
+								<Badge
+									variant={getRoleBadgeVariant(member.role)}
+									className="cursor-pointer"
+								>
+									{MEMBER_ROLES.find((r) => r.value === member.role)?.label || member.role}
+								</Badge>
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start">
+							{MEMBER_ROLES.map((role) => (
+								<DropdownMenuItem
+									key={role.value}
+									onClick={() => handleUpdateRole(member.memberId, role.value)}
+									disabled={member.role === role.value || updateMember.isPending}
+								>
+									<Shield className="h-4 w-4 mr-2" />
+									{role.label}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : (
+					<Badge variant={getRoleBadgeVariant(member.role)}>{MEMBER_ROLES.find((r) => r.value === member.role)?.label || member.role}</Badge>
+				),
 		},
 		{
 			key: "createdAt",
@@ -122,27 +129,28 @@ export function TeamTab({ projectId }: TeamTabProps) {
 		{
 			key: "actions",
 			header: "",
-			render: (member) => (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon"
-						>
-							<MoreHorizontal className="h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem
-							onClick={() => setMemberToRemove(member)}
-							className="text-destructive"
-						>
-							<UserMinus className="h-4 w-4 mr-2" />
-							Remove from project
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			),
+			render: (member) =>
+				canRemoveProjectMembers ? (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+							>
+								<MoreHorizontal className="h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem
+								onClick={() => setMemberToRemove(member)}
+								className="text-destructive"
+							>
+								<UserMinus className="h-4 w-4 mr-2" />
+								Remove from project
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : null,
 		},
 	];
 
@@ -160,13 +168,15 @@ export function TeamTab({ projectId }: TeamTabProps) {
 					icon: Users,
 					title: "No team members",
 					description: "Add team members to start collaborating on this project.",
-					action: { label: "Add Member", onClick: () => setShowAddDialog(true) },
+					action: canAddProjectMembers ? { label: "Add Member", onClick: () => setShowAddDialog(true) } : undefined,
 				}}
 				headerActions={
-					<Button onClick={() => setShowAddDialog(true)}>
-						<Plus className="h-4 w-4 mr-2" />
-						Add Member
-					</Button>
+					canAddProjectMembers ? (
+						<Button onClick={() => setShowAddDialog(true)}>
+							<Plus className="h-4 w-4 mr-2" />
+							Add Member
+						</Button>
+					) : undefined
 				}
 			/>
 

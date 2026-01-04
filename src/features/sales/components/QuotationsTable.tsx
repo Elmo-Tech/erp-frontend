@@ -12,6 +12,7 @@ import { Quotation, QuotationStatus, QuotationFilters } from "../types/quotation
 import { getQuotationsColumns } from "./columns/quotationsColumns";
 import { Plus, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 const STATUS_OPTIONS = [
 	{ value: QuotationStatus.DRAFT, label: "Draft" },
@@ -37,6 +38,9 @@ export function QuotationsTable({ onAdd, onEdit, onView }: QuotationsTableProps)
 
 	const { data, isLoading, error } = useQuotations(filters);
 	const deleteQuotation = useDeleteQuotation();
+
+	// Permission checks
+	const { canCreateQuotations, canEditQuotations, canDeleteQuotations } = usePermissions();
 
 	const handleSearch = (search: string) => {
 		setFilters((prev) => ({ ...prev, search: search || undefined, page: 1 }));
@@ -77,8 +81,8 @@ export function QuotationsTable({ onAdd, onEdit, onView }: QuotationsTableProps)
 
 	const columns = getQuotationsColumns({
 		onView,
-		onEdit,
-		onDelete: openDeleteDialog,
+		onEdit: canEditQuotations ? onEdit : undefined,
+		onDelete: canDeleteQuotations ? openDeleteDialog : undefined,
 	});
 
 	return (
@@ -98,15 +102,17 @@ export function QuotationsTable({ onAdd, onEdit, onView }: QuotationsTableProps)
 					icon: FileText,
 					title: "No quotations found",
 					description: "Get started by creating your first quotation.",
-					action: { label: "Create Quotation", onClick: onAdd },
+					action: canCreateQuotations ? { label: "Create Quotation", onClick: onAdd } : undefined,
 				}}
 				headerActions={
 					<FilterBar
 						actions={
-							<Button onClick={onAdd}>
-								<Plus className="h-4 w-4 mr-2" />
-								New Quotation
-							</Button>
+							canCreateQuotations ? (
+								<Button onClick={onAdd}>
+									<Plus className="h-4 w-4 mr-2" />
+									New Quotation
+								</Button>
+							) : undefined
 						}
 					>
 						<SearchInput

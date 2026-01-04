@@ -12,6 +12,7 @@ import { Client, ClientFilters } from "../types";
 import { getClientsColumns } from "./columns/clientsColumns";
 import { Plus, Building2 } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 interface ClientsTableProps {
 	onEdit: (client: Client) => void;
@@ -29,6 +30,9 @@ export function ClientsTable({ onEdit, onAdd }: ClientsTableProps) {
 
 	const { data, isLoading, error } = useClients(filters);
 	const deleteClient = useDeleteClient();
+
+	// Permission checks
+	const { canCreateClients, canEditClients, canDeleteClients } = usePermissions();
 
 	const handleSearch = (search: string) => {
 		setFilters((prev) => ({ ...prev, search: search || undefined, page: 1 }));
@@ -62,8 +66,8 @@ export function ClientsTable({ onEdit, onAdd }: ClientsTableProps) {
 
 	const columns = getClientsColumns({
 		onView: handleView,
-		onEdit,
-		onDelete: openDeleteDialog,
+		onEdit: canEditClients ? onEdit : undefined,
+		onDelete: canDeleteClients ? openDeleteDialog : undefined,
 	});
 
 	return (
@@ -83,15 +87,17 @@ export function ClientsTable({ onEdit, onAdd }: ClientsTableProps) {
 					icon: Building2,
 					title: "No clients found",
 					description: "Get started by adding your first client.",
-					action: { label: "Add Client", onClick: onAdd },
+					action: canCreateClients ? { label: "Add Client", onClick: onAdd } : undefined,
 				}}
 				headerActions={
 					<FilterBar
 						actions={
-							<Button onClick={onAdd}>
-								<Plus className="h-4 w-4 mr-2" />
-								Add Client
-							</Button>
+							canCreateClients ? (
+								<Button onClick={onAdd}>
+									<Plus className="h-4 w-4 mr-2" />
+									Add Client
+								</Button>
+							) : undefined
 						}
 					>
 						<SearchInput
