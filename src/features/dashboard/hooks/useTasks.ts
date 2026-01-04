@@ -81,18 +81,6 @@ export const useProjectTasks = (projectId: number, page = 1, perPage = 15, enabl
 };
 
 /**
- * Hook to fetch task children for lazy loading
- */
-export const useTaskChildren = (taskId: number, enabled = true) => {
-	return useQuery<Task[], Error>({
-		queryKey: taskKeys.taskChildren(taskId),
-		queryFn: () => tasksApi.getTaskChildren(taskId),
-		enabled: enabled && !!taskId,
-		staleTime: 5 * 60 * 1000,
-	});
-};
-
-/**
  * Hook to create a new task
  */
 export const useCreateTask = () => {

@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { SearchInput, FilterBar, FilterSelect, ConfirmDialog } from "@/components/shared";
-import { useProjectTasks, useDeleteTask, useTaskChildren } from "@/features/dashboard/hooks/useTasks";
-import { Task, TaskStatus, TaskStatusLabels, TaskStatusColors, TaskType, TaskTypeLabels, TaskTypeColors, TaskPriority, TaskPriorityLabels, TaskPriorityColors } from "@/features/dashboard/types/task";
+import { useProjectTasks, useDeleteTask } from "@/features/dashboard/hooks/useTasks";
+import { useTaskChildren } from "@/features/dashboard/hooks/useTaskTree";
+import { Task, TaskStatus, TaskStatusLabels, TaskStatusColors, TaskType, TaskTypeLabels, TaskTypeColors, TaskPriority, TaskPriorityLabels, TaskPriorityColors, TaskChildrenResponse } from "@/features/dashboard/types/task";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { TaskDetailSheet } from "../tasks/TaskDetailSheet";
 import { Plus, ListTodo, Clock, MoreHorizontal, Pencil, Trash2, ChevronRight, ChevronDown, Calendar, Users, CheckCircle2 } from "lucide-react";
@@ -48,7 +49,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 	const deleteTask = useDeleteTask();
 
 	// Permission checks
-	const { canCreateTasks, canEditTasks, canDeleteTasks, canAssignTasks } = usePermissions();
+	const { canCreateTasks, canEditTasks, canDeleteTasks } = usePermissions();
 
 	const handleSearch = (value: string) => {
 		setSearch(value);
@@ -261,10 +262,14 @@ interface TaskTreeItemProps {
 
 function TaskTreeItem({ task, level, onSelect, onEdit, onDelete, onCreateChild, canEdit, canDelete, canCreate }: TaskTreeItemProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
-	const { data: children, isLoading: loadingChildren } = useTaskChildren(task.taskId, isExpanded);
+	const { data: childrenData, isLoading: loadingChildren } = useTaskChildren(task.taskId, isExpanded) as {
+		data: TaskChildrenResponse | undefined;
+		isLoading: boolean;
+	};
 
-	const hasChildren = (task.children && task.children.length > 0) || (children && children.length > 0);
-	const childTasks = children || task.children || [];
+	const loadedChildren = childrenData?.children || [];
+	const hasChildren = (task.children && task.children.length > 0) || loadedChildren.length > 0;
+	const childTasks = loadedChildren.length > 0 ? loadedChildren : task.children || [];
 
 	const progressPercent = task.estimatedHours > 0 ? Math.min((task.totalTimeSpent / 60 / task.estimatedHours) * 100, 100) : 0;
 

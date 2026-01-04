@@ -12,7 +12,7 @@ import { ChevronRightIcon, ChevronDownIcon, ClockIcon, UserIcon } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Task, TaskStatus, TaskStatusLabels, TaskStatusColors } from "../types/task";
+import { Task, TaskStatus, TaskStatusLabels, TaskStatusColors, TaskChildrenResponse } from "../types/task";
 import { useTaskTree, useTaskChildren } from "../hooks/useTaskTree";
 import { useTimerStore } from "@/store/timerStore";
 
@@ -87,7 +87,15 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selected
 	const hasChildren = task.children && task.children.length > 0;
 
 	// Use lazy loading hook for children
-	const { data: childrenData, isLoading: isLoadingChildren, error: childrenError } = useTaskChildren(task.taskId, isExpanded && !hasChildren);
+	const {
+		data: childrenData,
+		isLoading: isLoadingChildren,
+		error: childrenError,
+	} = useTaskChildren(task.taskId, isExpanded && !hasChildren) as {
+		data: TaskChildrenResponse | undefined;
+		isLoading: boolean;
+		error: Error | null;
+	};
 
 	// Get children from either preloaded data or lazy-loaded data
 	const children = hasChildren ? task.children || [] : childrenData?.children || [];

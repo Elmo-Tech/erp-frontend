@@ -7,6 +7,7 @@ import api from "@/lib/axios";
 import {
 	Task,
 	TaskListResponse,
+	TaskChildrenResponse,
 	TaskFilters,
 	CreateTaskPayload,
 	UpdateTaskPayload,
@@ -107,9 +108,9 @@ export const tasksApi = {
 	/**
 	 * Get children of a specific task for lazy loading
 	 */
-	getTaskChildren: async (id: number): Promise<Task[]> => {
+	getTaskChildren: async (id: number): Promise<TaskChildrenResponse> => {
 		const response = await api.get<{ data: Task[] }>(`/tasks/${id}/children`);
-		return response.data.data;
+		return { children: response.data.data };
 	},
 
 	/**
