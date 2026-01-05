@@ -86,6 +86,13 @@ export const ADMIN_PERMISSIONS = {
 	DELETE_QUOTATIONS: "delete_quotations",
 	CALCULATE_QUOTATIONS: "calculate_quotations",
 
+	// Sales - Contracts
+	VIEW_CONTRACTS: "view_contracts",
+	CREATE_CONTRACTS: "create_contracts",
+	EDIT_CONTRACTS: "edit_contracts",
+	DELETE_CONTRACTS: "delete_contracts",
+	SIGN_CONTRACTS: "sign_contracts",
+
 	// Invoice Management
 	MANAGE_INVOICES: "manage_invoices",
 	VIEW_INVOICES: "view_invoices",
@@ -269,6 +276,13 @@ export const usePermissions = () => {
 			canEditQuotations: hasPermission(ADMIN_PERMISSIONS.EDIT_QUOTATIONS),
 			canDeleteQuotations: hasPermission(ADMIN_PERMISSIONS.DELETE_QUOTATIONS),
 			canCalculateQuotations: hasPermission(ADMIN_PERMISSIONS.CALCULATE_QUOTATIONS),
+
+			// Sales - Contracts
+			canViewContracts: hasPermission(ADMIN_PERMISSIONS.VIEW_CONTRACTS),
+			canCreateContracts: hasPermission(ADMIN_PERMISSIONS.CREATE_CONTRACTS),
+			canEditContracts: hasPermission(ADMIN_PERMISSIONS.EDIT_CONTRACTS),
+			canDeleteContracts: hasPermission(ADMIN_PERMISSIONS.DELETE_CONTRACTS),
+			canSignContracts: hasPermission(ADMIN_PERMISSIONS.SIGN_CONTRACTS),
 
 			// Invoice Management
 			canManageInvoices: hasPermission(ADMIN_PERMISSIONS.MANAGE_INVOICES),

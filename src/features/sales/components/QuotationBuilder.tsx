@@ -43,7 +43,9 @@ const CURRENCY_OPTIONS = [
 const STATUS_OPTIONS = [
 	{ value: QuotationStatus.DRAFT, label: "Draft" },
 	{ value: QuotationStatus.SENT, label: "Sent" },
-	{ value: QuotationStatus.ACCEPTED, label: "Accepted" },
+	{ value: QuotationStatus.VIEWED, label: "Viewed" },
+	{ value: QuotationStatus.NEGOTIATION, label: "Negotiation" },
+	{ value: QuotationStatus.APPROVED, label: "Approved" },
 	{ value: QuotationStatus.REJECTED, label: "Rejected" },
 	{ value: QuotationStatus.EXPIRED, label: "Expired" },
 ];
@@ -99,9 +101,9 @@ export const QuotationBuilder: React.FC<QuotationBuilderProps> = ({ onSuccess, o
 	const updateQuotationMutation = useUpdateQuotation();
 
 	const leadOptions = React.useMemo(() => {
-		if (leadsLoading) return [{ value: "", label: "Loading leads...", disabled: true }];
+		if (leadsLoading) return [{ value: "loading", label: "Loading leads...", disabled: true }];
 		const leads = leadsResponse?.leads || [];
-		if (leads.length === 0) return [{ value: "", label: "No leads available", disabled: true }];
+		if (leads.length === 0) return [{ value: "no-leads", label: "No leads available", disabled: true }];
 		return leads.map((lead) => ({
 			value: lead.leadId.toString(),
 			label: `${lead.name}${lead.company ? ` - ${lead.company}` : ""}`,
@@ -159,7 +161,6 @@ export const QuotationBuilder: React.FC<QuotationBuilderProps> = ({ onSuccess, o
 					hourlyRate: data.hourlyRate,
 					discountPercentage: data.discountPercentage,
 					currency: data.currency,
-					status: data.status,
 				};
 
 				await updateQuotationMutation.mutateAsync({
@@ -175,7 +176,6 @@ export const QuotationBuilder: React.FC<QuotationBuilderProps> = ({ onSuccess, o
 					hourlyRate: data.hourlyRate,
 					discountPercentage: data.discountPercentage,
 					currency: data.currency,
-					status: data.status,
 				};
 
 				const result = await createQuotationMutation.mutateAsync(payload);

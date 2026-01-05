@@ -56,7 +56,7 @@ export const useCalculatePricing = (
 
 	// Create a stable query key that changes only when significant values change
 	const queryKey = useMemo(() => {
-		if (!payload || !isValidPayload) return null;
+		if (!payload || !isValidPayload || !payload.estimations) return null;
 
 		// Round values to avoid excessive API calls for minor changes
 		const roundedPayload: CalculatePricingPayload = {
@@ -66,7 +66,7 @@ export const useCalculatePricing = (
 					Math.round(value * 100) / 100, // Round to 2 decimal places
 				])
 			) as typeof payload.estimations, // Type assertion to maintain Estimations interface
-			hourlyRate: Math.round(payload.hourlyRate * 100) / 100,
+			hourlyRate: Math.round((payload.hourlyRate || 0) * 100) / 100,
 			discountPercentage: Math.round(payload.discountPercentage * 100) / 100,
 		};
 

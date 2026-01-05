@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { FormDialog, FormInput, FormSelect } from "@/components/shared";
 import { createLeadSchema, CreateLeadFormData } from "../schemas/leadSchema";
-import { LeadStatus, Lead } from "../types/lead";
+import { LeadStatus, LeadSource, Lead } from "../types/lead";
 import { useCreateLead, useUpdateLead } from "../hooks/useLeads";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -21,13 +21,13 @@ const STATUS_OPTIONS = [
 ];
 
 const SOURCE_OPTIONS = [
-	{ value: "website", label: "Website" },
-	{ value: "referral", label: "Referral" },
-	{ value: "social_media", label: "Social Media" },
-	{ value: "cold_call", label: "Cold Call" },
-	{ value: "email_campaign", label: "Email Campaign" },
-	{ value: "event", label: "Event" },
-	{ value: "other", label: "Other" },
+	{ value: LeadSource.WEBSITE, label: "Website" },
+	{ value: LeadSource.REFERRAL, label: "Referral" },
+	{ value: LeadSource.LINKEDIN, label: "LinkedIn" },
+	{ value: LeadSource.FACEBOOK, label: "Facebook" },
+	{ value: LeadSource.GOOGLE, label: "Google" },
+	{ value: LeadSource.DIRECT, label: "Direct" },
+	{ value: LeadSource.OTHER, label: "Other" },
 ];
 
 interface LeadFormDialogProps {
@@ -49,7 +49,7 @@ export function LeadFormDialog({ open, onOpenChange, lead, defaultStatus, onSucc
 			name: "",
 			email: "",
 			company: "",
-			source: "",
+			source: undefined,
 			status: defaultStatus || LeadStatus.NEW,
 		},
 	});
@@ -62,7 +62,7 @@ export function LeadFormDialog({ open, onOpenChange, lead, defaultStatus, onSucc
 					name: lead.name,
 					email: lead.email,
 					company: lead.company || "",
-					source: lead.source || "",
+					source: lead.source,
 					status: lead.status,
 				});
 			} else {
@@ -70,7 +70,7 @@ export function LeadFormDialog({ open, onOpenChange, lead, defaultStatus, onSucc
 					name: "",
 					email: "",
 					company: "",
-					source: "",
+					source: undefined,
 					status: defaultStatus || LeadStatus.NEW,
 				});
 			}

@@ -17,7 +17,9 @@ import { usePermissions } from "@/features/admin/hooks/usePermissions";
 const STATUS_OPTIONS = [
 	{ value: QuotationStatus.DRAFT, label: "Draft" },
 	{ value: QuotationStatus.SENT, label: "Sent" },
-	{ value: QuotationStatus.ACCEPTED, label: "Accepted" },
+	{ value: QuotationStatus.VIEWED, label: "Viewed" },
+	{ value: QuotationStatus.NEGOTIATION, label: "Negotiation" },
+	{ value: QuotationStatus.APPROVED, label: "Approved" },
 	{ value: QuotationStatus.REJECTED, label: "Rejected" },
 	{ value: QuotationStatus.EXPIRED, label: "Expired" },
 ];
@@ -58,10 +60,7 @@ export function QuotationsTable({ onAdd, onEdit, onView }: QuotationsTableProps)
 		if (!quotationToDelete) return;
 
 		try {
-			await deleteQuotation.mutateAsync({
-				id: quotationToDelete.quotationId,
-				leadId: quotationToDelete.leadId,
-			});
+			await deleteQuotation.mutateAsync(quotationToDelete.quotationId);
 			toast.success("Quotation deleted successfully");
 			setDeleteDialogOpen(false);
 			setQuotationToDelete(null);

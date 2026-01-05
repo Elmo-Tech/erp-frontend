@@ -16,7 +16,9 @@ interface QuotationsColumnsOptions {
 const STATUS_VARIANTS: Record<QuotationStatus, "default" | "secondary" | "destructive" | "outline"> = {
 	[QuotationStatus.DRAFT]: "secondary",
 	[QuotationStatus.SENT]: "default",
-	[QuotationStatus.ACCEPTED]: "default",
+	[QuotationStatus.VIEWED]: "default",
+	[QuotationStatus.NEGOTIATION]: "outline",
+	[QuotationStatus.APPROVED]: "default",
 	[QuotationStatus.REJECTED]: "destructive",
 	[QuotationStatus.EXPIRED]: "outline",
 };

@@ -15,7 +15,9 @@ const STATUS_OPTIONS = [
 	{ value: "", label: "All Statuses" },
 	{ value: QuotationStatus.DRAFT, label: "Draft" },
 	{ value: QuotationStatus.SENT, label: "Sent" },
-	{ value: QuotationStatus.ACCEPTED, label: "Accepted" },
+	{ value: QuotationStatus.VIEWED, label: "Viewed" },
+	{ value: QuotationStatus.NEGOTIATION, label: "Negotiation" },
+	{ value: QuotationStatus.APPROVED, label: "Approved" },
 	{ value: QuotationStatus.REJECTED, label: "Rejected" },
 	{ value: QuotationStatus.EXPIRED, label: "Expired" },
 ];
@@ -36,10 +38,7 @@ export function QuotationList({ onCreateNew, onView, onEdit }: QuotationListProp
 	const handleDelete = async () => {
 		if (!deleteTarget) return;
 		try {
-			await deleteMutation.mutateAsync({
-				id: deleteTarget.quotationId,
-				leadId: deleteTarget.leadId,
-			});
+			await deleteMutation.mutateAsync(deleteTarget.quotationId);
 			toast.success("Quotation deleted successfully");
 			setDeleteTarget(null);
 		} catch {
