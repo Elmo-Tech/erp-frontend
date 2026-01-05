@@ -161,6 +161,23 @@ export const ADMIN_PERMISSIONS = {
 	VIEW_ALL_INNOVATION_LOGS: "view_all_innovation_logs",
 	VERIFY_INNOVATION_LOGS: "verify_innovation_logs",
 	MANAGE_INNOVATION_LOGS: "manage_innovation_logs",
+
+	// Lead Conversion
+	CONVERT_LEADS: "convert_leads",
+	VIEW_LEAD_CONVERSION_STATUS: "view_lead_conversion_status",
+
+	// Client Portal Access
+	MANAGE_CLIENT_PORTAL_ACCESS: "manage_client_portal_access",
+	CREATE_CLIENT_PORTAL_ACCESS: "create_client_portal_access",
+	REVOKE_CLIENT_PORTAL_ACCESS: "revoke_client_portal_access",
+	RESET_CLIENT_PORTAL_PASSWORD: "reset_client_portal_password",
+
+	// Points System
+	VIEW_POINTS: "view_points",
+	MANAGE_POINTS: "manage_points",
+	AWARD_POINTS: "award_points",
+	DEDUCT_POINTS: "deduct_points",
+	VIEW_POINT_TRANSACTIONS: "view_point_transactions",
 } as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];
@@ -370,6 +387,23 @@ export const usePermissions = () => {
 			canViewAllInnovationLogs: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_INNOVATION_LOGS),
 			canVerifyInnovationLogs: hasPermission(ADMIN_PERMISSIONS.VERIFY_INNOVATION_LOGS),
 			canManageInnovationLogs: hasPermission(ADMIN_PERMISSIONS.MANAGE_INNOVATION_LOGS),
+
+			// Lead Conversion
+			canConvertLeads: hasPermission(ADMIN_PERMISSIONS.CONVERT_LEADS),
+			canViewLeadConversionStatus: hasPermission(ADMIN_PERMISSIONS.VIEW_LEAD_CONVERSION_STATUS),
+
+			// Client Portal Access
+			canManageClientPortalAccess: hasPermission(ADMIN_PERMISSIONS.MANAGE_CLIENT_PORTAL_ACCESS),
+			canCreateClientPortalAccess: hasPermission(ADMIN_PERMISSIONS.CREATE_CLIENT_PORTAL_ACCESS),
+			canRevokeClientPortalAccess: hasPermission(ADMIN_PERMISSIONS.REVOKE_CLIENT_PORTAL_ACCESS),
+			canResetClientPortalPassword: hasPermission(ADMIN_PERMISSIONS.RESET_CLIENT_PORTAL_PASSWORD),
+
+			// Points System
+			canViewPoints: hasPermission(ADMIN_PERMISSIONS.VIEW_POINTS),
+			canManagePoints: hasPermission(ADMIN_PERMISSIONS.MANAGE_POINTS),
+			canAwardPoints: hasPermission(ADMIN_PERMISSIONS.AWARD_POINTS),
+			canDeductPoints: hasPermission(ADMIN_PERMISSIONS.DEDUCT_POINTS),
+			canViewPointTransactions: hasPermission(ADMIN_PERMISSIONS.VIEW_POINT_TRANSACTIONS),
 		}),
 		[hasPermission]
 	);

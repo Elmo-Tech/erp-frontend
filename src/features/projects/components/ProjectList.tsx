@@ -45,9 +45,9 @@ export const ProjectList: React.FC<ProjectListProps> = ({ onProjectClick, onCrea
 
 		const clientMap = new Map();
 		projects.forEach((project) => {
-			if (project.client && !clientMap.has(project.client.userId)) {
-				clientMap.set(project.client.userId, {
-					value: project.client.userId.toString(),
+			if (project.client && !clientMap.has(project.client.clientId)) {
+				clientMap.set(project.client.clientId, {
+					value: project.client.clientId.toString(),
 					label: project.client.name,
 				});
 			}

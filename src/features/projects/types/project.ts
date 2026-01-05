@@ -2,6 +2,14 @@
 export { ProjectStatus, ProjectStatusLabels, ProjectStatusColors, PROJECT_STATUS_TRANSITIONS as STATUS_TRANSITIONS } from "@/lib/statusHelpers";
 import { ProjectStatus } from "@/lib/statusHelpers";
 
+export interface ProjectClient {
+	clientId: number;
+	name: string;
+	email: string;
+	company?: string;
+	phone?: string;
+}
+
 export interface Project {
 	projectId: number;
 	clientId: number;
@@ -15,11 +23,7 @@ export interface Project {
 	uiApprovedAt: string | null;
 	progress?: number;
 	totalTimeSpent?: number;
-	client?: {
-		userId: number;
-		name: string;
-		email: string;
-	};
+	client?: ProjectClient;
 	quotation?: {
 		quotationId: number;
 		finalPrice: number;

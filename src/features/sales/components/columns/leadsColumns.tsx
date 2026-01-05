@@ -1,16 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
 import { LeadStatusBadge, LeadPriorityBadge } from "@/components/shared/StatusBadge";
 import { Lead } from "../../types/lead";
-import { MoreHorizontal, Pencil, Trash2, Eye, Phone, Mail } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Eye, Phone, Mail, UserPlus } from "lucide-react";
 
 interface LeadsColumnsOptions {
 	onView: (lead: Lead) => void;
 	onEdit?: (lead: Lead) => void;
 	onDelete?: (lead: Lead) => void;
+	onConvert?: (lead: Lead) => void;
+	canConvert?: (lead: Lead) => boolean;
 }
 
 const formatDate = (dateString?: string) => {
@@ -31,7 +33,7 @@ const formatCurrency = (amount?: number) => {
 	}).format(amount);
 };
 
-export function getLeadsColumns({ onView, onEdit, onDelete }: LeadsColumnsOptions): Column<Lead>[] {
+export function getLeadsColumns({ onView, onEdit, onDelete, onConvert, canConvert }: LeadsColumnsOptions): Column<Lead>[] {
 	return [
 		{
 			key: "name",
@@ -112,14 +114,26 @@ export function getLeadsColumns({ onView, onEdit, onDelete }: LeadsColumnsOption
 								Edit
 							</DropdownMenuItem>
 						)}
+						{onConvert && canConvert?.(lead) && (
+							<>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem onClick={() => onConvert(lead)}>
+									<UserPlus className="h-4 w-4 mr-2" />
+									Convert to Client
+								</DropdownMenuItem>
+							</>
+						)}
 						{onDelete && (
-							<DropdownMenuItem
-								className="text-destructive"
-								onClick={() => onDelete(lead)}
-							>
-								<Trash2 className="h-4 w-4 mr-2" />
-								Delete
-							</DropdownMenuItem>
+							<>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									className="text-destructive"
+									onClick={() => onDelete(lead)}
+								>
+									<Trash2 className="h-4 w-4 mr-2" />
+									Delete
+								</DropdownMenuItem>
+							</>
 						)}
 					</DropdownMenuContent>
 				</DropdownMenu>

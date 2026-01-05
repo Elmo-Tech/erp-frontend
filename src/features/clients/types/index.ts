@@ -1,3 +1,7 @@
+import { ClientStatus, ClientStatusLabels, ClientStatusColors } from "@/lib/statusHelpers";
+
+export { ClientStatus, ClientStatusLabels, ClientStatusColors };
+
 export interface Client {
 	clientId: number;
 	name: string;
@@ -10,10 +14,19 @@ export interface Client {
 	country: string;
 	website: string;
 	notes: string;
-	status: "active" | "inactive";
+	status: ClientStatus;
 	userId?: number;
+	leadId?: number;
 	projectsCount?: number;
+	totalRevenue?: number;
+	activeProjectsCount?: number;
+	hasPortalAccess?: boolean;
 	projects?: ClientProject[];
+	originalLead?: {
+		leadId: number;
+		name: string;
+		source: string;
+	};
 	createdAt: string;
 	updatedAt: string;
 }
@@ -48,15 +61,36 @@ export interface CreateClientPayload {
 	country?: string;
 	website?: string;
 	notes?: string;
-	status?: "active" | "inactive";
+	status?: ClientStatus;
 }
 
 export interface UpdateClientPayload extends Partial<CreateClientPayload> {}
 
+export interface ConvertLeadToClientPayload {
+	leadId: number;
+	name?: string;
+	email?: string;
+	phone?: string;
+	company?: string;
+	position?: string;
+	address?: string;
+	city?: string;
+	country?: string;
+	website?: string;
+	notes?: string;
+}
+
+export interface CreatePortalAccessPayload {
+	clientId: number;
+	password: string;
+	sendWelcomeEmail?: boolean;
+}
+
 export interface ClientFilters {
 	search?: string;
-	status?: string;
+	status?: ClientStatus;
 	company?: string;
+	hasPortalAccess?: boolean;
 	page?: number;
 	perPage?: number;
 }

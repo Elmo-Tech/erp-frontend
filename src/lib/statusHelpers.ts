@@ -246,6 +246,25 @@ export const MilestoneStatusColors: Record<MilestoneStatus, string> = {
 	[MilestoneStatus.OVERDUE]: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
 };
 
+// ============ Client Status ============
+export enum ClientStatus {
+	ACTIVE = "active",
+	INACTIVE = "inactive",
+	SUSPENDED = "suspended",
+}
+
+export const ClientStatusLabels: Record<ClientStatus, string> = {
+	[ClientStatus.ACTIVE]: "Active",
+	[ClientStatus.INACTIVE]: "Inactive",
+	[ClientStatus.SUSPENDED]: "Suspended",
+};
+
+export const ClientStatusColors: Record<ClientStatus, string> = {
+	[ClientStatus.ACTIVE]: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
+	[ClientStatus.INACTIVE]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[ClientStatus.SUSPENDED]: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
+};
+
 // ============ Helper Functions ============
 export function getStatusLabel<T extends string>(status: T, labels: Record<T, string>): string {
 	return labels[status] || status;

@@ -8,6 +8,7 @@ export { LeadFormDialog } from "./LeadFormDialog";
 export { LeadsTable } from "./LeadsTable";
 export { ContractsTable } from "./ContractsTable";
 export { ContractFormDialog } from "./ContractFormDialog";
+export { ConvertLeadDialog } from "./ConvertLeadDialog";
 
 // Column exports
 export { getLeadsColumns } from "./columns/leadsColumns";

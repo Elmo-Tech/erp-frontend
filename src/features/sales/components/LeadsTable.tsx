@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
 import { useLeads, useDeleteLead } from "../hooks/useLeads";
 import { Lead, LeadStatus, LeadPriority, LeadSource, LeadFilters } from "../types/lead";
 import { getLeadsColumns } from "./columns/leadsColumns";
+import { ConvertLeadDialog } from "./ConvertLeadDialog";
 import { Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
@@ -56,12 +57,14 @@ export function LeadsTable({ onAdd, onEdit, onView }: LeadsTableProps) {
 	});
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+	const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+	const [leadToConvert, setLeadToConvert] = useState<Lead | null>(null);
 
 	const { data, isLoading, error } = useLeads(filters);
 	const deleteLead = useDeleteLead();
 
 	// Permission checks
-	const { canCreateLeads, canEditLeads, canDeleteLeads } = usePermissions();
+	const { canCreateLeads, canEditLeads, canDeleteLeads, canConvertLeads } = usePermissions();
 
 	const handleSearch = (search: string) => {
 		setFilters((prev) => ({ ...prev, search: search || undefined, page: 1 }));
@@ -121,10 +124,22 @@ export function LeadsTable({ onAdd, onEdit, onView }: LeadsTableProps) {
 		setDeleteDialogOpen(true);
 	};
 
+	const openConvertDialog = (lead: Lead) => {
+		setLeadToConvert(lead);
+		setConvertDialogOpen(true);
+	};
+
+	// Check if lead can be converted (not already won/lost/converted)
+	const canConvert = (lead: Lead) => {
+		return canConvertLeads && lead.status !== LeadStatus.WON && lead.status !== LeadStatus.LOST && !lead.clientId;
+	};
+
 	const columns = getLeadsColumns({
 		onView: handleView,
 		onEdit: canEditLeads ? onEdit : undefined,
 		onDelete: canDeleteLeads ? openDeleteDialog : undefined,
+		onConvert: canConvertLeads ? openConvertDialog : undefined,
+		canConvert,
 	});
 
 	return (
@@ -199,6 +214,14 @@ export function LeadsTable({ onAdd, onEdit, onView }: LeadsTableProps) {
 				variant="destructive"
 				isLoading={deleteLead.isPending}
 			/>
+
+			{leadToConvert && (
+				<ConvertLeadDialog
+					open={convertDialogOpen}
+					onOpenChange={setConvertDialogOpen}
+					lead={leadToConvert}
+				/>
+			)}
 		</>
 	);
 }

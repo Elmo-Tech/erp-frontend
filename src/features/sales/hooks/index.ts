@@ -1,6 +1,9 @@
 // Lead hooks
 export { useLeads, useLead, useLeadsKanban, useLeadsFollowUps, useCreateLead, useUpdateLead, useUpdateLeadStatus, useDeleteLead, useLeadActivities, useAddLeadActivity, useLeadMeetings, useScheduleMeeting, useUpdateMeeting } from "./useLeads";
 
+// Lead conversion hooks
+export { useCanConvertLead, useConvertLead } from "./useLeadConversion";
+
 // Quotation hooks
 export { useQuotations, useQuotation, useExpiringQuotations, useOverdueQuotations, useCreateQuotation, useUpdateQuotation, useUpdateQuotationStatus, useSendQuotation, useDeleteQuotation } from "./useQuotations";
 

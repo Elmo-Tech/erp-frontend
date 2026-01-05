@@ -9,12 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useClient } from "../hooks/useClients";
 import { ClientFormDialog } from "./ClientFormDialog";
+import { PortalAccessDialog } from "./PortalAccessDialog";
 import { ProjectFormDialog } from "@/features/projects/components/ProjectFormDialog";
 import { InvoiceFormDialog } from "@/features/invoices/components/InvoiceFormDialog";
 import { useInvoices, useUpdateInvoice } from "@/features/invoices/hooks/useInvoices";
 import { InvoiceStatus } from "@/features/invoices/types";
 import { ProjectStatusBadge, InvoiceStatusBadge } from "@/components/shared/StatusBadge";
-import { User, Building2, Mail, Phone, MapPin, Globe, FileText, Pencil, ArrowLeft, Plus, MoreHorizontal, CheckCircle, XCircle, Send, Clock } from "lucide-react";
+import { User, Building2, Mail, Phone, MapPin, Globe, FileText, Pencil, ArrowLeft, Plus, MoreHorizontal, CheckCircle, XCircle, Send, Clock, Key, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [projectDialogOpen, setProjectDialogOpen] = useState(false);
 	const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+	const [portalAccessDialogOpen, setPortalAccessDialogOpen] = useState(false);
 
 	// Fetch invoices for this client's projects
 	const projectIds = client?.projects?.map((p) => p.projectId) || [];
@@ -92,10 +94,28 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 						<p className="text-muted-foreground">{client.company || "No company"}</p>
 					</div>
 				</div>
-				<Button onClick={() => setEditDialogOpen(true)}>
-					<Pencil className="h-4 w-4 mr-2" />
-					Edit Client
-				</Button>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						onClick={() => setPortalAccessDialogOpen(true)}
+					>
+						{client.hasPortalAccess ? (
+							<>
+								<ShieldCheck className="h-4 w-4 mr-2 text-green-600" />
+								Manage Portal
+							</>
+						) : (
+							<>
+								<Key className="h-4 w-4 mr-2" />
+								Create Portal Access
+							</>
+						)}
+					</Button>
+					<Button onClick={() => setEditDialogOpen(true)}>
+						<Pencil className="h-4 w-4 mr-2" />
+						Edit Client
+					</Button>
+				</div>
 			</div>
 
 			{/* Tabs */}
@@ -338,6 +358,12 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 				onOpenChange={setInvoiceDialogOpen}
 				clientId={clientId}
 				projects={projects.map((p) => ({ projectId: p.projectId, title: p.title }))}
+			/>
+
+			<PortalAccessDialog
+				open={portalAccessDialogOpen}
+				onOpenChange={setPortalAccessDialogOpen}
+				client={client}
 			/>
 		</div>
 	);

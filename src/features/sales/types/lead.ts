@@ -37,6 +37,18 @@ export interface Lead {
 	notes?: string;
 	lossReason?: string;
 	status: LeadStatus;
+	// Conversion fields
+	clientId?: number;
+	convertedAt?: string;
+	convertedBy?: number;
+	convertedByName?: string;
+	isConverted?: boolean;
+	client?: {
+		clientId: number;
+		name: string;
+		company?: string;
+	};
+	// Counts
 	activitiesCount?: number;
 	meetingsCount?: number;
 	quotationsCount?: number;

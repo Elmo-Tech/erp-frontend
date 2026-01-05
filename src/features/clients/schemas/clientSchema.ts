@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ClientStatus } from "@/lib/statusHelpers";
 
 export const clientSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -11,7 +12,7 @@ export const clientSchema = z.object({
 	country: z.string().optional(),
 	website: z.string().url("Invalid URL").optional().or(z.literal("")),
 	notes: z.string().optional(),
-	status: z.enum(["active", "inactive"]),
+	status: z.nativeEnum(ClientStatus),
 });
 
 export type ClientFormData = z.infer<typeof clientSchema>;

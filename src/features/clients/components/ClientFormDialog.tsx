@@ -9,7 +9,7 @@ import { FormInput } from "@/components/shared/forms/FormInput";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { useCreateClient, useUpdateClient } from "../hooks/useClients";
-import { Client } from "../types";
+import { Client, ClientStatus, ClientStatusLabels } from "../types";
 import { clientSchema, ClientFormData } from "../schemas/clientSchema";
 import { toast } from "sonner";
 
@@ -37,7 +37,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
 			country: "",
 			website: "",
 			notes: "",
-			status: "active",
+			status: ClientStatus.ACTIVE,
 		},
 	});
 
@@ -68,7 +68,7 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
 				country: "",
 				website: "",
 				notes: "",
-				status: "active",
+				status: ClientStatus.ACTIVE,
 			});
 		}
 	}, [client, form]);
@@ -90,10 +90,10 @@ export function ClientFormDialog({ open, onOpenChange, client }: ClientFormDialo
 
 	const isLoading = createClient.isPending || updateClient.isPending;
 
-	const statusOptions = [
-		{ value: "active", label: "Active" },
-		{ value: "inactive", label: "Inactive" },
-	];
+	const statusOptions = Object.values(ClientStatus).map((status) => ({
+		value: status,
+		label: ClientStatusLabels[status],
+	}));
 
 	return (
 		<FormDialog
