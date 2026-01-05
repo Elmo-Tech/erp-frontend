@@ -146,6 +146,24 @@ export const ADMIN_PERMISSIONS = {
 	// Tags
 	MANAGE_TAGS: "manage_tags",
 	VIEW_TAGS: "view_tags",
+
+	// Performance Evaluations
+	VIEW_EVALUATIONS: "view_evaluations",
+	CREATE_EVALUATIONS: "create_evaluations",
+	EDIT_EVALUATIONS: "edit_evaluations",
+	APPROVE_EVALUATIONS: "approve_evaluations",
+	VIEW_ALL_EVALUATIONS: "view_all_evaluations",
+	VIEW_BONUSES: "view_bonuses",
+
+	// Code Reviews
+	VIEW_CODE_REVIEWS: "view_code_reviews",
+	CREATE_CODE_REVIEWS: "create_code_reviews",
+	APPROVE_CODE_REVIEWS: "approve_code_reviews",
+
+	// Innovation Logs
+	VIEW_INNOVATION_LOGS: "view_innovation_logs",
+	CREATE_INNOVATION_LOGS: "create_innovation_logs",
+	VERIFY_INNOVATION_LOGS: "verify_innovation_logs",
 } as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];
@@ -337,6 +355,24 @@ export const usePermissions = () => {
 			// Tags
 			canManageTags: hasPermission(ADMIN_PERMISSIONS.MANAGE_TAGS),
 			canViewTags: hasPermission(ADMIN_PERMISSIONS.VIEW_TAGS),
+
+			// Performance Evaluations
+			canViewEvaluations: hasPermission(ADMIN_PERMISSIONS.VIEW_EVALUATIONS),
+			canCreateEvaluations: hasPermission(ADMIN_PERMISSIONS.CREATE_EVALUATIONS),
+			canEditEvaluations: hasPermission(ADMIN_PERMISSIONS.EDIT_EVALUATIONS),
+			canApproveEvaluations: hasPermission(ADMIN_PERMISSIONS.APPROVE_EVALUATIONS),
+			canViewAllEvaluations: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_EVALUATIONS),
+			canViewBonuses: hasPermission(ADMIN_PERMISSIONS.VIEW_BONUSES),
+
+			// Code Reviews
+			canViewCodeReviews: hasPermission(ADMIN_PERMISSIONS.VIEW_CODE_REVIEWS),
+			canCreateCodeReviews: hasPermission(ADMIN_PERMISSIONS.CREATE_CODE_REVIEWS),
+			canApproveCodeReviews: hasPermission(ADMIN_PERMISSIONS.APPROVE_CODE_REVIEWS),
+
+			// Innovation Logs
+			canViewInnovationLogs: hasPermission(ADMIN_PERMISSIONS.VIEW_INNOVATION_LOGS),
+			canCreateInnovationLogs: hasPermission(ADMIN_PERMISSIONS.CREATE_INNOVATION_LOGS),
+			canVerifyInnovationLogs: hasPermission(ADMIN_PERMISSIONS.VERIFY_INNOVATION_LOGS),
 		}),
 		[hasPermission]
 	);
