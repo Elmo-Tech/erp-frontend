@@ -1,9 +1,8 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Column } from "@/components/shared/data-display/DataTable";
+import { ProjectStatusBadge } from "@/components/shared/StatusBadge";
 import { Project } from "../../types/project";
-import { getStatusLabel, getStatusColor } from "../../helpers/statusHelpers";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 
 export function getProjectsColumns(): Column<Project>[] {
@@ -34,7 +33,7 @@ export function getProjectsColumns(): Column<Project>[] {
 		{
 			key: "status",
 			header: "Status",
-			render: (project) => <Badge className={getStatusColor(project.status)}>{getStatusLabel(project.status)}</Badge>,
+			render: (project) => <ProjectStatusBadge status={project.status} />,
 		},
 		{
 			key: "budget",

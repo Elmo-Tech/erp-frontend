@@ -56,7 +56,9 @@ export function FormDatePicker<T extends FieldValues>({ control, name, label, pl
 									if (maxDate && date > maxDate) return true;
 									return false;
 								}}
-								initialFocus
+								className="rounded-md border shadow-sm"
+								captionLayout="dropdown"
+								autoFocus
 							/>
 						</PopoverContent>
 					</Popover>

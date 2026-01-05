@@ -1,10 +1,10 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
-import { Lead, LeadStatus, LeadPriority } from "../../types/lead";
+import { LeadStatusBadge, LeadPriorityBadge } from "@/components/shared/StatusBadge";
+import { Lead } from "../../types/lead";
 import { MoreHorizontal, Pencil, Trash2, Eye, Phone, Mail } from "lucide-react";
 
 interface LeadsColumnsOptions {
@@ -12,33 +12,6 @@ interface LeadsColumnsOptions {
 	onEdit?: (lead: Lead) => void;
 	onDelete?: (lead: Lead) => void;
 }
-
-const STATUS_VARIANTS: Record<LeadStatus, "default" | "secondary" | "destructive" | "outline"> = {
-	[LeadStatus.NEW]: "secondary",
-	[LeadStatus.CONTACTED]: "default",
-	[LeadStatus.QUALIFIED]: "default",
-	[LeadStatus.PROPOSAL]: "default",
-	[LeadStatus.NEGOTIATION]: "default",
-	[LeadStatus.WON]: "default",
-	[LeadStatus.LOST]: "destructive",
-};
-
-const STATUS_COLORS: Record<LeadStatus, string> = {
-	[LeadStatus.NEW]: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-	[LeadStatus.CONTACTED]: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-	[LeadStatus.QUALIFIED]: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300",
-	[LeadStatus.PROPOSAL]: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-	[LeadStatus.NEGOTIATION]: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300",
-	[LeadStatus.WON]: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-	[LeadStatus.LOST]: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-};
-
-const PRIORITY_COLORS: Record<LeadPriority, string> = {
-	[LeadPriority.LOW]: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-	[LeadPriority.MEDIUM]: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-	[LeadPriority.HIGH]: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-	[LeadPriority.URGENT]: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-};
 
 const formatDate = (dateString?: string) => {
 	if (!dateString) return "-";
@@ -91,26 +64,12 @@ export function getLeadsColumns({ onView, onEdit, onDelete }: LeadsColumnsOption
 		{
 			key: "status",
 			header: "Status",
-			render: (lead) => (
-				<Badge
-					className={STATUS_COLORS[lead.status]}
-					variant={STATUS_VARIANTS[lead.status]}
-				>
-					{lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-				</Badge>
-			),
+			render: (lead) => <LeadStatusBadge status={lead.status} />,
 		},
 		{
 			key: "priority",
 			header: "Priority",
-			render: (lead) => (
-				<Badge
-					className={PRIORITY_COLORS[lead.priority]}
-					variant="outline"
-				>
-					{lead.priority.charAt(0).toUpperCase() + lead.priority.slice(1)}
-				</Badge>
-			),
+			render: (lead) => <LeadPriorityBadge priority={lead.priority} />,
 		},
 		{
 			key: "expectedBudget",

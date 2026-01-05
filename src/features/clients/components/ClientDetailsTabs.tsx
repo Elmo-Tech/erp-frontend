@@ -13,6 +13,7 @@ import { ProjectFormDialog } from "@/features/projects/components/ProjectFormDia
 import { InvoiceFormDialog } from "@/features/invoices/components/InvoiceFormDialog";
 import { useInvoices, useUpdateInvoice } from "@/features/invoices/hooks/useInvoices";
 import { InvoiceStatus } from "@/features/invoices/types";
+import { ProjectStatusBadge, InvoiceStatusBadge } from "@/components/shared/StatusBadge";
 import { User, Building2, Mail, Phone, MapPin, Globe, FileText, Pencil, ArrowLeft, Plus, MoreHorizontal, CheckCircle, XCircle, Send, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -43,23 +44,6 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 			toast.success(`Invoice marked as ${status}`);
 		} catch {
 			toast.error("Failed to update invoice status");
-		}
-	};
-
-	const getStatusBadgeVariant = (status: InvoiceStatus) => {
-		switch (status) {
-			case InvoiceStatus.PAID:
-				return "default";
-			case InvoiceStatus.OVERDUE:
-				return "destructive";
-			case InvoiceStatus.SENT:
-				return "secondary";
-			case InvoiceStatus.DRAFT:
-				return "outline";
-			case InvoiceStatus.CANCELLED:
-				return "destructive";
-			default:
-				return "secondary";
 		}
 	};
 
@@ -230,7 +214,7 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 													{project.deadline && ` • Due: ${project.deadline}`}
 												</p>
 											</div>
-											<Badge>{project.status}</Badge>
+											<ProjectStatusBadge status={project.status} />
 										</Link>
 									))}
 								</div>
@@ -275,7 +259,7 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 												<span className="font-medium">
 													{invoice.currency} {Number(invoice.amount).toLocaleString()}
 												</span>
-												<Badge variant={getStatusBadgeVariant(invoice.status)}>{invoice.status}</Badge>
+												<InvoiceStatusBadge status={invoice.status} />
 												<DropdownMenu>
 													<DropdownMenuTrigger asChild>
 														<Button

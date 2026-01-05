@@ -17,7 +17,8 @@ export * from "./data-display/DataTable";
 export * from "./data-display/EmptyState";
 export * from "./data-display/LoadingState";
 export * from "./data-display/Pagination";
-export * from "./data-display/StatusBadge";
+export { StatusBadge, getStatusVariant, getBonusTierVariant, getImpactVariant, getCategoryVariant } from "./data-display/StatusBadge";
+export type { StatusVariant } from "./data-display/StatusBadge";
 
 // Dialog Components
 export * from "./dialogs/ConfirmDialog";

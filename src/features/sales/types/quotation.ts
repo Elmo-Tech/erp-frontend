@@ -1,12 +1,6 @@
-export enum QuotationStatus {
-	DRAFT = "draft",
-	SENT = "sent",
-	VIEWED = "viewed",
-	EXPIRED = "expired",
-	NEGOTIATION = "negotiation",
-	APPROVED = "approved",
-	REJECTED = "rejected",
-}
+// Re-export enums from centralized statusHelpers
+export { QuotationStatus, QuotationStatusLabels, QuotationStatusColors } from "@/lib/statusHelpers";
+import { QuotationStatus } from "@/lib/statusHelpers";
 
 export enum CommissionType {
 	MARKUP = "markup",

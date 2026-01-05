@@ -2,12 +2,12 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { ProjectStatus } from "../types/project";
-import { getStatusLabel, getStatusColor, getStatusIcon } from "../helpers/statusHelpers";
+import { ProjectStatus, ProjectStatusLabels, ProjectStatusColors } from "@/lib/statusHelpers";
 import { FileText, PlayCircle, Palette, Code, Bug, CheckCircle, PauseCircle, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ProjectStatusBadgeProps {
-	status: ProjectStatus;
+	status: ProjectStatus | string;
 	showIcon?: boolean;
 	size?: "sm" | "md" | "lg";
 	className?: string;
@@ -25,41 +25,33 @@ const STATUS_ICONS = {
 	[ProjectStatus.CANCELLED]: XCircle,
 };
 
+const SIZE_CLASSES = {
+	sm: "text-xs px-2 py-0.5",
+	md: "text-xs px-2.5 py-0.5",
+	lg: "text-sm px-3 py-1",
+};
+
+const ICON_SIZES = {
+	sm: "h-3 w-3",
+	md: "h-3.5 w-3.5",
+	lg: "h-4 w-4",
+};
+
 /**
  * ProjectStatusBadge component for displaying project status with appropriate styling
- * Requirements: 14.2 - Display status with appropriate color using getStatusColor helper
  */
 export const ProjectStatusBadge: React.FC<ProjectStatusBadgeProps> = ({ status, showIcon = false, size = "md", className = "" }) => {
-	const IconComponent = STATUS_ICONS[status];
-
-	// Size-based styling
-	const sizeClasses = {
-		sm: "text-xs px-2 py-1",
-		md: "text-sm px-2.5 py-1",
-		lg: "text-base px-3 py-1.5",
-	};
-
-	const iconSizes = {
-		sm: "h-3 w-3",
-		md: "h-4 w-4",
-		lg: "h-5 w-5",
-	};
+	const IconComponent = STATUS_ICONS[status as ProjectStatus];
+	const label = ProjectStatusLabels[status as ProjectStatus] || status;
+	const colorClass = ProjectStatusColors[status as ProjectStatus] || "bg-gray-100 text-gray-800 border-gray-200";
 
 	return (
 		<Badge
-			className={`
-				${getStatusColor(status)} 
-				${sizeClasses[size]} 
-				font-medium 
-				border 
-				inline-flex 
-				items-center 
-				gap-1.5
-				${className}
-			`}
+			variant="outline"
+			className={cn(colorClass, SIZE_CLASSES[size], "font-medium border inline-flex items-center gap-1.5", className)}
 		>
-			{showIcon && IconComponent && <IconComponent className={iconSizes[size]} />}
-			{getStatusLabel(status)}
+			{showIcon && IconComponent && <IconComponent className={ICON_SIZES[size]} />}
+			{label}
 		</Badge>
 	);
 };

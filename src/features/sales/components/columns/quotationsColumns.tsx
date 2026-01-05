@@ -1,10 +1,10 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
-import { Quotation, QuotationStatus } from "../../types/quotation";
+import { QuotationStatusBadge } from "@/components/shared/StatusBadge";
+import { Quotation } from "../../types/quotation";
 import { MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
 
 interface QuotationsColumnsOptions {
@@ -12,16 +12,6 @@ interface QuotationsColumnsOptions {
 	onEdit?: (quotation: Quotation) => void;
 	onDelete?: (quotation: Quotation) => void;
 }
-
-const STATUS_VARIANTS: Record<QuotationStatus, "default" | "secondary" | "destructive" | "outline"> = {
-	[QuotationStatus.DRAFT]: "secondary",
-	[QuotationStatus.SENT]: "default",
-	[QuotationStatus.VIEWED]: "default",
-	[QuotationStatus.NEGOTIATION]: "outline",
-	[QuotationStatus.APPROVED]: "default",
-	[QuotationStatus.REJECTED]: "destructive",
-	[QuotationStatus.EXPIRED]: "outline",
-};
 
 const formatCurrency = (amount: number, currency: string) => {
 	return new Intl.NumberFormat("en-US", {
@@ -68,7 +58,7 @@ export function getQuotationsColumns({ onView, onEdit, onDelete }: QuotationsCol
 		{
 			key: "status",
 			header: "Status",
-			render: (item) => <Badge variant={STATUS_VARIANTS[item.status]}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</Badge>,
+			render: (item) => <QuotationStatusBadge status={item.status} />,
 		},
 		{
 			key: "createdAt",

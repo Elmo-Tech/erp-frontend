@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/shared/forms/DatePicker";
 import { useEvaluationPeriods, useCreateEvaluationPeriod, useActivateEvaluationPeriod } from "../hooks";
 import type { EvaluationPeriod } from "../types";
 import { getEvaluationPeriodsColumns } from "./columns/evaluationPeriodsColumns";
@@ -130,20 +131,18 @@ export function EvaluationPeriodsTable() {
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">
 								<Label htmlFor="startDate">Start Date</Label>
-								<Input
-									id="startDate"
-									type="date"
+								<DatePicker
 									value={newPeriod.startDate}
-									onChange={(e) => setNewPeriod((prev) => ({ ...prev, startDate: e.target.value }))}
+									onChange={(value) => setNewPeriod((prev) => ({ ...prev, startDate: value }))}
+									placeholder="Select start date"
 								/>
 							</div>
 							<div className="space-y-2">
 								<Label htmlFor="endDate">End Date</Label>
-								<Input
-									id="endDate"
-									type="date"
+								<DatePicker
 									value={newPeriod.endDate}
-									onChange={(e) => setNewPeriod((prev) => ({ ...prev, endDate: e.target.value }))}
+									onChange={(value) => setNewPeriod((prev) => ({ ...prev, endDate: value }))}
+									placeholder="Select end date"
 								/>
 							</div>
 						</div>

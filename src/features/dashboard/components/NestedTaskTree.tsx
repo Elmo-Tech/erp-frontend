@@ -12,7 +12,8 @@ import { ChevronRightIcon, ChevronDownIcon, ClockIcon, UserIcon } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Task, TaskStatus, TaskStatusLabels, TaskStatusColors, TaskChildrenResponse } from "../types/task";
+import { Task, TaskChildrenResponse } from "../types/task";
+import { TaskStatus, TaskStatusLabels, TaskStatusColors } from "@/lib/statusHelpers";
 import { useTaskTree, useTaskChildren } from "../hooks/useTaskTree";
 import { useTimerStore } from "@/store/timerStore";
 

@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
 import { FormInput } from "@/components/shared/forms/FormInput";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { useCreateInnovationLog } from "../hooks";
 import { innovationLogSchema, InnovationLogFormData } from "../schemas/innovationLogSchema";
-import { Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+
+interface InnovationLogFormProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+}
 
 const categoryOptions = [
 	{ value: "ai_tool", label: "AI Tool" },
@@ -28,8 +29,7 @@ const impactOptions = [
 	{ value: "high", label: "High" },
 ];
 
-export function InnovationLogForm() {
-	const [open, setOpen] = useState(false);
+export function InnovationLogForm({ open, onOpenChange }: InnovationLogFormProps) {
 	const createMutation = useCreateInnovationLog();
 
 	const form = useForm<InnovationLogFormData>({
@@ -52,122 +52,102 @@ export function InnovationLogForm() {
 				description: data.description,
 				impactDescription: data.impactDescription || undefined,
 				impactLevel: data.impactLevel,
-				timeSavedMinutes: typeof data.timeSavedMinutes === "number" ? data.timeSavedMinutes : undefined,
+				timeSavedMinutes: data.timeSavedMinutes ? parseInt(data.timeSavedMinutes, 10) : undefined,
 			});
 			toast.success("Innovation logged successfully");
 			form.reset();
-			setOpen(false);
+			onOpenChange(false);
 		} catch {
 			toast.error("Failed to log innovation");
 		}
 	};
 
-	const handleOpenChange = (isOpen: boolean) => {
-		setOpen(isOpen);
-		if (!isOpen) {
-			form.reset();
-		}
-	};
+	const isLoading = createMutation.isPending;
 
 	return (
-		<Dialog
+		<FormDialog
 			open={open}
-			onOpenChange={handleOpenChange}
+			onOpenChange={onOpenChange}
+			title="Log New Innovation"
+			description="Record your use of AI tools or new technologies that helped improve your work"
+			submitLabel="Save"
+			isLoading={isLoading}
+			onSubmit={form.handleSubmit(onSubmit)}
+			showFooter={false}
+			size="md"
 		>
-			<DialogTrigger asChild>
-				<Button>
-					<Plus className="mr-2 h-4 w-4" />
-					Log Innovation
-				</Button>
-			</DialogTrigger>
+			<Form {...form}>
+				<form
+					onSubmit={form.handleSubmit(onSubmit)}
+					className="space-y-4"
+				>
+					<FormInput
+						control={form.control}
+						name="toolName"
+						label="Tool/Technology Name"
+						placeholder="e.g., GitHub Copilot"
+					/>
 
-			<FormDialog
-				open={open}
-				onOpenChange={handleOpenChange}
-				title="Log New Innovation"
-				description="Record your use of AI tools or new technologies that helped improve your work"
-				showFooter={false}
-				size="md"
-			>
-				<div className="flex items-center gap-2 mb-4">
-					<Sparkles className="h-5 w-5 text-yellow-500" />
-					<span className="text-sm text-muted-foreground">Track your innovation contributions</span>
-				</div>
+					<FormSelect
+						control={form.control}
+						name="category"
+						label="Category"
+						placeholder="Select category"
+						options={categoryOptions}
+					/>
 
-				<Form {...form}>
-					<form
-						onSubmit={form.handleSubmit(onSubmit)}
-						className="space-y-4"
-					>
-						<FormInput
-							control={form.control}
-							name="toolName"
-							label="Tool/Technology Name"
-							placeholder="e.g., GitHub Copilot"
-						/>
+					<FormTextarea
+						control={form.control}
+						name="description"
+						label="Description"
+						placeholder="Explain how you used this tool/technology"
+						rows={3}
+					/>
 
+					<FormTextarea
+						control={form.control}
+						name="impactDescription"
+						label="Impact (Optional)"
+						placeholder="How did it help improve your work?"
+						rows={2}
+					/>
+
+					<div className="grid grid-cols-2 gap-4">
 						<FormSelect
 							control={form.control}
-							name="category"
-							label="Category"
-							placeholder="Select category"
-							options={categoryOptions}
+							name="impactLevel"
+							label="Impact Level"
+							options={impactOptions}
 						/>
 
-						<FormTextarea
+						<FormInput
 							control={form.control}
-							name="description"
-							label="Description"
-							placeholder="Explain how you used this tool/technology"
-							rows={3}
+							name="timeSavedMinutes"
+							label="Time Saved (minutes)"
+							placeholder="0"
+							description="Approximate estimate"
 						/>
+					</div>
 
-						<FormTextarea
-							control={form.control}
-							name="impactDescription"
-							label="Impact (Optional)"
-							placeholder="How did it help improve your work?"
-							rows={2}
-						/>
-
-						<div className="grid grid-cols-2 gap-4">
-							<FormSelect
-								control={form.control}
-								name="impactLevel"
-								label="Impact Level"
-								options={impactOptions}
-							/>
-
-							<FormInput
-								control={form.control}
-								name="timeSavedMinutes"
-								label="Time Saved (minutes)"
-								type="number"
-								min={0}
-								placeholder="0"
-								description="Approximate estimate"
-							/>
-						</div>
-
-						<div className="flex justify-end gap-2 pt-4">
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => handleOpenChange(false)}
-								disabled={createMutation.isPending}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={createMutation.isPending}
-							>
-								{createMutation.isPending ? "Saving..." : "Save"}
-							</Button>
-						</div>
-					</form>
-				</Form>
-			</FormDialog>
-		</Dialog>
+					<div className="flex justify-end gap-2 pt-4">
+						<button
+							type="button"
+							className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+							onClick={() => onOpenChange(false)}
+							disabled={isLoading}
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+							disabled={isLoading}
+						>
+							{isLoading ? "Saving..." : "Save"}
+						</button>
+					</div>
+				</form>
+			</Form>
+		</FormDialog>
 	);
 }

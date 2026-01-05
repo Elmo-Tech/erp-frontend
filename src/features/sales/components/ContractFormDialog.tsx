@@ -12,7 +12,6 @@ import { FormInput } from "@/components/shared/forms/FormInput";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { createContractSchema } from "../schemas/contractSchema";
-import { CreateContractPayload } from "../types/contract";
 import { Contract, MilestoneTriggerType } from "../types/contract";
 import { useCreateContract, useUpdateContract } from "../hooks/useContracts";
 import { useQuotations } from "../hooks/useQuotations";
@@ -47,13 +46,13 @@ export function ContractFormDialog({ open, onOpenChange, contract, quotationId, 
 	const createMutation = useCreateContract();
 	const updateMutation = useUpdateContract();
 
-	// Fetch quotations for dropdown
+	// Fetch quotations for dropdown - filter approved ones
 	const { data: quotationsData } = useQuotations();
 
 	const form = useForm({
 		resolver: zodResolver(createContractSchema),
 		defaultValues: {
-			quotationId: quotationId,
+			quotationId: quotationId?.toString() || "",
 			title: "",
 			content: "",
 			partyOne: {
@@ -88,14 +87,25 @@ export function ContractFormDialog({ open, onOpenChange, contract, quotationId, 
 		name: "milestones",
 	});
 
+	// Watch quotationId to auto-fill price and currency
+	const selectedQuotationId = form.watch("quotationId");
+
+	useEffect(() => {
+		if (selectedQuotationId && quotationsData?.quotations) {
+			const selectedQuotation = quotationsData.quotations.find((q) => q.quotationId.toString() === selectedQuotationId);
+			if (selectedQuotation) {
+				form.setValue("totalAmount", selectedQuotation.finalPrice);
+				form.setValue("currency", selectedQuotation.currency);
+			}
+		}
+	}, [selectedQuotationId, quotationsData, form]);
+
 	// Reset form when dialog opens/closes
 	useEffect(() => {
 		if (open) {
 			if (contract) {
 				form.reset({
-					quotationId: contract.quotationId,
-					projectId: contract.projectId,
-					templateId: contract.templateId,
+					quotationId: contract.quotationId?.toString() || "",
 					title: contract.title,
 					content: contract.content,
 					partyOne: contract.partyOne,
@@ -108,8 +118,20 @@ export function ContractFormDialog({ open, onOpenChange, contract, quotationId, 
 					milestones: contract.milestones || [],
 				});
 			} else {
+				const initialQuotationId = quotationId?.toString() || "";
+				let initialAmount = 0;
+				let initialCurrency = "USD";
+
+				if (initialQuotationId && quotationsData?.quotations) {
+					const selectedQuotation = quotationsData.quotations.find((q) => q.quotationId.toString() === initialQuotationId);
+					if (selectedQuotation) {
+						initialAmount = selectedQuotation.finalPrice;
+						initialCurrency = selectedQuotation.currency;
+					}
+				}
+
 				form.reset({
-					quotationId: quotationId || undefined,
+					quotationId: initialQuotationId,
 					title: "",
 					content: "",
 					partyOne: {
@@ -126,8 +148,8 @@ export function ContractFormDialog({ open, onOpenChange, contract, quotationId, 
 						address: "",
 						idNumber: "",
 					},
-					totalAmount: 0,
-					currency: "USD",
+					totalAmount: initialAmount,
+					currency: initialCurrency,
 					paymentTerms: "",
 					startDate: "",
 					endDate: "",
@@ -135,18 +157,25 @@ export function ContractFormDialog({ open, onOpenChange, contract, quotationId, 
 				});
 			}
 		}
-	}, [open, contract, quotationId, form]);
+	}, [open, contract, quotationId, form, quotationsData]);
 
-	const onSubmit = async (data: CreateContractPayload) => {
+	const onSubmit = async (data: unknown) => {
 		try {
+			// Convert quotationId from string to number for API
+			const formData = data as Record<string, unknown>;
+			const payload = {
+				...formData,
+				quotationId: formData.quotationId ? parseInt(formData.quotationId as string, 10) : undefined,
+			};
+
 			if (isEditing && contract) {
 				await updateMutation.mutateAsync({
 					id: contract.contractId,
-					payload: data,
+					payload: payload as Parameters<typeof updateMutation.mutateAsync>[0]["payload"],
 				});
 				toast.success("Contract updated successfully");
 			} else {
-				await createMutation.mutateAsync(data);
+				await createMutation.mutateAsync(payload as Parameters<typeof createMutation.mutateAsync>[0]);
 				toast.success("Contract created successfully");
 			}
 			onOpenChange(false);
@@ -170,10 +199,12 @@ export function ContractFormDialog({ open, onOpenChange, contract, quotationId, 
 	const isLoading = createMutation.isPending || updateMutation.isPending;
 
 	const quotationOptions =
-		quotationsData?.quotations?.map((q) => ({
-			value: q.quotationId.toString(),
-			label: `#${q.quotationId} - ${q.leadId}`,
-		})) || [];
+		quotationsData?.quotations
+			?.filter((q) => q.status === "approved")
+			?.map((q) => ({
+				value: q.quotationId.toString(),
+				label: `#${q.quotationId} - ${q.lead?.company || q.lead?.name || "Unknown"} (${q.currency} ${q.finalPrice.toLocaleString()})`,
+			})) || [];
 
 	return (
 		<FormDialog

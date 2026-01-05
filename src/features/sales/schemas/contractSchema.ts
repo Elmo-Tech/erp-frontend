@@ -21,14 +21,14 @@ export const contractMilestoneSchema = z.object({
 });
 
 export const createContractSchema = z.object({
-	quotationId: z.number().optional(),
+	quotationId: z.string().optional(),
 	projectId: z.number().optional(),
 	templateId: z.number().optional(),
 	title: z.string().min(1, "Contract title is required").max(255, "Title must be less than 255 characters"),
 	content: z.string().min(1, "Contract content is required"),
 	partyOne: contractPartySchema,
 	partyTwo: contractPartySchema,
-	totalAmount: z.number().min(0, "Total amount must be positive"),
+	totalAmount: z.coerce.number().min(0, "Total amount must be positive"),
 	currency: z.string().min(3, "Currency must be 3 characters").max(3, "Currency must be 3 characters").default("USD"),
 	paymentTerms: z.string().max(1000, "Payment terms must be less than 1000 characters").optional(),
 	startDate: z.string().min(1, "Start date is required"),

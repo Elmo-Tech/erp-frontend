@@ -1,32 +1,29 @@
 /**
  * TaskStatusBadge Component
  * Displays task status with appropriate color coding
- *
- * Requirements: 13.4
  */
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { TaskStatus, TaskStatusLabels, TaskStatusColors } from "../types/task";
+import { TaskStatus, TaskStatusLabels, TaskStatusColors } from "@/lib/statusHelpers";
 import { cn } from "@/lib/utils";
 
 interface TaskStatusBadgeProps {
-	status: TaskStatus;
+	status: TaskStatus | string;
 	className?: string;
 }
 
 /**
  * TaskStatusBadge component for displaying task status with color coding
- * Requirement 13.4: Display status with appropriate color coding
  */
 export const TaskStatusBadge: React.FC<TaskStatusBadgeProps> = ({ status, className }) => {
-	const statusLabel = TaskStatusLabels[status];
-	const statusColor = TaskStatusColors[status];
+	const statusLabel = TaskStatusLabels[status as TaskStatus] || status;
+	const statusColor = TaskStatusColors[status as TaskStatus] || "bg-gray-100 text-gray-800";
 
 	return (
 		<Badge
-			variant="secondary"
-			className={cn(statusColor, className)}
+			variant="outline"
+			className={cn(statusColor, "border font-medium", className)}
 		>
 			{statusLabel}
 		</Badge>

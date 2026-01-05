@@ -4,10 +4,10 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { GripVertical, Mail, Building2, MapPin, Calendar } from "lucide-react";
-import { Lead, LeadStatus } from "../types/lead";
+import { Lead } from "../types/lead";
+import { LeadStatusBadge } from "@/components/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 
 interface LeadCardProps {
@@ -16,17 +16,6 @@ interface LeadCardProps {
 	isDragging?: boolean;
 	className?: string;
 }
-
-// Status color mapping
-const STATUS_COLORS: Record<LeadStatus, string> = {
-	[LeadStatus.NEW]: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-	[LeadStatus.CONTACTED]: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-	[LeadStatus.QUALIFIED]: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-	[LeadStatus.PROPOSAL]: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-	[LeadStatus.NEGOTIATION]: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300",
-	[LeadStatus.WON]: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-	[LeadStatus.LOST]: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-};
 
 export const LeadCard: React.FC<LeadCardProps> = ({ lead, onClick, isDragging = false, className = "" }) => {
 	const {
@@ -112,12 +101,10 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onClick, isDragging = 
 
 					{/* Footer: Status & Date */}
 					<div className="flex items-center justify-between pt-2 border-t">
-						<Badge
-							variant="secondary"
-							className={cn("text-xs font-medium", STATUS_COLORS[lead.status])}
-						>
-							{lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-						</Badge>
+						<LeadStatusBadge
+							status={lead.status}
+							size="sm"
+						/>
 						<div className="flex items-center gap-1.5 text-muted-foreground">
 							<Calendar className="h-3.5 w-3.5" />
 							<span className="text-xs">{formatDate(lead.createdAt)}</span>

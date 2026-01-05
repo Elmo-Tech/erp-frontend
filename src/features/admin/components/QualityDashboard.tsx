@@ -12,11 +12,11 @@ import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DatePicker } from "@/components/shared/forms/DatePicker";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, AlertTriangle, CheckCircle, Filter, ExternalLink, Calendar, Users, Target } from "lucide-react";
 import { useQualityMetrics } from "../hooks/useAdminStats";
@@ -49,12 +49,10 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ dateFrom, dateTo, onD
 				>
 					From
 				</Label>
-				<Input
-					id="dateFrom"
-					type="date"
+				<DatePicker
 					value={dateFrom || ""}
-					onChange={(e) => onDateFromChange(e.target.value)}
-					className="text-sm"
+					onChange={onDateFromChange}
+					placeholder="Select date"
 				/>
 			</div>
 			<div className="flex-1">
@@ -64,12 +62,10 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({ dateFrom, dateTo, onD
 				>
 					To
 				</Label>
-				<Input
-					id="dateTo"
-					type="date"
+				<DatePicker
 					value={dateTo || ""}
-					onChange={(e) => onDateToChange(e.target.value)}
-					className="text-sm"
+					onChange={onDateToChange}
+					placeholder="Select date"
 				/>
 			</div>
 		</div>

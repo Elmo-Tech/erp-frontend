@@ -1,13 +1,6 @@
-export enum ProjectStatus {
-	DRAFT = "draft",
-	ACTIVE = "active",
-	UI_UX = "ui_ux",
-	DEVELOPMENT = "development",
-	TESTING = "testing",
-	COMPLETED = "completed",
-	ON_HOLD = "on_hold",
-	CANCELLED = "cancelled",
-}
+// Re-export enums from centralized statusHelpers
+export { ProjectStatus, ProjectStatusLabels, ProjectStatusColors, PROJECT_STATUS_TRANSITIONS as STATUS_TRANSITIONS } from "@/lib/statusHelpers";
+import { ProjectStatus } from "@/lib/statusHelpers";
 
 export interface Project {
 	projectId: number;
@@ -119,15 +112,3 @@ export interface ProjectFilters {
 	page?: number;
 	perPage?: number;
 }
-
-// Status transition map for frontend validation
-export const STATUS_TRANSITIONS: Record<ProjectStatus, ProjectStatus[]> = {
-	[ProjectStatus.DRAFT]: [ProjectStatus.ACTIVE],
-	[ProjectStatus.ACTIVE]: [ProjectStatus.UI_UX, ProjectStatus.ON_HOLD, ProjectStatus.CANCELLED],
-	[ProjectStatus.UI_UX]: [ProjectStatus.DEVELOPMENT, ProjectStatus.ON_HOLD, ProjectStatus.CANCELLED],
-	[ProjectStatus.DEVELOPMENT]: [ProjectStatus.TESTING, ProjectStatus.ON_HOLD, ProjectStatus.CANCELLED],
-	[ProjectStatus.TESTING]: [ProjectStatus.COMPLETED, ProjectStatus.DEVELOPMENT, ProjectStatus.ON_HOLD, ProjectStatus.CANCELLED],
-	[ProjectStatus.COMPLETED]: [],
-	[ProjectStatus.ON_HOLD]: [], // Dynamic - returns to previous status
-	[ProjectStatus.CANCELLED]: [],
-};

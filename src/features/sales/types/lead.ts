@@ -1,12 +1,6 @@
-export enum LeadStatus {
-	NEW = "new",
-	CONTACTED = "contacted",
-	QUALIFIED = "qualified",
-	PROPOSAL = "proposal",
-	NEGOTIATION = "negotiation",
-	WON = "won",
-	LOST = "lost",
-}
+// Re-export enums from centralized statusHelpers
+export { LeadStatus, LeadStatusLabels, LeadStatusColors, LeadPriority, LeadPriorityLabels, LeadPriorityColors } from "@/lib/statusHelpers";
+import { LeadStatus, LeadPriority } from "@/lib/statusHelpers";
 
 export enum LeadSource {
 	FACEBOOK = "facebook",
@@ -16,13 +10,6 @@ export enum LeadSource {
 	DIRECT = "direct",
 	WEBSITE = "website",
 	OTHER = "other",
-}
-
-export enum LeadPriority {
-	LOW = "low",
-	MEDIUM = "medium",
-	HIGH = "high",
-	URGENT = "urgent",
 }
 
 export enum ReferenceType {

@@ -8,8 +8,8 @@ import { SearchInput } from "@/components/shared/filters/SearchInput";
 import { FilterSelect, FilterOption } from "@/components/shared/filters/FilterSelect";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
 import { useProjects } from "../hooks/useProjects";
-import { Project, ProjectStatus, ProjectFilters } from "../types/project";
-import { getStatusLabel } from "../helpers/statusHelpers";
+import { Project, ProjectFilters } from "../types/project";
+import { ProjectStatus, ProjectStatusLabels } from "@/lib/statusHelpers";
 import { getProjectsColumns } from "./columns/projectsColumns";
 import { FolderOpen, Filter, Users, Plus } from "lucide-react";
 
@@ -35,7 +35,7 @@ export const ProjectList: React.FC<ProjectListProps> = ({ onProjectClick, onCrea
 	// Status options for filter
 	const statusOptions: FilterOption[] = Object.values(ProjectStatus).map((status) => ({
 		value: status,
-		label: getStatusLabel(status),
+		label: ProjectStatusLabels[status],
 	}));
 
 	// Get unique clients for filter dropdown

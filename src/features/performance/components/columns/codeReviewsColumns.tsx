@@ -1,9 +1,9 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
+import { StatusBadge, getStatusVariant } from "@/components/shared";
 import type { CodeReview, CodeReviewStatus } from "../../types";
 import { MoreHorizontal, Eye, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -12,13 +12,6 @@ interface CodeReviewsColumnsOptions {
 	onApprove?: (review: CodeReview) => void;
 	onRequestRevision?: (review: CodeReview) => void;
 }
-
-const statusColors: Record<CodeReviewStatus, "default" | "secondary" | "outline" | "destructive"> = {
-	pending: "secondary",
-	approved: "default",
-	needs_revision: "outline",
-	rejected: "destructive",
-};
 
 const statusLabels: Record<CodeReviewStatus, string> = {
 	pending: "Pending",
@@ -52,7 +45,12 @@ export function getCodeReviewsColumns({ onView, onApprove, onRequestRevision }: 
 		{
 			key: "status",
 			header: "Status",
-			render: (review) => <Badge variant={statusColors[review.status]}>{statusLabels[review.status]}</Badge>,
+			render: (review) => (
+				<StatusBadge
+					label={statusLabels[review.status]}
+					variant={getStatusVariant(review.status)}
+				/>
+			),
 		},
 		{
 			key: "createdAt",

@@ -6,7 +6,7 @@ export const innovationLogSchema = z.object({
 	description: z.string().min(10, "Description must be at least 10 characters"),
 	impactDescription: z.string().optional(),
 	impactLevel: z.enum(["low", "medium", "high"]),
-	timeSavedMinutes: z.union([z.number().min(0), z.string()]).optional(),
+	timeSavedMinutes: z.string().optional(),
 });
 
 export type InnovationLogFormData = z.infer<typeof innovationLogSchema>;

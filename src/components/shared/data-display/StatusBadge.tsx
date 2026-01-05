@@ -33,23 +33,73 @@ export function getStatusVariant(status: string): StatusVariant {
 		done: "success",
 		approved: "success",
 		paid: "success",
+		signed: "success",
+		verified: "success",
+		won: "success",
 		// Warning statuses
 		pending: "warning",
 		in_progress: "warning",
 		draft: "warning",
+		pending_signature: "warning",
+		negotiation: "warning",
+		proposal: "warning",
+		needs_revision: "warning",
 		// Error statuses
 		cancelled: "error",
 		rejected: "error",
 		overdue: "error",
 		failed: "error",
+		terminated: "error",
+		lost: "error",
+		expired: "error",
+		poor: "error",
 		// Info statuses
 		new: "info",
 		open: "info",
 		sent: "info",
+		viewed: "info",
+		contacted: "info",
+		qualified: "info",
 		// Secondary
 		on_hold: "secondary",
 		testing: "secondary",
+		review: "secondary",
+		ui_ux: "secondary",
+		development: "secondary",
+		average: "secondary",
 	};
 
 	return statusMap[status.toLowerCase()] || "default";
+}
+
+// Helper for bonus tier variants
+export function getBonusTierVariant(tier: string): StatusVariant {
+	const tierMap: Record<string, StatusVariant> = {
+		excellent: "success",
+		good: "info",
+		average: "warning",
+		poor: "error",
+	};
+	return tierMap[tier.toLowerCase()] || "default";
+}
+
+// Helper for impact level variants
+export function getImpactVariant(level: string): StatusVariant {
+	const impactMap: Record<string, StatusVariant> = {
+		high: "success",
+		medium: "warning",
+		low: "secondary",
+	};
+	return impactMap[level.toLowerCase()] || "default";
+}
+
+// Helper for category variants
+export function getCategoryVariant(category: string): StatusVariant {
+	const categoryMap: Record<string, StatusVariant> = {
+		ai_tool: "secondary",
+		automation: "info",
+		new_tech: "success",
+		process_improvement: "warning",
+	};
+	return categoryMap[category.toLowerCase()] || "default";
 }

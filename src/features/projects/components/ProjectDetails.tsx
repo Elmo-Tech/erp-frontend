@@ -10,15 +10,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Edit, Save, X, Calendar, DollarSign, User, FileText, Clock, History } from "lucide-react";
+import { AlertCircle, Edit, Save, X, Calendar, DollarSign, User, FileText, Clock, History, CalendarIcon } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useProject, useUpdateProject, useApproveUI } from "../hooks/useProjects";
-import { Project, ProjectStatus, UpdateProjectPayload } from "../types/project";
+import { Project, UpdateProjectPayload } from "../types/project";
+import { ProjectStatus, getAvailableProjectTransitions } from "@/lib/statusHelpers";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
-import { getAvailableTransitions, canTransitionTo } from "../helpers/statusHelpers";
 import { updateProjectSchema, UpdateProjectFormData } from "../schemas/projectSchema";
 import { WikiList } from "./WikiList";
 import { HistoryLog } from "./HistoryLog";
+import { cn } from "@/lib/utils";
+import { format, parseISO } from "date-fns";
 
 interface ProjectDetailsProps {
 	projectId: number;
@@ -175,7 +179,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onPro
 		);
 	}
 
-	const availableTransitions = getAvailableTransitions(project.status, project.previousStatus);
+	const availableTransitions = getAvailableProjectTransitions(project.status, project.previousStatus);
 
 	return (
 		<div className={className}>
@@ -282,18 +286,38 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onPro
 											<FormField
 												control={form.control}
 												name="deadline"
-												render={({ field }) => (
-													<FormItem>
-														<FormLabel>Deadline</FormLabel>
-														<FormControl>
-															<Input
-																type="date"
-																{...field}
-															/>
-														</FormControl>
-														<FormMessage />
-													</FormItem>
-												)}
+												render={({ field }) => {
+													const selectedDate = field.value ? parseISO(field.value) : undefined;
+													return (
+														<FormItem className="flex flex-col">
+															<FormLabel>Deadline</FormLabel>
+															<Popover>
+																<PopoverTrigger asChild>
+																	<FormControl>
+																		<Button
+																			variant="outline"
+																			className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+																		>
+																			{selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+																			<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+																		</Button>
+																	</FormControl>
+																</PopoverTrigger>
+																<PopoverContent
+																	className="w-auto p-0"
+																	align="start"
+																>
+																	<CalendarComponent
+																		mode="single"
+																		selected={selectedDate}
+																		onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+																	/>
+																</PopoverContent>
+															</Popover>
+															<FormMessage />
+														</FormItem>
+													);
+												}}
 											/>
 
 											{requiresReason && (

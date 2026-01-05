@@ -6,11 +6,12 @@ import { FilterBar } from "@/components/shared/filters/FilterBar";
 import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { useInnovationLogs, useVerifyInnovationLog, useRejectInnovationLog, useDeleteInnovationLog } from "../hooks";
 import type { InnovationLog, InnovationCategory, ImpactLevel } from "../types";
 import { getInnovationLogsColumns } from "./columns/innovationLogsColumns";
 import { InnovationLogForm } from "./InnovationLogForm";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
@@ -30,13 +31,14 @@ export function InnovationLogsTable() {
 	const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
 	const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [formDialogOpen, setFormDialogOpen] = useState(false);
 
 	const { data, isLoading, error } = useInnovationLogs(filters);
 	const verifyMutation = useVerifyInnovationLog();
 	const rejectMutation = useRejectInnovationLog();
 	const deleteMutation = useDeleteInnovationLog();
 
-	const { canVerifyInnovationLogs, canCreateInnovationLogs } = usePermissions();
+	const { canVerifyInnovationLogs } = usePermissions();
 
 	const handleView = (log: InnovationLog) => {
 		setSelectedLog(log);
@@ -140,10 +142,17 @@ export function InnovationLogsTable() {
 					icon: Lightbulb,
 					title: "No innovation logs found",
 					description: "Start logging your use of AI tools and new technologies.",
-					action: canCreateInnovationLogs ? { label: "Log Innovation", onClick: () => {} } : undefined,
+					action: { label: "Log Innovation", onClick: () => setFormDialogOpen(true) },
 				}}
 				headerActions={
-					<FilterBar actions={canCreateInnovationLogs ? <InnovationLogForm /> : undefined}>
+					<FilterBar
+						actions={
+							<Button onClick={() => setFormDialogOpen(true)}>
+								<Plus className="mr-2 h-4 w-4" />
+								Log Innovation
+							</Button>
+						}
+					>
 						<Select
 							onValueChange={handleCategoryFilter}
 							defaultValue="all"
@@ -274,6 +283,12 @@ export function InnovationLogsTable() {
 				onConfirm={handleDelete}
 				variant="destructive"
 				isLoading={deleteMutation.isPending}
+			/>
+
+			{/* Create Form Dialog */}
+			<InnovationLogForm
+				open={formDialogOpen}
+				onOpenChange={setFormDialogOpen}
 			/>
 		</>
 	);

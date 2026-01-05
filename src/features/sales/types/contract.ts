@@ -1,19 +1,6 @@
-export enum ContractStatus {
-	DRAFT = "draft",
-	PENDING_SIGNATURE = "pending_signature",
-	SIGNED = "signed",
-	ACTIVE = "active",
-	COMPLETED = "completed",
-	TERMINATED = "terminated",
-}
-
-export enum MilestoneStatus {
-	PENDING = "pending",
-	DUE = "due",
-	INVOICED = "invoiced",
-	PAID = "paid",
-	OVERDUE = "overdue",
-}
+// Re-export enums from centralized statusHelpers
+export { ContractStatus, ContractStatusLabels, ContractStatusColors, MilestoneStatus, MilestoneStatusLabels, MilestoneStatusColors } from "@/lib/statusHelpers";
+import { ContractStatus, MilestoneStatus } from "@/lib/statusHelpers";
 
 export enum MilestoneTriggerType {
 	IMMEDIATE = "immediate",

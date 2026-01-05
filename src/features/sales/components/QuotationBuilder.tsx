@@ -12,7 +12,7 @@ import { Loader2, Calculator, Save } from "lucide-react";
 import { FormInput, FormSelect } from "@/components/shared";
 import { useLeads } from "../hooks/useLeads";
 import { useCalculatePricing } from "../hooks/useCalculatePricing";
-import { useCreateQuotation, useUpdateQuotation } from "../hooks/useQuotations";
+import { useCreateQuotation, useUpdateQuotation, useUpdateQuotationStatus } from "../hooks/useQuotations";
 import { CreateQuotationPayload, UpdateQuotationPayload, Estimations, QuotationStatus } from "../types/quotation";
 import { PricingBreakdown } from "./PricingBreakdown";
 import { toast } from "sonner";
@@ -99,6 +99,7 @@ export const QuotationBuilder: React.FC<QuotationBuilderProps> = ({ onSuccess, o
 	const { data: leadsResponse, isLoading: leadsLoading } = useLeads();
 	const createQuotationMutation = useCreateQuotation();
 	const updateQuotationMutation = useUpdateQuotation();
+	const updateStatusMutation = useUpdateQuotationStatus();
 
 	const leadOptions = React.useMemo(() => {
 		if (leadsLoading) return [{ value: "loading", label: "Loading leads...", disabled: true }];
@@ -167,6 +168,15 @@ export const QuotationBuilder: React.FC<QuotationBuilderProps> = ({ onSuccess, o
 					id: initialData.quotationId,
 					payload,
 				});
+
+				// If status changed, update it separately
+				if (data.status !== initialData.status) {
+					await updateStatusMutation.mutateAsync({
+						id: initialData.quotationId,
+						payload: { status: data.status },
+					});
+				}
+
 				toast.success("Quotation updated successfully");
 				onSuccess?.(initialData.quotationId);
 			} else {

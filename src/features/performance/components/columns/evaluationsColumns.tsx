@@ -1,9 +1,9 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
+import { StatusBadge, getStatusVariant, getBonusTierVariant } from "@/components/shared";
 import type { PerformanceEvaluation, EvaluationStatus, BonusTier } from "../../types";
 import { MoreHorizontal, Eye, CheckCircle, Calculator } from "lucide-react";
 
@@ -13,25 +13,11 @@ interface EvaluationsColumnsOptions {
 	onApprove?: (evaluation: PerformanceEvaluation) => void;
 }
 
-const statusColors: Record<EvaluationStatus, string> = {
-	pending: "secondary",
-	in_progress: "default",
-	completed: "outline",
-	approved: "default",
-};
-
 const statusLabels: Record<EvaluationStatus, string> = {
 	pending: "Pending",
 	in_progress: "In Progress",
 	completed: "Completed",
 	approved: "Approved",
-};
-
-const tierColors: Record<BonusTier, string> = {
-	excellent: "bg-green-500 text-white",
-	good: "bg-blue-500 text-white",
-	average: "bg-yellow-500 text-white",
-	poor: "bg-red-500 text-white",
 };
 
 const tierLabels: Record<BonusTier, string> = {
@@ -61,7 +47,15 @@ export function getEvaluationsColumns({ onView, onCalculate, onApprove }: Evalua
 		{
 			key: "bonusTier",
 			header: "Tier",
-			render: (evaluation) => (evaluation.bonusTier ? <Badge className={tierColors[evaluation.bonusTier]}>{tierLabels[evaluation.bonusTier]}</Badge> : <span className="text-muted-foreground">-</span>),
+			render: (evaluation) =>
+				evaluation.bonusTier ? (
+					<StatusBadge
+						label={tierLabels[evaluation.bonusTier]}
+						variant={getBonusTierVariant(evaluation.bonusTier)}
+					/>
+				) : (
+					<span className="text-muted-foreground">-</span>
+				),
 		},
 		{
 			key: "bonusAmount",
@@ -71,7 +65,12 @@ export function getEvaluationsColumns({ onView, onCalculate, onApprove }: Evalua
 		{
 			key: "status",
 			header: "Status",
-			render: (evaluation) => <Badge variant={statusColors[evaluation.status] as "default" | "secondary" | "outline"}>{statusLabels[evaluation.status]}</Badge>,
+			render: (evaluation) => (
+				<StatusBadge
+					label={statusLabels[evaluation.status]}
+					variant={getStatusVariant(evaluation.status)}
+				/>
+			),
 		},
 		{
 			key: "actions",

@@ -3,16 +3,9 @@
  * Type definitions for task management with recursive hierarchy
  */
 
-/**
- * Task status enum matching backend TaskStatus
- */
-export enum TaskStatus {
-	TODO = "todo",
-	IN_PROGRESS = "in_progress",
-	REVIEW = "review",
-	TESTING = "testing",
-	COMPLETED = "completed",
-}
+// Re-export enums from centralized statusHelpers
+export { TaskStatus, TaskStatusLabels, TaskStatusColors, TaskPriority, TaskPriorityLabels, TaskPriorityColors } from "@/lib/statusHelpers";
+import { TaskStatus, TaskPriority } from "@/lib/statusHelpers";
 
 /**
  * Task type enum matching backend TaskType
@@ -21,16 +14,6 @@ export enum TaskType {
 	MAIN = "main",
 	WEEKLY = "weekly",
 	SUBTASK = "subtask",
-}
-
-/**
- * Task priority enum matching backend TaskPriority
- */
-export enum TaskPriority {
-	LOW = "low",
-	MEDIUM = "medium",
-	HIGH = "high",
-	URGENT = "urgent",
 }
 
 /**
@@ -50,28 +33,6 @@ export enum TestScenarioStatus {
 	PASSED = "passed",
 	FAILED = "failed",
 }
-
-/**
- * Task status labels for UI display
- */
-export const TaskStatusLabels: Record<TaskStatus, string> = {
-	[TaskStatus.TODO]: "To Do",
-	[TaskStatus.IN_PROGRESS]: "In Progress",
-	[TaskStatus.REVIEW]: "Review",
-	[TaskStatus.TESTING]: "Testing",
-	[TaskStatus.COMPLETED]: "Completed",
-};
-
-/**
- * Task status colors for UI display
- */
-export const TaskStatusColors: Record<TaskStatus, string> = {
-	[TaskStatus.TODO]: "bg-gray-100 text-gray-800",
-	[TaskStatus.IN_PROGRESS]: "bg-blue-100 text-blue-800",
-	[TaskStatus.REVIEW]: "bg-yellow-100 text-yellow-800",
-	[TaskStatus.TESTING]: "bg-purple-100 text-purple-800",
-	[TaskStatus.COMPLETED]: "bg-green-100 text-green-800",
-};
 
 /**
  * Task type labels for UI display
@@ -98,26 +59,6 @@ export const TaskTypeIcons: Record<TaskType, string> = {
 	[TaskType.MAIN]: "folder",
 	[TaskType.WEEKLY]: "calendar-days",
 	[TaskType.SUBTASK]: "list-check",
-};
-
-/**
- * Task priority labels for UI display
- */
-export const TaskPriorityLabels: Record<TaskPriority, string> = {
-	[TaskPriority.LOW]: "Low",
-	[TaskPriority.MEDIUM]: "Medium",
-	[TaskPriority.HIGH]: "High",
-	[TaskPriority.URGENT]: "Urgent",
-};
-
-/**
- * Task priority colors for UI display
- */
-export const TaskPriorityColors: Record<TaskPriority, string> = {
-	[TaskPriority.LOW]: "bg-gray-100 text-gray-600",
-	[TaskPriority.MEDIUM]: "bg-blue-100 text-blue-700",
-	[TaskPriority.HIGH]: "bg-orange-100 text-orange-700",
-	[TaskPriority.URGENT]: "bg-red-100 text-red-700",
 };
 
 /**

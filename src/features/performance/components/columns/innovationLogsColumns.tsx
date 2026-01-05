@@ -1,9 +1,9 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
+import { StatusBadge, getStatusVariant, getImpactVariant, getCategoryVariant } from "@/components/shared";
 import type { InnovationLog, InnovationCategory, ImpactLevel } from "../../types";
 import { MoreHorizontal, Eye, CheckCircle, XCircle, Trash2 } from "lucide-react";
 
@@ -19,19 +19,6 @@ const categoryLabels: Record<InnovationCategory, string> = {
 	automation: "Automation",
 	new_tech: "New Technology",
 	process_improvement: "Process Improvement",
-};
-
-const categoryColors: Record<InnovationCategory, string> = {
-	ai_tool: "bg-purple-500 text-white",
-	automation: "bg-blue-500 text-white",
-	new_tech: "bg-green-500 text-white",
-	process_improvement: "bg-orange-500 text-white",
-};
-
-const impactColors: Record<ImpactLevel, "default" | "secondary" | "outline"> = {
-	low: "secondary",
-	medium: "outline",
-	high: "default",
 };
 
 const impactLabels: Record<ImpactLevel, string> = {
@@ -55,12 +42,22 @@ export function getInnovationLogsColumns({ onView, onVerify, onReject, onDelete 
 		{
 			key: "category",
 			header: "Category",
-			render: (log) => <Badge className={categoryColors[log.category]}>{categoryLabels[log.category]}</Badge>,
+			render: (log) => (
+				<StatusBadge
+					label={categoryLabels[log.category]}
+					variant={getCategoryVariant(log.category)}
+				/>
+			),
 		},
 		{
 			key: "impactLevel",
 			header: "Impact",
-			render: (log) => <Badge variant={impactColors[log.impactLevel]}>{impactLabels[log.impactLevel]}</Badge>,
+			render: (log) => (
+				<StatusBadge
+					label={impactLabels[log.impactLevel]}
+					variant={getImpactVariant(log.impactLevel)}
+				/>
+			),
 		},
 		{
 			key: "timeSavedMinutes",
@@ -70,7 +67,12 @@ export function getInnovationLogsColumns({ onView, onVerify, onReject, onDelete 
 		{
 			key: "isVerified",
 			header: "Status",
-			render: (log) => <Badge variant={log.isVerified ? "default" : "secondary"}>{log.isVerified ? "Verified" : "Pending"}</Badge>,
+			render: (log) => (
+				<StatusBadge
+					label={log.isVerified ? "Verified" : "Pending"}
+					variant={getStatusVariant(log.isVerified ? "verified" : "pending")}
+				/>
+			),
 		},
 		{
 			key: "createdAt",

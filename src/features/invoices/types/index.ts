@@ -1,10 +1,6 @@
-export enum InvoiceStatus {
-	DRAFT = "draft",
-	SENT = "sent",
-	PAID = "paid",
-	OVERDUE = "overdue",
-	CANCELLED = "cancelled",
-}
+// Re-export enums from centralized statusHelpers
+export { InvoiceStatus, InvoiceStatusLabels, InvoiceStatusColors } from "@/lib/statusHelpers";
+import { InvoiceStatus } from "@/lib/statusHelpers";
 
 export interface Invoice {
 	invoiceId: number;

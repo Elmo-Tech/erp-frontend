@@ -148,22 +148,19 @@ export const ADMIN_PERMISSIONS = {
 	VIEW_TAGS: "view_tags",
 
 	// Performance Evaluations
-	VIEW_EVALUATIONS: "view_evaluations",
-	CREATE_EVALUATIONS: "create_evaluations",
-	EDIT_EVALUATIONS: "edit_evaluations",
-	APPROVE_EVALUATIONS: "approve_evaluations",
-	VIEW_ALL_EVALUATIONS: "view_all_evaluations",
+	VIEW_EVALUATIONS: "view_performance_evaluations",
+	MANAGE_EVALUATIONS: "manage_performance_evaluations",
+	APPROVE_EVALUATIONS: "approve_performance_evaluations",
 	VIEW_BONUSES: "view_bonuses",
 
 	// Code Reviews
-	VIEW_CODE_REVIEWS: "view_code_reviews",
-	CREATE_CODE_REVIEWS: "create_code_reviews",
-	APPROVE_CODE_REVIEWS: "approve_code_reviews",
+	VIEW_ALL_CODE_REVIEWS: "view_all_code_reviews",
+	MANAGE_CODE_REVIEWS: "manage_code_reviews",
 
 	// Innovation Logs
-	VIEW_INNOVATION_LOGS: "view_innovation_logs",
-	CREATE_INNOVATION_LOGS: "create_innovation_logs",
+	VIEW_ALL_INNOVATION_LOGS: "view_all_innovation_logs",
 	VERIFY_INNOVATION_LOGS: "verify_innovation_logs",
+	MANAGE_INNOVATION_LOGS: "manage_innovation_logs",
 } as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];
@@ -358,21 +355,21 @@ export const usePermissions = () => {
 
 			// Performance Evaluations
 			canViewEvaluations: hasPermission(ADMIN_PERMISSIONS.VIEW_EVALUATIONS),
-			canCreateEvaluations: hasPermission(ADMIN_PERMISSIONS.CREATE_EVALUATIONS),
-			canEditEvaluations: hasPermission(ADMIN_PERMISSIONS.EDIT_EVALUATIONS),
+			canManageEvaluations: hasPermission(ADMIN_PERMISSIONS.MANAGE_EVALUATIONS),
+			canCreateEvaluations: hasPermission(ADMIN_PERMISSIONS.MANAGE_EVALUATIONS),
+			canEditEvaluations: hasPermission(ADMIN_PERMISSIONS.MANAGE_EVALUATIONS),
 			canApproveEvaluations: hasPermission(ADMIN_PERMISSIONS.APPROVE_EVALUATIONS),
-			canViewAllEvaluations: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_EVALUATIONS),
 			canViewBonuses: hasPermission(ADMIN_PERMISSIONS.VIEW_BONUSES),
 
 			// Code Reviews
-			canViewCodeReviews: hasPermission(ADMIN_PERMISSIONS.VIEW_CODE_REVIEWS),
-			canCreateCodeReviews: hasPermission(ADMIN_PERMISSIONS.CREATE_CODE_REVIEWS),
-			canApproveCodeReviews: hasPermission(ADMIN_PERMISSIONS.APPROVE_CODE_REVIEWS),
+			canViewAllCodeReviews: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_CODE_REVIEWS),
+			canManageCodeReviews: hasPermission(ADMIN_PERMISSIONS.MANAGE_CODE_REVIEWS),
+			canApproveCodeReviews: hasPermission(ADMIN_PERMISSIONS.MANAGE_CODE_REVIEWS),
 
 			// Innovation Logs
-			canViewInnovationLogs: hasPermission(ADMIN_PERMISSIONS.VIEW_INNOVATION_LOGS),
-			canCreateInnovationLogs: hasPermission(ADMIN_PERMISSIONS.CREATE_INNOVATION_LOGS),
+			canViewAllInnovationLogs: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_INNOVATION_LOGS),
 			canVerifyInnovationLogs: hasPermission(ADMIN_PERMISSIONS.VERIFY_INNOVATION_LOGS),
+			canManageInnovationLogs: hasPermission(ADMIN_PERMISSIONS.MANAGE_INNOVATION_LOGS),
 		}),
 		[hasPermission]
 	);

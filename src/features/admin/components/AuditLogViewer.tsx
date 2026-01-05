@@ -15,7 +15,8 @@ import { DataTable } from "@/components/shared/data-display/DataTable";
 import { SearchInput } from "@/components/shared/filters/SearchInput";
 import { FilterSelect, FilterOption } from "@/components/shared/filters/FilterSelect";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
-import { Clock, User, AlertTriangle, Settings, AlertCircle, RefreshCw, Filter, Calendar } from "lucide-react";
+import { DatePicker } from "@/components/shared/forms/DatePicker";
+import { Clock, User, AlertTriangle, Settings, AlertCircle, RefreshCw, Filter } from "lucide-react";
 import { useAuditLogs, useAuditLogActionTypes } from "../hooks/useAuditLogs";
 import { useAdminPermissions } from "../hooks";
 import { AuditLogFilters } from "../types";
@@ -211,21 +212,18 @@ export const AuditLogViewer: React.FC = () => {
 							disabled={actionTypesLoading}
 						/>
 						<div className="flex items-center gap-2">
-							<Calendar className="h-4 w-4 text-muted-foreground" />
-							<input
-								type="date"
+							<DatePicker
 								value={filters.dateFrom || ""}
-								onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
-								className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-								placeholder="From"
+								onChange={(value) => handleFilterChange("dateFrom", value)}
+								placeholder="From date"
+								className="w-[140px]"
 							/>
 							<span className="text-muted-foreground">to</span>
-							<input
-								type="date"
+							<DatePicker
 								value={filters.dateTo || ""}
-								onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-								className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-								placeholder="To"
+								onChange={(value) => handleFilterChange("dateTo", value)}
+								placeholder="To date"
+								className="w-[140px]"
 							/>
 						</div>
 					</FilterBar>

@@ -9,3 +9,4 @@ export * from "./FormSwitch";
 export * from "./FormDatePicker";
 export * from "./FormCheckboxGroup";
 export * from "./TagInput";
+export * from "./DatePicker";

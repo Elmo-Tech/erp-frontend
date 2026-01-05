@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
+import { ContractStatusBadge } from "@/components/shared/StatusBadge";
 import { Contract, ContractStatus } from "../../types/contract";
 import { MoreHorizontal, Pencil, Trash2, Eye, FileSignature } from "lucide-react";
 
@@ -13,24 +14,6 @@ interface ContractsColumnsOptions {
 	onDelete?: (contract: Contract) => void;
 	onSign?: (contract: Contract) => void;
 }
-
-const STATUS_VARIANTS: Record<ContractStatus, "default" | "secondary" | "destructive" | "outline"> = {
-	[ContractStatus.DRAFT]: "secondary",
-	[ContractStatus.PENDING_SIGNATURE]: "outline",
-	[ContractStatus.SIGNED]: "default",
-	[ContractStatus.ACTIVE]: "default",
-	[ContractStatus.COMPLETED]: "default",
-	[ContractStatus.TERMINATED]: "destructive",
-};
-
-const STATUS_COLORS: Record<ContractStatus, string> = {
-	[ContractStatus.DRAFT]: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
-	[ContractStatus.PENDING_SIGNATURE]: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300",
-	[ContractStatus.SIGNED]: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-	[ContractStatus.ACTIVE]: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-	[ContractStatus.COMPLETED]: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-	[ContractStatus.TERMINATED]: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-};
 
 const formatCurrency = (amount: number, currency: string) => {
 	return new Intl.NumberFormat("en-US", {
@@ -46,13 +29,6 @@ const formatDate = (dateString?: string) => {
 		month: "short",
 		day: "numeric",
 	});
-};
-
-const formatStatus = (status: ContractStatus) => {
-	return status
-		.split("_")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-		.join(" ");
 };
 
 export function getContractsColumns({ onView, onEdit, onDelete, onSign }: ContractsColumnsOptions): Column<Contract>[] {
@@ -90,14 +66,7 @@ export function getContractsColumns({ onView, onEdit, onDelete, onSign }: Contra
 		{
 			key: "status",
 			header: "Status",
-			render: (contract) => (
-				<Badge
-					className={STATUS_COLORS[contract.status]}
-					variant={STATUS_VARIANTS[contract.status]}
-				>
-					{formatStatus(contract.status)}
-				</Badge>
-			),
+			render: (contract) => <ContractStatusBadge status={contract.status} />,
 		},
 		{
 			key: "startDate",

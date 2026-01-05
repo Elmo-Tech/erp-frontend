@@ -1,9 +1,9 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
+import { StatusBadge, getStatusVariant } from "@/components/shared";
 import type { EvaluationPeriod, PeriodStatus } from "../../types";
 import { MoreHorizontal, Eye, Play, DollarSign } from "lucide-react";
 
@@ -12,12 +12,6 @@ interface EvaluationPeriodsColumnsOptions {
 	onActivate?: (period: EvaluationPeriod) => void;
 	onViewBonuses?: (period: EvaluationPeriod) => void;
 }
-
-const statusColors: Record<PeriodStatus, "default" | "secondary" | "outline"> = {
-	draft: "secondary",
-	active: "default",
-	completed: "outline",
-};
 
 const statusLabels: Record<PeriodStatus, string> = {
 	draft: "Draft",
@@ -45,7 +39,12 @@ export function getEvaluationPeriodsColumns({ onView, onActivate, onViewBonuses 
 		{
 			key: "status",
 			header: "Status",
-			render: (period) => <Badge variant={statusColors[period.status]}>{statusLabels[period.status]}</Badge>,
+			render: (period) => (
+				<StatusBadge
+					label={statusLabels[period.status]}
+					variant={getStatusVariant(period.status)}
+				/>
+			),
 		},
 		{
 			key: "actions",
