@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, UserPlus, FileText, LayoutGrid, List } from "lucide-react";
-import { LeadKanban, LeadFormDialog, QuotationBuilder, QuotationsTable, LeadsTable, ContractsTable } from "@/features/sales/components";
+import { LeadKanban, LeadFormDialog, QuotationBuilder, QuotationsTable, LeadsTable, ContractsTable, ContractFormDialog } from "@/features/sales/components";
 import { Lead, LeadStatus } from "@/features/sales/types/lead";
 import { Quotation } from "@/features/sales/types/quotation";
 import { Contract } from "@/features/sales/types/contract";
@@ -233,17 +233,15 @@ export default function SalesPage() {
 
 			{/* Contract Form Dialog */}
 			{(canCreateContracts || canEditContracts) && (
-				<Dialog
+				<ContractFormDialog
 					open={showContractForm}
 					onOpenChange={handleContractFormClose}
-				>
-					<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>{selectedContract ? "Edit Contract" : "Create New Contract"}</DialogTitle>
-						</DialogHeader>
-						<div className="py-8 text-center text-muted-foreground">Contract form coming soon...</div>
-					</DialogContent>
-				</Dialog>
+					contract={selectedContract}
+					onSuccess={() => {
+						setShowContractForm(false);
+						setSelectedContract(null);
+					}}
+				/>
 			)}
 		</div>
 	);

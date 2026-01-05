@@ -7,6 +7,7 @@ export { LeadCard, CompactLeadCard } from "./LeadCard";
 export { LeadFormDialog } from "./LeadFormDialog";
 export { LeadsTable } from "./LeadsTable";
 export { ContractsTable } from "./ContractsTable";
+export { ContractFormDialog } from "./ContractFormDialog";
 
 // Column exports
 export { getLeadsColumns } from "./columns/leadsColumns";
