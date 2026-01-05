@@ -75,7 +75,7 @@ const navGroups: NavGroup[] = [
 		items: [
 			{
 				title: "Employees",
-				href: "/dashboard/admin/employees",
+				href: "/dashboard/employees",
 				icon: Users,
 				permission: "manage_employees",
 			},
@@ -98,7 +98,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				title: "Roles & Permissions",
-				href: "/dashboard/admin/roles",
+				href: "/dashboard/roles",
 				icon: Shield,
 				permission: "manage_roles",
 			},
@@ -126,6 +126,13 @@ export function Sidebar() {
 		if (href === "/dashboard") {
 			return pathname === "/dashboard";
 		}
+
+		// Special handling for admin routes to avoid conflicts
+		if (href === "/dashboard/admin") {
+			// Only active if exactly on admin page or admin sub-pages (but not employees)
+			return pathname === "/dashboard/admin" || (pathname.startsWith("/dashboard/admin/") && !pathname.startsWith("/dashboard/employees"));
+		}
+
 		// For other routes, check if pathname starts with href
 		return pathname === href || pathname.startsWith(`${href}/`);
 	};

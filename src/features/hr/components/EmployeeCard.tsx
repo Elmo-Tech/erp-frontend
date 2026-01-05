@@ -20,7 +20,11 @@ interface EmployeeCardProps {
 export function EmployeeCard({ employee, onEdit, onToggleStatus, onViewPerformance, showSalary = false }: EmployeeCardProps) {
 	const formatTime = (time: string | null) => {
 		if (!time) return "-";
-		return time.slice(0, 5);
+		const hours = parseInt(time.slice(0, 2));
+		const minutes = parseInt(time.slice(3, 5));
+		const isPm = hours >= 12;
+		const displayHours = isPm ? hours - 12 : hours;
+		return `${displayHours < 10 ? `0${displayHours}` : displayHours}:${minutes < 10 ? `0${minutes}` : minutes}`.padStart(5, "0") + ` ${isPm ? "PM" : "AM"}`;
 	};
 
 	return (
@@ -88,7 +92,7 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus, onViewPerforman
 			<CardContent className="space-y-3">
 				{employee.role && <Badge variant="outline">{employee.role}</Badge>}
 
-				<div className="grid grid-cols-2 gap-3 text-sm">
+				<div className="flex flex-wrap items-center justify-between gap-3 text-sm">
 					<div className="flex items-center gap-2 text-muted-foreground">
 						<Clock className="h-4 w-4" />
 						<span>
