@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,6 +10,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { projectKeys } from "../../hooks/useProjects";
 import api from "@/lib/axios";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Upload, X, FileIcon } from "lucide-react";
 
 const fileSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -45,6 +48,8 @@ interface FileFormDialogProps {
 
 export function FileFormDialog({ projectId, open, onOpenChange }: FileFormDialogProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	const queryClient = useQueryClient();
 
 	const form = useForm<FileFormData>({
@@ -62,13 +67,61 @@ export function FileFormDialog({ projectId, open, onOpenChange }: FileFormDialog
 
 	const fileType = form.watch("type");
 
+	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			setSelectedFile(file);
+			// Auto-fill name if empty
+			if (!form.getValues("name")) {
+				form.setValue("name", file.name.replace(/\.[^/.]+$/, ""));
+			}
+		}
+	};
+
+	const handleRemoveFile = () => {
+		setSelectedFile(null);
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	};
+
 	const handleSubmit = async (data: FileFormData) => {
 		try {
 			setIsSubmitting(true);
-			await api.post(`/projects/${projectId}/files`, data);
+
+			if (data.type === "file" && selectedFile) {
+				// Upload file using FormData
+				const formData = new FormData();
+				formData.append("file", selectedFile);
+				formData.append("name", data.name);
+				formData.append("type", data.type);
+				formData.append("description", data.description || "");
+				formData.append("category", data.category);
+				formData.append("isClientVisible", data.isClientVisible ? "1" : "0");
+				formData.append("isDownloadable", data.isDownloadable ? "1" : "0");
+
+				await api.post(`/projects/${projectId}/files`, formData, {
+					headers: {
+						"Content-Type": "multipart/form-data",
+					},
+				});
+			} else {
+				// Send link data as JSON - Backend expects 'url' not 'fileUrl'
+				await api.post(`/projects/${projectId}/files`, {
+					name: data.name,
+					type: data.type,
+					url: data.fileUrl,
+					description: data.description,
+					category: data.category,
+					isClientVisible: data.isClientVisible,
+					isDownloadable: data.isDownloadable,
+				});
+			}
+
 			toast.success("File added successfully");
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			form.reset();
+			setSelectedFile(null);
 			onOpenChange(false);
 		} catch {
 			toast.error("Failed to add file");
@@ -77,16 +130,24 @@ export function FileFormDialog({ projectId, open, onOpenChange }: FileFormDialog
 		}
 	};
 
+	const handleOpenChange = (newOpen: boolean) => {
+		if (!newOpen) {
+			form.reset();
+			setSelectedFile(null);
+		}
+		onOpenChange(newOpen);
+	};
+
 	return (
 		<FormDialog
 			open={open}
-			onOpenChange={onOpenChange}
+			onOpenChange={handleOpenChange}
 			title="Add File or Link"
 			description="Add a file or external link to this project"
 			submitLabel="Add"
 			onSubmit={form.handleSubmit(handleSubmit)}
 			isLoading={isSubmitting}
-			isSubmitDisabled={!form.formState.isValid}
+			isSubmitDisabled={!form.formState.isValid || (fileType === "file" && !selectedFile)}
 		>
 			<Form {...form}>
 				<div className="space-y-4">
@@ -109,6 +170,47 @@ export function FileFormDialog({ projectId, open, onOpenChange }: FileFormDialog
 							label="URL"
 							placeholder="https://..."
 						/>
+					)}
+					{fileType === "file" && (
+						<div className="space-y-2">
+							<Label>File</Label>
+							<input
+								ref={fileInputRef}
+								type="file"
+								onChange={handleFileSelect}
+								className="hidden"
+								accept="*/*"
+							/>
+							{selectedFile ? (
+								<div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
+									<FileIcon className="h-8 w-8 text-muted-foreground" />
+									<div className="flex-1 min-w-0">
+										<p className="text-sm font-medium truncate">{selectedFile.name}</p>
+										<p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+									</div>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										onClick={handleRemoveFile}
+									>
+										<X className="h-4 w-4" />
+									</Button>
+								</div>
+							) : (
+								<Button
+									type="button"
+									variant="outline"
+									className="w-full h-24 border-dashed"
+									onClick={() => fileInputRef.current?.click()}
+								>
+									<div className="flex flex-col items-center gap-2">
+										<Upload className="h-6 w-6 text-muted-foreground" />
+										<span className="text-sm text-muted-foreground">Click to select a file</span>
+									</div>
+								</Button>
+							)}
+						</div>
 					)}
 					<FormTextarea
 						control={form.control}
