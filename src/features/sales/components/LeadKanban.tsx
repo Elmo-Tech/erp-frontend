@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Users, AlertCircle } from "lucide-react";
 import { useLeads, useUpdateLead } from "../hooks/useLeads";
+import { useConvertLead } from "../hooks/useLeadConversion";
 import { Lead, LeadStatus } from "../types/lead";
 import { LeadCard } from "./LeadCard";
 import { cn } from "@/lib/utils";
@@ -150,6 +151,7 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 
 	const { data: leadsResponse, isLoading, error } = useLeads();
 	const updateLeadMutation = useUpdateLead();
+	const convertLeadMutation = useConvertLead();
 
 	// Permission checks
 	const { canCreateLeads, canEditLeads } = usePermissions();
@@ -227,6 +229,16 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 				payload: { status: newStatus },
 			});
 			toast.success(`Lead moved to ${newStatus}`);
+
+			// Auto-convert to client when status is WON
+			if (newStatus === LeadStatus.WON && !lead.isConverted) {
+				try {
+					const result = await convertLeadMutation.mutateAsync({ leadId });
+					toast.success(result.message || "Lead converted to client successfully");
+				} catch {
+					toast.error("Lead status updated but failed to convert to client. You can convert manually.");
+				}
+			}
 		} catch (error) {
 			console.error("Failed to update lead status:", error);
 			toast.error("Failed to update lead status");

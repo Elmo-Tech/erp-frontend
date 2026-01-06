@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectsApi } from "../api/projects";
-import { Project, CreateProjectPayload, CreateDirectProjectPayload, UpdateProjectPayload, ProjectFilters, ProjectListResponse } from "../types/project";
+import { Project, CreateProjectPayload, CreateDirectProjectPayload, UpdateProjectPayload, ConvertQuotationPayload, ProjectFilters, ProjectListResponse } from "../types/project";
 import { projectHistoryKeys } from "./useProjectHistory";
 import { clientKeys } from "@/features/clients/hooks/useClients";
 
@@ -179,4 +179,37 @@ export const usePrefetchProject = () => {
 			staleTime: 5 * 60 * 1000, // 5 minutes
 		});
 	};
+};
+
+/**
+ * Hook to convert a quotation to a project
+ * Requirement 2.7: POST /api/v1/projects/convert endpoint to convert a quotation to a project
+ */
+export const useConvertQuotationToProject = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<Project, Error, ConvertQuotationPayload>({
+		mutationFn: projectsApi.convert,
+		onSuccess: (newProject) => {
+			// Invalidate and refetch projects list
+			queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+
+			// Add the new project to the cache
+			queryClient.setQueryData(projectKeys.detail(newProject.projectId), newProject);
+
+			// Invalidate quotations since one was converted
+			queryClient.invalidateQueries({ queryKey: ["quotations"] });
+
+			// Invalidate contracts since they may reference the quotation
+			queryClient.invalidateQueries({ queryKey: ["contracts"] });
+
+			// Invalidate client details to refresh projects list
+			if (newProject.clientId) {
+				queryClient.invalidateQueries({ queryKey: clientKeys.detail(newProject.clientId) });
+			}
+		},
+		onError: (error) => {
+			console.error("Failed to convert quotation to project:", error);
+		},
+	});
 };

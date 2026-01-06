@@ -101,13 +101,12 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 						</p>
 					</div>
 				</div>
-				<Button
-					onClick={() => setEditDialogOpen(true)}
-					disabled={!canEditProjects}
-				>
-					<Pencil className="h-4 w-4 mr-2" />
-					Edit Project
-				</Button>
+				{canEditProjects && (
+					<Button onClick={() => setEditDialogOpen(true)}>
+						<Pencil className="h-4 w-4 mr-2" />
+						Edit Project
+					</Button>
+				)}
 			</div>
 
 			{/* Quick Stats */}

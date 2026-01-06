@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { ProjectList } from "@/features/projects/components/ProjectList";
 import { ProjectFormDialog } from "@/features/projects/components/ProjectFormDialog";
 import { Project } from "@/features/projects/types/project";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 export default function ProjectsPage() {
 	const router = useRouter();
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
+	const { canCreateProjects } = usePermissions();
 
 	const handleProjectClick = (project: Project) => {
 		router.push(`/dashboard/projects/${project.projectId}`);
@@ -27,13 +29,15 @@ export default function ProjectsPage() {
 
 			<ProjectList
 				onProjectClick={handleProjectClick}
-				onCreateProject={handleCreateProject}
+				onCreateProject={canCreateProjects ? handleCreateProject : undefined}
 			/>
 
-			<ProjectFormDialog
-				open={showCreateDialog}
-				onOpenChange={setShowCreateDialog}
-			/>
+			{canCreateProjects && (
+				<ProjectFormDialog
+					open={showCreateDialog}
+					onOpenChange={setShowCreateDialog}
+				/>
+			)}
 		</div>
 	);
 }

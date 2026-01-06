@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { useContract, useSignContract, useActivateContract, useMarkMilestonePaid } from "../hooks/useContracts";
+import { useConvertQuotationToProject } from "@/features/projects/hooks/useProjects";
 import { ContractFormDialog } from "./ContractFormDialog";
 import { ContractStatusBadge, MilestoneStatusBadge } from "@/components/shared/StatusBadge";
 import { ContractStatus, MilestoneStatus } from "@/lib/statusHelpers";
@@ -29,6 +30,7 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 	const signContract = useSignContract();
 	const activateContract = useActivateContract();
 	const markMilestonePaid = useMarkMilestonePaid();
+	const convertToProject = useConvertQuotationToProject();
 
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [signDialogOpen, setSignDialogOpen] = useState(false);
@@ -81,6 +83,20 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 		try {
 			await activateContract.mutateAsync(contractId);
 			toast.success("Contract activated successfully");
+
+			// Auto-convert quotation to project when contract is activated
+			if (contract.quotationId && !contract.projectId) {
+				try {
+					const project = await convertToProject.mutateAsync({
+						quotationId: contract.quotationId,
+						title: contract.title,
+					});
+					toast.success(`Project "${project.title}" created successfully`);
+					router.push(`/dashboard/projects/${project.projectId}`);
+				} catch {
+					toast.error("Contract activated but failed to create project. You can create it manually.");
+				}
+			}
 		} catch {
 			toast.error("Failed to activate contract");
 		}

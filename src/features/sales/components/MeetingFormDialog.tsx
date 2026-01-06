@@ -5,7 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { FormInput, FormSelect } from "@/components/shared";
 import { Loader2 } from "lucide-react";
 import { useScheduleMeeting } from "../hooks/useLeads";
@@ -14,12 +15,10 @@ import { toast } from "sonner";
 const meetingSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	location: z.enum(["online", "office", "client_site"]),
-	meetingLink: z.string().url("Invalid URL").optional().or(z.literal("")),
+	meetingLink: z.string().url({ message: "Invalid URL" }).optional().or(z.literal("")),
 	scheduledAt: z.string().min(1, "Date and time is required"),
-	durationMinutes: z.coerce.number().min(15, "Minimum 15 minutes").max(480, "Maximum 8 hours"),
+	durationMinutes: z.string().min(1, "Duration is required"),
 });
-
-type MeetingFormData = z.infer<typeof meetingSchema>;
 
 const LOCATION_OPTIONS = [
 	{ value: "online", label: "Online" },
@@ -45,23 +44,28 @@ interface MeetingFormDialogProps {
 export function MeetingFormDialog({ open, onOpenChange, leadId }: MeetingFormDialogProps) {
 	const scheduleMeeting = useScheduleMeeting();
 
-	const form = useForm<MeetingFormData>({
+	const form = useForm({
 		resolver: zodResolver(meetingSchema),
 		defaultValues: {
 			title: "",
 			location: "online",
 			meetingLink: "",
 			scheduledAt: "",
-			durationMinutes: 30,
+			durationMinutes: "30",
 		},
 	});
 
-	const onSubmit = async (data: MeetingFormData) => {
+	const onSubmit = async (data: unknown) => {
 		try {
+			const formData = data as Record<string, unknown>;
 			await scheduleMeeting.mutateAsync({
 				leadId,
 				payload: {
-					...data,
+					title: formData.title as string,
+					location: formData.location as "online" | "office" | "client_site",
+					meetingLink: formData.meetingLink as string,
+					scheduledAt: formData.scheduledAt as string,
+					durationMinutes: parseInt(formData.durationMinutes as string, 10),
 					attendees: [],
 				},
 			});
@@ -121,11 +125,21 @@ export function MeetingFormDialog({ open, onOpenChange, leadId }: MeetingFormDia
 							/>
 						</div>
 
-						<FormInput
+						<FormField
 							control={form.control}
 							name="scheduledAt"
-							label="Date & Time"
-							type="datetime-local"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Date & Time</FormLabel>
+									<FormControl>
+										<Input
+											type="datetime-local"
+											{...field}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
 						/>
 
 						{watchLocation === "online" && (
