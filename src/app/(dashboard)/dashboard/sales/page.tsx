@@ -3,11 +3,9 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, UserPlus, FileText, LayoutGrid, List } from "lucide-react";
-import { LeadKanban, LeadFormDialog, QuotationBuilder, QuotationsTable, LeadsTable, ContractsTable, ContractFormDialog } from "@/features/sales/components";
-import { Lead, LeadStatus } from "@/features/sales/types/lead";
-import { Quotation } from "@/features/sales/types/quotation";
+import { UserPlus, FileText, LayoutGrid, List } from "lucide-react";
+import { LeadKanban, LeadFormDialog, LeadsTable, ContractsTable, ContractFormDialog } from "@/features/sales/components";
+import { LeadStatus } from "@/features/sales/types/lead";
 import { Contract } from "@/features/sales/types/contract";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
@@ -16,56 +14,26 @@ type LeadViewMode = "kanban" | "table";
 export default function SalesPage() {
 	const [activeTab, setActiveTab] = useState("leads");
 	const [leadViewMode, setLeadViewMode] = useState<LeadViewMode>("kanban");
-	const [showQuotationBuilder, setShowQuotationBuilder] = useState(false);
 	const [showLeadForm, setShowLeadForm] = useState(false);
 	const [showContractForm, setShowContractForm] = useState(false);
-	const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-	const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
 	const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
 	const [defaultLeadStatus, setDefaultLeadStatus] = useState<LeadStatus | undefined>();
 
 	// Permission checks
-	const { canCreateLeads, canEditLeads, canViewLeads, canCreateQuotations, canEditQuotations, canViewQuotations, canCreateContracts, canEditContracts, canViewContracts } = usePermissions();
-
-	const handleLeadClick = (lead: Lead) => {
-		setSelectedLead(lead);
-		setShowLeadForm(true);
-	};
+	const { canCreateLeads, canViewLeads, canCreateContracts, canEditContracts, canViewContracts } = usePermissions();
 
 	const handleCreateLead = (status?: LeadStatus) => {
-		setSelectedLead(null);
 		setDefaultLeadStatus(status);
 		setShowLeadForm(true);
 	};
 
-	const handleCreateQuotation = () => {
-		setSelectedQuotation(null);
-		setShowQuotationBuilder(true);
-	};
-
-	const handleEditQuotation = (quotation: Quotation) => {
-		setSelectedQuotation(quotation);
-		setShowQuotationBuilder(true);
-	};
-
-	const handleQuotationSuccess = () => {
-		setShowQuotationBuilder(false);
-		setSelectedQuotation(null);
-	};
-
 	const handleLeadFormClose = () => {
 		setShowLeadForm(false);
-		setSelectedLead(null);
 		setDefaultLeadStatus(undefined);
 	};
 
 	const handleCreateContract = () => {
 		setSelectedContract(null);
-		setShowContractForm(true);
-	};
-
-	const handleEditContract = (contract: Contract) => {
-		setSelectedContract(contract);
 		setShowContractForm(true);
 	};
 
@@ -79,7 +47,7 @@ export default function SalesPage() {
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-2xl font-bold">Sales</h1>
-					<p className="text-muted-foreground">Manage leads, quotations, and contracts</p>
+					<p className="text-muted-foreground">Manage leads and contracts</p>
 				</div>
 				<div className="flex gap-2">
 					{canCreateLeads && (
@@ -89,15 +57,6 @@ export default function SalesPage() {
 						>
 							<UserPlus className="mr-2 h-4 w-4" />
 							New Lead
-						</Button>
-					)}
-					{canCreateQuotations && (
-						<Button
-							variant="outline"
-							onClick={handleCreateQuotation}
-						>
-							<Plus className="mr-2 h-4 w-4" />
-							New Quotation
 						</Button>
 					)}
 					{canCreateContracts && (
@@ -116,7 +75,6 @@ export default function SalesPage() {
 				<div className="flex items-center justify-between">
 					<TabsList>
 						{canViewLeads && <TabsTrigger value="leads">Leads Pipeline</TabsTrigger>}
-						{canViewQuotations && <TabsTrigger value="quotations">Quotations</TabsTrigger>}
 						{canViewContracts && <TabsTrigger value="contracts">Contracts</TabsTrigger>}
 					</TabsList>
 
@@ -147,26 +105,7 @@ export default function SalesPage() {
 						value="leads"
 						className="mt-6"
 					>
-						{leadViewMode === "kanban" ? (
-							<LeadKanban
-								onLeadClick={canEditLeads ? handleLeadClick : undefined}
-								onCreateLead={canCreateLeads ? handleCreateLead : undefined}
-							/>
-						) : (
-							<LeadsTable onAdd={() => handleCreateLead()} />
-						)}
-					</TabsContent>
-				)}
-
-				{canViewQuotations && (
-					<TabsContent
-						value="quotations"
-						className="mt-6"
-					>
-						<QuotationsTable
-							onAdd={handleCreateQuotation}
-							onEdit={handleEditQuotation}
-						/>
+						{leadViewMode === "kanban" ? <LeadKanban onCreateLead={canCreateLeads ? handleCreateLead : undefined} /> : <LeadsTable onAdd={() => handleCreateLead()} />}
 					</TabsContent>
 				)}
 
@@ -181,48 +120,12 @@ export default function SalesPage() {
 			</Tabs>
 
 			{/* Lead Form Dialog */}
-			{(canCreateLeads || canEditLeads) && (
+			{canCreateLeads && (
 				<LeadFormDialog
 					open={showLeadForm}
 					onOpenChange={handleLeadFormClose}
-					lead={selectedLead}
 					defaultStatus={defaultLeadStatus}
 				/>
-			)}
-
-			{/* Quotation Builder Dialog */}
-			{(canCreateQuotations || canEditQuotations) && (
-				<Dialog
-					open={showQuotationBuilder}
-					onOpenChange={setShowQuotationBuilder}
-				>
-					<DialogContent className="max-w-4xl! max-h-[90vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>{selectedQuotation ? "Edit Quotation" : "Create New Quotation"}</DialogTitle>
-						</DialogHeader>
-						<QuotationBuilder
-							initialData={
-								selectedQuotation
-									? {
-											quotationId: selectedQuotation.quotationId,
-											leadId: selectedQuotation.leadId,
-											frontendHours: selectedQuotation.estimations?.frontendHours || 0,
-											backendHours: selectedQuotation.estimations?.backendHours || 0,
-											uiUxHours: selectedQuotation.estimations?.uiUxHours || 0,
-											testingHours: selectedQuotation.estimations?.testingHours || 0,
-											pmHours: selectedQuotation.estimations?.pmHours || 0,
-											hourlyRate: selectedQuotation.hourlyRate,
-											discountPercentage: selectedQuotation.discountPercentage,
-											currency: selectedQuotation.currency,
-											status: selectedQuotation.status,
-									  }
-									: undefined
-							}
-							onSuccess={handleQuotationSuccess}
-							onCancel={() => setShowQuotationBuilder(false)}
-						/>
-					</DialogContent>
-				</Dialog>
 			)}
 
 			{/* Contract Form Dialog */}

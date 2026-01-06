@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors, closestCorners, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,7 +77,7 @@ const LEAD_STATUS_COLUMNS: Array<{
 ];
 
 // Droppable Column Component
-function DroppableColumn({ column, leads, activeId, onLeadClick, onCreateLead }: { column: (typeof LEAD_STATUS_COLUMNS)[0]; leads: Lead[]; activeId: string | null; onLeadClick?: (lead: Lead) => void; onCreateLead?: (status?: LeadStatus) => void }) {
+function DroppableColumn({ column, leads, activeId, onLeadClick, onCreateLead }: { column: (typeof LEAD_STATUS_COLUMNS)[0]; leads: Lead[]; activeId: string | null; onLeadClick: (lead: Lead) => void; onCreateLead?: (status?: LeadStatus) => void }) {
 	const { setNodeRef, isOver } = useDroppable({
 		id: column.status,
 	});
@@ -126,7 +127,7 @@ function DroppableColumn({ column, leads, activeId, onLeadClick, onCreateLead }:
 									<LeadCard
 										key={lead.leadId}
 										lead={lead}
-										onClick={() => onLeadClick?.(lead)}
+										onClick={() => onLeadClick(lead)}
 										isDragging={activeId === lead.leadId.toString()}
 									/>
 								))
@@ -140,12 +141,12 @@ function DroppableColumn({ column, leads, activeId, onLeadClick, onCreateLead }:
 }
 
 interface LeadKanbanProps {
-	onLeadClick?: (lead: Lead) => void;
 	onCreateLead?: (status?: LeadStatus) => void;
 	className?: string;
 }
 
-export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLead, className = "" }) => {
+export const LeadKanban: React.FC<LeadKanbanProps> = ({ onCreateLead, className = "" }) => {
+	const router = useRouter();
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
 
@@ -155,6 +156,11 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 
 	// Permission checks
 	const { canCreateLeads, canEditLeads } = usePermissions();
+
+	// Navigate to lead details page
+	const handleLeadClick = (lead: Lead) => {
+		router.push(`/dashboard/sales/leads/${lead.leadId}`);
+	};
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, {
@@ -299,7 +305,7 @@ export const LeadKanban: React.FC<LeadKanbanProps> = ({ onLeadClick, onCreateLea
 							column={column}
 							leads={leadsByStatus[column.status] || []}
 							activeId={activeId}
-							onLeadClick={onLeadClick}
+							onLeadClick={handleLeadClick}
 							onCreateLead={canCreateLeads ? onCreateLead : undefined}
 						/>
 					))}
