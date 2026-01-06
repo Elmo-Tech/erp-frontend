@@ -49,7 +49,7 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 		{
 			key: "clockOut",
 			header: "Clock Out",
-			render: (attendance) => attendance.expectedClockIn,
+			render: (attendance) => attendance.expectedClockOut,
 		},
 		{
 			key: "late",
@@ -60,15 +60,7 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 				}
 				return (
 					<div className="flex flex-col gap-1">
-						<Badge variant="destructive">{formatMinutes(attendance.lateMinutes)}</Badge>
-						{attendance.usedGraceDay && (
-							<Badge
-								variant="secondary"
-								className="text-xs"
-							>
-								Grace Day
-							</Badge>
-						)}
+						<Badge variant="destructive">{formatMinutes(attendance.lateMinutes)} Grace Day</Badge>
 					</div>
 				);
 			},
