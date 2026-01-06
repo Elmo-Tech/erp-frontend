@@ -93,12 +93,20 @@ export const ADMIN_PERMISSIONS = {
 	DELETE_CONTRACTS: "delete_contracts",
 	SIGN_CONTRACTS: "sign_contracts",
 
+	// Milestones
+	VIEW_MILESTONES: "view_milestones",
+	CREATE_MILESTONE_INVOICE: "create_milestone_invoice",
+	MARK_MILESTONE_PAID: "mark_milestone_paid",
+	LINK_MILESTONE_INVOICE: "link_milestone_invoice",
+
 	// Invoice Management
 	MANAGE_INVOICES: "manage_invoices",
 	VIEW_INVOICES: "view_invoices",
 	CREATE_INVOICES: "create_invoices",
 	EDIT_INVOICES: "edit_invoices",
 	DELETE_INVOICES: "delete_invoices",
+	SEND_INVOICES: "send_invoices",
+	CANCEL_INVOICES: "cancel_invoices",
 
 	// Wiki Management
 	MANAGE_WIKI: "manage_wiki",
@@ -316,12 +324,20 @@ export const usePermissions = () => {
 			canDeleteContracts: hasPermission(ADMIN_PERMISSIONS.DELETE_CONTRACTS),
 			canSignContracts: hasPermission(ADMIN_PERMISSIONS.SIGN_CONTRACTS),
 
+			// Milestones
+			canViewMilestones: hasPermission(ADMIN_PERMISSIONS.VIEW_MILESTONES),
+			canCreateMilestoneInvoice: hasPermission(ADMIN_PERMISSIONS.CREATE_MILESTONE_INVOICE),
+			canMarkMilestonePaid: hasPermission(ADMIN_PERMISSIONS.MARK_MILESTONE_PAID),
+			canLinkMilestoneInvoice: hasPermission(ADMIN_PERMISSIONS.LINK_MILESTONE_INVOICE),
+
 			// Invoice Management
 			canManageInvoices: hasPermission(ADMIN_PERMISSIONS.MANAGE_INVOICES),
 			canViewInvoices: hasPermission(ADMIN_PERMISSIONS.VIEW_INVOICES),
 			canCreateInvoices: hasPermission(ADMIN_PERMISSIONS.CREATE_INVOICES),
 			canEditInvoices: hasPermission(ADMIN_PERMISSIONS.EDIT_INVOICES),
 			canDeleteInvoices: hasPermission(ADMIN_PERMISSIONS.DELETE_INVOICES),
+			canSendInvoices: hasPermission(ADMIN_PERMISSIONS.SEND_INVOICES),
+			canCancelInvoices: hasPermission(ADMIN_PERMISSIONS.CANCEL_INVOICES),
 
 			// Wiki Management
 			canManageWiki: hasPermission(ADMIN_PERMISSIONS.MANAGE_WIKI),

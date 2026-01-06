@@ -457,7 +457,7 @@ export function LeadDetailsTabs({ leadId }: LeadDetailsTabsProps) {
 				open={quotationDialogOpen}
 				onOpenChange={setQuotationDialogOpen}
 			>
-				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+				<DialogContent className="max-w-4xl! max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Create Quotation for {lead.name}</DialogTitle>
 					</DialogHeader>

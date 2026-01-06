@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { contractsApi } from "../api";
+import { contractsApi, milestonesApi, CreateMilestoneInvoicePayload, LinkMilestoneInvoicePayload } from "../api";
 import { ContractFilters, CreateContractPayload, UpdateContractPayload, SignContractPayload } from "../types";
 
 const CONTRACTS_KEY = "contracts";
 const CONTRACT_KEY = "contract";
 const DUE_MILESTONES_KEY = "due-milestones";
+const MILESTONE_KEY = "milestone";
+const INVOICES_KEY = "invoices";
 
 export function useContracts(filters?: ContractFilters) {
 	return useQuery({
@@ -118,7 +120,63 @@ export function useMarkMilestonePaid() {
 		mutationFn: ({ milestoneId, invoiceId }: { milestoneId: number; invoiceId?: number }) => contractsApi.markMilestonePaid(milestoneId, invoiceId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: [CONTRACTS_KEY] });
+			queryClient.invalidateQueries({ queryKey: [CONTRACT_KEY] });
 			queryClient.invalidateQueries({ queryKey: [DUE_MILESTONES_KEY] });
+			queryClient.invalidateQueries({ queryKey: [INVOICES_KEY] });
+		},
+	});
+}
+
+// Milestone-specific hooks
+export function useMilestone(milestoneId: number) {
+	return useQuery({
+		queryKey: [MILESTONE_KEY, milestoneId],
+		queryFn: () => milestonesApi.getById(milestoneId),
+		enabled: !!milestoneId,
+	});
+}
+
+export function useCreateMilestoneInvoice() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ milestoneId, payload }: { milestoneId: number; payload?: CreateMilestoneInvoicePayload }) => milestonesApi.createInvoice(milestoneId, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [CONTRACTS_KEY] });
+			queryClient.invalidateQueries({ queryKey: [CONTRACT_KEY] });
+			queryClient.invalidateQueries({ queryKey: [DUE_MILESTONES_KEY] });
+			queryClient.invalidateQueries({ queryKey: [MILESTONE_KEY] });
+			queryClient.invalidateQueries({ queryKey: [INVOICES_KEY] });
+		},
+	});
+}
+
+export function useLinkMilestoneInvoice() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ milestoneId, payload }: { milestoneId: number; payload: LinkMilestoneInvoicePayload }) => milestonesApi.linkInvoice(milestoneId, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [CONTRACTS_KEY] });
+			queryClient.invalidateQueries({ queryKey: [CONTRACT_KEY] });
+			queryClient.invalidateQueries({ queryKey: [DUE_MILESTONES_KEY] });
+			queryClient.invalidateQueries({ queryKey: [MILESTONE_KEY] });
+			queryClient.invalidateQueries({ queryKey: [INVOICES_KEY] });
+		},
+	});
+}
+
+export function useMarkMilestonePaidNew() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ milestoneId, invoiceId }: { milestoneId: number; invoiceId?: number }) => milestonesApi.markPaid(milestoneId, invoiceId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: [CONTRACTS_KEY] });
+			queryClient.invalidateQueries({ queryKey: [CONTRACT_KEY] });
+			queryClient.invalidateQueries({ queryKey: [DUE_MILESTONES_KEY] });
+			queryClient.invalidateQueries({ queryKey: [MILESTONE_KEY] });
+			queryClient.invalidateQueries({ queryKey: [INVOICES_KEY] });
 		},
 	});
 }

@@ -8,18 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useContract, useSignContract, useActivateContract, useMarkMilestonePaid, useUpdateContractStatus } from "../hooks/useContracts";
+import { useContract, useSignContract, useActivateContract, useMarkMilestonePaid, useUpdateContractStatus, useCreateMilestoneInvoice } from "../hooks/useContracts";
 import { useConvertQuotationToProject } from "@/features/projects/hooks/useProjects";
 import { ContractFormDialog } from "./ContractFormDialog";
-import { ContractStatusBadge, MilestoneStatusBadge } from "@/components/shared/StatusBadge";
+import { MilestoneStatusBadge } from "@/components/shared/StatusBadge";
 import { ContractStatus, MilestoneStatus } from "@/lib/statusHelpers";
-import { Building2, User, FileText, Pencil, ArrowLeft, Calendar, DollarSign, CheckCircle, Clock, FileSignature, Play, Receipt } from "lucide-react";
+import { Building2, User, FileText, Pencil, ArrowLeft, Calendar, DollarSign, CheckCircle, Clock, FileSignature, Play, Receipt, Plus, Link2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 const CONTRACT_STATUS_OPTIONS = [
 	{ value: ContractStatus.DRAFT, label: "Draft" },
@@ -40,12 +44,23 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 	const signContract = useSignContract();
 	const activateContract = useActivateContract();
 	const markMilestonePaid = useMarkMilestonePaid();
+	const createMilestoneInvoice = useCreateMilestoneInvoice();
 	const convertToProject = useConvertQuotationToProject();
 	const updateStatus = useUpdateContractStatus();
 
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [signDialogOpen, setSignDialogOpen] = useState(false);
 	const [signedByClient, setSignedByClient] = useState("");
+
+	// Create Invoice Dialog State
+	const [createInvoiceDialogOpen, setCreateInvoiceDialogOpen] = useState(false);
+	const [selectedMilestoneId, setSelectedMilestoneId] = useState<number | null>(null);
+	const [invoiceDueDate, setInvoiceDueDate] = useState("");
+	const [invoiceNotes, setInvoiceNotes] = useState("");
+	const [sendImmediately, setSendImmediately] = useState(false);
+
+	// Permission checks
+	const { canCreateMilestoneInvoice, canMarkMilestonePaid, canEditContracts, canSignContracts } = usePermissions();
 
 	if (isLoading) {
 		return (
@@ -122,9 +137,37 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 		}
 	};
 
-	const canSign = contract.status === ContractStatus.PENDING_SIGNATURE;
+	const handleOpenCreateInvoiceDialog = (milestoneId: number, dueDate?: string) => {
+		setSelectedMilestoneId(milestoneId);
+		setInvoiceDueDate(dueDate || "");
+		setInvoiceNotes("");
+		setSendImmediately(false);
+		setCreateInvoiceDialogOpen(true);
+	};
+
+	const handleCreateInvoice = async () => {
+		if (!selectedMilestoneId) return;
+
+		try {
+			await createMilestoneInvoice.mutateAsync({
+				milestoneId: selectedMilestoneId,
+				payload: {
+					dueDate: invoiceDueDate || undefined,
+					notes: invoiceNotes || undefined,
+					sendImmediately,
+				},
+			});
+			toast.success("Invoice created successfully");
+			setCreateInvoiceDialogOpen(false);
+			setSelectedMilestoneId(null);
+		} catch {
+			toast.error("Failed to create invoice");
+		}
+	};
+
+	const canSign = contract.status === ContractStatus.PENDING_SIGNATURE && canSignContracts;
 	const canActivate = contract.status === ContractStatus.SIGNED;
-	const canEdit = contract.status === ContractStatus.DRAFT || contract.status === ContractStatus.PENDING_SIGNATURE;
+	const canEdit = (contract.status === ContractStatus.DRAFT || contract.status === ContractStatus.PENDING_SIGNATURE) && canEditContracts;
 
 	const handleStatusChange = async (newStatus: string) => {
 		try {
@@ -408,7 +451,7 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 					<Card>
 						<CardHeader>
 							<CardTitle>Payment Milestones</CardTitle>
-							<CardDescription>Track payment progress for this contract</CardDescription>
+							<CardDescription>Track payment progress and manage invoices for this contract</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{milestones.length > 0 ? (
@@ -416,17 +459,34 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 									{milestones.map((milestone) => (
 										<div
 											key={milestone.milestoneId}
-											className="flex items-center justify-between p-4 border rounded-lg"
+											className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
 										>
 											<div className="flex items-center gap-4">
-												<div className={`w-10 h-10 rounded-full flex items-center justify-center ${milestone.status === MilestoneStatus.PAID ? "bg-green-100 dark:bg-green-900/30" : "bg-muted"}`}>
-													{milestone.status === MilestoneStatus.PAID ? <CheckCircle className="h-5 w-5 text-green-600" /> : <Clock className="h-5 w-5 text-muted-foreground" />}
+												<div
+													className={`w-10 h-10 rounded-full flex items-center justify-center ${
+														milestone.status === MilestoneStatus.PAID ? "bg-green-100 dark:bg-green-900/30" : milestone.status === MilestoneStatus.INVOICED ? "bg-blue-100 dark:bg-blue-900/30" : "bg-muted"
+													}`}
+												>
+													{milestone.status === MilestoneStatus.PAID ? (
+														<CheckCircle className="h-5 w-5 text-green-600" />
+													) : milestone.status === MilestoneStatus.INVOICED ? (
+														<Receipt className="h-5 w-5 text-blue-600" />
+													) : (
+														<Clock className="h-5 w-5 text-muted-foreground" />
+													)}
 												</div>
 												<div>
 													<p className="font-medium">{milestone.title}</p>
 													<p className="text-sm text-muted-foreground">
 														{milestone.percentage}% • {milestone.dueDate && `Due: ${format(new Date(milestone.dueDate), "MMM d, yyyy")}`}
 													</p>
+													{/* Show linked invoice info */}
+													{milestone.invoiceId && (
+														<div className="flex items-center gap-2 mt-1">
+															<Link2 className="h-3 w-3 text-muted-foreground" />
+															<span className="text-xs text-muted-foreground">Invoice linked</span>
+														</div>
+													)}
 												</div>
 											</div>
 											<div className="flex items-center gap-3">
@@ -434,17 +494,51 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 													{contract.currency} {milestone.amount.toLocaleString()}
 												</span>
 												<MilestoneStatusBadge status={milestone.status} />
-												{milestone.status !== MilestoneStatus.PAID && contract.status === ContractStatus.ACTIVE && (
-													<Button
-														variant="outline"
-														size="sm"
-														onClick={() => handleMarkMilestonePaid(milestone.milestoneId)}
-														disabled={markMilestonePaid.isPending}
-													>
-														<Receipt className="h-4 w-4 mr-1" />
-														Mark Paid
-													</Button>
-												)}
+
+												{/* Action buttons based on milestone status */}
+												<TooltipProvider>
+													<div className="flex items-center gap-2">
+														{/* Create Invoice button - show when milestone is due and has no invoice */}
+														{(milestone.status === MilestoneStatus.DUE || milestone.status === MilestoneStatus.PENDING) && !milestone.invoiceId && contract.status === ContractStatus.ACTIVE && canCreateMilestoneInvoice && (
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant="outline"
+																		size="sm"
+																		onClick={() => handleOpenCreateInvoiceDialog(milestone.milestoneId, milestone.dueDate)}
+																		disabled={createMilestoneInvoice.isPending}
+																	>
+																		<Plus className="h-4 w-4 mr-1" />
+																		Create Invoice
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent>
+																	<p>Create an invoice for this milestone</p>
+																</TooltipContent>
+															</Tooltip>
+														)}
+
+														{/* Mark Paid button - show when milestone has invoice or is due */}
+														{milestone.status !== MilestoneStatus.PAID && contract.status === ContractStatus.ACTIVE && canMarkMilestonePaid && (
+															<Tooltip>
+																<TooltipTrigger asChild>
+																	<Button
+																		variant={milestone.invoiceId ? "default" : "outline"}
+																		size="sm"
+																		onClick={() => handleMarkMilestonePaid(milestone.milestoneId)}
+																		disabled={markMilestonePaid.isPending}
+																	>
+																		<CheckCircle className="h-4 w-4 mr-1" />
+																		Mark Paid
+																	</Button>
+																</TooltipTrigger>
+																<TooltipContent>
+																	<p>{milestone.invoiceId ? "Mark milestone and linked invoice as paid" : "Mark milestone as paid without invoice"}</p>
+																</TooltipContent>
+															</Tooltip>
+														)}
+													</div>
+												</TooltipProvider>
 											</div>
 										</div>
 									))}
@@ -510,6 +604,68 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 							disabled={signContract.isPending}
 						>
 							{signContract.isPending ? "Signing..." : "Sign Contract"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Create Invoice from Milestone Dialog */}
+			<Dialog
+				open={createInvoiceDialogOpen}
+				onOpenChange={setCreateInvoiceDialogOpen}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create Invoice from Milestone</DialogTitle>
+						<DialogDescription>Create an invoice for this milestone. The amount will be taken from the milestone.</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 py-4">
+						<div className="space-y-2">
+							<Label htmlFor="invoiceDueDate">Due Date</Label>
+							<Input
+								id="invoiceDueDate"
+								type="date"
+								value={invoiceDueDate}
+								onChange={(e) => setInvoiceDueDate(e.target.value)}
+							/>
+							<p className="text-xs text-muted-foreground">Leave empty to use milestone due date or default to 14 days from now</p>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="invoiceNotes">Notes (Optional)</Label>
+							<Textarea
+								id="invoiceNotes"
+								value={invoiceNotes}
+								onChange={(e) => setInvoiceNotes(e.target.value)}
+								placeholder="Additional notes for the invoice..."
+								rows={3}
+							/>
+						</div>
+						<div className="flex items-center space-x-2">
+							<Checkbox
+								id="sendImmediately"
+								checked={sendImmediately}
+								onCheckedChange={(checked) => setSendImmediately(checked === true)}
+							/>
+							<Label
+								htmlFor="sendImmediately"
+								className="text-sm font-normal cursor-pointer"
+							>
+								Send invoice to client immediately
+							</Label>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setCreateInvoiceDialogOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleCreateInvoice}
+							disabled={createMilestoneInvoice.isPending}
+						>
+							{createMilestoneInvoice.isPending ? "Creating..." : "Create Invoice"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

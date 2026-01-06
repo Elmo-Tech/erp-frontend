@@ -1,6 +1,28 @@
 import api from "@/lib/axios";
 import { Contract, ContractMilestone, ContractListResponse, CreateContractPayload, UpdateContractPayload, SignContractPayload, ContractFilters } from "../types";
 
+export interface CreateMilestoneInvoicePayload {
+	dueDate?: string;
+	notes?: string;
+	sendImmediately?: boolean;
+}
+
+export interface LinkMilestoneInvoicePayload {
+	invoiceId: number;
+}
+
+export interface MilestoneWithInvoice extends ContractMilestone {
+	invoice?: {
+		invoiceId: number;
+		invoiceNumber: string;
+		amount: number;
+		currency: string;
+		status: string;
+		dueDate: string;
+		paidAt?: string;
+	};
+}
+
 export const contractsApi = {
 	getAll: async (filters?: ContractFilters): Promise<ContractListResponse> => {
 		const params = new URLSearchParams();
@@ -63,6 +85,31 @@ export const contractsApi = {
 
 	markMilestonePaid: async (milestoneId: number, invoiceId?: number): Promise<ContractMilestone> => {
 		const response = await api.patch<{ data: ContractMilestone }>(`/contracts/milestones/${milestoneId}/paid`, {
+			invoiceId,
+		});
+		return response.data.data;
+	},
+};
+
+// Milestone API - separate endpoints for milestone-invoice integration
+export const milestonesApi = {
+	getById: async (milestoneId: number): Promise<MilestoneWithInvoice> => {
+		const response = await api.get<{ data: MilestoneWithInvoice }>(`/milestones/${milestoneId}`);
+		return response.data.data;
+	},
+
+	createInvoice: async (milestoneId: number, payload?: CreateMilestoneInvoicePayload): Promise<{ invoice: unknown; milestone: MilestoneWithInvoice }> => {
+		const response = await api.post<{ data: { invoice: unknown; milestone: MilestoneWithInvoice } }>(`/milestones/${milestoneId}/create-invoice`, payload || {});
+		return response.data.data;
+	},
+
+	linkInvoice: async (milestoneId: number, payload: LinkMilestoneInvoicePayload): Promise<{ milestone: MilestoneWithInvoice }> => {
+		const response = await api.post<{ data: { milestone: MilestoneWithInvoice } }>(`/milestones/${milestoneId}/link-invoice`, payload);
+		return response.data.data;
+	},
+
+	markPaid: async (milestoneId: number, invoiceId?: number): Promise<MilestoneWithInvoice> => {
+		const response = await api.patch<{ data: MilestoneWithInvoice }>(`/milestones/${milestoneId}/mark-paid`, {
 			invoiceId,
 		});
 		return response.data.data;
