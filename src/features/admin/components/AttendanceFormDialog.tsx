@@ -32,10 +32,13 @@ interface AttendanceFormDialogProps {
 	attendance: Attendance | null;
 }
 
-function formatTimeFromISO(isoString: string | null): string {
-	if (!isoString) return "";
-	const date = new Date(isoString);
-	return format(date, "HH:mm");
+function formatTimeFromISO(dateTimeString: string | null): string {
+	if (!dateTimeString) return "";
+	// Parse the datetime string directly without timezone conversion
+	// Format: "2026-01-06T10:00:00" -> "10:00"
+	const timePart = dateTimeString.split("T")[1];
+	if (!timePart) return "";
+	return timePart.substring(0, 5); // Get HH:mm
 }
 
 // Combine date and time into ISO datetime string

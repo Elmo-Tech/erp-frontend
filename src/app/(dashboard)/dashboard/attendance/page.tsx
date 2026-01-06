@@ -24,8 +24,15 @@ export default function AttendancePage() {
 	const formatTime = (timeString: string | null): string => {
 		if (!timeString) return "--:--";
 		try {
-			const date = new Date(timeString);
-			return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+			// Parse time directly from string without timezone conversion
+			// Format: "2026-01-06T10:00:00" -> "10:00 AM"
+			const timePart = timeString.split("T")[1];
+			if (!timePart) return "--:--";
+			const [hours, minutes] = timePart.split(":");
+			const hour = parseInt(hours);
+			const ampm = hour >= 12 ? "PM" : "AM";
+			const hour12 = hour % 12 || 12;
+			return `${hour12}:${minutes} ${ampm}`;
 		} catch {
 			return "--:--";
 		}

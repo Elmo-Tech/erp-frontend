@@ -13,6 +13,19 @@ interface AttendanceColumnsOptions {
 	canManage?: boolean;
 }
 
+// Parse time from datetime string without timezone conversion
+// Format: "2026-01-06T10:00:00" -> "10:00 AM"
+function formatTime(dateString: string | null): string {
+	if (!dateString) return "-";
+	const timePart = dateString.split("T")[1];
+	if (!timePart) return "-";
+	const [hours, minutes] = timePart.split(":");
+	const hour = parseInt(hours);
+	const ampm = hour >= 12 ? "PM" : "AM";
+	const hour12 = hour % 12 || 12;
+	return `${hour12}:${minutes} ${ampm}`;
+}
+
 function formatMinutes(minutes: number): string {
 	if (minutes === 0) return "-";
 	const hours = Math.floor(minutes / 60);
@@ -44,12 +57,12 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 		{
 			key: "clockIn",
 			header: "Clock In",
-			render: (attendance) => attendance.expectedClockIn,
+			render: (attendance) => formatTime(attendance.clockIn),
 		},
 		{
 			key: "clockOut",
 			header: "Clock Out",
-			render: (attendance) => attendance.expectedClockOut,
+			render: (attendance) => formatTime(attendance.clockOut),
 		},
 		{
 			key: "late",
@@ -60,7 +73,15 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 				}
 				return (
 					<div className="flex flex-col gap-1">
-						<Badge variant="destructive">{formatMinutes(attendance.lateMinutes)} Grace Day</Badge>
+						<Badge variant="destructive">{formatMinutes(attendance.lateMinutes)}</Badge>
+						{attendance.usedGraceDay && (
+							<Badge
+								variant="outline"
+								className="text-xs"
+							>
+								Grace Day
+							</Badge>
+						)}
 					</div>
 				);
 			},
