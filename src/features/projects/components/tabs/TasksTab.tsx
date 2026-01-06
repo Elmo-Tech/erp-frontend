@@ -463,12 +463,12 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 									<Pencil className="h-4 w-4 mr-2" /> Edit Task
 								</DropdownMenuItem>
 							)}
-							{onCreateChild && canCreateWeeklyTasks && task.type === TaskType.MAIN && (
+							{onCreateChild && canCreateWeeklyTasks && task.type === TaskType.MAIN && task.status !== TaskStatus.COMPLETED && (
 								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
 									<Plus className="h-4 w-4 mr-2" /> Add Weekly Task
 								</DropdownMenuItem>
 							)}
-							{onCreateChild && canCreateSubtasks && task.type === TaskType.WEEKLY && (
+							{onCreateChild && canCreateSubtasks && task.type === TaskType.WEEKLY && task.status !== TaskStatus.COMPLETED && (
 								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
 									<Plus className="h-4 w-4 mr-2" /> Add Subtask
 								</DropdownMenuItem>

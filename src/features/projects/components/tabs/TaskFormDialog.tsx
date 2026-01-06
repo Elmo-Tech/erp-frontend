@@ -106,10 +106,20 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 		}
 	}, [task, form, parentId, defaultType]);
 
-	const statusOptions = Object.values(TaskStatus).map((status) => ({
-		value: status,
-		label: TaskStatusLabels[status],
-	}));
+	// Status options - if task is completed, only show completed (no transitions allowed)
+	const statusOptions = useMemo(() => {
+		if (task?.status === TaskStatus.COMPLETED) {
+			// Completed tasks cannot change status
+			return [{ value: TaskStatus.COMPLETED, label: TaskStatusLabels[TaskStatus.COMPLETED] }];
+		}
+		return Object.values(TaskStatus).map((status) => ({
+			value: status,
+			label: TaskStatusLabels[status],
+		}));
+	}, [task?.status]);
+
+	// Check if task is completed (for disabling certain actions)
+	const isTaskCompleted = task?.status === TaskStatus.COMPLETED;
 
 	const typeOptions = Object.values(TaskType).map((type) => ({
 		value: type,
