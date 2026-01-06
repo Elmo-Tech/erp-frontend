@@ -65,7 +65,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 
 	const { data, isLoading, error } = useProjectTasks(projectId, page, 20);
 	const deleteTask = useDeleteTask();
-	const { canCreateTasks, canEditTasks, canDeleteTasks, canCreateMainTasks, canCreateWeeklyTasks, canCreateSubtasks } = usePermissions();
+	const { canCreateTasks, canEditTasks, canDeleteTasks, canCreateMainTasks, canCreateWeeklyTasks, canCreateSubtasks, canEditMainTasks, canEditWeeklyTasks, canEditSubtasks } = usePermissions();
 
 	// Determine if user can create main tasks (admin only) or just subtasks
 	const canCreateMainOrWeekly = canCreateMainTasks || canCreateWeeklyTasks;
@@ -212,6 +212,9 @@ export function TasksTab({ projectId }: TasksTabProps) {
 									onCreateChild={canCreateWeeklyTasks || canCreateSubtasks ? handleCreateChild : undefined}
 									canCreateWeeklyTasks={canCreateWeeklyTasks}
 									canCreateSubtasks={canCreateSubtasks}
+									canEditMainTasks={canEditMainTasks}
+									canEditWeeklyTasks={canEditWeeklyTasks}
+									canEditSubtasks={canEditSubtasks}
 									expandedTasks={expandedTasks}
 									onToggleExpand={toggleExpand}
 								/>
@@ -296,11 +299,14 @@ interface TaskRowProps {
 	onCreateChild?: (task: Task, type: TaskType) => void;
 	canCreateWeeklyTasks?: boolean;
 	canCreateSubtasks?: boolean;
+	canEditMainTasks?: boolean;
+	canEditWeeklyTasks?: boolean;
+	canEditSubtasks?: boolean;
 	expandedTasks: Set<number>;
 	onToggleExpand: (taskId: number) => void;
 }
 
-function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete, onCreateChild, canCreateWeeklyTasks, canCreateSubtasks, expandedTasks, onToggleExpand }: TaskRowProps) {
+function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete, onCreateChild, canCreateWeeklyTasks, canCreateSubtasks, canEditMainTasks, canEditWeeklyTasks, canEditSubtasks, expandedTasks, onToggleExpand }: TaskRowProps) {
 	const { data: childrenData, isLoading: loadingChildren } = useTaskChildren(task.taskId, isExpanded) as {
 		data: TaskChildrenResponse | undefined;
 		isLoading: boolean;
@@ -315,6 +321,9 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 	const timeSpentMins = task.totalTimeSpent % 60;
 	const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== TaskStatus.COMPLETED;
 	const isDueToday = task.dueDate && isToday(new Date(task.dueDate));
+
+	// Determine if user can edit this specific task based on its type
+	const canEditThisTask = onEdit && ((task.type === TaskType.MAIN && canEditMainTasks) || (task.type === TaskType.WEEKLY && canEditWeeklyTasks) || (task.type === TaskType.SUBTASK && canEditSubtasks));
 
 	return (
 		<>
@@ -449,7 +458,7 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 							align="end"
 							className="w-48"
 						>
-							{onEdit && (
+							{canEditThisTask && (
 								<DropdownMenuItem onClick={() => onEdit(task)}>
 									<Pencil className="h-4 w-4 mr-2" /> Edit Task
 								</DropdownMenuItem>
@@ -496,6 +505,9 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 							onCreateChild={onCreateChild}
 							canCreateWeeklyTasks={canCreateWeeklyTasks}
 							canCreateSubtasks={canCreateSubtasks}
+							canEditMainTasks={canEditMainTasks}
+							canEditWeeklyTasks={canEditWeeklyTasks}
+							canEditSubtasks={canEditSubtasks}
 							expandedTasks={expandedTasks}
 							onToggleExpand={onToggleExpand}
 						/>

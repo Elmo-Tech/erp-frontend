@@ -136,6 +136,11 @@ export const ADMIN_PERMISSIONS = {
 	CREATE_WEEKLY_TASKS: "create_weekly_tasks",
 	CREATE_SUBTASKS: "create_subtasks",
 
+	// Task Edit Permissions
+	EDIT_MAIN_TASKS: "edit_main_tasks",
+	EDIT_WEEKLY_TASKS: "edit_weekly_tasks",
+	EDIT_SUBTASKS: "edit_subtasks",
+
 	// Dashboard
 	VIEW_DASHBOARD: "view_dashboard",
 	VIEW_DASHBOARD_OVERVIEW: "view_dashboard_overview",
@@ -373,6 +378,11 @@ export const usePermissions = () => {
 			canCreateMainTasks: hasPermission(ADMIN_PERMISSIONS.CREATE_MAIN_TASKS),
 			canCreateWeeklyTasks: hasPermission(ADMIN_PERMISSIONS.CREATE_WEEKLY_TASKS),
 			canCreateSubtasks: hasPermission(ADMIN_PERMISSIONS.CREATE_SUBTASKS),
+
+			// Task Edit
+			canEditMainTasks: hasPermission(ADMIN_PERMISSIONS.EDIT_MAIN_TASKS),
+			canEditWeeklyTasks: hasPermission(ADMIN_PERMISSIONS.EDIT_WEEKLY_TASKS),
+			canEditSubtasks: hasPermission(ADMIN_PERMISSIONS.EDIT_SUBTASKS),
 
 			// Dashboard
 			canViewDashboard: hasPermission(ADMIN_PERMISSIONS.VIEW_DASHBOARD),

@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Task, TaskStatusLabels, TaskStatusColors, TaskPriorityLabels, TaskPriorityColors, TaskTypeLabels } from "@/features/dashboard/types/task";
+import { Task, TaskStatusLabels, TaskStatusColors, TaskPriorityLabels, TaskPriorityColors, TaskTypeLabels, TaskType } from "@/features/dashboard/types/task";
 import { useTask, useTaskActivities, useTestScenarios } from "@/features/dashboard/hooks/useTasks";
 import { TaskAssigneesSection } from "./TaskAssigneesSection";
 import { TaskTestScenariosSection } from "./TaskTestScenariosSection";
 import { TaskActivitySection } from "./TaskActivitySection";
 import { TaskTimerWidget } from "./TaskTimerWidget";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -30,8 +31,12 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 	const { data: task, isLoading } = useTask(taskId ?? 0, !!taskId && open);
 	const { data: activities } = useTaskActivities(taskId ?? 0, !!taskId && open);
 	const { data: testScenarios } = useTestScenarios(taskId ?? 0, !!taskId && open);
+	const { canEditMainTasks, canEditWeeklyTasks, canEditSubtasks } = usePermissions();
 
 	if (!taskId) return null;
+
+	// Determine if user can edit this specific task based on its type
+	const canEditThisTask = task && onEdit && ((task.type === TaskType.MAIN && canEditMainTasks) || (task.type === TaskType.WEEKLY && canEditWeeklyTasks) || (task.type === TaskType.SUBTASK && canEditSubtasks));
 
 	const formatTimeSpent = (minutes: number) => {
 		const hours = Math.floor(minutes / 60);
@@ -82,7 +87,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 										</div>
 									)}
 								</div>
-								{onEdit && (
+								{canEditThisTask && (
 									<Button
 										variant="outline"
 										size="sm"
