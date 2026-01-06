@@ -35,10 +35,6 @@ export interface AttendanceFormData {
 	date: string;
 	clockIn: string;
 	clockOut?: string | null;
-	lateMinutes?: number;
-	isLate?: boolean;
-	usedGraceDay?: boolean;
-	deductionMinutes?: number;
 	notes?: string;
 }
 
