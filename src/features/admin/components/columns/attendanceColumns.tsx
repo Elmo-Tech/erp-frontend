@@ -59,7 +59,24 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 		{
 			key: "late",
 			header: "Late",
-			render: (attendance) => (attendance.lateMinutes > 0 ? <Badge variant="destructive">{formatMinutes(attendance.lateMinutes)}</Badge> : <Badge variant="secondary">On Time</Badge>),
+			render: (attendance) => {
+				if (!attendance.isLate) {
+					return <Badge variant="secondary">On Time</Badge>;
+				}
+				return (
+					<div className="flex flex-col gap-1">
+						<Badge variant="destructive">{formatMinutes(attendance.lateMinutes)}</Badge>
+						{attendance.usedGraceDay && (
+							<Badge
+								variant="outline"
+								className="text-xs"
+							>
+								Grace Day
+							</Badge>
+						)}
+					</div>
+				);
+			},
 		},
 		{
 			key: "worked",
@@ -69,7 +86,7 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 		{
 			key: "deduction",
 			header: "Deduction",
-			render: (attendance) => (attendance.deductionMinutes > 0 ? <Badge variant="destructive">{formatMinutes(attendance.deductionMinutes)}</Badge> : attendance.usedGraceDay ? <Badge variant="outline">Grace Day</Badge> : "-"),
+			render: (attendance) => (attendance.deductionMinutes > 0 ? <Badge variant="destructive">{formatMinutes(attendance.deductionMinutes)}</Badge> : "-"),
 		},
 		{
 			key: "status",

@@ -393,6 +393,9 @@ export interface User {
 	skills: string[];
 	roles: string[];
 	isActive: boolean;
+	graceDaysRemaining?: number;
+	graceDaysAllowed?: number;
+	graceDaysUsed?: number;
 	createdAt: string;
 	updatedAt: string;
 }

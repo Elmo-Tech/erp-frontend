@@ -7,6 +7,7 @@ export interface Attendance {
 	expectedClockIn: string | null;
 	expectedClockOut: string | null;
 	lateMinutes: number;
+	isLate: boolean;
 	idleMinutes: number;
 	deductionMinutes: number;
 	usedGraceDay: boolean;
@@ -18,6 +19,7 @@ export interface Attendance {
 		name: string;
 		email: string;
 		avatar: string;
+		graceDaysRemaining?: number;
 	};
 }
 
@@ -34,6 +36,8 @@ export interface AttendanceFormData {
 	clockIn: string;
 	clockOut?: string | null;
 	lateMinutes?: number;
+	isLate?: boolean;
+	usedGraceDay?: boolean;
 	deductionMinutes?: number;
 	notes?: string;
 }
