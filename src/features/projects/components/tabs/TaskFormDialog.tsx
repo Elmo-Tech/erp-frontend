@@ -176,6 +176,20 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 		return isNaN(parsed) ? null : parsed;
 	};
 
+	// Helper to normalize date for comparison (extract YYYY-MM-DD)
+	const normalizeDate = (date: string | null | undefined): string | null => {
+		if (!date) return null;
+		// Handle both ISO format and YYYY-MM-DD format
+		return date.split("T")[0];
+	};
+
+	// Helper to check if dates are different
+	const datesAreDifferent = (date1: string | null | undefined, date2: string | null | undefined): boolean => {
+		const normalized1 = normalizeDate(date1);
+		const normalized2 = normalizeDate(date2);
+		return normalized1 !== normalized2;
+	};
+
 	const selectedTagIds = form.watch("tagIds") || [];
 
 	const toggleTag = (tagId: number) => {
@@ -205,8 +219,8 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 				if (data.priority !== task.priority) payload.priority = data.priority;
 				if (assignedTo !== task.assignedTo) payload.assignedTo = assignedTo;
 				if (Number(data.estimatedHours) !== task.estimatedHours) payload.estimatedHours = Number(data.estimatedHours);
-				if (data.dueDate !== task.dueDate) payload.dueDate = data.dueDate;
-				if (data.startDate !== task.startDate) payload.startDate = data.startDate;
+				if (datesAreDifferent(data.dueDate, task.dueDate)) payload.dueDate = data.dueDate ? normalizeDate(data.dueDate) : null;
+				if (datesAreDifferent(data.startDate, task.startDate)) payload.startDate = data.startDate ? normalizeDate(data.startDate) : null;
 				if (data.sprintNumber !== task.sprintNumber) payload.sprintNumber = data.sprintNumber;
 				if (data.internalReviewerNotes !== (task.internalReviewerNotes || "")) payload.internalReviewerNotes = data.internalReviewerNotes;
 
