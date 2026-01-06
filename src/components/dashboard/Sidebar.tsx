@@ -102,6 +102,12 @@ const navGroups: NavGroup[] = [
 				permission: "view_admin_stats",
 			},
 			{
+				title: "Attendance Management",
+				href: "/dashboard/admin/attendance",
+				icon: Clock,
+				permission: "view_all_attendance",
+			},
+			{
 				title: "Roles & Permissions",
 				href: "/dashboard/roles",
 				icon: Shield,
