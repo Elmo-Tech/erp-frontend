@@ -49,12 +49,12 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 		{
 			key: "clockIn",
 			header: "Clock In",
-			render: (attendance) => formatTime(attendance.clockIn),
+			render: (attendance) => formatTime(attendance.expectedClockIn),
 		},
 		{
 			key: "clockOut",
 			header: "Clock Out",
-			render: (attendance) => formatTime(attendance.clockOut),
+			render: (attendance) => formatTime(attendance.expectedClockOut),
 		},
 		{
 			key: "late",
@@ -68,7 +68,7 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 						<Badge variant="destructive">{formatMinutes(attendance.lateMinutes)}</Badge>
 						{attendance.usedGraceDay && (
 							<Badge
-								variant="outline"
+								variant="secondary"
 								className="text-xs"
 							>
 								Grace Day
