@@ -6,18 +6,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
 import { FormInput } from "@/components/shared/forms/FormInput";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
+import { FormDatePicker } from "@/components/shared/forms/FormDatePicker";
 import { Attendance, AttendanceFormData } from "../types/attendance";
 import { useCreateAttendance, useUpdateAttendance } from "../hooks/useAttendance";
 import { useUsers } from "../hooks/useUsers";
 
 const formSchema = z.object({
-	userId: z.string().min(1, "اختر الموظف"),
-	date: z.string().min(1, "التاريخ مطلوب"),
-	clockIn: z.string().min(1, "وقت الدخول مطلوب"),
+	userId: z.string().min(1, "Please select an employee"),
+	date: z.string().min(1, "Date is required"),
+	clockIn: z.string().min(1, "Clock in time is required"),
 	clockOut: z.string().optional(),
 	lateMinutes: z.number().min(0).optional(),
 	deductionMinutes: z.number().min(0).optional(),
@@ -116,12 +118,9 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 		<FormDialog
 			open={open}
 			onOpenChange={(o) => !o && onClose()}
-			title={isEditing ? "تعديل سجل الحضور" : "إضافة سجل حضور جديد"}
-			submitLabel={isEditing ? "تحديث" : "إضافة"}
-			isLoading={isPending}
-			onSubmit={form.handleSubmit(onSubmit)}
+			title={isEditing ? "Edit Attendance Record" : "Add Attendance Record"}
+			size="xl"
 			showFooter={false}
-			size="md"
 		>
 			<Form {...form}>
 				<form
@@ -131,17 +130,16 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 					<FormSelect
 						control={form.control}
 						name="userId"
-						label="الموظف"
-						placeholder="اختر الموظف"
+						label="Employee"
+						placeholder="Select employee"
 						options={userOptions}
 						disabled={isEditing}
 					/>
 
-					<FormInput
+					<FormDatePicker
 						control={form.control}
 						name="date"
-						label="التاريخ"
-						type="date"
+						label="Date"
 						disabled={isEditing}
 					/>
 
@@ -149,14 +147,14 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 						<FormInput
 							control={form.control}
 							name="clockIn"
-							label="وقت الدخول"
+							label="Clock In"
 							type="time"
 						/>
 
 						<FormInput
 							control={form.control}
 							name="clockOut"
-							label="وقت الخروج"
+							label="Clock Out"
 							type="time"
 						/>
 					</div>
@@ -165,7 +163,7 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 						<FormInput
 							control={form.control}
 							name="lateMinutes"
-							label="دقائق التأخير"
+							label="Late Minutes"
 							type="number"
 							min={0}
 						/>
@@ -173,7 +171,7 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 						<FormInput
 							control={form.control}
 							name="deductionMinutes"
-							label="دقائق الخصم"
+							label="Deduction Minutes"
 							type="number"
 							min={0}
 						/>
@@ -182,27 +180,26 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 					<FormTextarea
 						control={form.control}
 						name="notes"
-						label="ملاحظات"
-						placeholder="أضف ملاحظات (اختياري)"
+						label="Notes"
+						placeholder="Add notes (optional)"
 						rows={3}
 					/>
 
 					<div className="flex justify-end gap-2 pt-4">
-						<button
+						<Button
 							type="button"
-							className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+							variant="outline"
 							onClick={onClose}
 							disabled={isPending}
 						>
-							إلغاء
-						</button>
-						<button
+							Cancel
+						</Button>
+						<Button
 							type="submit"
-							className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
 							disabled={isPending}
 						>
-							{isPending ? "جاري الحفظ..." : isEditing ? "تحديث" : "إضافة"}
-						</button>
+							{isPending ? "Saving..." : isEditing ? "Update" : "Add"}
+						</Button>
 					</div>
 				</form>
 			</Form>

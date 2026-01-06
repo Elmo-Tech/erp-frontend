@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
 import { useEffect, useMemo } from "react";
@@ -117,9 +118,6 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 			label: TaskStatusLabels[status],
 		}));
 	}, [task?.status]);
-
-	// Check if task is completed (for disabling certain actions)
-	const isTaskCompleted = task?.status === TaskStatus.COMPLETED;
 
 	const typeOptions = Object.values(TaskType).map((type) => ({
 		value: type,
