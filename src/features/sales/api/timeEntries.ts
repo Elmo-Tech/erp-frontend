@@ -34,19 +34,19 @@ export const timeEntriesApi = {
 		const params = new URLSearchParams();
 
 		if (filters?.trackableType) {
-			params.append("filter[trackableType]", filters.trackableType);
+			params.append("filter[trackable_type]", filters.trackableType);
 		}
 		if (filters?.trackableId) {
-			params.append("filter[trackableId]", filters.trackableId.toString());
+			params.append("filter[trackable_id]", filters.trackableId.toString());
 		}
 		if (filters?.userId) {
-			params.append("filter[userId]", filters.userId.toString());
+			params.append("filter[user_id]", filters.userId.toString());
 		}
 		if (filters?.startDate) {
-			params.append("filter[startDate]", filters.startDate);
+			params.append("filter[start_date]", filters.startDate);
 		}
 		if (filters?.endDate) {
-			params.append("filter[endDate]", filters.endDate);
+			params.append("filter[end_date]", filters.endDate);
 		}
 		if (filters?.page) {
 			params.append("page", filters.page.toString());
@@ -66,19 +66,19 @@ export const timeEntriesApi = {
 		const params = new URLSearchParams();
 
 		if (filters?.trackableType) {
-			params.append("filter[trackableType]", filters.trackableType);
+			params.append("filter[trackable_type]", filters.trackableType);
 		}
 		if (filters?.trackableId) {
-			params.append("filter[trackableId]", filters.trackableId.toString());
+			params.append("filter[trackable_id]", filters.trackableId.toString());
 		}
 		if (filters?.userId) {
-			params.append("filter[userId]", filters.userId.toString());
+			params.append("filter[user_id]", filters.userId.toString());
 		}
 		if (filters?.startDate) {
-			params.append("filter[startDate]", filters.startDate);
+			params.append("filter[start_date]", filters.startDate);
 		}
 		if (filters?.endDate) {
-			params.append("filter[endDate]", filters.endDate);
+			params.append("filter[end_date]", filters.endDate);
 		}
 		if (filters?.page) {
 			params.append("page", filters.page.toString());
