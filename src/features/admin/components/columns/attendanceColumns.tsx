@@ -13,11 +13,6 @@ interface AttendanceColumnsOptions {
 	canManage?: boolean;
 }
 
-function formatTime(dateString: string | null): string {
-	if (!dateString) return "-";
-	return format(new Date(dateString), "hh:mm a");
-}
-
 function formatMinutes(minutes: number): string {
 	if (minutes === 0) return "-";
 	const hours = Math.floor(minutes / 60);
@@ -44,17 +39,17 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 		{
 			key: "date",
 			header: "Date",
-			render: (attendance) => format(new Date(attendance.date), "yyyy/MM/dd"),
+			render: (attendance) => format(new Date(attendance.date), "dd/MM/yyyy"),
 		},
 		{
 			key: "clockIn",
 			header: "Clock In",
-			render: (attendance) => formatTime(attendance.expectedClockIn),
+			render: (attendance) => attendance.expectedClockIn,
 		},
 		{
 			key: "clockOut",
 			header: "Clock Out",
-			render: (attendance) => formatTime(attendance.expectedClockOut),
+			render: (attendance) => attendance.expectedClockIn,
 		},
 		{
 			key: "late",
