@@ -16,6 +16,8 @@ import { Plus, X, Crown, Code, Eye, Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
+import { useAuthStore } from "@/store/authStore";
 
 const addAssigneeSchema = z.object({
 	userId: z.string().min(1, "Please select a member"),
@@ -52,11 +54,19 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 	const { data: membersData } = useProjectMembers(task.projectId);
 	const addAssignee = useAddAssignee();
 	const removeAssignee = useRemoveAssignee();
+	const { canManageTaskTeam } = usePermissions();
+	const { user, role } = useAuthStore();
 
-	// All task types can have assignees edited now
-	// For Weekly/Subtasks, only team members from Main Task can be assigned
-	const canEditAssignees = true;
+	// Permission logic:
+	// - Main/Weekly Tasks: Only users with manage_task_team permission can add/remove team
+	// - Subtasks: Team is inherited (view-only), no one can add/remove
+	const isMainOrWeeklyTask = task.type === TaskType.MAIN || task.type === TaskType.WEEKLY;
+	const isSubtask = task.type === TaskType.SUBTASK;
 	const isMainTask = task.type === TaskType.MAIN;
+
+	// Check if user is admin/super-admin or has manage_task_team permission
+	const isAdminOrSuperAdmin = role === "admin" || role === "super-admin";
+	const canEditAssignees = isMainOrWeeklyTask && (isAdminOrSuperAdmin || canManageTaskTeam);
 
 	const form = useForm<AddAssigneeFormData>({
 		resolver: zodResolver(addAssigneeSchema),
@@ -154,7 +164,13 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 			</div>
 
 			{/* Info notice for non-main tasks */}
-			{!isMainTask && (
+			{isSubtask && (
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>Team members are inherited from the main task and cannot be modified on subtasks.</AlertDescription>
+				</Alert>
+			)}
+			{!isMainOrWeeklyTask && !isSubtask && (
 				<Alert>
 					<Info className="h-4 w-4" />
 					<AlertDescription>You can assign team members from the main task&apos;s team. Add members to the main task first to expand the available team.</AlertDescription>

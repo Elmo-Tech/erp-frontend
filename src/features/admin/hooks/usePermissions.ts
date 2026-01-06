@@ -141,6 +141,13 @@ export const ADMIN_PERMISSIONS = {
 	EDIT_WEEKLY_TASKS: "edit_weekly_tasks",
 	EDIT_SUBTASKS: "edit_subtasks",
 
+	// Task Team & Test Scenarios Permissions
+	MANAGE_TASK_TEAM: "manage_task_team",
+	MANAGE_TASK_TEST_SCENARIOS: "manage_task_test_scenarios",
+
+	// Project Budget Permission
+	VIEW_PROJECT_BUDGET: "view_project_budget",
+
 	// Dashboard
 	VIEW_DASHBOARD: "view_dashboard",
 	VIEW_DASHBOARD_OVERVIEW: "view_dashboard_overview",
@@ -383,6 +390,13 @@ export const usePermissions = () => {
 			canEditMainTasks: hasPermission(ADMIN_PERMISSIONS.EDIT_MAIN_TASKS),
 			canEditWeeklyTasks: hasPermission(ADMIN_PERMISSIONS.EDIT_WEEKLY_TASKS),
 			canEditSubtasks: hasPermission(ADMIN_PERMISSIONS.EDIT_SUBTASKS),
+
+			// Task Team & Test Scenarios
+			canManageTaskTeam: hasPermission(ADMIN_PERMISSIONS.MANAGE_TASK_TEAM),
+			canManageTaskTestScenarios: hasPermission(ADMIN_PERMISSIONS.MANAGE_TASK_TEST_SCENARIOS),
+
+			// Project Budget
+			canViewProjectBudget: hasPermission(ADMIN_PERMISSIONS.VIEW_PROJECT_BUDGET),
 
 			// Dashboard
 			canViewDashboard: hasPermission(ADMIN_PERMISSIONS.VIEW_DASHBOARD),

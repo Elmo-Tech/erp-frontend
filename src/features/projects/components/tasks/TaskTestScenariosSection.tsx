@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { usePermissions } from "@/features/admin/hooks/usePermissions";
+import { usePermissions, ADMIN_PERMISSIONS } from "@/features/admin/hooks/usePermissions";
+import { useAuthStore } from "@/store/authStore";
 
 const addScenarioSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -71,13 +72,27 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 	const addScenario = useAddTestScenario();
 	const completeScenario = useCompleteTestScenario();
 	const verifyScenario = useVerifyTestScenario();
-	const { canVerifyTestScenarios } = usePermissions();
+	const { canVerifyTestScenarios, canManageTaskTestScenarios } = usePermissions();
+	const { user, role } = useAuthStore();
 
-	// Test scenarios can only be added to Weekly tasks
-	// Subtasks can have scenarios added by assignees but not edited
-	const canAddScenarios = task.type === TaskType.WEEKLY;
+	// Permission logic:
+	// - Weekly Tasks: Only users with manage_task_test_scenarios permission can add scenarios
+	// - Subtasks: Assigned users can add their own test scenarios
+	// - Main Tasks: No test scenarios (they organize work structure)
+	const isWeeklyTask = task.type === TaskType.WEEKLY;
 	const isSubtask = task.type === TaskType.SUBTASK;
 	const isMainTask = task.type === TaskType.MAIN;
+
+	// Check if user is admin/super-admin or has manage_task_test_scenarios permission
+	const isAdminOrSuperAdmin = role === "admin" || role === "super-admin";
+
+	// Check if current user is assigned to this task
+	const isAssignedToTask = task.assignees?.some((a) => a.userId === user?.userId) || false;
+
+	// Can add scenarios:
+	// - Weekly: admin/super-admin or has manage_task_test_scenarios permission
+	// - Subtask: assigned users can add scenarios
+	const canAddScenarios = isWeeklyTask ? isAdminOrSuperAdmin || canManageTaskTestScenarios : isSubtask && isAssignedToTask;
 
 	const addForm = useForm<AddScenarioFormData>({
 		resolver: zodResolver(addScenarioSchema),
@@ -150,7 +165,7 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 						</p>
 					)}
 				</div>
-				{(canAddScenarios || isSubtask) && (
+				{canAddScenarios && (
 					<Button
 						variant="outline"
 						size="sm"
@@ -162,8 +177,22 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 				)}
 			</div>
 
+			{/* Info for weekly tasks without permission */}
+			{isWeeklyTask && !canAddScenarios && (
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>You don&apos;t have permission to add test scenarios to weekly tasks.</AlertDescription>
+				</Alert>
+			)}
+
 			{/* Info for subtasks */}
-			{isSubtask && (
+			{isSubtask && !isAssignedToTask && (
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>Only assigned team members can add test scenarios to subtasks.</AlertDescription>
+				</Alert>
+			)}
+			{isSubtask && isAssignedToTask && (
 				<Alert>
 					<Info className="h-4 w-4" />
 					<AlertDescription>You can add personal test scenarios for this subtask. Main test scenarios are defined on the Weekly Task.</AlertDescription>

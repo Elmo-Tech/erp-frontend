@@ -34,6 +34,7 @@ export interface Project {
 	updatedAt: string;
 	createdBy: number | null;
 	updatedBy: number | null;
+	canViewBudget?: boolean; // Permission flag from API
 }
 
 export interface ProjectMember {

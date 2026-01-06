@@ -26,7 +26,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 
 	// Permission checks
-	const { canEditProjects, canViewTasks, canViewProjectMembers, canViewProjectFiles, canViewWiki, canViewProjectHistory } = usePermissions();
+	const { canEditProjects, canViewTasks, canViewProjectMembers, canViewProjectFiles, canViewWiki, canViewProjectHistory, canViewProjectBudget } = usePermissions();
 
 	if (isLoading) {
 		return (
@@ -110,16 +110,18 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 			</div>
 
 			{/* Quick Stats */}
-			<div className="grid gap-4 md:grid-cols-4">
-				<Card>
-					<CardContent className="pt-6">
-						<div className="flex items-center gap-2">
-							<DollarSign className="h-4 w-4 text-muted-foreground" />
-							<span className="text-sm text-muted-foreground">Budget</span>
-						</div>
-						<p className="text-2xl font-bold">${Number(project.budget || 0).toLocaleString()}</p>
-					</CardContent>
-				</Card>
+			<div className={`grid gap-4 ${canViewProjectBudget ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
+				{canViewProjectBudget && (
+					<Card>
+						<CardContent className="pt-6">
+							<div className="flex items-center gap-2">
+								<DollarSign className="h-4 w-4 text-muted-foreground" />
+								<span className="text-sm text-muted-foreground">Budget</span>
+							</div>
+							<p className="text-2xl font-bold">${Number(project.budget || 0).toLocaleString()}</p>
+						</CardContent>
+					</Card>
+				)}
 				<Card>
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-2">
