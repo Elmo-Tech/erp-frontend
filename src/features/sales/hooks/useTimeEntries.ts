@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { timeEntriesApi } from "../api/timeEntries";
-import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryFilters, TimeEntryListResponse } from "../types/timeEntry";
+import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryFilters, TimeEntryListResponse, UpdateTimeEntryPayload } from "../types/timeEntry";
 
 /**
  * TanStack Query hooks for time entry management
@@ -257,4 +257,48 @@ const formatDuration = (minutes: number): string => {
 	}
 
 	return `${hours}h ${remainingMinutes}m`;
+};
+
+/**
+ * Hook to fetch all time entries (Admin only)
+ */
+export const useAllTimeEntries = (filters?: TimeEntryFilters) => {
+	return useQuery<TimeEntryListResponse, Error>({
+		queryKey: [...timeEntryKeys.lists(), "admin", filters],
+		queryFn: () => timeEntriesApi.getAllAdmin(filters),
+		staleTime: 2 * 60 * 1000,
+		gcTime: 5 * 60 * 1000,
+	});
+};
+
+/**
+ * Hook to update a time entry (Admin only)
+ */
+export const useUpdateTimeEntry = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<TimeEntry, Error, { id: number; payload: UpdateTimeEntryPayload }>({
+		mutationFn: ({ id, payload }) => timeEntriesApi.update(id, payload),
+		onSuccess: (updatedEntry) => {
+			// Invalidate all time entry queries
+			queryClient.invalidateQueries({ queryKey: timeEntryKeys.all });
+
+			// If this is a task timer, invalidate task queries to refresh totalTimeSpent
+			if (updatedEntry.trackableType.toLowerCase().includes("task")) {
+				const taskKeys = {
+					all: ["tasks"] as const,
+					lists: () => [...taskKeys.all, "list"] as const,
+					details: () => [...taskKeys.all, "detail"] as const,
+					detail: (id: number) => [...taskKeys.details(), id] as const,
+				};
+
+				queryClient.invalidateQueries({
+					queryKey: taskKeys.detail(updatedEntry.trackableId),
+				});
+				queryClient.invalidateQueries({
+					queryKey: taskKeys.lists(),
+				});
+			}
+		},
+	});
 };

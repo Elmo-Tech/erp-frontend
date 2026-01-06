@@ -13,6 +13,11 @@ export interface TimeEntry {
 	startTime: string;
 	endTime?: string;
 	durationMinutes?: number;
+	user?: {
+		userId: number;
+		name: string;
+		email: string;
+	};
 	createdAt: string;
 	updatedAt: string;
 }
@@ -20,6 +25,12 @@ export interface TimeEntry {
 export interface StartTimerPayload {
 	trackableId: number;
 	trackableType: TrackableType;
+}
+
+export interface UpdateTimeEntryPayload {
+	startTime?: string;
+	endTime?: string;
+	durationMinutes?: number;
 }
 
 export interface ActiveTimerResponse {

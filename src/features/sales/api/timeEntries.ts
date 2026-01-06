@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryListResponse, TimeEntryFilters } from "../types/timeEntry";
+import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryListResponse, TimeEntryFilters, UpdateTimeEntryPayload } from "../types/timeEntry";
 
 /**
  * API functions for time entry management
@@ -60,11 +60,51 @@ export const timeEntriesApi = {
 	},
 
 	/**
+	 * Get all time entries (Admin only)
+	 */
+	getAllAdmin: async (filters?: TimeEntryFilters): Promise<TimeEntryListResponse> => {
+		const params = new URLSearchParams();
+
+		if (filters?.trackableType) {
+			params.append("filter[trackableType]", filters.trackableType);
+		}
+		if (filters?.trackableId) {
+			params.append("filter[trackableId]", filters.trackableId.toString());
+		}
+		if (filters?.userId) {
+			params.append("filter[userId]", filters.userId.toString());
+		}
+		if (filters?.startDate) {
+			params.append("filter[startDate]", filters.startDate);
+		}
+		if (filters?.endDate) {
+			params.append("filter[endDate]", filters.endDate);
+		}
+		if (filters?.page) {
+			params.append("page", filters.page.toString());
+		}
+		if (filters?.perPage) {
+			params.append("perPage", filters.perPage.toString());
+		}
+
+		const response = await api.get<{ data: TimeEntryListResponse }>(`/time-entries/all?${params.toString()}`);
+		return response.data.data;
+	},
+
+	/**
 	 * Get the current user's active timer
 	 * Requirement 8.4: GET /api/v1/time-entries/active endpoint to get the current user's active timer
 	 */
 	getActive: async (): Promise<ActiveTimerResponse> => {
 		const response = await api.get<{ data: ActiveTimerResponse }>("/time-entries/active");
+		return response.data.data;
+	},
+
+	/**
+	 * Update a time entry (Admin only)
+	 */
+	update: async (id: number, payload: UpdateTimeEntryPayload): Promise<TimeEntry> => {
+		const response = await api.put<{ data: TimeEntry }>(`/time-entries/${id}`, payload);
 		return response.data.data;
 	},
 };
