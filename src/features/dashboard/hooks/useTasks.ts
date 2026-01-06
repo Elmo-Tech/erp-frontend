@@ -75,9 +75,9 @@ export const useProjectTasks = (projectId: number, page = 1, perPage = 15, enabl
 		queryKey: [...taskKeys.projectTasks(projectId), page, perPage],
 		queryFn: () => tasksApi.getProjectTasks(projectId, page, perPage),
 		enabled: enabled && !!projectId,
-		staleTime: 30 * 1000, // 30 seconds - refresh more frequently
+		staleTime: 5 * 60 * 1000, // 5 minutes - rely on invalidation after mutations
 		gcTime: 10 * 60 * 1000,
-		refetchOnWindowFocus: true,
+		refetchOnWindowFocus: false, // Don't refetch on window focus to reduce requests
 	});
 };
 
@@ -90,13 +90,24 @@ export const useCreateTask = () => {
 	return useMutation<Task, Error, CreateTaskPayload>({
 		mutationFn: tasksApi.createTask,
 		onSuccess: (newTask) => {
+			// Invalidate all task lists
 			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(newTask.projectId) });
+
+			// Set the new task in cache
 			queryClient.setQueryData(taskKeys.detail(newTask.taskId), newTask);
 
+			// Invalidate parent's children if this is a child task
 			if (newTask.parentId) {
 				queryClient.invalidateQueries({ queryKey: taskKeys.taskChildren(newTask.parentId) });
+				queryClient.invalidateQueries({ queryKey: taskKeys.detail(newTask.parentId) });
 			}
+
+			// Invalidate all children queries
+			queryClient.invalidateQueries({ queryKey: taskKeys.children() });
+
+			// Invalidate project details
+			queryClient.invalidateQueries({ queryKey: ["projects", "detail", newTask.projectId] });
 		},
 	});
 };
@@ -110,19 +121,38 @@ export const useUpdateTask = () => {
 	return useMutation<Task, Error, { id: number; payload: UpdateTaskPayload }>({
 		mutationFn: ({ id, payload }) => tasksApi.updateTask(id, payload),
 		onSuccess: (updatedTask, variables) => {
+			// Update the specific task in cache
 			queryClient.setQueryData(taskKeys.detail(updatedTask.taskId), updatedTask);
+
+			// Invalidate all task lists
 			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+
+			// Invalidate project tasks
 			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(updatedTask.projectId) });
 
+			// Invalidate all children queries (for time updates propagation)
+			queryClient.invalidateQueries({ queryKey: taskKeys.children() });
+
+			// Handle parent change
 			const oldTask = queryClient.getQueryData<Task>(taskKeys.detail(variables.id));
 			if (oldTask?.parentId !== updatedTask.parentId) {
 				if (oldTask?.parentId) {
 					queryClient.invalidateQueries({ queryKey: taskKeys.taskChildren(oldTask.parentId) });
+					queryClient.invalidateQueries({ queryKey: taskKeys.detail(oldTask.parentId) });
 				}
 				if (updatedTask.parentId) {
 					queryClient.invalidateQueries({ queryKey: taskKeys.taskChildren(updatedTask.parentId) });
+					queryClient.invalidateQueries({ queryKey: taskKeys.detail(updatedTask.parentId) });
 				}
 			}
+
+			// Invalidate parent task to update aggregated time
+			if (updatedTask.parentId) {
+				queryClient.invalidateQueries({ queryKey: taskKeys.detail(updatedTask.parentId) });
+			}
+
+			// Invalidate project details for total time update
+			queryClient.invalidateQueries({ queryKey: ["projects", "detail", updatedTask.projectId] });
 		},
 	});
 };
@@ -137,13 +167,25 @@ export const useDeleteTask = () => {
 		mutationFn: ({ id }) => tasksApi.deleteTask(id),
 		onSuccess: (_, { id, projectId }) => {
 			const deletedTask = queryClient.getQueryData<Task>(taskKeys.detail(id));
+
+			// Remove the task from cache
 			queryClient.removeQueries({ queryKey: taskKeys.detail(id) });
+
+			// Invalidate all task lists
 			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(projectId) });
 
+			// Invalidate all children queries
+			queryClient.invalidateQueries({ queryKey: taskKeys.children() });
+
+			// Invalidate parent if exists
 			if (deletedTask?.parentId) {
 				queryClient.invalidateQueries({ queryKey: taskKeys.taskChildren(deletedTask.parentId) });
+				queryClient.invalidateQueries({ queryKey: taskKeys.detail(deletedTask.parentId) });
 			}
+
+			// Invalidate project details
+			queryClient.invalidateQueries({ queryKey: ["projects", "detail", projectId] });
 		},
 	});
 };
@@ -170,11 +212,13 @@ export const useTags = () => {
 export const useAddAssignee = () => {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskAssignee, Error, { taskId: number; payload: AddAssigneePayload }>({
+	return useMutation<TaskAssignee, Error, { taskId: number; projectId: number; payload: AddAssigneePayload }>({
 		mutationFn: ({ taskId, payload }) => tasksApi.addAssignee(taskId, payload),
-		onSuccess: (_, { taskId }) => {
+		onSuccess: (_, { taskId, projectId }) => {
 			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(projectId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.children() });
 		},
 	});
 };
@@ -185,11 +229,13 @@ export const useAddAssignee = () => {
 export const useRemoveAssignee = () => {
 	const queryClient = useQueryClient();
 
-	return useMutation<void, Error, { taskId: number; userId: number }>({
+	return useMutation<void, Error, { taskId: number; projectId: number; userId: number }>({
 		mutationFn: ({ taskId, userId }) => tasksApi.removeAssignee(taskId, userId),
-		onSuccess: (_, { taskId }) => {
+		onSuccess: (_, { taskId, projectId }) => {
 			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(projectId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.children() });
 		},
 	});
 };
@@ -214,11 +260,12 @@ export const useTestScenarios = (taskId: number, enabled = true) => {
 export const useAddTestScenario = () => {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskTestScenario, Error, { taskId: number; payload: AddTestScenarioPayload }>({
+	return useMutation<TaskTestScenario, Error, { taskId: number; projectId: number; payload: AddTestScenarioPayload }>({
 		mutationFn: ({ taskId, payload }) => tasksApi.addTestScenario(taskId, payload),
-		onSuccess: (_, { taskId }) => {
+		onSuccess: (_, { taskId, projectId }) => {
 			queryClient.invalidateQueries({ queryKey: taskKeys.testScenarios(taskId) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(projectId) });
 		},
 	});
 };
@@ -229,12 +276,13 @@ export const useAddTestScenario = () => {
 export const useCompleteTestScenario = () => {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskTestScenario, Error, { scenarioId: number; taskId: number }>({
+	return useMutation<TaskTestScenario, Error, { scenarioId: number; taskId: number; projectId: number }>({
 		mutationFn: ({ scenarioId }) => tasksApi.completeTestScenario(scenarioId),
-		onSuccess: (_, { taskId }) => {
+		onSuccess: (_, { taskId, projectId }) => {
 			queryClient.invalidateQueries({ queryKey: taskKeys.testScenarios(taskId) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(projectId) });
 		},
 	});
 };
@@ -245,12 +293,13 @@ export const useCompleteTestScenario = () => {
 export const useVerifyTestScenario = () => {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskTestScenario, Error, { scenarioId: number; taskId: number; payload: VerifyTestScenarioPayload }>({
+	return useMutation<TaskTestScenario, Error, { scenarioId: number; taskId: number; projectId: number; payload: VerifyTestScenarioPayload }>({
 		mutationFn: ({ scenarioId, payload }) => tasksApi.verifyTestScenario(scenarioId, payload),
-		onSuccess: (_, { taskId }) => {
+		onSuccess: (_, { taskId, projectId }) => {
 			queryClient.invalidateQueries({ queryKey: taskKeys.testScenarios(taskId) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.activities(taskId) });
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(projectId) });
 		},
 	});
 };

@@ -106,7 +106,7 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 
 	const handleAddScenario = async (data: AddScenarioFormData) => {
 		try {
-			await addScenario.mutateAsync({ taskId: task.taskId, payload: data });
+			await addScenario.mutateAsync({ taskId: task.taskId, projectId: task.projectId, payload: data });
 			toast.success("Test scenario added");
 			setShowAddDialog(false);
 			addForm.reset();
@@ -117,7 +117,7 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 
 	const handleComplete = async (scenario: TaskTestScenario) => {
 		try {
-			await completeScenario.mutateAsync({ scenarioId: scenario.scenarioId, taskId: task.taskId });
+			await completeScenario.mutateAsync({ scenarioId: scenario.scenarioId, taskId: task.taskId, projectId: task.projectId });
 			toast.success("Test marked as completed");
 		} catch {
 			toast.error("Failed to complete test");
@@ -130,6 +130,7 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 			await verifyScenario.mutateAsync({
 				scenarioId: showVerifyDialog.scenarioId,
 				taskId: task.taskId,
+				projectId: task.projectId,
 				payload: data,
 			});
 			toast.success(data.passed ? "Test verified as passed" : "Test marked as failed");

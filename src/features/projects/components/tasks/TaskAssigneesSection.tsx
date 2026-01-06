@@ -111,6 +111,7 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 		try {
 			await addAssignee.mutateAsync({
 				taskId: task.taskId,
+				projectId: task.projectId,
 				payload: {
 					userId: parseInt(data.userId),
 					role: data.role,
@@ -127,7 +128,7 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 
 	const handleRemoveAssignee = async (userId: number) => {
 		try {
-			await removeAssignee.mutateAsync({ taskId: task.taskId, userId });
+			await removeAssignee.mutateAsync({ taskId: task.taskId, projectId: task.projectId, userId });
 			toast.success("Assignee removed successfully");
 		} catch {
 			toast.error("Failed to remove assignee");
