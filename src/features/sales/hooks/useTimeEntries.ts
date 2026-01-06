@@ -52,17 +52,32 @@ export const useActiveTimer = (options?: { refetchInterval?: number }) => {
  * Requirement 11.3: Frontend hooks for time tracking operations
  */
 export const useTimeEntriesByTrackable = (trackableType: string, trackableId: number, enabled = true) => {
+	// Map short type names to full model class names
+	const fullTrackableType = mapTrackableType(trackableType);
+
 	return useQuery<TimeEntryListResponse, Error>({
 		queryKey: timeEntryKeys.byTrackable(trackableType, trackableId),
 		queryFn: () =>
 			timeEntriesApi.getAll({
-				trackableType: trackableType as any,
+				trackableType: fullTrackableType as any,
 				trackableId,
 			}),
 		enabled: enabled && !!trackableType && !!trackableId,
 		staleTime: 2 * 60 * 1000, // 2 minutes
 		gcTime: 5 * 60 * 1000, // 5 minutes
 	});
+};
+
+/**
+ * Map short trackable type names to full Laravel model class names
+ */
+const mapTrackableType = (type: string): string => {
+	const typeMap: Record<string, string> = {
+		task: "App\\Models\\Task",
+		lead: "App\\Models\\Lead",
+		quotation: "App\\Models\\Quotation",
+	};
+	return typeMap[type.toLowerCase()] || type;
 };
 
 /**

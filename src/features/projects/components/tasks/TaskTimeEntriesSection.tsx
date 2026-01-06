@@ -46,7 +46,13 @@ export function TaskTimeEntriesSection({ task }: TaskTimeEntriesSectionProps) {
 
 	const handleEdit = (entry: TimeEntry) => {
 		setEditingEntry(entry);
-		const totalMinutes = entry.durationMinutes || 0;
+		// For active timers, calculate duration from start time to now
+		let totalMinutes = entry.durationMinutes || 0;
+		if (!entry.endTime && entry.startTime) {
+			const start = new Date(entry.startTime);
+			const now = new Date();
+			totalMinutes = Math.floor((now.getTime() - start.getTime()) / 60000);
+		}
 		const hours = Math.floor(totalMinutes / 60);
 		const minutes = totalMinutes % 60;
 		form.reset({
@@ -148,7 +154,7 @@ export function TaskTimeEntriesSection({ task }: TaskTimeEntriesSectionProps) {
 									</div>
 								</div>
 							</div>
-							{canEditTimeEntries && entry.endTime && (
+							{canEditTimeEntries && (
 								<Button
 									variant="ghost"
 									size="icon"
