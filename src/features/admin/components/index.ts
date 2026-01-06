@@ -16,6 +16,8 @@ export { AuditLogViewer } from "./AuditLogViewer";
 export { UsersManagement } from "./UsersManagement";
 export { UsersTable } from "./UsersTable";
 export { UserFormDialog } from "./UserFormDialog";
+export { AttendanceManagement } from "./AttendanceManagement";
+export { AttendanceFormDialog } from "./AttendanceFormDialog";
 
 // Column definitions
 export * from "./columns";
