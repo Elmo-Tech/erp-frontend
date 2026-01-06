@@ -46,6 +46,11 @@ export const contractsApi = {
 		return response.data.data;
 	},
 
+	updateStatus: async (id: number, status: string): Promise<Contract> => {
+		const response = await api.patch<{ data: Contract }>(`/contracts/${id}/status`, { status });
+		return response.data.data;
+	},
+
 	delete: async (id: number): Promise<void> => {
 		await api.delete(`/contracts/${id}`);
 	},

@@ -11,7 +11,6 @@ import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
 import { useLeads, useDeleteLead } from "../hooks/useLeads";
 import { Lead, LeadStatus, LeadPriority, LeadSource, LeadFilters } from "../types/lead";
 import { getLeadsColumns } from "./columns/leadsColumns";
-import { ConvertLeadDialog } from "./ConvertLeadDialog";
 import { Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
@@ -45,11 +44,9 @@ const SOURCE_OPTIONS = [
 
 interface LeadsTableProps {
 	onAdd: () => void;
-	onEdit: (lead: Lead) => void;
-	onView?: (lead: Lead) => void;
 }
 
-export function LeadsTable({ onAdd, onEdit, onView }: LeadsTableProps) {
+export function LeadsTable({ onAdd }: LeadsTableProps) {
 	const router = useRouter();
 	const [filters, setFilters] = useState<LeadFilters>({
 		page: 1,
@@ -57,14 +54,12 @@ export function LeadsTable({ onAdd, onEdit, onView }: LeadsTableProps) {
 	});
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
-	const [convertDialogOpen, setConvertDialogOpen] = useState(false);
-	const [leadToConvert, setLeadToConvert] = useState<Lead | null>(null);
 
 	const { data, isLoading, error } = useLeads(filters);
 	const deleteLead = useDeleteLead();
 
 	// Permission checks
-	const { canCreateLeads, canEditLeads, canDeleteLeads, canConvertLeads } = usePermissions();
+	const { canCreateLeads, canDeleteLeads } = usePermissions();
 
 	const handleSearch = (search: string) => {
 		setFilters((prev) => ({ ...prev, search: search || undefined, page: 1 }));
@@ -95,11 +90,7 @@ export function LeadsTable({ onAdd, onEdit, onView }: LeadsTableProps) {
 	};
 
 	const handleView = (lead: Lead) => {
-		if (onView) {
-			onView(lead);
-		} else {
-			router.push(`/dashboard/sales/leads/${lead.leadId}`);
-		}
+		router.push(`/dashboard/sales/leads/${lead.leadId}`);
 	};
 
 	const handleDelete = async () => {
@@ -124,22 +115,9 @@ export function LeadsTable({ onAdd, onEdit, onView }: LeadsTableProps) {
 		setDeleteDialogOpen(true);
 	};
 
-	const openConvertDialog = (lead: Lead) => {
-		setLeadToConvert(lead);
-		setConvertDialogOpen(true);
-	};
-
-	// Check if lead can be converted (not already won/lost/converted)
-	const canConvert = (lead: Lead) => {
-		return canConvertLeads && lead.status !== LeadStatus.WON && lead.status !== LeadStatus.LOST && !lead.clientId;
-	};
-
 	const columns = getLeadsColumns({
 		onView: handleView,
-		onEdit: canEditLeads ? onEdit : undefined,
 		onDelete: canDeleteLeads ? openDeleteDialog : undefined,
-		onConvert: canConvertLeads ? openConvertDialog : undefined,
-		canConvert,
 	});
 
 	return (
@@ -214,14 +192,6 @@ export function LeadsTable({ onAdd, onEdit, onView }: LeadsTableProps) {
 				variant="destructive"
 				isLoading={deleteLead.isPending}
 			/>
-
-			{leadToConvert && (
-				<ConvertLeadDialog
-					open={convertDialogOpen}
-					onOpenChange={setConvertDialogOpen}
-					lead={leadToConvert}
-				/>
-			)}
 		</>
 	);
 }

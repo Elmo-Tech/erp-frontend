@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { useContract, useSignContract, useActivateContract, useMarkMilestonePaid } from "../hooks/useContracts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useContract, useSignContract, useActivateContract, useMarkMilestonePaid, useUpdateContractStatus } from "../hooks/useContracts";
 import { useConvertQuotationToProject } from "@/features/projects/hooks/useProjects";
 import { ContractFormDialog } from "./ContractFormDialog";
 import { ContractStatusBadge, MilestoneStatusBadge } from "@/components/shared/StatusBadge";
@@ -20,6 +21,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const CONTRACT_STATUS_OPTIONS = [
+	{ value: ContractStatus.DRAFT, label: "Draft" },
+	{ value: ContractStatus.PENDING_SIGNATURE, label: "Pending Signature" },
+	{ value: ContractStatus.SIGNED, label: "Signed" },
+	{ value: ContractStatus.ACTIVE, label: "Active" },
+	{ value: ContractStatus.COMPLETED, label: "Completed" },
+	{ value: ContractStatus.TERMINATED, label: "Terminated" },
+];
+
 interface ContractDetailsTabsProps {
 	contractId: number;
 }
@@ -31,6 +41,7 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 	const activateContract = useActivateContract();
 	const markMilestonePaid = useMarkMilestonePaid();
 	const convertToProject = useConvertQuotationToProject();
+	const updateStatus = useUpdateContractStatus();
 
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [signDialogOpen, setSignDialogOpen] = useState(false);
@@ -115,6 +126,29 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 	const canActivate = contract.status === ContractStatus.SIGNED;
 	const canEdit = contract.status === ContractStatus.DRAFT || contract.status === ContractStatus.PENDING_SIGNATURE;
 
+	const handleStatusChange = async (newStatus: string) => {
+		try {
+			await updateStatus.mutateAsync({ id: contractId, status: newStatus });
+			toast.success("Contract status updated");
+
+			// Auto-convert quotation to project when contract becomes active
+			if (newStatus === ContractStatus.ACTIVE && contract.quotationId && !contract.projectId) {
+				try {
+					const project = await convertToProject.mutateAsync({
+						quotationId: contract.quotationId,
+						title: contract.title,
+					});
+					toast.success(`Project "${project.title}" created successfully`);
+					router.push(`/dashboard/projects/${project.projectId}`);
+				} catch {
+					toast.error("Status updated but failed to create project. You can create it manually.");
+				}
+			}
+		} catch {
+			toast.error("Failed to update status");
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
@@ -128,14 +162,30 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 						<ArrowLeft className="h-4 w-4" />
 					</Button>
 					<div>
-						<h1 className="text-3xl font-bold flex items-center gap-2">
-							{contract.contractNumber}
-							<ContractStatusBadge status={contract.status} />
-						</h1>
+						<h1 className="text-3xl font-bold flex items-center gap-2">{contract.contractNumber}</h1>
 						<p className="text-muted-foreground">{contract.title}</p>
 					</div>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-3">
+					<Select
+						value={contract.status}
+						onValueChange={handleStatusChange}
+						disabled={updateStatus.isPending}
+					>
+						<SelectTrigger className="w-[180px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{CONTRACT_STATUS_OPTIONS.map((option) => (
+								<SelectItem
+									key={option.value}
+									value={option.value}
+								>
+									{option.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 					{canSign && (
 						<Button
 							variant="outline"

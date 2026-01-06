@@ -153,10 +153,7 @@ export default function SalesPage() {
 								onCreateLead={canCreateLeads ? handleCreateLead : undefined}
 							/>
 						) : (
-							<LeadsTable
-								onAdd={() => handleCreateLead()}
-								onEdit={handleLeadClick}
-							/>
+							<LeadsTable onAdd={() => handleCreateLead()} />
 						)}
 					</TabsContent>
 				)}
@@ -178,10 +175,7 @@ export default function SalesPage() {
 						value="contracts"
 						className="mt-6"
 					>
-						<ContractsTable
-							onAdd={handleCreateContract}
-							onEdit={handleEditContract}
-						/>
+						<ContractsTable onAdd={handleCreateContract} />
 					</TabsContent>
 				)}
 			</Tabs>

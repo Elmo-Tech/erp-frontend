@@ -26,12 +26,9 @@ const STATUS_OPTIONS = [
 
 interface ContractsTableProps {
 	onAdd: () => void;
-	onEdit: (contract: Contract) => void;
-	onView?: (contract: Contract) => void;
-	onSign?: (contract: Contract) => void;
 }
 
-export function ContractsTable({ onAdd, onEdit, onView, onSign }: ContractsTableProps) {
+export function ContractsTable({ onAdd }: ContractsTableProps) {
 	const router = useRouter();
 	const [filters, setFilters] = useState<ContractFilters>({
 		page: 1,
@@ -44,7 +41,7 @@ export function ContractsTable({ onAdd, onEdit, onView, onSign }: ContractsTable
 	const deleteContract = useDeleteContract();
 
 	// Permission checks
-	const { canCreateContracts, canEditContracts, canDeleteContracts, canSignContracts } = usePermissions();
+	const { canCreateContracts, canDeleteContracts } = usePermissions();
 
 	const handleSearch = (search: string) => {
 		setFilters((prev) => ({ ...prev, search: search || undefined, page: 1 }));
@@ -59,11 +56,7 @@ export function ContractsTable({ onAdd, onEdit, onView, onSign }: ContractsTable
 	};
 
 	const handleView = (contract: Contract) => {
-		if (onView) {
-			onView(contract);
-		} else {
-			router.push(`/dashboard/sales/contracts/${contract.contractId}`);
-		}
+		router.push(`/dashboard/sales/contracts/${contract.contractId}`);
 	};
 
 	const handleDelete = async () => {
@@ -90,9 +83,7 @@ export function ContractsTable({ onAdd, onEdit, onView, onSign }: ContractsTable
 
 	const columns = getContractsColumns({
 		onView: handleView,
-		onEdit: canEditContracts ? onEdit : undefined,
 		onDelete: canDeleteContracts ? openDeleteDialog : undefined,
-		onSign: canSignContracts ? onSign : undefined,
 	});
 
 	return (

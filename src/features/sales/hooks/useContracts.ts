@@ -88,6 +88,18 @@ export function useActivateContract() {
 	});
 }
 
+export function useUpdateContractStatus() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ id, status }: { id: number; status: string }) => contractsApi.updateStatus(id, status),
+		onSuccess: (data) => {
+			queryClient.invalidateQueries({ queryKey: [CONTRACTS_KEY] });
+			queryClient.setQueryData([CONTRACT_KEY, data.contractId], data);
+		},
+	});
+}
+
 export function useDeleteContract() {
 	const queryClient = useQueryClient();
 

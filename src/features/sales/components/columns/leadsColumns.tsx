@@ -1,18 +1,14 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
 import { LeadStatusBadge, LeadPriorityBadge } from "@/components/shared/StatusBadge";
 import { Lead } from "../../types/lead";
-import { MoreHorizontal, Pencil, Trash2, Eye, Phone, Mail, UserPlus } from "lucide-react";
+import { Phone, Mail, Trash2 } from "lucide-react";
 
 interface LeadsColumnsOptions {
 	onView: (lead: Lead) => void;
-	onEdit?: (lead: Lead) => void;
 	onDelete?: (lead: Lead) => void;
-	onConvert?: (lead: Lead) => void;
-	canConvert?: (lead: Lead) => boolean;
 }
 
 const formatDate = (dateString?: string) => {
@@ -33,7 +29,7 @@ const formatCurrency = (amount?: number) => {
 	}).format(amount);
 };
 
-export function getLeadsColumns({ onView, onEdit, onDelete, onConvert, canConvert }: LeadsColumnsOptions): Column<Lead>[] {
+export function getLeadsColumns({ onDelete }: LeadsColumnsOptions): Column<Lead>[] {
 	return [
 		{
 			key: "name",
@@ -88,56 +84,27 @@ export function getLeadsColumns({ onView, onEdit, onDelete, onConvert, canConver
 			header: "Next Follow-up",
 			render: (lead) => formatDate(lead.nextFollowUpAt),
 		},
-		{
-			key: "actions",
-			header: "",
-			className: "w-[70px]",
-			render: (lead) => (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<MoreHorizontal className="h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem onClick={() => onView(lead)}>
-							<Eye className="h-4 w-4 mr-2" />
-							View
-						</DropdownMenuItem>
-						{onEdit && (
-							<DropdownMenuItem onClick={() => onEdit(lead)}>
-								<Pencil className="h-4 w-4 mr-2" />
-								Edit
-							</DropdownMenuItem>
-						)}
-						{onConvert && canConvert?.(lead) && (
-							<>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem onClick={() => onConvert(lead)}>
-									<UserPlus className="h-4 w-4 mr-2" />
-									Convert to Client
-								</DropdownMenuItem>
-							</>
-						)}
-						{onDelete && (
-							<>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									className="text-destructive"
-									onClick={() => onDelete(lead)}
-								>
-									<Trash2 className="h-4 w-4 mr-2" />
-									Delete
-								</DropdownMenuItem>
-							</>
-						)}
-					</DropdownMenuContent>
-				</DropdownMenu>
-			),
-		},
+		...(onDelete
+			? [
+					{
+						key: "actions" as const,
+						header: "",
+						className: "w-[70px]",
+						render: (lead: Lead) => (
+							<Button
+								variant="ghost"
+								size="icon"
+								className="text-destructive hover:text-destructive"
+								onClick={(e) => {
+									e.stopPropagation();
+									onDelete(lead);
+								}}
+							>
+								<Trash2 className="h-4 w-4" />
+							</Button>
+						),
+					},
+			  ]
+			: []),
 	];
 }

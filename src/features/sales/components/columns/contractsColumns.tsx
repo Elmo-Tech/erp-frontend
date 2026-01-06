@@ -2,17 +2,14 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
 import { ContractStatusBadge } from "@/components/shared/StatusBadge";
-import { Contract, ContractStatus } from "../../types/contract";
-import { MoreHorizontal, Pencil, Trash2, Eye, FileSignature } from "lucide-react";
+import { Contract } from "../../types/contract";
+import { Trash2 } from "lucide-react";
 
 interface ContractsColumnsOptions {
 	onView: (contract: Contract) => void;
-	onEdit?: (contract: Contract) => void;
 	onDelete?: (contract: Contract) => void;
-	onSign?: (contract: Contract) => void;
 }
 
 const formatCurrency = (amount: number, currency: string) => {
@@ -31,7 +28,7 @@ const formatDate = (dateString?: string) => {
 	});
 };
 
-export function getContractsColumns({ onView, onEdit, onDelete, onSign }: ContractsColumnsOptions): Column<Contract>[] {
+export function getContractsColumns({ onDelete }: ContractsColumnsOptions): Column<Contract>[] {
 	return [
 		{
 			key: "contractNumber",
@@ -83,50 +80,27 @@ export function getContractsColumns({ onView, onEdit, onDelete, onSign }: Contra
 			header: "Milestones",
 			render: (contract) => <Badge variant="outline">{contract.milestones?.length || 0}</Badge>,
 		},
-		{
-			key: "actions",
-			header: "",
-			className: "w-[70px]",
-			render: (contract) => (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={(e) => e.stopPropagation()}
-						>
-							<MoreHorizontal className="h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem onClick={() => onView(contract)}>
-							<Eye className="h-4 w-4 mr-2" />
-							View
-						</DropdownMenuItem>
-						{onSign && contract.status === ContractStatus.PENDING_SIGNATURE && (
-							<DropdownMenuItem onClick={() => onSign(contract)}>
-								<FileSignature className="h-4 w-4 mr-2" />
-								Sign
-							</DropdownMenuItem>
-						)}
-						{onEdit && (
-							<DropdownMenuItem onClick={() => onEdit(contract)}>
-								<Pencil className="h-4 w-4 mr-2" />
-								Edit
-							</DropdownMenuItem>
-						)}
-						{onDelete && (
-							<DropdownMenuItem
-								className="text-destructive"
-								onClick={() => onDelete(contract)}
+		...(onDelete
+			? [
+					{
+						key: "actions" as const,
+						header: "",
+						className: "w-[70px]",
+						render: (contract: Contract) => (
+							<Button
+								variant="ghost"
+								size="icon"
+								className="text-destructive hover:text-destructive"
+								onClick={(e) => {
+									e.stopPropagation();
+									onDelete(contract);
+								}}
 							>
-								<Trash2 className="h-4 w-4 mr-2" />
-								Delete
-							</DropdownMenuItem>
-						)}
-					</DropdownMenuContent>
-				</DropdownMenu>
-			),
-		},
+								<Trash2 className="h-4 w-4" />
+							</Button>
+						),
+					},
+			  ]
+			: []),
 	];
 }
