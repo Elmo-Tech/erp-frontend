@@ -37,7 +37,13 @@ interface AttendanceFormDialogProps {
 function formatDateTimeLocal(isoString: string | null): string {
 	if (!isoString) return "";
 	const date = new Date(isoString);
-	return format(date, "yyyy-MM-dd'T'HH:mm");
+	return format(date, "HH:mm");
+}
+
+// Combine date and time into ISO datetime string
+function combineDateTime(date: string, time: string): string {
+	if (!time) return "";
+	return `${date}T${time}:00`;
 }
 
 export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFormDialogProps) {
@@ -87,8 +93,8 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 		const data: AttendanceFormData = {
 			userId: parseInt(values.userId),
 			date: values.date,
-			clockIn: values.clockIn,
-			clockOut: values.clockOut || undefined,
+			clockIn: combineDateTime(values.date, values.clockIn),
+			clockOut: values.clockOut ? combineDateTime(values.date, values.clockOut) : undefined,
 			lateMinutes: values.lateMinutes,
 			deductionMinutes: values.deductionMinutes,
 			notes: values.notes,

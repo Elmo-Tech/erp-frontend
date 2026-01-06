@@ -137,11 +137,13 @@ export function AttendanceManagement() {
 							value={filters.startDate}
 							onChange={handleStartDateChange}
 							placeholder="From Date"
+							className="w-fit!"
 						/>
 						<DatePicker
 							value={filters.endDate}
 							onChange={handleEndDateChange}
 							placeholder="To Date"
+							className="w-fit!"
 						/>
 					</FilterBar>
 				}
