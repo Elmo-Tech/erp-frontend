@@ -65,7 +65,10 @@ export function TasksTab({ projectId }: TasksTabProps) {
 
 	const { data, isLoading, error } = useProjectTasks(projectId, page, 20);
 	const deleteTask = useDeleteTask();
-	const { canCreateTasks, canEditTasks, canDeleteTasks } = usePermissions();
+	const { canCreateTasks, canEditTasks, canDeleteTasks, canCreateMainTasks, canCreateWeeklyTasks, canCreateSubtasks } = usePermissions();
+
+	// Determine if user can create main tasks (admin only) or just subtasks
+	const canCreateMainOrWeekly = canCreateMainTasks || canCreateWeeklyTasks;
 
 	const handleSearch = (value: string) => {
 		setSearch(value);
@@ -131,7 +134,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 							{stats.review > 0 && <span className="text-amber-600">{stats.review} in review</span>}
 						</div>
 					</div>
-					{canCreateTasks && (
+					{canCreateMainOrWeekly && (
 						<Button
 							onClick={() => {
 								setCreateParentId(null);
@@ -181,7 +184,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 					</div>
 				) : filteredTasks.length === 0 ? (
 					<EmptyState
-						canCreate={canCreateTasks}
+						canCreate={canCreateMainOrWeekly}
 						onCreate={() => setShowCreateDialog(true)}
 					/>
 				) : (
@@ -206,7 +209,9 @@ export function TasksTab({ projectId }: TasksTabProps) {
 									onSelect={handleSelectTask}
 									onEdit={canEditTasks ? handleEditTask : undefined}
 									onDelete={canDeleteTasks ? handleDeleteTask : undefined}
-									onCreateChild={canCreateTasks ? handleCreateChild : undefined}
+									onCreateChild={canCreateWeeklyTasks || canCreateSubtasks ? handleCreateChild : undefined}
+									canCreateWeeklyTasks={canCreateWeeklyTasks}
+									canCreateSubtasks={canCreateSubtasks}
 									expandedTasks={expandedTasks}
 									onToggleExpand={toggleExpand}
 								/>
@@ -289,11 +294,13 @@ interface TaskRowProps {
 	onEdit?: (task: Task) => void;
 	onDelete?: (task: Task) => void;
 	onCreateChild?: (task: Task, type: TaskType) => void;
+	canCreateWeeklyTasks?: boolean;
+	canCreateSubtasks?: boolean;
 	expandedTasks: Set<number>;
 	onToggleExpand: (taskId: number) => void;
 }
 
-function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete, onCreateChild, expandedTasks, onToggleExpand }: TaskRowProps) {
+function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete, onCreateChild, canCreateWeeklyTasks, canCreateSubtasks, expandedTasks, onToggleExpand }: TaskRowProps) {
 	const { data: childrenData, isLoading: loadingChildren } = useTaskChildren(task.taskId, isExpanded) as {
 		data: TaskChildrenResponse | undefined;
 		isLoading: boolean;
@@ -447,12 +454,12 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 									<Pencil className="h-4 w-4 mr-2" /> Edit Task
 								</DropdownMenuItem>
 							)}
-							{onCreateChild && task.type === TaskType.MAIN && (
+							{onCreateChild && canCreateWeeklyTasks && task.type === TaskType.MAIN && (
 								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
 									<Plus className="h-4 w-4 mr-2" /> Add Weekly Task
 								</DropdownMenuItem>
 							)}
-							{onCreateChild && task.type === TaskType.WEEKLY && (
+							{onCreateChild && canCreateSubtasks && task.type === TaskType.WEEKLY && (
 								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
 									<Plus className="h-4 w-4 mr-2" /> Add Subtask
 								</DropdownMenuItem>
@@ -487,6 +494,8 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 							onEdit={onEdit}
 							onDelete={onDelete}
 							onCreateChild={onCreateChild}
+							canCreateWeeklyTasks={canCreateWeeklyTasks}
+							canCreateSubtasks={canCreateSubtasks}
 							expandedTasks={expandedTasks}
 							onToggleExpand={onToggleExpand}
 						/>

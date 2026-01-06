@@ -122,12 +122,19 @@ export const ADMIN_PERMISSIONS = {
 	START_TIMER: "start_timer",
 	STOP_TIMER: "stop_timer",
 	VIEW_ALL_TIME_ENTRIES: "view_all_time_entries",
+	EDIT_TIME_ENTRIES: "edit_time_entries",
 
 	// Attendance
 	MANAGE_ATTENDANCE: "manage_attendance",
 	VIEW_ATTENDANCE: "view_attendance",
 	VIEW_ALL_ATTENDANCE: "view_all_attendance",
 	CLOCK_OUT: "clock_out",
+	EDIT_ATTENDANCE: "edit_attendance",
+
+	// Task Creation Permissions
+	CREATE_MAIN_TASKS: "create_main_tasks",
+	CREATE_WEEKLY_TASKS: "create_weekly_tasks",
+	CREATE_SUBTASKS: "create_subtasks",
 
 	// Dashboard
 	VIEW_DASHBOARD: "view_dashboard",
@@ -353,12 +360,19 @@ export const usePermissions = () => {
 			canStartTimer: hasPermission(ADMIN_PERMISSIONS.START_TIMER),
 			canStopTimer: hasPermission(ADMIN_PERMISSIONS.STOP_TIMER),
 			canViewAllTimeEntries: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_TIME_ENTRIES),
+			canEditTimeEntries: hasPermission(ADMIN_PERMISSIONS.EDIT_TIME_ENTRIES),
 
 			// Attendance
 			canManageAttendance: hasPermission(ADMIN_PERMISSIONS.MANAGE_ATTENDANCE),
 			canViewAttendance: hasPermission(ADMIN_PERMISSIONS.VIEW_ATTENDANCE),
 			canViewAllAttendance: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_ATTENDANCE),
 			canClockOut: hasPermission(ADMIN_PERMISSIONS.CLOCK_OUT),
+			canEditAttendance: hasPermission(ADMIN_PERMISSIONS.EDIT_ATTENDANCE),
+
+			// Task Creation
+			canCreateMainTasks: hasPermission(ADMIN_PERMISSIONS.CREATE_MAIN_TASKS),
+			canCreateWeeklyTasks: hasPermission(ADMIN_PERMISSIONS.CREATE_WEEKLY_TASKS),
+			canCreateSubtasks: hasPermission(ADMIN_PERMISSIONS.CREATE_SUBTASKS),
 
 			// Dashboard
 			canViewDashboard: hasPermission(ADMIN_PERMISSIONS.VIEW_DASHBOARD),

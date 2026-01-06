@@ -2,58 +2,17 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardStats } from "@/features/dashboard/hooks/useDashboardStats";
-import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle } from "lucide-react";
+import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee } from "lucide-react";
+import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview } from "@/features/dashboard/types";
 
 export default function DashboardPage() {
 	const { user } = useAuthStore();
 	const { data, isLoading, isError } = useDashboardStats();
 
 	const dashboardData = data?.data;
-
-	const stats = [
-		{
-			title: "Total Projects",
-			value: dashboardData?.stats.totalProjects ?? 0,
-			change: dashboardData?.stats.projectsChange ?? 0,
-			trend: (dashboardData?.stats.projectsChange ?? 0) >= 0 ? "up" : "down",
-			icon: FolderKanban,
-			color: "text-blue-600",
-			bgColor: "bg-blue-100 dark:bg-blue-900/30",
-			format: (v: number) => v.toString(),
-		},
-		{
-			title: "Monthly Sales",
-			value: dashboardData?.stats.monthlySales ?? 0,
-			change: dashboardData?.stats.salesChange ?? 0,
-			trend: (dashboardData?.stats.salesChange ?? 0) >= 0 ? "up" : "down",
-			icon: TrendingUp,
-			color: "text-green-600",
-			bgColor: "bg-green-100 dark:bg-green-900/30",
-			format: (v: number) => `$${v.toLocaleString()}`,
-		},
-		{
-			title: "Work Hours",
-			value: dashboardData?.stats.workHours ?? 0,
-			change: dashboardData?.stats.workHoursChange ?? 0,
-			trend: (dashboardData?.stats.workHoursChange ?? 0) >= 0 ? "up" : "down",
-			icon: Clock,
-			color: "text-orange-600",
-			bgColor: "bg-orange-100 dark:bg-orange-900/30",
-			format: (v: number) => v.toLocaleString(),
-		},
-		{
-			title: "Active Clients",
-			value: dashboardData?.stats.activeClients ?? 0,
-			change: dashboardData?.stats.clientsChange ?? 0,
-			trend: (dashboardData?.stats.clientsChange ?? 0) >= 0 ? "up" : "down",
-			icon: Users,
-			color: "text-purple-600",
-			bgColor: "bg-purple-100 dark:bg-purple-900/30",
-			format: (v: number) => v.toString(),
-		},
-	];
 
 	if (isLoading) {
 		return <DashboardSkeleton />;
@@ -68,109 +27,351 @@ export default function DashboardPage() {
 		);
 	}
 
+	const role = dashboardData?.role;
+
 	return (
 		<div className="space-y-6">
-			{/* Welcome Section */}
 			<div>
 				<h1 className="text-2xl font-bold">Welcome back, {user?.name || "User"} 👋</h1>
-				<p className="text-muted-foreground">Here&apos;s an overview of your business today</p>
+				<p className="text-muted-foreground">
+					{role === "admin" && "Here's an overview of your business today"}
+					{role === "manager" && "Here's how your team is performing"}
+					{role === "developer" && "Here's your work summary"}
+					{!role && "Here's your dashboard"}
+				</p>
 			</div>
 
-			{/* Stats Grid */}
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-				{stats.map((stat) => {
-					const Icon = stat.icon;
-					const changeValue = Math.abs(stat.change);
-					const changeDisplay = stat.title === "Active Clients" ? `${stat.change >= 0 ? "+" : ""}${stat.change}` : `${stat.change >= 0 ? "+" : ""}${changeValue}%`;
+			{role === "admin" && dashboardData && <AdminDashboard data={dashboardData as AdminDashboardOverview} />}
+			{role === "manager" && dashboardData && <ManagerDashboard data={dashboardData as ManagerDashboardOverview} />}
+			{role === "developer" && dashboardData && <DeveloperDashboard data={dashboardData as DeveloperDashboardOverview} />}
+			{!role && dashboardData && <AdminDashboard data={dashboardData as AdminDashboardOverview} />}
+		</div>
+	);
+}
 
-					return (
-						<Card key={stat.title}>
-							<CardHeader className="flex flex-row items-center justify-between pb-2">
-								<CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-								<div className={`rounded-lg p-2 ${stat.bgColor}`}>
-									<Icon className={`h-4 w-4 ${stat.color}`} />
-								</div>
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">{stat.format(stat.value)}</div>
-								<div className="flex items-center gap-1 text-xs">
-									{stat.trend === "up" ? <ArrowUpRight className="h-3 w-3 text-green-600" /> : <ArrowDownRight className="h-3 w-3 text-red-600" />}
-									<span className={stat.trend === "up" ? "text-green-600" : "text-red-600"}>{changeDisplay}</span>
-									<span className="text-muted-foreground">from last month</span>
-								</div>
-							</CardContent>
-						</Card>
-					);
-				})}
+function AdminDashboard({ data }: { data: AdminDashboardOverview }) {
+	const stats = [
+		{
+			title: "Total Projects",
+			value: data?.stats?.totalProjects ?? 0,
+			change: data?.stats?.projectsChange ?? 0,
+			icon: FolderKanban,
+			color: "text-blue-600",
+			bgColor: "bg-blue-100 dark:bg-blue-900/30",
+			format: (v: number) => v.toString(),
+		},
+		{
+			title: "Monthly Sales",
+			value: data?.stats?.monthlySales ?? 0,
+			change: data?.stats?.salesChange ?? 0,
+			icon: TrendingUp,
+			color: "text-green-600",
+			bgColor: "bg-green-100 dark:bg-green-900/30",
+			format: (v: number) => `$${v.toLocaleString()}`,
+		},
+		{
+			title: "Work Hours",
+			value: data?.stats?.workHours ?? 0,
+			change: data?.stats?.workHoursChange ?? 0,
+			icon: Clock,
+			color: "text-orange-600",
+			bgColor: "bg-orange-100 dark:bg-orange-900/30",
+			format: (v: number) => `${v.toLocaleString()}h`,
+		},
+		{
+			title: "Active Clients",
+			value: data?.stats?.activeClients ?? 0,
+			change: data?.stats?.clientsChange ?? 0,
+			icon: Users,
+			color: "text-purple-600",
+			bgColor: "bg-purple-100 dark:bg-purple-900/30",
+			format: (v: number) => v.toString(),
+			isAbsolute: true,
+		},
+	];
+
+	return (
+		<>
+			<StatsGrid stats={stats} />
+			<div className="grid gap-4 md:grid-cols-2">
+				<RecentProjectsCard projects={data?.recentProjects ?? []} />
+				<RecentActivitiesCard activities={data?.recentActivities ?? []} />
 			</div>
+		</>
+	);
+}
 
-			{/* Recent Projects & Activities */}
+function ManagerDashboard({ data }: { data: ManagerDashboardOverview }) {
+	const stats = [
+		{
+			title: "Active Projects",
+			value: data?.stats?.activeProjects ?? 0,
+			icon: FolderKanban,
+			color: "text-blue-600",
+			bgColor: "bg-blue-100 dark:bg-blue-900/30",
+			format: (v: number) => v.toString(),
+		},
+		{
+			title: "Team Tasks",
+			value: data?.stats?.totalTasks ?? 0,
+			subtitle: `${data?.stats?.completedTasks ?? 0} completed`,
+			icon: ListTodo,
+			color: "text-green-600",
+			bgColor: "bg-green-100 dark:bg-green-900/30",
+			format: (v: number) => v.toString(),
+		},
+		{
+			title: "Team Hours",
+			value: data?.stats?.teamHours ?? 0,
+			change: data?.stats?.teamHoursChange ?? 0,
+			icon: Clock,
+			color: "text-orange-600",
+			bgColor: "bg-orange-100 dark:bg-orange-900/30",
+			format: (v: number) => `${v}h`,
+		},
+		{
+			title: "Team Members",
+			value: data?.stats?.teamMembers ?? 0,
+			icon: Users,
+			color: "text-purple-600",
+			bgColor: "bg-purple-100 dark:bg-purple-900/30",
+			format: (v: number) => v.toString(),
+		},
+	];
+
+	return (
+		<>
+			<StatsGrid stats={stats} />
 			<div className="grid gap-4 md:grid-cols-2">
 				<Card>
 					<CardHeader>
-						<CardTitle>Recent Projects</CardTitle>
-						<CardDescription>Your latest projects in progress</CardDescription>
+						<CardTitle>Team Tasks</CardTitle>
+						<CardDescription>Recent tasks from your team</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-4">
-							{dashboardData?.recentProjects && dashboardData.recentProjects.length > 0 ? (
-								dashboardData.recentProjects.map((project) => (
+							{data?.recentTasks && data.recentTasks.length > 0 ? (
+								data.recentTasks.map((task) => (
 									<div
-										key={project.projectId}
+										key={task.taskId}
 										className="flex items-center justify-between"
 									>
 										<div className="space-y-1">
-											<p className="text-sm font-medium">{project.name}</p>
-											<p className="text-xs text-muted-foreground">{project.status}</p>
+											<p className="text-sm font-medium">{task.title}</p>
+											<p className="text-xs text-muted-foreground">
+												{task.assignee} • {task.project}
+											</p>
 										</div>
-										<div className="flex items-center gap-2">
-											<div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
-												<div
-													className="h-full bg-primary transition-all"
-													style={{ width: `${project.progress}%` }}
-												/>
-											</div>
-											<span className="text-xs text-muted-foreground w-8">{project.progress}%</span>
-										</div>
+										<Badge variant={task.status === "completed" ? "default" : task.status === "in_progress" ? "secondary" : "outline"}>{task.status.replace("_", " ")}</Badge>
 									</div>
 								))
 							) : (
-								<p className="text-sm text-muted-foreground text-center py-4">No projects yet</p>
+								<p className="text-sm text-muted-foreground text-center py-4">No tasks yet</p>
 							)}
 						</div>
 					</CardContent>
 				</Card>
+				<RecentActivitiesCard activities={data?.recentActivities ?? []} />
+			</div>
+		</>
+	);
+}
 
+function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
+	const stats = [
+		{
+			title: "My Tasks",
+			value: data?.stats?.myTotalTasks ?? 0,
+			subtitle: `${data?.stats?.myCompletedTasks ?? 0} completed`,
+			icon: ListTodo,
+			color: "text-blue-600",
+			bgColor: "bg-blue-100 dark:bg-blue-900/30",
+			format: (v: number) => v.toString(),
+		},
+		{
+			title: "In Progress",
+			value: data?.stats?.myInProgressTasks ?? 0,
+			icon: PlayCircle,
+			color: "text-yellow-600",
+			bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+			format: (v: number) => v.toString(),
+		},
+		{
+			title: "My Hours",
+			value: data?.stats?.myHoursThisMonth ?? 0,
+			change: data?.stats?.myHoursChange ?? 0,
+			icon: Clock,
+			color: "text-green-600",
+			bgColor: "bg-green-100 dark:bg-green-900/30",
+			format: (v: number) => `${v}h`,
+		},
+		{
+			title: "Today",
+			value: data?.stats?.todayHours ?? 0,
+			icon: data?.stats?.clockedIn ? Timer : Coffee,
+			color: data?.stats?.clockedIn ? "text-green-600" : "text-gray-600",
+			bgColor: data?.stats?.clockedIn ? "bg-green-100 dark:bg-green-900/30" : "bg-gray-100 dark:bg-gray-900/30",
+			format: (v: number) => `${v}h`,
+			subtitle: data?.stats?.clockedIn ? "Clocked in" : "Not clocked in",
+		},
+	];
+
+	return (
+		<>
+			<StatsGrid stats={stats} />
+			<div className="grid gap-4 md:grid-cols-2">
 				<Card>
 					<CardHeader>
-						<CardTitle>Recent Activity</CardTitle>
-						<CardDescription>Latest system activities</CardDescription>
+						<CardTitle>My Tasks</CardTitle>
+						<CardDescription>Your recent tasks</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-4">
-							{dashboardData?.recentActivities && dashboardData.recentActivities.length > 0 ? (
-								dashboardData.recentActivities.map((activity) => (
+							{data?.recentTasks && data.recentTasks.length > 0 ? (
+								data.recentTasks.map((task) => (
 									<div
-										key={activity.activityId}
-										className="flex items-start gap-3"
+										key={task.taskId}
+										className="flex items-center justify-between"
 									>
-										<div className="mt-1 h-2 w-2 rounded-full bg-primary" />
-										<div className="flex-1 space-y-1">
-											<p className="text-sm">{activity.action}</p>
-											<p className="text-xs text-muted-foreground">
-												{activity.user} • {activity.time}
-											</p>
+										<div className="space-y-1">
+											<p className="text-sm font-medium">{task.title}</p>
+											<p className="text-xs text-muted-foreground">{task.project}</p>
+										</div>
+										<div className="flex items-center gap-2">
+											<Badge variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "secondary" : "outline"}>{task.priority}</Badge>
+											<Badge variant={task.status === "completed" ? "default" : task.status === "in_progress" ? "secondary" : "outline"}>{task.status.replace("_", " ")}</Badge>
 										</div>
 									</div>
 								))
 							) : (
-								<p className="text-sm text-muted-foreground text-center py-4">No recent activities</p>
+								<p className="text-sm text-muted-foreground text-center py-4">No tasks assigned</p>
 							)}
 						</div>
 					</CardContent>
 				</Card>
+				<RecentActivitiesCard activities={data?.recentActivities ?? []} />
 			</div>
+		</>
+	);
+}
+
+interface StatItem {
+	title: string;
+	value: number;
+	change?: number;
+	subtitle?: string;
+	icon: React.ComponentType<{ className?: string }>;
+	color: string;
+	bgColor: string;
+	format: (v: number) => string;
+	isAbsolute?: boolean;
+}
+
+function StatsGrid({ stats }: { stats: StatItem[] }) {
+	return (
+		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			{stats.map((stat) => {
+				const Icon = stat.icon;
+				const hasChange = stat.change !== undefined;
+				const trend = (stat.change ?? 0) >= 0 ? "up" : "down";
+				const changeDisplay = stat.isAbsolute ? `${(stat.change ?? 0) >= 0 ? "+" : ""}${stat.change}` : `${(stat.change ?? 0) >= 0 ? "+" : ""}${Math.abs(stat.change ?? 0)}%`;
+
+				return (
+					<Card key={stat.title}>
+						<CardHeader className="flex flex-row items-center justify-between pb-2">
+							<CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+							<div className={`rounded-lg p-2 ${stat.bgColor}`}>
+								<Icon className={`h-4 w-4 ${stat.color}`} />
+							</div>
+						</CardHeader>
+						<CardContent>
+							<div className="text-2xl font-bold">{stat.format(stat.value)}</div>
+							{hasChange ? (
+								<div className="flex items-center gap-1 text-xs">
+									{trend === "up" ? <ArrowUpRight className="h-3 w-3 text-green-600" /> : <ArrowDownRight className="h-3 w-3 text-red-600" />}
+									<span className={trend === "up" ? "text-green-600" : "text-red-600"}>{changeDisplay}</span>
+									<span className="text-muted-foreground">from last month</span>
+								</div>
+							) : stat.subtitle ? (
+								<p className="text-xs text-muted-foreground">{stat.subtitle}</p>
+							) : null}
+						</CardContent>
+					</Card>
+				);
+			})}
 		</div>
+	);
+}
+
+function RecentProjectsCard({ projects }: { projects: { projectId: number; name: string; status: string; progress: number }[] }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Recent Projects</CardTitle>
+				<CardDescription>Your latest projects in progress</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="space-y-4">
+					{projects.length > 0 ? (
+						projects.map((project) => (
+							<div
+								key={project.projectId}
+								className="flex items-center justify-between"
+							>
+								<div className="space-y-1">
+									<p className="text-sm font-medium">{project.name}</p>
+									<p className="text-xs text-muted-foreground">{project.status}</p>
+								</div>
+								<div className="flex items-center gap-2">
+									<div className="h-2 w-24 overflow-hidden rounded-full bg-secondary">
+										<div
+											className="h-full bg-primary transition-all"
+											style={{ width: `${project.progress}%` }}
+										/>
+									</div>
+									<span className="text-xs text-muted-foreground w-8">{project.progress}%</span>
+								</div>
+							</div>
+						))
+					) : (
+						<p className="text-sm text-muted-foreground text-center py-4">No projects yet</p>
+					)}
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function RecentActivitiesCard({ activities }: { activities: { activityId: number; action: string; user: string; time: string }[] }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Recent Activity</CardTitle>
+				<CardDescription>Latest activities</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="space-y-4">
+					{activities.length > 0 ? (
+						activities.map((activity) => (
+							<div
+								key={activity.activityId}
+								className="flex items-start gap-3"
+							>
+								<div className="mt-1 h-2 w-2 rounded-full bg-primary" />
+								<div className="flex-1 space-y-1">
+									<p className="text-sm">{activity.action}</p>
+									<p className="text-xs text-muted-foreground">
+										{activity.user} • {activity.time}
+									</p>
+								</div>
+							</div>
+						))
+					) : (
+						<p className="text-sm text-muted-foreground text-center py-4">No recent activities</p>
+					)}
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 
