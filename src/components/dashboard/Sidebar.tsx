@@ -108,6 +108,12 @@ const navGroups: NavGroup[] = [
 				permission: "view_all_attendance",
 			},
 			{
+				title: "Points Management",
+				href: "/dashboard/user-points",
+				icon: Award,
+				permission: "manage_user_points",
+			},
+			{
 				title: "Roles & Permissions",
 				href: "/dashboard/roles",
 				icon: Shield,
