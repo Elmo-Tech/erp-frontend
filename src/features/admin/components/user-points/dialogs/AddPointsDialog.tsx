@@ -12,7 +12,8 @@ import { FormInput } from "@/components/shared/forms/FormInput";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { UserWithPoints, AddPointsFormData } from "../../../types/userPoints";
-import { useAddPoints, useUsersWithPoints } from "../../../hooks/useUserPoints";
+import { useAddPoints } from "../../../hooks/useUserPoints";
+import { useEmployees } from "@/features/hr/hooks";
 
 const formSchema = z.object({
 	userId: z.number().min(1, "Please select a user"),
@@ -40,7 +41,7 @@ interface AddPointsDialogProps {
 
 export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	const addPointsMutation = useAddPoints();
-	const { data: usersData, isLoading: isLoadingUsers } = useUsersWithPoints({}, 1, 100);
+	const { data: employeesData, isLoading: isLoadingUsers } = useEmployees({ isActive: true, perPage: 100 });
 
 	const defaultValues = useMemo(() => getDefaultValues(user?.userId), [user?.userId]);
 
@@ -64,15 +65,15 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	}, [open, user?.userId, form]);
 
 	const selectedUserId = form.watch("userId");
-	const selectedUser = usersData?.users.find((u) => u.userId === selectedUserId);
+	const selectedUser = employeesData?.employees.find((u) => u.userId === selectedUserId);
 
 	const userOptions = useMemo(() => {
-		if (!usersData?.users || usersData.users.length === 0) return [];
-		return usersData.users.map((u) => ({
+		if (!employeesData?.employees || employeesData.employees.length === 0) return [];
+		return employeesData.employees.map((u) => ({
 			value: u.userId.toString(),
 			label: `${u.name} (${u.totalPoints} pts)`,
 		}));
-	}, [usersData?.users]);
+	}, [employeesData?.employees]);
 
 	const onSubmit = async (values: FormValues) => {
 		const data: AddPointsFormData = {
