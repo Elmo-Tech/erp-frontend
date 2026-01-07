@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { UserPointsFilters } from "../../types/userPoints";
-import { UserPointsStats } from "./UserPointsStats";
-import { UserPointsLeaderboard } from "./UserPointsLeaderboard";
-import { UserPointsFilters as UserPointsFiltersComponent } from "./UserPointsFilters";
-import { UserPointsTable } from "./tables/UserPointsTable";
+import { UserPointsStats } from "../user-points/UserPointsStats";
+import { UserPointsLeaderboard } from "../user-points/UserPointsLeaderboard";
+import { UserPointsFilters as UserPointsFiltersComponent } from "../user-points/UserPointsFilters";
+import { UserPointsTable } from "../user-points/tables/UserPointsTable";
 
 export function UserPointsWrapper() {
 	const [filters, setFilters] = useState<UserPointsFilters>({
