@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FormDialog } from "@/components/shared";
+import { Form } from "@/components/ui/form";
 import { useUpdateEmployee } from "../../../hooks";
 import { useUserSpecializations } from "@/features/admin/hooks/useEnums";
 import type { Employee } from "../../../types";
@@ -123,12 +124,14 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			isSubmitDisabled={!form.formState.isValid}
 			size="lg"
 		>
-			<EmployeeFormFields
-				control={form.control}
-				isEditing={true}
-				roleOptions={roles}
-				specializationOptions={specializationOptions}
-			/>
+			<Form {...form}>
+				<EmployeeFormFields
+					control={form.control}
+					isEditing={true}
+					roleOptions={roles}
+					specializationOptions={specializationOptions}
+				/>
+			</Form>
 		</FormDialog>
 	);
 }
