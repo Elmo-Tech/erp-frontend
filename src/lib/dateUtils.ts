@@ -1,19 +1,19 @@
 /**
  * Date and Time Utilities
  *
- * CRITICAL: All times are stored in UTC in the database.
- * These utilities handle proper conversion to user's local timezone for display.
+ * IMPORTANT: Times are stored as local time in the database (no UTC conversion).
+ * The server and client should be in the same timezone context.
  */
 
 /**
- * Parse a datetime string from API (UTC) and return local Date object
- * @param dateTimeString - ISO string from API (e.g., "2026-01-07T09:47:00.000000Z")
- * @returns Date object in local timezone
+ * Parse a datetime string from API and return Date object
+ * @param dateTimeString - ISO string from API (e.g., "2026-01-07T10:00:00")
+ * @returns Date object
  */
-export function parseUTCDateTime(dateTimeString: string | null | undefined): Date | null {
+export function parseDateTime(dateTimeString: string | null | undefined): Date | null {
 	if (!dateTimeString) return null;
 
-	// Parse the UTC datetime string
+	// Parse the datetime string as local time (no Z suffix means local)
 	const date = new Date(dateTimeString);
 
 	// Check if valid date
@@ -23,17 +23,16 @@ export function parseUTCDateTime(dateTimeString: string | null | undefined): Dat
 }
 
 /**
- * Format time for display (HH:MM AM/PM format in local timezone)
+ * Format time for display (HH:MM AM/PM format)
  * @param dateTimeString - ISO string from API
- * @returns Formatted time string (e.g., "09:47 AM")
+ * @returns Formatted time string (e.g., "10:00 AM")
  */
 export function formatTimeDisplay(dateTimeString: string | null | undefined): string {
 	if (!dateTimeString) return "--:--";
 
-	const date = parseUTCDateTime(dateTimeString);
+	const date = parseDateTime(dateTimeString);
 	if (!date) return "--:--";
 
-	// Format in local timezone
 	return date.toLocaleTimeString("en-US", {
 		hour: "2-digit",
 		minute: "2-digit",
@@ -42,17 +41,17 @@ export function formatTimeDisplay(dateTimeString: string | null | undefined): st
 }
 
 /**
- * Format time for input field (HH:MM 24-hour format in local timezone)
+ * Format time for input field (HH:MM 24-hour format)
  * @param dateTimeString - ISO string from API
- * @returns Time string for input (e.g., "09:47")
+ * @returns Time string for input (e.g., "10:00")
  */
 export function formatTimeForInput(dateTimeString: string | null | undefined): string {
 	if (!dateTimeString) return "";
 
-	const date = parseUTCDateTime(dateTimeString);
+	const date = parseDateTime(dateTimeString);
 	if (!date) return "";
 
-	// Get local hours and minutes
+	// Get hours and minutes
 	const hours = date.getHours().toString().padStart(2, "0");
 	const minutes = date.getMinutes().toString().padStart(2, "0");
 
@@ -80,12 +79,12 @@ export function formatDateDisplay(dateString: string | null | undefined): string
 /**
  * Format full datetime for display
  * @param dateTimeString - ISO string from API
- * @returns Formatted datetime string (e.g., "Mon, Jan 7 at 09:47 AM")
+ * @returns Formatted datetime string (e.g., "Mon, Jan 7 at 10:00 AM")
  */
 export function formatDateTimeDisplay(dateTimeString: string | null | undefined): string {
 	if (!dateTimeString) return "--";
 
-	const date = parseUTCDateTime(dateTimeString);
+	const date = parseDateTime(dateTimeString);
 	if (!date) return "--";
 
 	const dateStr = date.toLocaleDateString("en-US", {
@@ -111,7 +110,7 @@ export function formatDateTimeDisplay(dateTimeString: string | null | undefined)
 export function getElapsedSeconds(startTimeString: string | null | undefined): number {
 	if (!startTimeString) return 0;
 
-	const startDate = parseUTCDateTime(startTimeString);
+	const startDate = parseDateTime(startTimeString);
 	if (!startDate) return 0;
 
 	const now = new Date();
@@ -141,14 +140,13 @@ export function formatDuration(seconds: number): string {
  * Combine date and time strings for API submission
  * @param dateString - Date string (YYYY-MM-DD)
  * @param timeString - Time string (HH:MM)
- * @returns ISO datetime string in UTC
+ * @returns ISO datetime string WITHOUT timezone conversion (local time)
  */
 export function combineDateTimeForAPI(dateString: string, timeString: string): string {
-	// Create date in local timezone
-	const [hours, minutes] = timeString.split(":");
-	const date = new Date(dateString);
-	date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-	// Convert to ISO string (UTC)
-	return date.toISOString();
+	// Return as local datetime string without UTC conversion
+	// Format: YYYY-MM-DDTHH:MM:SS (no Z suffix = local time)
+	return `${dateString}T${timeString}:00`;
 }
+
+// Legacy function names for backward compatibility
+export const parseUTCDateTime = parseDateTime;
