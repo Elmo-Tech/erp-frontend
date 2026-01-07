@@ -232,7 +232,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 				if (data.priority !== task.priority) payload.priority = data.priority;
 				if (assignedTo !== task.assignedTo) payload.assignedTo = assignedTo;
 				if (data.taskCategory !== (task.taskCategory || "")) {
-					const categoryValue = data.taskCategory === "none" ? null : data.taskCategory;
+					const categoryValue = data.taskCategory === "none" ? undefined : data.taskCategory;
 					payload.taskCategory = categoryValue;
 				}
 				if (Number(data.estimatedHours) !== task.estimatedHours) payload.estimatedHours = Number(data.estimatedHours);
@@ -265,7 +265,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					type: data.type,
 					priority: data.priority,
 					assignedTo,
-					taskCategory: data.taskCategory === "none" ? null : data.taskCategory,
+					taskCategory: data.taskCategory === "none" ? undefined : data.taskCategory,
 					estimatedHours: Number(data.estimatedHours),
 					dueDate: data.dueDate,
 					startDate: data.startDate,
