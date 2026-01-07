@@ -200,6 +200,7 @@ export const ADMIN_PERMISSIONS = {
 	RESET_CLIENT_PORTAL_PASSWORD: "reset_client_portal_password",
 
 	// Points System
+	MANAGE_USER_POINTS: "manage_user_points",
 	VIEW_POINTS: "view_points",
 	MANAGE_POINTS: "manage_points",
 	AWARD_POINTS: "award_points",
@@ -453,6 +454,7 @@ export const usePermissions = () => {
 			canResetClientPortalPassword: hasPermission(ADMIN_PERMISSIONS.RESET_CLIENT_PORTAL_PASSWORD),
 
 			// Points System
+			canManageUserPoints: hasPermission(ADMIN_PERMISSIONS.MANAGE_USER_POINTS),
 			canViewPoints: hasPermission(ADMIN_PERMISSIONS.VIEW_POINTS),
 			canManagePoints: hasPermission(ADMIN_PERMISSIONS.MANAGE_POINTS),
 			canAwardPoints: hasPermission(ADMIN_PERMISSIONS.AWARD_POINTS),

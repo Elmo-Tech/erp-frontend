@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserPointsFilters } from "../../types/userPoints";
-import { UserPointsStats } from "../user-points/UserPointsStats";
-import { UserPointsLeaderboard } from "../user-points/UserPointsLeaderboard";
-import { UserPointsFilters as UserPointsFiltersComponent } from "../user-points/UserPointsFilters";
-import { UserPointsTable } from "../user-points/UserPointsTable";
+import { UserPointsStats } from "./UserPointsStats";
+import { UserPointsLeaderboard } from "./UserPointsLeaderboard";
+import { UserPointsFilters as UserPointsFiltersComponent } from "./UserPointsFilters";
+import { UserPointsTable } from "./tables/UserPointsTable";
 
 export function UserPointsWrapper() {
 	const [filters, setFilters] = useState<UserPointsFilters>({
@@ -34,17 +33,10 @@ export function UserPointsWrapper() {
 						onFiltersChange={setFilters}
 					/>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Employee Points</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<UserPointsTable
-								filters={filters}
-								onFiltersChange={setFilters}
-							/>
-						</CardContent>
-					</Card>
+					<UserPointsTable
+						filters={filters}
+						onFiltersChange={setFilters}
+					/>
 				</div>
 
 				{/* Leaderboard Sidebar */}
