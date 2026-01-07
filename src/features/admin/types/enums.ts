@@ -42,6 +42,8 @@ export enum TaskCategory {
 	API = "api",
 	DATABASE = "database",
 	UI = "ui",
+	UX = "ux",
+	UI_UX = "ui_ux",
 	COMPONENT = "component",
 	STYLING = "styling",
 	DESIGN = "design",
