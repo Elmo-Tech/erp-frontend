@@ -1,5 +1,6 @@
 /**
- * Projects Table Columns
+ * Projects Columns Exports
  */
 
-export * from "./projectsColumns";
+// Columns are now in projects/tables/columns.tsx
+export { getProjectsColumns } from "../projects/tables/columns";

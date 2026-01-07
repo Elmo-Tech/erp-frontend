@@ -1,8 +1,11 @@
-export * from "./components/ClientsTable";
-export * from "./components/ClientFormDialog";
-export * from "./components/ClientsManagement";
+// Components
+export * from "./components";
 export * from "./components/ClientDetailsTabs";
 export * from "./components/PortalAccessDialog";
+
+// Hooks
 export * from "./hooks/useClients";
 export * from "./hooks/usePortalAccess";
+
+// Types
 export * from "./types";

@@ -1,23 +1,23 @@
-/**
- * Admin Components
- * Export all admin-related components.
- *
- * Requirements: 11-18 (Frontend)
- */
+// ============================================
+// USERS
+// ============================================
+export { CreateUserForm, UpdateUserForm, UserFormFields, UsersTable, getUsersColumns, UserActions, DeleteUserDialog } from "./users";
 
-export { RolesMatrix } from "./RolesMatrix";
-export { ProfitChart } from "./ProfitChart";
+// ============================================
+// WRAPPERS
+// ============================================
+export { UsersWrapper } from "./wrappers";
+
+// ============================================
+// OTHER COMPONENTS
+// ============================================
 export { AdminDashboard } from "./AdminDashboard";
+export { AttendanceFormDialog } from "./AttendanceFormDialog";
+export { AttendanceManagement } from "./AttendanceManagement";
+export { AuditLogViewer } from "./AuditLogViewer";
+export { InternalCostManager } from "./InternalCostManager";
+export { ProfitChart } from "./ProfitChart";
+export { QualityDashboard } from "./QualityDashboard";
+export { RolesMatrix } from "./RolesMatrix";
 export { UserPerformanceCard } from "./UserPerformanceCard";
 export { UserPerformanceList } from "./UserPerformanceList";
-export { InternalCostManager } from "./InternalCostManager";
-export { QualityDashboard } from "./QualityDashboard";
-export { AuditLogViewer } from "./AuditLogViewer";
-export { UsersManagement } from "./UsersManagement";
-export { UsersTable } from "./UsersTable";
-export { UserFormDialog } from "./UserFormDialog";
-export { AttendanceManagement } from "./AttendanceManagement";
-export { AttendanceFormDialog } from "./AttendanceFormDialog";
-
-// Column definitions
-export * from "./columns";

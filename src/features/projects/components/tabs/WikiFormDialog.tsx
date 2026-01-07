@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,6 +18,21 @@ const wikiSchema = z.object({
 
 type WikiFormData = z.infer<typeof wikiSchema>;
 
+const getDefaultValues = (wiki?: ProjectWiki | null): WikiFormData => {
+	if (wiki) {
+		return {
+			title: wiki.title,
+			content: wiki.content,
+			isEncrypted: wiki.isEncrypted,
+		};
+	}
+	return {
+		title: "",
+		content: "",
+		isEncrypted: false,
+	};
+};
+
 interface WikiFormDialogProps {
 	projectId: number;
 	open: boolean;
@@ -30,30 +45,13 @@ export function WikiFormDialog({ projectId, open, onOpenChange, wiki }: WikiForm
 	const createWiki = useCreateProjectWiki();
 	const updateWiki = useUpdateProjectWiki();
 
+	const defaultValues = useMemo(() => getDefaultValues(wiki), [wiki]);
+
 	const form = useForm<WikiFormData>({
 		resolver: zodResolver(wikiSchema),
-		defaultValues: {
-			title: "",
-			content: "",
-			isEncrypted: false,
-		},
+		defaultValues,
+		values: defaultValues,
 	});
-
-	useEffect(() => {
-		if (wiki) {
-			form.reset({
-				title: wiki.title,
-				content: wiki.content,
-				isEncrypted: wiki.isEncrypted,
-			});
-		} else {
-			form.reset({
-				title: "",
-				content: "",
-				isEncrypted: false,
-			});
-		}
-	}, [wiki, form]);
 
 	const handleSubmit = async (data: WikiFormData) => {
 		try {

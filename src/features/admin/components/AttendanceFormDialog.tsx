@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,6 +27,25 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const getDefaultValues = (attendance: Attendance | null): FormValues => {
+	if (attendance) {
+		return {
+			userId: attendance.userId.toString(),
+			date: attendance.date,
+			clockIn: formatTimeForInput(attendance.clockIn),
+			clockOut: formatTimeForInput(attendance.clockOut),
+			notes: attendance.notes || "",
+		};
+	}
+	return {
+		userId: "",
+		date: format(new Date(), "yyyy-MM-dd"),
+		clockIn: "",
+		clockOut: "",
+		notes: "",
+	};
+};
+
 interface AttendanceFormDialogProps {
 	open: boolean;
 	onClose: () => void;
@@ -39,36 +58,13 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 	const createMutation = useCreateAttendance();
 	const updateMutation = useUpdateAttendance();
 
+	const defaultValues = useMemo(() => getDefaultValues(attendance), [attendance]);
+
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
-		defaultValues: {
-			userId: "",
-			date: format(new Date(), "yyyy-MM-dd"),
-			clockIn: "",
-			clockOut: "",
-			notes: "",
-		},
+		defaultValues,
+		values: defaultValues,
 	});
-
-	useEffect(() => {
-		if (attendance) {
-			form.reset({
-				userId: attendance.userId.toString(),
-				date: attendance.date,
-				clockIn: formatTimeForInput(attendance.clockIn),
-				clockOut: formatTimeForInput(attendance.clockOut),
-				notes: attendance.notes || "",
-			});
-		} else {
-			form.reset({
-				userId: "",
-				date: format(new Date(), "yyyy-MM-dd"),
-				clockIn: "",
-				clockOut: "",
-				notes: "",
-			});
-		}
-	}, [attendance, form]);
 
 	const onSubmit = async (values: FormValues) => {
 		const data: AttendanceFormData = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ClientsManagement } from "@/features/clients";
+import { ClientsWrapper } from "@/features/clients/components";
 
 export default function ClientsPage() {
 	return (
@@ -9,7 +9,7 @@ export default function ClientsPage() {
 				<h1 className="text-2xl font-bold">Clients</h1>
 				<p className="text-muted-foreground">Manage your clients and their information</p>
 			</div>
-			<ClientsManagement />
+			<ClientsWrapper />
 		</div>
 	);
 }

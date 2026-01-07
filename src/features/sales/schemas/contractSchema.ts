@@ -20,7 +20,7 @@ export const contractMilestoneSchema = z.object({
 	sortOrder: z.number().min(0, "Sort order must be positive"),
 });
 
-export const createContractSchema = z.object({
+const baseContractSchema = z.object({
 	quotationId: z.string().optional(),
 	projectId: z.number().optional(),
 	templateId: z.number().optional(),
@@ -29,14 +29,15 @@ export const createContractSchema = z.object({
 	partyOne: contractPartySchema,
 	partyTwo: contractPartySchema,
 	totalAmount: z.coerce.number().min(0, "Total amount must be positive"),
-	currency: z.string().min(3, "Currency must be 3 characters").max(3, "Currency must be 3 characters").default("USD"),
+	currency: z.string().min(3, "Currency must be 3 characters").max(3, "Currency must be 3 characters"),
 	paymentTerms: z.string().max(1000, "Payment terms must be less than 1000 characters").optional(),
 	startDate: z.string().min(1, "Start date is required"),
 	endDate: z.string().optional(),
 	milestones: z.array(contractMilestoneSchema).optional(),
 });
 
-export const updateContractSchema = createContractSchema.partial();
+export const createContractSchema = baseContractSchema;
+export const updateContractSchema = baseContractSchema.partial();
 
 export const signContractSchema = z.object({
 	signedByClient: z.string().min(1, "Client signature is required").max(255, "Signature must be less than 255 characters"),

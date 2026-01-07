@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "../hooks/useProjects";
-import { ProjectFormDialog } from "./ProjectFormDialog";
+import { UpdateProjectForm } from "./projects";
 import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab } from "./tabs";
 import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -305,7 +305,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 			</Tabs>
 
 			{/* Edit Project Dialog */}
-			<ProjectFormDialog
+			<UpdateProjectForm
 				open={editDialogOpen}
 				onOpenChange={setEditDialogOpen}
 				project={project}

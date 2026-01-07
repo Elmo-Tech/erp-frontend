@@ -81,7 +81,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				title: "Attendance",
-				href: "/dashboard/attendance",
+				href: "/dashboard/my-attendance",
 				icon: Clock,
 				permission: "view_attendance",
 			},
@@ -103,7 +103,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				title: "Attendance Management",
-				href: "/dashboard/admin/attendance",
+				href: "/dashboard/attendance",
 				icon: Clock,
 				permission: "view_all_attendance",
 			},

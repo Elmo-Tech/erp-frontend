@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,6 +34,43 @@ const taskSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskSchema>;
 
+const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.MAIN): TaskFormData => {
+	if (task) {
+		return {
+			title: task.title,
+			description: task.description || "",
+			acceptanceCriteria: task.acceptanceCriteria || "",
+			status: task.status,
+			type: task.type,
+			priority: task.priority,
+			assignedTo: task.assignedTo?.toString() || "none",
+			taskCategory: task.taskCategory || "none",
+			estimatedHours: task.estimatedHours,
+			dueDate: task.dueDate,
+			startDate: task.startDate,
+			sprintNumber: task.sprintNumber,
+			tagIds: task.tags?.map((t) => t.tagId) || [],
+			internalReviewerNotes: task.internalReviewerNotes || "",
+		};
+	}
+	return {
+		title: "",
+		description: "",
+		acceptanceCriteria: "",
+		status: TaskStatus.TODO,
+		type: defaultType,
+		priority: TaskPriority.MEDIUM,
+		assignedTo: "none",
+		taskCategory: "none",
+		estimatedHours: 0,
+		dueDate: null,
+		startDate: null,
+		sprintNumber: null,
+		tagIds: [],
+		internalReviewerNotes: "",
+	};
+};
+
 interface TaskFormDialogProps {
 	projectId: number;
 	parentId?: number | null;
@@ -52,66 +89,13 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 	const createTask = useCreateTask();
 	const updateTask = useUpdateTask();
 
+	const defaultValues = useMemo(() => getDefaultValues(task, defaultType), [task, defaultType]);
+
 	const form = useForm<TaskFormData>({
 		resolver: zodResolver(taskSchema),
-		defaultValues: {
-			title: "",
-			description: "",
-			acceptanceCriteria: "",
-			status: TaskStatus.TODO,
-			type: defaultType,
-			priority: TaskPriority.MEDIUM,
-			assignedTo: "none",
-			taskCategory: "none",
-			estimatedHours: 0,
-			dueDate: null,
-			startDate: null,
-			sprintNumber: null,
-			tagIds: [],
-			internalReviewerNotes: "",
-		},
+		defaultValues,
+		values: defaultValues,
 	});
-
-	useEffect(() => {
-		if (task) {
-			form.reset({
-				title: task.title,
-				description: task.description || "",
-				acceptanceCriteria: task.acceptanceCriteria || "",
-				status: task.status,
-				type: task.type,
-				priority: task.priority,
-				assignedTo: task.assignedTo?.toString() || "none",
-				taskCategory: task.taskCategory || "none",
-				estimatedHours: task.estimatedHours,
-				dueDate: task.dueDate,
-				startDate: task.startDate,
-				sprintNumber: task.sprintNumber,
-				tagIds: task.tags?.map((t) => t.tagId) || [],
-				internalReviewerNotes: task.internalReviewerNotes || "",
-			});
-		} else {
-			// Use defaultType directly - it's already set correctly from TasksTab
-			// WEEKLY when clicking "Add Weekly Task" on a MAIN task
-			// SUBTASK when clicking "Add Subtask" on a WEEKLY task
-			form.reset({
-				title: "",
-				description: "",
-				acceptanceCriteria: "",
-				status: TaskStatus.TODO,
-				type: defaultType,
-				priority: TaskPriority.MEDIUM,
-				assignedTo: "none",
-				taskCategory: "none",
-				estimatedHours: 0,
-				dueDate: null,
-				startDate: null,
-				sprintNumber: null,
-				tagIds: [],
-				internalReviewerNotes: "",
-			});
-		}
-	}, [task, form, parentId, defaultType]);
 
 	// Status options - if task is completed, only show completed (no transitions allowed)
 	const statusOptions = useMemo(() => {

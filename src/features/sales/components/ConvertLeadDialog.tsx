@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,6 +37,19 @@ interface ConvertLeadDialogProps {
 	lead: Lead;
 }
 
+const getDefaultValues = (lead: Lead): ConvertFormData => ({
+	name: lead.name,
+	email: lead.email,
+	phone: lead.phone || "",
+	company: lead.company || "",
+	position: "",
+	address: "",
+	city: "",
+	country: lead.country || "",
+	website: "",
+	notes: lead.notes || "",
+});
+
 export function ConvertLeadDialog({ open, onOpenChange, lead }: ConvertLeadDialogProps) {
 	const router = useRouter();
 	const { data: canConvertData, isLoading: checkingConvert } = useCanConvertLead(lead.leadId);
@@ -45,36 +58,9 @@ export function ConvertLeadDialog({ open, onOpenChange, lead }: ConvertLeadDialo
 
 	const form = useForm<ConvertFormData>({
 		resolver: zodResolver(convertSchema),
-		defaultValues: {
-			name: lead.name,
-			email: lead.email,
-			phone: lead.phone || "",
-			company: lead.company || "",
-			position: "",
-			address: "",
-			city: "",
-			country: lead.country || "",
-			website: "",
-			notes: lead.notes || "",
-		},
+		defaultValues: getDefaultValues(lead),
+		values: getDefaultValues(lead),
 	});
-
-	useEffect(() => {
-		if (lead) {
-			form.reset({
-				name: lead.name,
-				email: lead.email,
-				phone: lead.phone || "",
-				company: lead.company || "",
-				position: "",
-				address: "",
-				city: "",
-				country: lead.country || "",
-				website: "",
-				notes: lead.notes || "",
-			});
-		}
-	}, [lead, form]);
 
 	const handleQuickConvert = async () => {
 		try {

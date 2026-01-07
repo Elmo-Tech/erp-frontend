@@ -1,20 +1,35 @@
-// Sales & Pricing Engine Components
-export { QuotationBuilder } from "./QuotationBuilder";
-export { QuotationsTable } from "./QuotationsTable";
-export { PricingBreakdown, InlinePricingBreakdown } from "./PricingBreakdown";
+// ============================================
+// LEADS
+// ============================================
+export { CreateLeadForm, UpdateLeadForm, LeadFormFields, LeadsTable, getLeadsColumns, LeadActions, DeleteLeadDialog } from "./leads";
+
 export { LeadKanban } from "./LeadKanban";
 export { LeadCard, CompactLeadCard } from "./LeadCard";
-export { LeadFormDialog } from "./LeadFormDialog";
-export { LeadsTable } from "./LeadsTable";
-export { ContractsTable } from "./ContractsTable";
-export { ContractFormDialog } from "./ContractFormDialog";
-export { ConvertLeadDialog } from "./ConvertLeadDialog";
 export { LeadDetailsTabs } from "./LeadDetailsTabs";
+
+// ============================================
+// QUOTATIONS
+// ============================================
+export { QuotationsTable, getQuotationsColumns, QuotationActions, DeleteQuotationDialog } from "./quotations";
+
+export { QuotationBuilder } from "./QuotationBuilder";
+export { PricingBreakdown, InlinePricingBreakdown } from "./PricingBreakdown";
+
+// ============================================
+// CONTRACTS
+// ============================================
+export { CreateContractForm, UpdateContractForm, ContractFormFields, ContractsTable, getContractsColumns, ContractActions, DeleteContractDialog } from "./contracts";
+
+export { ContractDetailsTabs } from "./ContractDetailsTabs";
+export { ConvertLeadDialog } from "./ConvertLeadDialog";
+
+// ============================================
+// WRAPPERS
+// ============================================
+export { SalesWrapper } from "./wrappers";
+
+// ============================================
+// OTHER
+// ============================================
 export { ActivityFormDialog } from "./ActivityFormDialog";
 export { MeetingFormDialog } from "./MeetingFormDialog";
-export { ContractDetailsTabs } from "./ContractDetailsTabs";
-
-// Column exports
-export { getLeadsColumns } from "./columns/leadsColumns";
-export { getQuotationsColumns } from "./columns/quotationsColumns";
-export { getContractsColumns } from "./columns/contractsColumns";

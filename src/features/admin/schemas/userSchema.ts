@@ -11,10 +11,10 @@ export const createUserSchema = z
 		email: z.string().min(1, "Email is required").email("Invalid email address"),
 		password: z.string().min(8, "Password must be at least 8 characters"),
 		password_confirmation: z.string().min(1, "Please confirm password"),
-		skills: z.array(z.string()).optional().default([]),
-		roles: z.array(z.string()).optional().default([]),
+		skills: z.array(z.string()),
+		roles: z.array(z.string()),
 		specialization: z.string().optional(),
-		isActive: z.boolean().optional().default(true),
+		isActive: z.boolean(),
 	})
 	.refine((data) => data.password === data.password_confirmation, {
 		message: "Passwords do not match",

@@ -44,29 +44,22 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onPro
 	const approveUIMutation = useApproveUI();
 
 	// Form setup
-	const form = useForm<UpdateProjectFormData>({
-		resolver: zodResolver(updateProjectSchema),
-		defaultValues: {
+	const defaultValues = React.useMemo(
+		() => ({
 			title: project?.title || "",
 			description: project?.description || "",
 			budget: project?.budget || 0,
 			deadline: project?.deadline ? new Date(project.deadline).toISOString().split("T")[0] : "",
 			reason: "",
-		},
-	});
+		}),
+		[project]
+	);
 
-	// Reset form when project data changes
-	React.useEffect(() => {
-		if (project) {
-			form.reset({
-				title: project.title,
-				description: project.description || "",
-				budget: project.budget,
-				deadline: project.deadline ? new Date(project.deadline).toISOString().split("T")[0] : "",
-				reason: "",
-			});
-		}
-	}, [project, form]);
+	const form = useForm<UpdateProjectFormData>({
+		resolver: zodResolver(updateProjectSchema),
+		defaultValues,
+		values: defaultValues,
+	});
 
 	// Handle form submission
 	const onSubmit = async (data: UpdateProjectFormData) => {

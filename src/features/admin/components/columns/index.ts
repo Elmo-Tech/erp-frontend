@@ -1,2 +1,2 @@
-export * from "./usersColumns";
+export * from "./attendanceColumns";
 export * from "./auditLogsColumns";
