@@ -3,7 +3,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TaskStatusBadge, TaskPriorityBadge } from "@/components/shared/StatusBadge";
-import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardStats } from "@/features/dashboard/hooks/useDashboardStats";
 import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee } from "lucide-react";
@@ -242,10 +241,12 @@ function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
 											<p className="text-xs text-muted-foreground">{task.project}</p>
 										</div>
 										<div className="flex items-center gap-2">
-											<TaskPriorityBadge
-												priority={task.priority}
-												size="sm"
-											/>
+											{task.priority && (
+												<TaskPriorityBadge
+													priority={task.priority}
+													size="sm"
+												/>
+											)}
 											<TaskStatusBadge
 												status={task.status}
 												size="sm"

@@ -14,6 +14,7 @@ import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileTe
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
+import { Badge } from "@/components/ui/badge";
 
 interface ProjectDetailsTabsProps {
 	projectId: number;
@@ -64,17 +65,6 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 			</div>
 		);
 	}
-
-	const statusColors: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-		draft: "secondary",
-		active: "default",
-		ui_ux: "default",
-		development: "default",
-		testing: "default",
-		completed: "default",
-		on_hold: "secondary",
-		cancelled: "destructive",
-	};
 
 	const membersCount = project.members?.length || 0;
 	const filesCount = project.files?.length || 0;
