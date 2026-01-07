@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TaskStatusBadge, TaskPriorityBadge } from "@/components/shared/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardStats } from "@/features/dashboard/hooks/useDashboardStats";
@@ -162,7 +163,10 @@ function ManagerDashboard({ data }: { data: ManagerDashboardOverview }) {
 												{task.assignee} • {task.project}
 											</p>
 										</div>
-										<Badge variant={task.status === "completed" ? "default" : task.status === "in_progress" ? "secondary" : "outline"}>{task.status.replace("_", " ")}</Badge>
+										<TaskStatusBadge
+											status={task.status}
+											size="sm"
+										/>
 									</div>
 								))
 							) : (
@@ -238,8 +242,14 @@ function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
 											<p className="text-xs text-muted-foreground">{task.project}</p>
 										</div>
 										<div className="flex items-center gap-2">
-											<Badge variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "secondary" : "outline"}>{task.priority}</Badge>
-											<Badge variant={task.status === "completed" ? "default" : task.status === "in_progress" ? "secondary" : "outline"}>{task.status.replace("_", " ")}</Badge>
+											<TaskPriorityBadge
+												priority={task.priority}
+												size="sm"
+											/>
+											<TaskStatusBadge
+												status={task.status}
+												size="sm"
+											/>
 										</div>
 									</div>
 								))

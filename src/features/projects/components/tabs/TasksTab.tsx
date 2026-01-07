@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { TaskStatusBadge, TaskTypeBadge, TaskPriorityBadge, TaskCategoryBadge } from "@/components/shared/StatusBadge";
 import { SearchInput, FilterBar, FilterSelect, ConfirmDialog } from "@/components/shared";
 import { useProjectTasks, useDeleteTask } from "@/features/dashboard/hooks/useTasks";
 import { useTaskChildren } from "@/features/dashboard/hooks/useTaskTree";
@@ -394,20 +394,18 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 						<div className="flex items-center gap-2">
 							<span className={cn("font-medium truncate", task.status === TaskStatus.COMPLETED && "line-through")}>{task.title}</span>
 							{task.type !== TaskType.MAIN && (
-								<Badge
-									variant="outline"
+								<TaskTypeBadge
+									type={task.type}
+									size="sm"
 									className="text-[10px] px-1.5 py-0 shrink-0"
-								>
-									{TaskTypeLabels[task.type]}
-								</Badge>
+								/>
 							)}
 							{task.taskCategory && (
-								<Badge
-									variant="secondary"
-									className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-100 text-blue-800"
-								>
-									{task.taskCategory}
-								</Badge>
+								<TaskCategoryBadge
+									category={task.taskCategory}
+									size="sm"
+									className="text-[10px] px-1.5 py-0 shrink-0"
+								/>
 							)}
 						</div>
 						{task.tags && task.tags.length > 0 && (

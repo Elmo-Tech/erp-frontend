@@ -22,9 +22,18 @@ import {
 	TaskStatus,
 	TaskStatusLabels,
 	TaskStatusColors,
+	TaskType,
+	TaskTypeLabels,
+	TaskTypeColors,
 	TaskPriority,
 	TaskPriorityLabels,
 	TaskPriorityColors,
+	TaskCategory,
+	TaskCategoryLabels,
+	TaskCategoryColors,
+	ClientStatus,
+	ClientStatusLabels,
+	ClientStatusColors,
 	InvoiceStatus,
 	InvoiceStatusLabels,
 	InvoiceStatusColors,
@@ -33,9 +42,9 @@ import {
 	MilestoneStatusColors,
 } from "@/lib/statusHelpers";
 
-type StatusType = "lead" | "leadPriority" | "quotation" | "contract" | "project" | "task" | "taskPriority" | "invoice" | "milestone";
+type StatusType = "lead" | "leadPriority" | "quotation" | "contract" | "project" | "task" | "taskType" | "taskPriority" | "taskCategory" | "client" | "invoice" | "milestone";
 
-type StatusValue = LeadStatus | LeadPriority | QuotationStatus | ContractStatus | ProjectStatus | TaskStatus | TaskPriority | InvoiceStatus | MilestoneStatus;
+type StatusValue = LeadStatus | LeadPriority | QuotationStatus | ContractStatus | ProjectStatus | TaskStatus | TaskType | TaskPriority | TaskCategory | ClientStatus | InvoiceStatus | MilestoneStatus;
 
 interface StatusBadgeProps {
 	type: StatusType;
@@ -52,7 +61,10 @@ const STATUS_CONFIG = {
 	contract: { labels: ContractStatusLabels, colors: ContractStatusColors },
 	project: { labels: ProjectStatusLabels, colors: ProjectStatusColors },
 	task: { labels: TaskStatusLabels, colors: TaskStatusColors },
+	taskType: { labels: TaskTypeLabels, colors: TaskTypeColors },
 	taskPriority: { labels: TaskPriorityLabels, colors: TaskPriorityColors },
+	taskCategory: { labels: TaskCategoryLabels, colors: TaskCategoryColors },
+	client: { labels: ClientStatusLabels, colors: ClientStatusColors },
 	invoice: { labels: InvoiceStatusLabels, colors: InvoiceStatusColors },
 	milestone: { labels: MilestoneStatusLabels, colors: MilestoneStatusColors },
 } as const;
@@ -139,6 +151,16 @@ export function TaskStatusBadge({ status, ...props }: Omit<StatusBadgeProps, "ty
 	);
 }
 
+export function TaskTypeBadge({ type, ...props }: Omit<StatusBadgeProps, "type" | "status"> & { type: TaskType | string }) {
+	return (
+		<StatusBadge
+			type="taskType"
+			status={type}
+			{...props}
+		/>
+	);
+}
+
 export function TaskPriorityBadge({ priority, ...props }: Omit<StatusBadgeProps, "type" | "status"> & { priority: TaskPriority | string }) {
 	return (
 		<StatusBadge
@@ -153,6 +175,26 @@ export function InvoiceStatusBadge({ status, ...props }: Omit<StatusBadgeProps, 
 	return (
 		<StatusBadge
 			type="invoice"
+			status={status}
+			{...props}
+		/>
+	);
+}
+
+export function TaskCategoryBadge({ category, ...props }: Omit<StatusBadgeProps, "type" | "status"> & { category: TaskCategory | string }) {
+	return (
+		<StatusBadge
+			type="taskCategory"
+			status={category}
+			{...props}
+		/>
+	);
+}
+
+export function ClientStatusBadge({ status, ...props }: Omit<StatusBadgeProps, "type" | "status"> & { status: ClientStatus | string }) {
+	return (
+		<StatusBadge
+			type="client"
 			status={status}
 			{...props}
 		/>

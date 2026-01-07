@@ -10,6 +10,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TaskStatusBadge } from "@/components/shared/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -111,7 +112,10 @@ const TopBouncingTasks: React.FC<TopBouncingTasksProps> = ({ tasks, onTaskClick 
 						<div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
 							<span>Project: {task.projectTitle}</span>
 							<span>Assigned to: {task.assignedTo}</span>
-							<Badge variant={task.status === "completed" ? "default" : task.status === "in_progress" ? "secondary" : "destructive"}>{task.status}</Badge>
+							<TaskStatusBadge
+								status={task.status}
+								size="sm"
+							/>
 						</div>
 					</div>
 					<div className="flex items-center gap-2">

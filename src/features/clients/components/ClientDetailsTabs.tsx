@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ClientStatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -89,7 +89,7 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 					<div>
 						<h1 className="text-3xl font-bold flex items-center gap-2">
 							{client.name}
-							<Badge variant={client.status === "active" ? "default" : "secondary"}>{client.status}</Badge>
+							<ClientStatusBadge status={client.status} />
 						</h1>
 						<p className="text-muted-foreground">{client.company || "No company"}</p>
 					</div>

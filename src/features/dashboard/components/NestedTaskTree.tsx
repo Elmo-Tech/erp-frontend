@@ -10,10 +10,9 @@
 import React, { useState, useCallback } from "react";
 import { ChevronRightIcon, ChevronDownIcon, ClockIcon, UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { TaskStatusBadge } from "@/components/shared/StatusBadge";
 import { cn } from "@/lib/utils";
 import { Task, TaskChildrenResponse } from "../types/task";
-import { TaskStatus, TaskStatusLabels, TaskStatusColors } from "@/lib/statusHelpers";
 import { useTaskTree, useTaskChildren } from "../hooks/useTaskTree";
 import { useTimerStore } from "@/store/timerStore";
 
@@ -34,24 +33,6 @@ interface TaskNodeProps {
 	expandedTasks: Set<number>;
 	onToggleExpand: (taskId: number) => void;
 }
-
-/**
- * TaskStatusBadge component for displaying task status with appropriate colors
- * Requirement 9.4: Display task title, status badge, assigned user
- */
-const TaskStatusBadge: React.FC<{ status: TaskStatus }> = ({ status }) => {
-	const colorClass = TaskStatusColors[status];
-	const label = TaskStatusLabels[status];
-
-	return (
-		<Badge
-			variant="outline"
-			className={cn("text-xs font-medium", colorClass)}
-		>
-			{label}
-		</Badge>
-	);
-};
 
 /**
  * TimeSpentIndicator component for showing total time spent
@@ -174,7 +155,10 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selected
 
 						{/* Status Badge */}
 						{/* Requirement 9.4: Display status badge */}
-						<TaskStatusBadge status={task.status} />
+						<TaskStatusBadge
+							status={task.status}
+							size="sm"
+						/>
 
 						{/* Timer Indicator */}
 						{isTimerActive && (

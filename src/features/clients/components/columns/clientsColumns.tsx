@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { ClientStatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Column } from "@/components/shared/data-display/DataTable";
@@ -38,7 +38,12 @@ export function getClientsColumns({ onView, onEdit, onDelete }: ClientsColumnsOp
 		{
 			key: "status",
 			header: "Status",
-			render: (client) => <Badge variant={client.status === "active" ? "default" : "secondary"}>{client.status}</Badge>,
+			render: (client) => (
+				<ClientStatusBadge
+					status={client.status}
+					size="sm"
+				/>
+			),
 		},
 		{
 			key: "projects",

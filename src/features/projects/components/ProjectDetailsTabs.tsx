@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ProjectStatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -94,7 +94,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 					<div>
 						<h1 className="text-3xl font-bold flex items-center gap-2">
 							{project.title}
-							<Badge variant={statusColors[project.status] || "default"}>{project.status?.replace(/_/g, " ")}</Badge>
+							<ProjectStatusBadge status={project.status} />
 						</h1>
 						<p className="text-muted-foreground">
 							{project.client?.name || "No client"} • Created {format(new Date(project.createdAt), "MMM d, yyyy")}

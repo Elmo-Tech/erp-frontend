@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskStatusBadge, TaskTypeBadge, TaskPriorityBadge, TaskCategoryBadge } from "@/components/shared/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Task, TaskStatusLabels, TaskStatusColors, TaskPriorityLabels, TaskPriorityColors, TaskTypeLabels, TaskType } from "@/features/dashboard/types/task";
+import { Task, TaskType } from "@/features/dashboard/types/task";
 import { useTask, useTaskActivities, useTestScenarios } from "@/features/dashboard/hooks/useTasks";
 import { TaskAssigneesSection } from "./TaskAssigneesSection";
 import { TaskTestScenariosSection } from "./TaskTestScenariosSection";
@@ -66,19 +67,24 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 							<div className="flex items-start justify-between gap-4">
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-2 mb-2">
-										<Badge
-											variant="outline"
-											className={cn("text-xs", TaskPriorityColors[task.priority])}
-										>
-											{TaskPriorityLabels[task.priority]}
-										</Badge>
-										<Badge
-											variant="outline"
-											className="text-xs"
-										>
-											{TaskTypeLabels[task.type]}
-										</Badge>
-										<Badge className={cn("text-xs", TaskStatusColors[task.status])}>{TaskStatusLabels[task.status]}</Badge>
+										<TaskPriorityBadge
+											priority={task.priority}
+											size="sm"
+										/>
+										<TaskTypeBadge
+											type={task.type}
+											size="sm"
+										/>
+										<TaskStatusBadge
+											status={task.status}
+											size="sm"
+										/>
+										{task.taskCategory && (
+											<TaskCategoryBadge
+												category={task.taskCategory}
+												size="sm"
+											/>
+										)}
 									</div>
 									<SheetTitle className="text-xl font-semibold line-clamp-2">{task.title}</SheetTitle>
 									{task.parent && (
