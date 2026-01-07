@@ -83,7 +83,7 @@ export function UserPointsFilters({ filters, onFiltersChange }: UserPointsFilter
 					value={filters.isActive === undefined ? "all" : filters.isActive ? "active" : "inactive"}
 					onValueChange={handleStatusChange}
 				>
-					<SelectTrigger>
+					<SelectTrigger className="w-full">
 						<SelectValue placeholder="All Status" />
 					</SelectTrigger>
 					<SelectContent>
@@ -98,7 +98,7 @@ export function UserPointsFilters({ filters, onFiltersChange }: UserPointsFilter
 					value={filters.sortBy || "total_points"}
 					onValueChange={handleSortByChange}
 				>
-					<SelectTrigger>
+					<SelectTrigger className="w-full">
 						<SelectValue placeholder="Sort by" />
 					</SelectTrigger>
 					<SelectContent>
@@ -113,7 +113,7 @@ export function UserPointsFilters({ filters, onFiltersChange }: UserPointsFilter
 					value={filters.sortOrder || "desc"}
 					onValueChange={handleSortOrderChange}
 				>
-					<SelectTrigger>
+					<SelectTrigger className="w-full">
 						<SelectValue placeholder="Order" />
 					</SelectTrigger>
 					<SelectContent>
