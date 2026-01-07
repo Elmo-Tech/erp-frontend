@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,18 +8,25 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
 import { FormInput } from "@/components/shared/forms/FormInput";
+import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { UserWithPoints, AddPointsFormData } from "../../../types/userPoints";
-import { useAddPoints } from "../../../hooks/useUserPoints";
+import { useAddPoints, useUsersWithPoints } from "../../../hooks/useUserPoints";
 
 const formSchema = z.object({
-	points: z.number().min(1, "Points must be at least 1").max(1000, "Points cannot exceed 1000"),
+	userId: z.number().min(1, "Please select a user"),
+	points: z
+		.number()
+		.min(-1000, "Points cannot be less than -1000")
+		.max(1000, "Points cannot exceed 1000")
+		.refine((val) => val !== 0, "Points cannot be zero"),
 	reason: z.string().min(3, "Reason must be at least 3 characters").max(255, "Reason cannot exceed 255 characters"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-const getDefaultValues = (): FormValues => ({
+const getDefaultValues = (userId?: number): FormValues => ({
+	userId: userId || 0,
 	points: 10,
 	reason: "",
 });
@@ -27,25 +34,48 @@ const getDefaultValues = (): FormValues => ({
 interface AddPointsDialogProps {
 	open: boolean;
 	onClose: () => void;
-	user: UserWithPoints | null;
+	user?: UserWithPoints | null;
 }
 
 export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	const addPointsMutation = useAddPoints();
+	const { data: usersData } = useUsersWithPoints({}, 1, 100);
 
-	const defaultValues = useMemo(() => getDefaultValues(), []);
+	const defaultValues = useMemo(() => getDefaultValues(user?.userId), [user?.userId]);
 
 	const form = useForm<FormValues>({
 		resolver: zodResolver(formSchema),
 		defaultValues,
-		values: defaultValues,
 	});
 
-	const onSubmit = async (values: FormValues) => {
-		if (!user) return;
+	// Update form when user prop changes
+	useEffect(() => {
+		if (user) {
+			form.setValue("userId", user.userId);
+		}
+	}, [user, form]);
 
+	// Reset form when dialog opens
+	useEffect(() => {
+		if (open) {
+			form.reset(getDefaultValues(user?.userId));
+		}
+	}, [open, user?.userId, form]);
+
+	const selectedUserId = form.watch("userId");
+	const selectedUser = usersData?.users.find((u) => u.userId === selectedUserId);
+
+	const userOptions = useMemo(() => {
+		if (!usersData?.users) return [];
+		return usersData.users.map((u) => ({
+			value: u.userId.toString(),
+			label: `${u.name} (${u.totalPoints} pts)`,
+		}));
+	}, [usersData?.users]);
+
+	const onSubmit = async (values: FormValues) => {
 		const data: AddPointsFormData = {
-			userId: user.userId,
+			userId: values.userId,
 			points: values.points,
 			reason: values.reason,
 		};
@@ -60,13 +90,15 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	};
 
 	const isPending = addPointsMutation.isPending;
+	const pointsValue = form.watch("points");
+	const isNegative = pointsValue < 0;
 
 	return (
 		<FormDialog
 			open={open}
 			onOpenChange={(o) => !o && onClose()}
-			title="Add Points"
-			description={user ? `Add points to ${user.name}` : "Add points to user"}
+			title={isNegative ? "Deduct Points" : "Add Points"}
+			description="Add or deduct points from a user"
 			size="md"
 			showFooter={false}
 		>
@@ -75,20 +107,30 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 					onSubmit={form.handleSubmit(onSubmit)}
 					className="space-y-4"
 				>
-					{user && (
+					<FormSelect
+						control={form.control}
+						name="userId"
+						label="Select User"
+						placeholder="Choose a user..."
+						options={userOptions}
+						onValueChange={(value) => form.setValue("userId", parseInt(value))}
+					/>
+
+					{selectedUser && (
 						<div className="p-3 bg-muted rounded-lg">
-							<div className="text-sm font-medium">{user.name}</div>
-							<div className="text-xs text-muted-foreground">Current Points: {user.totalPoints}</div>
+							<div className="text-sm font-medium">{selectedUser.name}</div>
+							<div className="text-xs text-muted-foreground">Current Points: {selectedUser.totalPoints}</div>
 						</div>
 					)}
 
 					<FormInput
 						control={form.control}
 						name="points"
-						label="Points to Add"
+						label="Points"
+						description="Use positive values to add, negative to deduct"
 						type="number"
-						placeholder="Enter points amount"
-						min={1}
+						placeholder="Enter points (e.g., 10 or -5)"
+						min={-1000}
 						max={1000}
 					/>
 
@@ -96,7 +138,7 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 						control={form.control}
 						name="reason"
 						label="Reason"
-						placeholder="Why are you adding these points?"
+						placeholder="Why are you adding/deducting these points?"
 						rows={3}
 					/>
 
@@ -112,8 +154,9 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 						<Button
 							type="submit"
 							disabled={isPending}
+							variant={isNegative ? "destructive" : "default"}
 						>
-							{isPending ? "Adding..." : "Add Points"}
+							{isPending ? "Processing..." : isNegative ? "Deduct Points" : "Add Points"}
 						</Button>
 					</div>
 				</form>
