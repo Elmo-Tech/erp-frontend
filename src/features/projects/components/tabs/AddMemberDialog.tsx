@@ -40,9 +40,9 @@ export function AddMemberDialog({ projectId, open, onOpenChange, existingMemberI
 	const availableUsers = usersData?.users?.filter((user) => !existingMemberIds.includes(user.userId)) || [];
 
 	const userOptions = usersLoading
-		? [{ value: "", label: "Loading users...", disabled: true }]
+		? [{ value: "loading", label: "Loading users...", disabled: true }]
 		: availableUsers.length === 0
-		? [{ value: "", label: "No available users", disabled: true }]
+		? [{ value: "unavailable", label: "No available users", disabled: true }]
 		: availableUsers.map((user) => ({
 				value: user.userId.toString(),
 				label: `${user.name} (${user.email})`,

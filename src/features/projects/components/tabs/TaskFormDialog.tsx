@@ -121,7 +121,6 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 
 	// Transform task categories to select options
 	const taskCategoryOptions = [
-		{ value: "none", label: "No Category" },
 		...(taskCategoriesData?.data?.map((category) => ({
 			value: category.value,
 			label: category.label,
@@ -129,7 +128,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 	];
 
 	const assigneeOptions = useMemo(() => {
-		const options = [{ value: "none", label: "Unassigned" }];
+		const options = [];
 
 		// For Main Tasks: use project members
 		// For Weekly/Subtasks: use teamAssignees from parent task

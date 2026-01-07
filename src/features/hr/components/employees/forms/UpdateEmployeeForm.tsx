@@ -105,7 +105,6 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 	};
 
 	const specializationOptions = [
-		{ value: "none", label: "No Specialization" },
 		...(specializationsData?.data?.map((spec) => ({
 			value: spec.value,
 			label: spec.label,

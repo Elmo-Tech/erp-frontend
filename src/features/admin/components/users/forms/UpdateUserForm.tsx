@@ -80,7 +80,6 @@ export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUs
 		})) || [];
 
 	const specializationOptions = [
-		{ value: "", label: "No Specialization" },
 		...(specializationsData?.data?.map((spec) => ({
 			value: spec.value,
 			label: spec.label,

@@ -73,7 +73,6 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 		})) || [];
 
 	const specializationOptions = [
-		{ value: "", label: "No Specialization" },
 		...(specializationsData?.data?.map((spec) => ({
 			value: spec.value,
 			label: spec.label,
