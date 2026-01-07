@@ -298,7 +298,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 			onSubmit={form.handleSubmit(handleSubmit)}
 			isLoading={createTask.isPending || updateTask.isPending}
 			isSubmitDisabled={!form.formState.isValid}
-			size="xl"
+			size="xxl"
 		>
 			<Form {...form}>
 				<div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
