@@ -9,6 +9,7 @@ import { Form } from "@/components/ui/form";
 import { FormDialog, FormInput, FormSelect, FormTextarea, FormDatePicker } from "@/components/shared";
 import { useCreateTask, useUpdateTask, useTags } from "@/features/dashboard/hooks/useTasks";
 import { useProjectMembers } from "../../hooks/useProjectMembers";
+import { useTaskCategories } from "@/features/admin/hooks/useEnums";
 import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels, TaskPriority, TaskPriorityLabels } from "@/features/dashboard/types/task";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,7 @@ const taskSchema = z.object({
 	type: z.enum([TaskType.MAIN, TaskType.WEEKLY, TaskType.SUBTASK]),
 	priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.URGENT]),
 	assignedTo: z.string().optional(),
+	taskCategory: z.string().optional(),
 	estimatedHours: z.number().min(0, "Must be 0 or greater"),
 	dueDate: z.string().optional().nullable(),
 	startDate: z.string().optional().nullable(),
@@ -46,6 +48,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 	const isEditing = !!task;
 	const { data: membersData } = useProjectMembers(projectId);
 	const { data: tags } = useTags();
+	const { data: taskCategoriesData } = useTaskCategories();
 	const createTask = useCreateTask();
 	const updateTask = useUpdateTask();
 
@@ -59,6 +62,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 			type: defaultType,
 			priority: TaskPriority.MEDIUM,
 			assignedTo: "none",
+			taskCategory: "",
 			estimatedHours: 0,
 			dueDate: null,
 			startDate: null,
@@ -78,6 +82,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 				type: task.type,
 				priority: task.priority,
 				assignedTo: task.assignedTo?.toString() || "none",
+				taskCategory: task.taskCategory || "",
 				estimatedHours: task.estimatedHours,
 				dueDate: task.dueDate,
 				startDate: task.startDate,
@@ -97,6 +102,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 				type: defaultType,
 				priority: TaskPriority.MEDIUM,
 				assignedTo: "none",
+				taskCategory: "",
 				estimatedHours: 0,
 				dueDate: null,
 				startDate: null,
@@ -128,6 +134,15 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 		value: priority,
 		label: TaskPriorityLabels[priority],
 	}));
+
+	// Transform task categories to select options
+	const taskCategoryOptions = [
+		{ value: "", label: "No Category" },
+		...(taskCategoriesData?.data?.map((category) => ({
+			value: category.value,
+			label: category.label,
+		})) || []),
+	];
 
 	const assigneeOptions = useMemo(() => {
 		const options = [{ value: "none", label: "Unassigned" }];
@@ -216,6 +231,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 				if (data.type !== task.type) payload.type = data.type;
 				if (data.priority !== task.priority) payload.priority = data.priority;
 				if (assignedTo !== task.assignedTo) payload.assignedTo = assignedTo;
+				if (data.taskCategory !== (task.taskCategory || "")) payload.taskCategory = data.taskCategory || "";
 				if (Number(data.estimatedHours) !== task.estimatedHours) payload.estimatedHours = Number(data.estimatedHours);
 				if (datesAreDifferent(data.dueDate, task.dueDate)) payload.dueDate = data.dueDate ? normalizeDate(data.dueDate) : null;
 				if (datesAreDifferent(data.startDate, task.startDate)) payload.startDate = data.startDate ? normalizeDate(data.startDate) : null;
@@ -246,6 +262,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					type: data.type,
 					priority: data.priority,
 					assignedTo,
+					taskCategory: data.taskCategory || "",
 					estimatedHours: Number(data.estimatedHours),
 					dueDate: data.dueDate,
 					startDate: data.startDate,
@@ -292,7 +309,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 						placeholder="Enter task title..."
 					/>
 
-					<div className="grid grid-cols-3 gap-4">
+					<div className="grid grid-cols-4 gap-4">
 						<FormSelect
 							control={form.control}
 							name="type"
@@ -312,6 +329,14 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							name="status"
 							label="Status"
 							options={statusOptions}
+						/>
+						<FormSelect
+							control={form.control}
+							name="taskCategory"
+							label="Category"
+							placeholder="Select category..."
+							options={taskCategoryOptions}
+							description="Determines which developers can see this task"
 						/>
 					</div>
 

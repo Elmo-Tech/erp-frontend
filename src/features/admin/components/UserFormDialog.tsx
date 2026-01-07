@@ -6,11 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
 import { FormInput } from "@/components/shared/forms/FormInput";
+import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormSwitch } from "@/components/shared/forms/FormSwitch";
 import { FormCheckboxGroup } from "@/components/shared/forms/FormCheckboxGroup";
 import { TagInput } from "@/components/shared/forms/TagInput";
 import { useCreateUser, useUpdateUser } from "../hooks/useUsers";
 import { useRoles } from "../hooks/useRoles";
+import { useUserSpecializations } from "../hooks/useEnums";
 import { User } from "../types";
 import { createUserSchema, updateUserSchema, CreateUserFormData, UpdateUserFormData } from "../schemas/userSchema";
 import { toast } from "sonner";
@@ -26,6 +28,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 	const createUser = useCreateUser();
 	const updateUser = useUpdateUser();
 	const { data: rolesData } = useRoles();
+	const { data: specializationsData } = useUserSpecializations();
 
 	const form = useForm<CreateUserFormData | UpdateUserFormData>({
 		resolver: zodResolver(isEditing ? updateUserSchema : createUserSchema),
@@ -36,6 +39,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 			password_confirmation: "",
 			skills: [],
 			roles: [],
+			specialization: "",
 			isActive: true,
 		},
 	});
@@ -49,6 +53,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 				password_confirmation: "",
 				skills: user.skills,
 				roles: user.roles,
+				specialization: user.specialization || "",
 				isActive: user.isActive,
 			});
 		} else {
@@ -59,6 +64,7 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 				password_confirmation: "",
 				skills: [],
 				roles: [],
+				specialization: "",
 				isActive: true,
 			});
 		}
@@ -92,6 +98,15 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 			value: role.name,
 			label: role.name,
 		})) || [];
+
+	// Transform specializations to select options
+	const specializationOptions = [
+		{ value: "", label: "No Specialization" },
+		...(specializationsData?.data?.map((spec) => ({
+			value: spec.value,
+			label: spec.label,
+		})) || []),
+	];
 
 	return (
 		<FormDialog
@@ -144,6 +159,15 @@ export function UserFormDialog({ open, onOpenChange, user }: UserFormDialogProps
 						name="skills"
 						label="Skills"
 						placeholder="Type a skill and press Enter"
+					/>
+
+					<FormSelect
+						control={form.control}
+						name="specialization"
+						label="Specialization"
+						placeholder="Select specialization..."
+						options={specializationOptions}
+						description="Determines which tasks the user can see and work on"
 					/>
 
 					<FormCheckboxGroup

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { SearchInput, FilterBar, FilterSelect, ConfirmDialog } from "@/components/shared";
 import { useProjectTasks, useDeleteTask } from "@/features/dashboard/hooks/useTasks";
 import { useTaskChildren } from "@/features/dashboard/hooks/useTaskTree";
+import { useTaskCategories } from "@/features/admin/hooks/useEnums";
 import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels, TaskPriority, TaskPriorityLabels, TaskChildrenResponse } from "@/features/dashboard/types/task";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { TaskDetailSheet } from "../tasks/TaskDetailSheet";
@@ -27,6 +28,8 @@ const PRIORITY_OPTIONS = Object.values(TaskPriority).map((priority) => ({
 	value: priority,
 	label: TaskPriorityLabels[priority],
 }));
+
+// This will be defined after the hook call
 
 // Priority indicator colors
 const PriorityIndicator: Record<TaskPriority, string> = {
@@ -54,6 +57,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<TaskStatus | undefined>();
 	const [priorityFilter, setPriorityFilter] = useState<TaskPriority | undefined>();
+	const [categoryFilter, setCategoryFilter] = useState<string | undefined>();
 	const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
 
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -64,8 +68,18 @@ export function TasksTab({ projectId }: TasksTabProps) {
 	const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
 	const { data, isLoading, error } = useProjectTasks(projectId, page, 20);
+	const { data: taskCategoriesData } = useTaskCategories();
 	const deleteTask = useDeleteTask();
-	const { canCreateTasks, canEditTasks, canDeleteTasks, canCreateMainTasks, canCreateWeeklyTasks, canCreateSubtasks, canEditMainTasks, canEditWeeklyTasks, canEditSubtasks } = usePermissions();
+	const { canEditTasks, canDeleteTasks, canCreateMainTasks, canCreateWeeklyTasks, canCreateSubtasks, canEditMainTasks, canEditWeeklyTasks, canEditSubtasks } = usePermissions();
+
+	// Transform task categories to filter options
+	const CATEGORY_OPTIONS = [
+		{ value: "all", label: "All Categories" },
+		...(taskCategoriesData?.data?.map((category: { value: string; label: string }) => ({
+			value: category.value,
+			label: category.label,
+		})) || []),
+	];
 
 	// Determine if user can create main tasks (admin only) or just subtasks
 	const canCreateMainOrWeekly = canCreateMainTasks || canCreateWeeklyTasks;
@@ -109,6 +123,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 			if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
 			if (statusFilter && task.status !== statusFilter) return false;
 			if (priorityFilter && task.priority !== priorityFilter) return false;
+			if (categoryFilter && task.taskCategory !== categoryFilter) return false;
 			return true;
 		}) || [];
 
@@ -170,6 +185,13 @@ export function TasksTab({ projectId }: TasksTabProps) {
 						onChange={(v) => setPriorityFilter((v as TaskPriority) || undefined)}
 						options={PRIORITY_OPTIONS}
 						placeholder="All Priority"
+						className="w-40"
+					/>
+					<FilterSelect
+						value={categoryFilter || ""}
+						onChange={(v) => setCategoryFilter(v || undefined)}
+						options={CATEGORY_OPTIONS}
+						placeholder="All Categories"
 						className="w-40"
 					/>
 				</FilterBar>
@@ -379,6 +401,14 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 									{TaskTypeLabels[task.type]}
 								</Badge>
 							)}
+							{task.taskCategory && (
+								<Badge
+									variant="secondary"
+									className="text-[10px] px-1.5 py-0 shrink-0 bg-blue-100 text-blue-800"
+								>
+									{task.taskCategory}
+								</Badge>
+							)}
 						</div>
 						{task.tags && task.tags.length > 0 && (
 							<div className="flex gap-1 mt-1">
@@ -443,50 +473,52 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 				</div>
 
 				{/* Actions */}
-				<div className="opacity-0 group-hover:opacity-100 transition-opacity">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
+				{onCreateChild && canCreateWeeklyTasks && (
+					<div className="opacity-0 group-hover:opacity-100 transition-opacity">
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-8 w-8"
+								>
+									<MoreHorizontal className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent
+								align="end"
+								className="w-48"
 							>
-								<MoreHorizontal className="h-4 w-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent
-							align="end"
-							className="w-48"
-						>
-							{canEditThisTask && (
-								<DropdownMenuItem onClick={() => onEdit(task)}>
-									<Pencil className="h-4 w-4 mr-2" /> Edit Task
-								</DropdownMenuItem>
-							)}
-							{onCreateChild && canCreateWeeklyTasks && task.type === TaskType.MAIN && task.status !== TaskStatus.COMPLETED && (
-								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
-									<Plus className="h-4 w-4 mr-2" /> Add Weekly Task
-								</DropdownMenuItem>
-							)}
-							{onCreateChild && canCreateSubtasks && task.type === TaskType.WEEKLY && task.status !== TaskStatus.COMPLETED && (
-								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
-									<Plus className="h-4 w-4 mr-2" /> Add Subtask
-								</DropdownMenuItem>
-							)}
-							{onDelete && (
-								<>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem
-										onClick={() => onDelete(task)}
-										className="text-destructive focus:text-destructive"
-									>
-										<Trash2 className="h-4 w-4 mr-2" /> Delete
+								{canEditThisTask && (
+									<DropdownMenuItem onClick={() => onEdit(task)}>
+										<Pencil className="h-4 w-4 mr-2" /> Edit Task
 									</DropdownMenuItem>
-								</>
-							)}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
+								)}
+								{onCreateChild && canCreateWeeklyTasks && task.type === TaskType.MAIN && task.status !== TaskStatus.COMPLETED && (
+									<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
+										<Plus className="h-4 w-4 mr-2" /> Add Weekly Task
+									</DropdownMenuItem>
+								)}
+								{onCreateChild && canCreateSubtasks && task.type === TaskType.WEEKLY && task.status !== TaskStatus.COMPLETED && (
+									<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
+										<Plus className="h-4 w-4 mr-2" /> Add Subtask
+									</DropdownMenuItem>
+								)}
+								{onDelete && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onClick={() => onDelete(task)}
+											className="text-destructive focus:text-destructive"
+										>
+											<Trash2 className="h-4 w-4 mr-2" /> Delete
+										</DropdownMenuItem>
+									</>
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				)}
 			</div>
 
 			{/* Children */}

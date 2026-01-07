@@ -13,6 +13,7 @@ export const createUserSchema = z
 		password_confirmation: z.string().min(1, "Please confirm password"),
 		skills: z.array(z.string()).optional().default([]),
 		roles: z.array(z.string()).optional().default([]),
+		specialization: z.string().optional(),
 		isActive: z.boolean().optional().default(true),
 	})
 	.refine((data) => data.password === data.password_confirmation, {
@@ -28,6 +29,7 @@ export const updateUserSchema = z
 		password_confirmation: z.string().optional().or(z.literal("")),
 		skills: z.array(z.string()).optional(),
 		roles: z.array(z.string()).optional(),
+		specialization: z.string().optional(),
 		isActive: z.boolean().optional(),
 	})
 	.refine(

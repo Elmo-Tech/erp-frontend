@@ -392,6 +392,7 @@ export interface User {
 	emailVerifiedAt?: string | null;
 	skills: string[];
 	roles: string[];
+	specialization?: string;
 	isActive: boolean;
 	graceDaysRemaining?: number;
 	graceDaysAllowed?: number;
@@ -442,6 +443,7 @@ export interface CreateUserPayload {
 	password_confirmation: string;
 	skills?: string[];
 	roles?: string[];
+	specialization?: string;
 	isActive?: boolean;
 }
 
@@ -455,6 +457,7 @@ export interface UpdateUserPayload {
 	password_confirmation?: string;
 	skills?: string[];
 	roles?: string[];
+	specialization?: string;
 	isActive?: boolean;
 }
 

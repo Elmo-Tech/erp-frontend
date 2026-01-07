@@ -166,6 +166,7 @@ export interface Task {
 	status: TaskStatus;
 	type: TaskType;
 	priority: TaskPriority;
+	taskCategory?: string;
 	dueDate: string | null;
 	startDate: string | null;
 	sprintNumber: number | null;
@@ -209,6 +210,7 @@ export interface CreateTaskPayload {
 	status?: TaskStatus;
 	type?: TaskType;
 	priority?: TaskPriority;
+	taskCategory?: string;
 	dueDate?: string | null;
 	startDate?: string | null;
 	sprintNumber?: number | null;
@@ -234,6 +236,7 @@ export interface UpdateTaskPayload {
 	status?: TaskStatus;
 	type?: TaskType;
 	priority?: TaskPriority;
+	taskCategory?: string;
 	dueDate?: string | null;
 	startDate?: string | null;
 	sprintNumber?: number | null;

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Form } from "@/components/ui/form";
 import { FormDialog, FormInput, FormSelect, FormSwitch } from "@/components/shared";
 import { useCreateEmployee, useUpdateEmployee } from "../hooks";
+import { useUserSpecializations } from "@/features/admin/hooks/useEnums";
 import type { Employee } from "../types";
 import { toast } from "sonner";
 
@@ -15,6 +16,7 @@ const employeeSchema = z.object({
 	email: z.string().email("Invalid email"),
 	password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
 	role: z.string().optional(),
+	specialization: z.string().optional(),
 	isActive: z.boolean(),
 	salary: z.number().min(0).optional().nullable(),
 	workHoursPerDay: z.number().min(1).max(24),
@@ -36,6 +38,7 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 	const isEditing = !!employee;
 	const createEmployee = useCreateEmployee();
 	const updateEmployee = useUpdateEmployee();
+	const { data: specializationsData } = useUserSpecializations();
 
 	const form = useForm<EmployeeFormData>({
 		resolver: zodResolver(employeeSchema),
@@ -44,6 +47,7 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 			email: "",
 			password: "",
 			role: "",
+			specialization: "",
 			isActive: true,
 			salary: null,
 			workHoursPerDay: 8,
@@ -60,6 +64,7 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 				email: employee.email,
 				password: "",
 				role: employee.role || "",
+				specialization: employee.specialization || "",
 				isActive: employee.isActive,
 				salary: employee.salary,
 				workHoursPerDay: employee.workHoursPerDay,
@@ -73,6 +78,7 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 				email: "",
 				password: "",
 				role: "",
+				specialization: "",
 				isActive: true,
 				salary: null,
 				workHoursPerDay: 8,
@@ -91,6 +97,7 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 				if (data.email !== employee.email) payload.email = data.email;
 				if (data.password) payload.password = data.password;
 				if (data.role !== employee.role) payload.role = data.role;
+				if (data.specialization !== employee.specialization) payload.specialization = data.specialization;
 				if (data.isActive !== employee.isActive) payload.isActive = data.isActive;
 				if (data.salary !== employee.salary) payload.salary = data.salary;
 				if (data.workHoursPerDay !== employee.workHoursPerDay) payload.workHoursPerDay = data.workHoursPerDay;
@@ -108,6 +115,7 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 					email: data.email,
 					password: data.password || "",
 					role: data.role,
+					specialization: data.specialization,
 					isActive: data.isActive,
 					salary: data.salary ?? undefined,
 					workHoursPerDay: data.workHoursPerDay,
@@ -125,6 +133,15 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 	};
 
 	const roleOptions = [...roles];
+
+	// Transform specializations to select options
+	const specializationOptions = [
+		{ value: "", label: "No Specialization" },
+		...(specializationsData?.data?.map((spec) => ({
+			value: spec.value,
+			label: spec.label,
+		})) || []),
+	];
 
 	return (
 		<FormDialog
@@ -172,6 +189,15 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 							options={roleOptions}
 						/>
 					</div>
+
+					<FormSelect
+						control={form.control}
+						name="specialization"
+						label="Specialization"
+						placeholder="Select specialization..."
+						options={specializationOptions}
+						description="Determines which tasks the employee can see and work on"
+					/>
 
 					<div className="grid grid-cols-2 gap-4">
 						<FormInput

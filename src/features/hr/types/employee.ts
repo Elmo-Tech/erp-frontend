@@ -10,6 +10,7 @@ export interface Employee {
 	avatar: string;
 	isActive: boolean;
 	role: string;
+	specialization?: string;
 	workHoursPerDay: number;
 	workStartTime: string;
 	expectedClockOut: string | null;
@@ -49,6 +50,7 @@ export interface CreateEmployeePayload {
 	email: string;
 	password: string;
 	role?: string;
+	specialization?: string;
 	isActive?: boolean;
 	salary?: number;
 	workHoursPerDay?: number;
@@ -63,6 +65,7 @@ export interface UpdateEmployeePayload {
 	email?: string;
 	password?: string;
 	role?: string;
+	specialization?: string;
 	isActive?: boolean;
 	salary?: number;
 	workHoursPerDay?: number;
