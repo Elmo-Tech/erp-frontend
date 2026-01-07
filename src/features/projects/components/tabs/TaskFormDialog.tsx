@@ -330,15 +330,16 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							label="Status"
 							options={statusOptions}
 						/>
-						<FormSelect
-							control={form.control}
-							name="taskCategory"
-							label="Category"
-							placeholder="Select category..."
-							options={taskCategoryOptions}
-							description="Determines which developers can see this task"
-						/>
 					</div>
+
+					<FormSelect
+						control={form.control}
+						name="taskCategory"
+						label="Category"
+						placeholder="Select category..."
+						options={taskCategoryOptions}
+						description="Determines which developers can see this task"
+					/>
 
 					<FormTextarea
 						control={form.control}
