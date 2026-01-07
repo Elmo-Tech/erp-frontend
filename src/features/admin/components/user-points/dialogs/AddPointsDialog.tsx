@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
 import { useMemo, useEffect } from "react";
@@ -39,7 +40,7 @@ interface AddPointsDialogProps {
 
 export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	const addPointsMutation = useAddPoints();
-	const { data: usersData } = useUsersWithPoints({}, 1, 100);
+	const { data: usersData, isLoading: isLoadingUsers } = useUsersWithPoints({}, 1, 100);
 
 	const defaultValues = useMemo(() => getDefaultValues(user?.userId), [user?.userId]);
 
@@ -66,7 +67,7 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	const selectedUser = usersData?.users.find((u) => u.userId === selectedUserId);
 
 	const userOptions = useMemo(() => {
-		if (!usersData?.users) return [];
+		if (!usersData?.users || usersData.users.length === 0) return [];
 		return usersData.users.map((u) => ({
 			value: u.userId.toString(),
 			label: `${u.name} (${u.totalPoints} pts)`,
@@ -111,8 +112,9 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 						control={form.control}
 						name="userId"
 						label="Select User"
-						placeholder="Choose a user..."
+						placeholder={isLoadingUsers ? "Loading users..." : "Choose a user..."}
 						options={userOptions}
+						disabled={isLoadingUsers}
 						onValueChange={(value) => form.setValue("userId", parseInt(value))}
 					/>
 
