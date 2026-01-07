@@ -41,7 +41,12 @@ interface AddPointsDialogProps {
 
 export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	const addPointsMutation = useAddPoints();
-	const { data: employeesData, isLoading: isLoadingUsers } = useEmployees({ isActive: true, perPage: 100 });
+	const { data: employeesData, isLoading: isLoadingUsers, error } = useEmployees({ isActive: true, perPage: 100 });
+
+	// Debug log
+	console.log("AddPointsDialog - employeesData:", employeesData);
+	console.log("AddPointsDialog - isLoading:", isLoadingUsers);
+	console.log("AddPointsDialog - error:", error);
 
 	const defaultValues = useMemo(() => getDefaultValues(user?.userId), [user?.userId]);
 
