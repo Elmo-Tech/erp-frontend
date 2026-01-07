@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { useTimerStore } from "@/store/timerStore";
+import { getElapsedSeconds, formatDuration } from "@/lib/dateUtils";
 
 export function NavbarTimer({ className }: { className?: string }) {
 	const router = useRouter();
@@ -28,11 +29,8 @@ export function NavbarTimer({ className }: { className?: string }) {
 			return;
 		}
 
-		const startTime = new Date(activeTimer.startTime).getTime();
-
 		const updateElapsed = () => {
-			const now = Date.now();
-			const elapsed = Math.floor((now - startTime) / 1000);
+			const elapsed = getElapsedSeconds(activeTimer.startTime);
 			setElapsedSeconds(elapsed);
 		};
 
@@ -41,17 +39,6 @@ export function NavbarTimer({ className }: { className?: string }) {
 
 		return () => clearInterval(interval);
 	}, [activeTimer]);
-
-	const formatTime = (seconds: number): string => {
-		const hours = Math.floor(seconds / 3600);
-		const minutes = Math.floor((seconds % 3600) / 60);
-		const secs = seconds % 60;
-
-		if (hours > 0) {
-			return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-		}
-		return `${minutes}:${secs.toString().padStart(2, "0")}`;
-	};
 
 	const handleStopTimer = async () => {
 		setIsStopping(true);
@@ -92,7 +79,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 									className="flex items-center gap-2 hover:bg-muted rounded px-2 py-1 transition-colors cursor-pointer"
 								>
 									<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-									<span className="text-sm font-mono font-medium">{formatTime(elapsedSeconds)}</span>
+									<span className="text-sm font-mono font-medium">{formatDuration(elapsedSeconds)}</span>
 									<span className="text-xs text-muted-foreground max-w-[100px] truncate hidden sm:inline">{activeTimer.trackableDisplayName}</span>
 									<ExternalLink className="h-3 w-3 text-muted-foreground" />
 								</button>

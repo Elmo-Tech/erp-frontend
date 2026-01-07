@@ -15,6 +15,7 @@ import { FormDatePicker } from "@/components/shared/forms/FormDatePicker";
 import { Attendance, AttendanceFormData } from "../types/attendance";
 import { useCreateAttendance, useUpdateAttendance } from "../hooks/useAttendance";
 import { useUsers } from "../hooks/useUsers";
+import { formatTimeForInput, combineDateTimeForAPI } from "@/lib/dateUtils";
 
 const formSchema = z.object({
 	userId: z.string().min(1, "Please select an employee"),
@@ -30,21 +31,6 @@ interface AttendanceFormDialogProps {
 	open: boolean;
 	onClose: () => void;
 	attendance: Attendance | null;
-}
-
-function formatTimeFromISO(dateTimeString: string | null): string {
-	if (!dateTimeString) return "";
-	// Parse the datetime string directly without timezone conversion
-	// Format: "2026-01-06T10:00:00" -> "10:00"
-	const timePart = dateTimeString.split("T")[1];
-	if (!timePart) return "";
-	return timePart.substring(0, 5); // Get HH:mm
-}
-
-// Combine date and time into ISO datetime string
-function combineDateTime(date: string, time: string): string {
-	if (!time) return "";
-	return `${date}T${time}:00`;
 }
 
 export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFormDialogProps) {
@@ -69,8 +55,8 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 			form.reset({
 				userId: attendance.userId.toString(),
 				date: attendance.date,
-				clockIn: formatTimeFromISO(attendance.clockIn),
-				clockOut: formatTimeFromISO(attendance.clockOut),
+				clockIn: formatTimeForInput(attendance.clockIn),
+				clockOut: formatTimeForInput(attendance.clockOut),
 				notes: attendance.notes || "",
 			});
 		} else {
@@ -88,8 +74,8 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 		const data: AttendanceFormData = {
 			userId: parseInt(values.userId),
 			date: values.date,
-			clockIn: combineDateTime(values.date, values.clockIn),
-			clockOut: values.clockOut ? combineDateTime(values.date, values.clockOut) : undefined,
+			clockIn: combineDateTimeForAPI(values.date, values.clockIn),
+			clockOut: values.clockOut ? combineDateTimeForAPI(values.date, values.clockOut) : undefined,
 			notes: values.notes,
 		};
 

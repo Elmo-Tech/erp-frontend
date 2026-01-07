@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar, Clock, AlertCircle, TrendingDown, Star, Timer } from "lucide-react";
+import { formatTimeDisplay, formatDateDisplay } from "@/lib/dateUtils";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -20,28 +21,6 @@ export default function AttendancePage() {
 
 	const { data: historyData, isLoading, error } = useAttendanceHistory();
 	const { data: summary } = useAttendanceSummary(year, month);
-
-	const formatTime = (timeString: string | null): string => {
-		if (!timeString) return "--:--";
-		try {
-			// Parse time directly from string without timezone conversion
-			// Format: "2026-01-06T10:00:00" -> "10:00 AM"
-			const timePart = timeString.split("T")[1];
-			if (!timePart) return "--:--";
-			const [hours, minutes] = timePart.split(":");
-			const hour = parseInt(hours);
-			const ampm = hour >= 12 ? "PM" : "AM";
-			const hour12 = hour % 12 || 12;
-			return `${hour12}:${minutes} ${ampm}`;
-		} catch {
-			return "--:--";
-		}
-	};
-
-	const formatDate = (dateString: string): string => {
-		const date = new Date(dateString);
-		return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-	};
 
 	const formatMinutes = (minutes: number) => {
 		const hours = Math.floor(minutes / 60);
@@ -203,9 +182,9 @@ export default function AttendancePage() {
 									<TableBody>
 										{historyData.attendances.map((record) => (
 											<TableRow key={record.attendanceId}>
-												<TableCell className="font-medium">{formatDate(record.date)}</TableCell>
-												<TableCell>{formatTime(record.clockIn)}</TableCell>
-												<TableCell>{formatTime(record.clockOut)}</TableCell>
+												<TableCell className="font-medium">{formatDateDisplay(record.date)}</TableCell>
+												<TableCell>{formatTimeDisplay(record.clockIn)}</TableCell>
+												<TableCell>{formatTimeDisplay(record.clockOut)}</TableCell>
 												<TableCell className={record.lateMinutes > 0 ? "text-orange-500" : ""}>{record.lateMinutes > 0 ? formatMinutes(record.lateMinutes) : "-"}</TableCell>
 												<TableCell className={record.deductionMinutes > 0 ? "text-red-500" : ""}>{record.deductionMinutes > 0 ? formatMinutes(record.deductionMinutes) : "-"}</TableCell>
 												<TableCell>

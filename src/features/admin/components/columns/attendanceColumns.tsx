@@ -7,23 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Column } from "@/components/shared/data-display/DataTable";
 import { Attendance } from "../../types/attendance";
 import { Edit } from "lucide-react";
+import { formatTimeDisplay } from "@/lib/dateUtils";
 
 interface AttendanceColumnsOptions {
 	onEdit?: (attendance: Attendance) => void;
 	canManage?: boolean;
-}
-
-// Parse time from datetime string without timezone conversion
-// Format: "2026-01-06T10:00:00" -> "10:00 AM"
-function formatTime(dateString: string | null): string {
-	if (!dateString) return "-";
-	const timePart = dateString.split("T")[1];
-	if (!timePart) return "-";
-	const [hours, minutes] = timePart.split(":");
-	const hour = parseInt(hours);
-	const ampm = hour >= 12 ? "PM" : "AM";
-	const hour12 = hour % 12 || 12;
-	return `${hour12}:${minutes} ${ampm}`;
 }
 
 function formatMinutes(minutes: number): string {
@@ -57,12 +45,12 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 		{
 			key: "clockIn",
 			header: "Clock In",
-			render: (attendance) => formatTime(attendance.clockIn),
+			render: (attendance) => formatTimeDisplay(attendance.clockIn),
 		},
 		{
 			key: "clockOut",
 			header: "Clock Out",
-			render: (attendance) => formatTime(attendance.clockOut),
+			render: (attendance) => formatTimeDisplay(attendance.clockOut),
 		},
 		{
 			key: "late",

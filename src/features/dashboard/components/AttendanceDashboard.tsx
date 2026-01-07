@@ -14,6 +14,7 @@ import { Clock, LogIn, LogOut, AlertCircle, CheckCircle2, Loader2, Coffee, Play 
 import { useAttendanceStatus, useClockOut } from "../hooks/useAttendance";
 import { useTimerStore } from "@/store/timerStore";
 import { cn } from "@/lib/utils";
+import { formatTimeDisplay } from "@/lib/dateUtils";
 
 interface AttendanceDashboardProps {
 	className?: string;
@@ -83,21 +84,7 @@ export const AttendanceDashboard: React.FC<AttendanceDashboardProps> = ({ classN
 
 	// Format time for display - parse directly without timezone conversion
 	const formatTime = (timeString: string | null): string => {
-		if (!timeString) return "--:--";
-
-		try {
-			// Parse time directly from string without timezone conversion
-			// Format: "2026-01-06T10:00:00" -> "10:00 AM"
-			const timePart = timeString.split("T")[1];
-			if (!timePart) return "--:--";
-			const [hours, minutes] = timePart.split(":");
-			const hour = parseInt(hours);
-			const ampm = hour >= 12 ? "PM" : "AM";
-			const hour12 = hour % 12 || 12;
-			return `${hour12}:${minutes} ${ampm}`;
-		} catch {
-			return "--:--";
-		}
+		return formatTimeDisplay(timeString);
 	};
 
 	// Loading state
