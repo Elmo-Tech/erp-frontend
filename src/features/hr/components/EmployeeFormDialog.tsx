@@ -136,7 +136,7 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, roles = [] }:
 
 	// Transform specializations to select options
 	const specializationOptions = [
-		{ value: "", label: "No Specialization" },
+		{ value: "none", label: "No Specialization" },
 		...(specializationsData?.data?.map((spec) => ({
 			value: spec.value,
 			label: spec.label,
