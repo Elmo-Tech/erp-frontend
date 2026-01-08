@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/shared/data-display/DataTable";
 import { SearchInput } from "@/components/shared/filters/SearchInput";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
 import { UserWithPoints, UserPointsFilters } from "../../../types/userPoints";
-import { useUsersWithPoints } from "../../../hooks/useUserPoints";
+import { useEmployees } from "@/features/hr/hooks";
 import { getUserPointsColumns } from "./columns";
 import { AddPointsDialog } from "../dialogs/AddPointsDialog";
 import { DeductPointsDialog } from "../dialogs/DeductPointsDialog";
 import { SetPointsDialog } from "../dialogs/SetPointsDialog";
 import { UserPointsHistoryDialog } from "../dialogs/UserPointsHistoryDialog";
-import { Plus, Award } from "lucide-react";
+import { PointsReportDialog } from "../PointsReportDialog";
+import { Plus, Award, FileText } from "lucide-react";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 interface UserPointsTableProps {
@@ -27,9 +28,35 @@ export function UserPointsTable({ filters, onFiltersChange }: UserPointsTablePro
 	const [deductDialogOpen, setDeductDialogOpen] = useState(false);
 	const [setDialogOpen, setSetDialogOpen] = useState(false);
 	const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+	const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
-	const { data, isLoading, error } = useUsersWithPoints(filters, currentPage, 15);
+	// Use employees API instead of user-points API
+	const {
+		data: employeesData,
+		isLoading,
+		error,
+	} = useEmployees({
+		search: filters.search,
+		isActive: filters.isActive,
+		page: currentPage,
+		perPage: 15,
+	});
+
 	const { canManageUserPoints } = usePermissions();
+
+	// Convert employees data to UserWithPoints format
+	const usersWithPoints = useMemo(() => {
+		if (!employeesData?.employees) return [];
+		return employeesData.employees.map((emp) => ({
+			userId: emp.userId,
+			name: emp.name,
+			email: emp.email,
+			avatar: emp.avatar,
+			totalPoints: emp.totalPoints,
+			isActive: emp.isActive,
+			createdAt: emp.createdAt,
+		}));
+	}, [employeesData]);
 
 	// For header button - opens dialog without pre-selected user
 	const handleOpenAddDialog = () => {
@@ -80,13 +107,13 @@ export function UserPointsTable({ filters, onFiltersChange }: UserPointsTablePro
 		<>
 			<DataTable
 				title="Employee Points"
-				titleBadge={data?.pagination ? `${data.pagination.total} employees` : undefined}
+				titleBadge={employeesData?.pagination ? `${employeesData.pagination.total} employees` : undefined}
 				columns={columns}
-				data={data?.users || []}
+				data={usersWithPoints}
 				keyExtractor={(user) => user.userId.toString()}
 				isLoading={isLoading}
 				error={error}
-				pagination={data?.pagination}
+				pagination={employeesData?.pagination}
 				onPageChange={handlePageChange}
 				emptyState={{
 					icon: Award,
@@ -96,12 +123,21 @@ export function UserPointsTable({ filters, onFiltersChange }: UserPointsTablePro
 				headerActions={
 					<FilterBar
 						actions={
-							canManageUserPoints ? (
-								<Button onClick={handleOpenAddDialog}>
-									<Plus className="h-4 w-4 mr-2" />
-									Add Points
+							<div className="flex gap-2">
+								<Button
+									variant="outline"
+									onClick={() => setReportDialogOpen(true)}
+								>
+									<FileText className="h-4 w-4 mr-2" />
+									Generate Report
 								</Button>
-							) : undefined
+								{canManageUserPoints && (
+									<Button onClick={handleOpenAddDialog}>
+										<Plus className="h-4 w-4 mr-2" />
+										Add Points
+									</Button>
+								)}
+							</div>
 						}
 					>
 						<SearchInput
@@ -150,6 +186,11 @@ export function UserPointsTable({ filters, onFiltersChange }: UserPointsTablePro
 					setSelectedUser(null);
 				}}
 				user={selectedUser}
+			/>
+
+			<PointsReportDialog
+				open={reportDialogOpen}
+				onClose={() => setReportDialogOpen(false)}
 			/>
 		</>
 	);

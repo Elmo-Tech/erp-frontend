@@ -55,6 +55,18 @@ export const useTasks = (filters?: TaskFilters) => {
 };
 
 /**
+ * Hook to fetch tasks where current user is assigned as team member
+ */
+export const useMyAssignedTasks = (filters?: TaskFilters) => {
+	return useQuery<TaskListResponse, Error>({
+		queryKey: [...taskKeys.all, "my-assigned", filters],
+		queryFn: () => tasksApi.getMyAssignedTasks(filters),
+		staleTime: 5 * 60 * 1000,
+		gcTime: 10 * 60 * 1000,
+	});
+};
+
+/**
  * Hook to fetch a single task by ID
  */
 export const useTask = (id: number, enabled = true) => {

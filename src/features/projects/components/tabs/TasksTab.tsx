@@ -2,12 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { TaskStatusBadge, TaskTypeBadge, TaskPriorityBadge, TaskCategoryBadge } from "@/components/shared/StatusBadge";
+import { TaskTypeBadge, TaskCategoryBadge } from "@/components/shared/StatusBadge";
 import { SearchInput, FilterBar, FilterSelect, ConfirmDialog } from "@/components/shared";
 import { useProjectTasks, useDeleteTask } from "@/features/dashboard/hooks/useTasks";
 import { useTaskChildren } from "@/features/dashboard/hooks/useTaskTree";
 import { useTaskCategories } from "@/features/admin/hooks/useEnums";
-import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels, TaskPriority, TaskPriorityLabels, TaskChildrenResponse } from "@/features/dashboard/types/task";
+import { useAuthStore } from "@/store/authStore";
+import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskPriority, TaskPriorityLabels, TaskChildrenResponse } from "@/features/dashboard/types/task";
 import { TaskFormDialog } from "./TaskFormDialog";
 import { TaskDetailSheet } from "../tasks/TaskDetailSheet";
 import { Plus, ListTodo, Clock, MoreHorizontal, Pencil, Trash2, ChevronRight, ChevronDown, Calendar, AlertCircle, CheckCircle2, Circle, Timer } from "lucide-react";
@@ -53,11 +54,13 @@ interface TasksTabProps {
 }
 
 export function TasksTab({ projectId }: TasksTabProps) {
+	const { user, role } = useAuthStore();
 	const [page, setPage] = useState(1);
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<TaskStatus | undefined>();
 	const [priorityFilter, setPriorityFilter] = useState<TaskPriority | undefined>();
 	const [categoryFilter, setCategoryFilter] = useState<string | undefined>();
+	const [showMyTasksOnly] = useState(role !== "admin" && role !== "super-admin");
 	const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
 
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -83,6 +86,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 
 	// Determine if user can create main tasks (admin only) or just subtasks
 	const canCreateMainOrWeekly = canCreateMainTasks || canCreateWeeklyTasks;
+	const isAdminOrSuperAdmin = role === "admin" || role === "super-admin";
 
 	const handleSearch = (value: string) => {
 		setSearch(value);
@@ -118,21 +122,68 @@ export function TasksTab({ projectId }: TasksTabProps) {
 		setShowCreateDialog(true);
 	}, []);
 
+	// Filter tasks based on user assignment and other filters
 	const filteredTasks =
 		data?.tasks?.filter((task) => {
+			// Search filter
 			if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
+
+			// Status filter
 			if (statusFilter && task.status !== statusFilter) return false;
+
+			// Priority filter
 			if (priorityFilter && task.priority !== priorityFilter) return false;
+
+			// Category filter
 			if (categoryFilter && task.taskCategory !== categoryFilter) return false;
+
+			// My tasks only filter (for non-admin users)
+			if (showMyTasksOnly && !isAdminOrSuperAdmin) {
+				// Check if user is assigned to this task
+				const isAssigned = task.assignees?.some((assignee) => assignee.userId === user?.userId);
+				if (!isAssigned) return false;
+			}
+
 			return true;
 		}) || [];
+
+	// Recursive function to filter child tasks as well
+	const filterTasksRecursively = (tasks: Task[]): Task[] => {
+		return tasks
+			.map((task) => {
+				const filteredChildren = task.children ? filterTasksRecursively(task.children) : [];
+				return {
+					...task,
+					children: filteredChildren,
+				};
+			})
+			.filter((task) => {
+				// Apply the same filters to child tasks
+				if (search && !task.title.toLowerCase().includes(search.toLowerCase())) return false;
+				if (statusFilter && task.status !== statusFilter) return false;
+				if (priorityFilter && task.priority !== priorityFilter) return false;
+				if (categoryFilter && task.taskCategory !== categoryFilter) return false;
+
+				if (showMyTasksOnly && !isAdminOrSuperAdmin) {
+					const isAssigned = task.assignees?.some((assignee) => assignee.userId === user?.userId);
+					// Show parent task if user is assigned to it OR any of its children
+					const hasAssignedChildren = task.children?.some((child) => child.assignees?.some((assignee) => assignee.userId === user?.userId));
+					if (!isAssigned && !hasAssignedChildren) return false;
+				}
+
+				return true;
+			});
+	};
+
+	const finalFilteredTasks = filterTasksRecursively(filteredTasks);
 
 	// Calculate stats
 	const stats = {
 		total: data?.pagination?.total || 0,
-		done: filteredTasks.filter((t) => t.status === TaskStatus.COMPLETED).length,
-		inProgress: filteredTasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
-		review: filteredTasks.filter((t) => t.status === TaskStatus.REVIEW).length,
+		done: finalFilteredTasks.filter((t) => t.status === TaskStatus.COMPLETED).length,
+		inProgress: finalFilteredTasks.filter((t) => t.status === TaskStatus.IN_PROGRESS).length,
+		review: finalFilteredTasks.filter((t) => t.status === TaskStatus.REVIEW).length,
+		myTasks: showMyTasksOnly ? finalFilteredTasks.length : finalFilteredTasks.filter((t) => t.assignees?.some((assignee) => assignee.userId === user?.userId)).length,
 	};
 
 	return (
@@ -147,21 +198,41 @@ export function TasksTab({ projectId }: TasksTabProps) {
 							<span className="text-green-600">{stats.done} done</span>
 							<span className="text-blue-600">{stats.inProgress} in progress</span>
 							{stats.review > 0 && <span className="text-amber-600">{stats.review} in review</span>}
+							{!isAdminOrSuperAdmin && <span className="text-purple-600">{stats.myTasks} assigned to me</span>}
 						</div>
 					</div>
-					{canCreateMainOrWeekly && (
-						<Button
-							onClick={() => {
-								setCreateParentId(null);
-								setCreateType(TaskType.MAIN);
-								setShowCreateDialog(true);
-							}}
-							size="sm"
-						>
-							<Plus className="h-4 w-4 mr-2" />
-							New Task
-						</Button>
-					)}
+					<div className="flex items-center gap-4">
+						{/* My Tasks Toggle - Only show for non-admin users */}
+						{/* {!isAdminOrSuperAdmin && (
+							<div className="flex items-center space-x-2">
+								<Switch
+									id="my-tasks-only"
+									checked={showMyTasksOnly}
+									onCheckedChange={setShowMyTasksOnly}
+								/>
+								<Label
+									htmlFor="my-tasks-only"
+									className="text-sm flex items-center gap-1"
+								>
+									<User className="h-3 w-3" />
+									My Tasks Only
+								</Label>
+							</div>
+						)} */}
+						{canCreateMainOrWeekly && (
+							<Button
+								onClick={() => {
+									setCreateParentId(null);
+									setCreateType(TaskType.MAIN);
+									setShowCreateDialog(true);
+								}}
+								size="sm"
+							>
+								<Plus className="h-4 w-4 mr-2" />
+								New Task
+							</Button>
+						)}
+					</div>
 				</div>
 
 				{/* Filters */}
@@ -204,10 +275,12 @@ export function TasksTab({ projectId }: TasksTabProps) {
 						<AlertCircle className="h-10 w-10 mx-auto mb-3 opacity-50" />
 						<p>Failed to load tasks</p>
 					</div>
-				) : filteredTasks.length === 0 ? (
+				) : finalFilteredTasks.length === 0 ? (
 					<EmptyState
 						canCreate={canCreateMainOrWeekly}
 						onCreate={() => setShowCreateDialog(true)}
+						showMyTasksOnly={showMyTasksOnly}
+						isAdminOrSuperAdmin={isAdminOrSuperAdmin}
 					/>
 				) : (
 					<div className="border rounded-xl overflow-hidden bg-card">
@@ -221,7 +294,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 						</div>
 						{/* Task Rows */}
 						<div className="divide-y">
-							{filteredTasks.map((task) => (
+							{finalFilteredTasks.map((task) => (
 								<TaskRow
 									key={task.taskId}
 									task={task}
@@ -239,6 +312,9 @@ export function TasksTab({ projectId }: TasksTabProps) {
 									canEditSubtasks={canEditSubtasks}
 									expandedTasks={expandedTasks}
 									onToggleExpand={toggleExpand}
+									currentUserId={user?.userId}
+									showMyTasksOnly={showMyTasksOnly}
+									isAdminOrSuperAdmin={isAdminOrSuperAdmin}
 								/>
 							))}
 						</div>
@@ -326,9 +402,31 @@ interface TaskRowProps {
 	canEditSubtasks?: boolean;
 	expandedTasks: Set<number>;
 	onToggleExpand: (taskId: number) => void;
+	currentUserId?: number;
+	showMyTasksOnly?: boolean;
+	isAdminOrSuperAdmin?: boolean;
 }
 
-function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete, onCreateChild, canCreateWeeklyTasks, canCreateSubtasks, canEditMainTasks, canEditWeeklyTasks, canEditSubtasks, expandedTasks, onToggleExpand }: TaskRowProps) {
+function TaskRow({
+	task,
+	level,
+	isExpanded,
+	onToggle,
+	onSelect,
+	onEdit,
+	onDelete,
+	onCreateChild,
+	canCreateWeeklyTasks,
+	canCreateSubtasks,
+	canEditMainTasks,
+	canEditWeeklyTasks,
+	canEditSubtasks,
+	expandedTasks,
+	onToggleExpand,
+	currentUserId,
+	showMyTasksOnly,
+	isAdminOrSuperAdmin,
+}: TaskRowProps) {
 	const { data: childrenData, isLoading: loadingChildren } = useTaskChildren(task.taskId, isExpanded) as {
 		data: TaskChildrenResponse | undefined;
 		isLoading: boolean;
@@ -336,7 +434,13 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 
 	const loadedChildren = childrenData?.children || [];
 	const hasChildren = (task.children && task.children.length > 0) || loadedChildren.length > 0;
-	const childTasks = loadedChildren.length > 0 ? loadedChildren : task.children || [];
+	let childTasks = loadedChildren.length > 0 ? loadedChildren : task.children || [];
+
+	// Filter child tasks based on user assignment if needed
+	if (showMyTasksOnly && !isAdminOrSuperAdmin && currentUserId) {
+		childTasks = childTasks.filter((child) => child.assignees?.some((assignee) => assignee.userId === currentUserId));
+	}
+
 	const canExpand = hasChildren || task.type !== TaskType.SUBTASK;
 
 	const timeSpentHours = Math.floor(task.totalTimeSpent / 60);
@@ -540,6 +644,9 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 							canEditSubtasks={canEditSubtasks}
 							expandedTasks={expandedTasks}
 							onToggleExpand={onToggleExpand}
+							currentUserId={currentUserId}
+							showMyTasksOnly={showMyTasksOnly}
+							isAdminOrSuperAdmin={isAdminOrSuperAdmin}
 						/>
 					))}
 				</>
@@ -549,15 +656,30 @@ function TaskRow({ task, level, isExpanded, onToggle, onSelect, onEdit, onDelete
 }
 
 // Empty State Component
-function EmptyState({ canCreate, onCreate }: { canCreate: boolean; onCreate: () => void }) {
+function EmptyState({ canCreate, onCreate, showMyTasksOnly, isAdminOrSuperAdmin }: { canCreate: boolean; onCreate: () => void; showMyTasksOnly?: boolean; isAdminOrSuperAdmin?: boolean }) {
+	const getEmptyMessage = () => {
+		if (showMyTasksOnly && !isAdminOrSuperAdmin) {
+			return {
+				title: "No assigned tasks",
+				description: "You don't have any tasks assigned to you in this project yet. Tasks will appear here when you're added as a team member.",
+			};
+		}
+		return {
+			title: "No tasks yet",
+			description: "Start organizing your project by creating tasks. Break down work into manageable pieces.",
+		};
+	};
+
+	const { title, description } = getEmptyMessage();
+
 	return (
 		<div className="flex flex-col items-center justify-center py-16 px-4">
 			<div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
 				<ListTodo className="h-8 w-8 text-muted-foreground" />
 			</div>
-			<h3 className="text-lg font-semibold mb-1">No tasks yet</h3>
-			<p className="text-muted-foreground text-sm text-center max-w-sm mb-6">Start organizing your project by creating tasks. Break down work into manageable pieces.</p>
-			{canCreate && (
+			<h3 className="text-lg font-semibold mb-1">{title}</h3>
+			<p className="text-muted-foreground text-sm text-center max-w-sm mb-6">{description}</p>
+			{canCreate && !showMyTasksOnly && (
 				<Button onClick={onCreate}>
 					<Plus className="h-4 w-4 mr-2" />
 					Create First Task

@@ -1,5 +1,17 @@
 import { api } from "@/lib/axios";
-import { AddPointsFormData, DeductPointsFormData, SetPointsFormData, UserPointsFilters, UserPointsHistoryResponse, UsersWithPointsResponse, LeaderboardUser, PointsStatistics, UserPoint } from "../types/userPoints";
+import {
+	AddPointsFormData,
+	DeductPointsFormData,
+	SetPointsFormData,
+	UserPointsFilters,
+	UserPointsHistoryResponse,
+	UsersWithPointsResponse,
+	LeaderboardUser,
+	PointsStatistics,
+	UserPoint,
+	PointsReportFilters,
+	PointsReportResponse,
+} from "../types/userPoints";
 
 export const userPointsApi = {
 	// Get all users with their points
@@ -52,6 +64,18 @@ export const userPointsApi = {
 	// Get points statistics
 	getStatistics: async (): Promise<PointsStatistics> => {
 		const response = await api.get("/user-points/statistics");
+		return response.data.data;
+	},
+
+	// Get points report with date range
+	getPointsReport: async (filters: PointsReportFilters = {}, page = 1, perPage = 15): Promise<PointsReportResponse> => {
+		const params = new URLSearchParams({
+			page: page.toString(),
+			perPage: perPage.toString(),
+			...Object.fromEntries(Object.entries(filters).filter(([_, value]) => value !== undefined && value !== "")),
+		});
+
+		const response = await api.get(`/user-points/report?${params}`);
 		return response.data.data;
 	},
 };

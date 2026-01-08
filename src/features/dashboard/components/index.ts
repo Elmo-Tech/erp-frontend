@@ -15,5 +15,10 @@ export type { default as TaskStatusBadgeType } from "./TaskStatusBadge";
 export { InternalNotes } from "./InternalNotes";
 export type { default as InternalNotesType } from "./InternalNotes";
 
-export { AttendanceDashboard, CompactAttendanceDashboard } from "./AttendanceDashboard";
-export type { default as AttendanceDashboardType } from "./AttendanceDashboard";
+export { AttendanceDashboard, CompactAttendanceDashboard } from "./attendance/AttendanceDashboard";
+export type { default as AttendanceDashboardType } from "./attendance/AttendanceDashboard";
+
+export { MyAssignedTasks } from "./MyAssignedTasks";
+
+// Attendance
+export { MyAttendanceWrapper, AttendanceHistoryTable } from "./attendance";

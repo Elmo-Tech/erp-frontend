@@ -13,3 +13,4 @@ export { AddPointsDialog } from "./dialogs/AddPointsDialog";
 export { DeductPointsDialog } from "./dialogs/DeductPointsDialog";
 export { SetPointsDialog } from "./dialogs/SetPointsDialog";
 export { UserPointsHistoryDialog } from "./dialogs/UserPointsHistoryDialog";
+export { PointsReportDialog } from "./PointsReportDialog";

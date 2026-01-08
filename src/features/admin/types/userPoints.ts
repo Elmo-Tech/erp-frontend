@@ -63,6 +63,36 @@ export interface UserPointsFilters {
 	isActive?: boolean;
 	sortBy?: "total_points" | "name" | "created_at";
 	sortOrder?: "asc" | "desc";
+	dateFrom?: string;
+	dateTo?: string;
+}
+
+export interface PointsReportFilters {
+	dateFrom?: string;
+	dateTo?: string;
+	userId?: number;
+	type?: "manual" | "automatic" | "all";
+}
+
+export interface PointsReportResponse {
+	activities: UserPoint[];
+	summary: {
+		totalActivities: number;
+		totalPointsAdded: number;
+		totalPointsDeducted: number;
+		netChange: number;
+		period: {
+			from: string;
+			to: string;
+		};
+	};
+	pagination: {
+		total: number;
+		count: number;
+		perPage: number;
+		currentPage: number;
+		totalPages: number;
+	};
 }
 
 export interface UserPointsHistoryResponse {

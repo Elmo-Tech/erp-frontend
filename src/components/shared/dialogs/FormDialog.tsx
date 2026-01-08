@@ -18,7 +18,7 @@ interface FormDialogProps {
 	isSubmitDisabled?: boolean;
 	className?: string;
 	showFooter?: boolean;
-	size?: "sm" | "md" | "lg" | "xl" | "xxl" | "full";
+	size?: "sm" | "md" | "lg" | "xl" | "xxl" | "xxxl" | "full";
 }
 
 const sizeClasses = {
@@ -27,6 +27,7 @@ const sizeClasses = {
 	lg: "max-w-lg!",
 	xl: "max-w-xl!",
 	xxl: "max-w-2xl!",
+	xxxl: "max-w-3xl!",
 	full: "max-w-4xl!",
 };
 

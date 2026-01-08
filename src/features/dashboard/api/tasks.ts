@@ -75,6 +75,41 @@ export const tasksApi = {
 	},
 
 	/**
+	 * Get tasks where current user is assigned as team member
+	 */
+	getMyAssignedTasks: async (filters?: TaskFilters): Promise<TaskListResponse> => {
+		const params = new URLSearchParams();
+
+		if (filters?.projectId) {
+			params.append("filter[projectId]", filters.projectId.toString());
+		}
+		if (filters?.status) {
+			params.append("filter[status]", filters.status);
+		}
+		if (filters?.type) {
+			params.append("filter[type]", filters.type);
+		}
+		if (filters?.priority) {
+			params.append("filter[priority]", filters.priority);
+		}
+		if (filters?.search) {
+			params.append("filter[search]", filters.search);
+		}
+		if (filters?.page) {
+			params.append("page", filters.page.toString());
+		}
+		if (filters?.perPage) {
+			params.append("perPage", filters.perPage.toString());
+		}
+
+		const queryString = params.toString();
+		const url = queryString ? `/tasks/my-assigned?${queryString}` : "/tasks/my-assigned";
+
+		const response = await api.get<{ data: TaskListResponse }>(url);
+		return response.data.data;
+	},
+
+	/**
 	 * Get a single task by ID
 	 */
 	getTask: async (id: number): Promise<Task> => {

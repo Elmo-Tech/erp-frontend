@@ -1,11 +1,7 @@
 "use client";
 
-import { AttendanceDashboard } from "@/features/dashboard/components";
+import { MyAttendanceWrapper } from "@/features/dashboard/components/attendance";
 
-export default function AdminAttendancePage() {
-	return (
-		<div className="container mx-auto py-6">
-			<AttendanceDashboard />
-		</div>
-	);
+export default function MyAttendancePage() {
+	return <MyAttendanceWrapper />;
 }

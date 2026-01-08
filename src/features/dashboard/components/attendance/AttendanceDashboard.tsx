@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Clock, LogIn, LogOut, AlertCircle, CheckCircle2, Loader2, Coffee, Play } from "lucide-react";
-import { useAttendanceStatus, useClockOut } from "../hooks/useAttendance";
+import { useAttendanceStatus, useClockOut } from "../../hooks/useAttendance";
 import { useTimerStore } from "@/store/timerStore";
 import { cn } from "@/lib/utils";
 import { formatTimeDisplay } from "@/lib/dateUtils";

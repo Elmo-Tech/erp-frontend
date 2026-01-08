@@ -62,6 +62,11 @@ const navGroups: NavGroup[] = [
 				icon: FolderKanban,
 				permission: "view_projects",
 			},
+			// {
+			// 	title: "My Tasks",
+			// 	href: "/dashboard/my-tasks",
+			// 	icon: ListTodo,
+			// },
 			{
 				title: "Wiki",
 				href: "/dashboard/wiki",

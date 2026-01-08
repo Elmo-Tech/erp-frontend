@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { userPointsApi } from "../api/userPointsApi";
-import { AddPointsFormData, DeductPointsFormData, SetPointsFormData, UserPointsFilters } from "../types/userPoints";
+import { AddPointsFormData, DeductPointsFormData, SetPointsFormData, UserPointsFilters, PointsReportFilters } from "../types/userPoints";
 
 // Query Keys
 export const userPointsKeys = {
@@ -12,6 +12,7 @@ export const userPointsKeys = {
 	history: (userId: number, page: number, perPage: number) => [...userPointsKeys.all, "history", userId, { page, perPage }] as const,
 	leaderboard: (limit: number) => [...userPointsKeys.all, "leaderboard", limit] as const,
 	statistics: () => [...userPointsKeys.all, "statistics"] as const,
+	report: (filters: PointsReportFilters, page: number, perPage: number) => [...userPointsKeys.all, "report", { filters, page, perPage }] as const,
 };
 
 // Get all users with points
@@ -47,6 +48,14 @@ export function usePointsStatistics() {
 	});
 }
 
+// Get points report
+export function usePointsReport(filters: PointsReportFilters = {}, page = 1, perPage = 15) {
+	return useQuery({
+		queryKey: userPointsKeys.report(filters, page, perPage),
+		queryFn: () => userPointsApi.getPointsReport(filters, page, perPage),
+	});
+}
+
 // Add points mutation
 export function useAddPoints() {
 	const queryClient = useQueryClient();
@@ -55,9 +64,12 @@ export function useAddPoints() {
 		mutationFn: (data: AddPointsFormData) => userPointsApi.addPoints(data),
 		onSuccess: () => {
 			toast.success("Points added successfully");
-			// Invalidate both user points and employees queries
+			// Invalidate all related queries
 			queryClient.invalidateQueries({ queryKey: userPointsKeys.all });
 			queryClient.invalidateQueries({ queryKey: ["employees"] });
+			queryClient.invalidateQueries({ queryKey: ["users"] });
+			// Force refetch to ensure immediate update
+			queryClient.refetchQueries({ queryKey: ["employees"] });
 		},
 		onError: (error: any) => {
 			const message = error.response?.data?.message || "Failed to add points";
@@ -74,7 +86,12 @@ export function useDeductPoints() {
 		mutationFn: (data: DeductPointsFormData) => userPointsApi.deductPoints(data),
 		onSuccess: () => {
 			toast.success("Points deducted successfully");
+			// Invalidate all related queries
 			queryClient.invalidateQueries({ queryKey: userPointsKeys.all });
+			queryClient.invalidateQueries({ queryKey: ["employees"] });
+			queryClient.invalidateQueries({ queryKey: ["users"] });
+			// Force refetch to ensure immediate update
+			queryClient.refetchQueries({ queryKey: ["employees"] });
 		},
 		onError: (error: any) => {
 			const message = error.response?.data?.message || "Failed to deduct points";
@@ -91,7 +108,12 @@ export function useSetPoints() {
 		mutationFn: (data: SetPointsFormData) => userPointsApi.setPoints(data),
 		onSuccess: () => {
 			toast.success("Points set successfully");
+			// Invalidate all related queries
 			queryClient.invalidateQueries({ queryKey: userPointsKeys.all });
+			queryClient.invalidateQueries({ queryKey: ["employees"] });
+			queryClient.invalidateQueries({ queryKey: ["users"] });
+			// Force refetch to ensure immediate update
+			queryClient.refetchQueries({ queryKey: ["employees"] });
 		},
 		onError: (error: any) => {
 			const message = error.response?.data?.message || "Failed to set points";
