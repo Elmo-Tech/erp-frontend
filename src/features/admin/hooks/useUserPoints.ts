@@ -55,7 +55,9 @@ export function useAddPoints() {
 		mutationFn: (data: AddPointsFormData) => userPointsApi.addPoints(data),
 		onSuccess: () => {
 			toast.success("Points added successfully");
+			// Invalidate both user points and employees queries
 			queryClient.invalidateQueries({ queryKey: userPointsKeys.all });
+			queryClient.invalidateQueries({ queryKey: ["employees"] });
 		},
 		onError: (error: any) => {
 			const message = error.response?.data?.message || "Failed to add points";
