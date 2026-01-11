@@ -95,7 +95,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 	};
 
 	const handleViewProject = (project: Project) => {
-		router.push(`/projects/${project.projectId}`);
+		router.push(`/dashboard/projects/${project.projectId}`);
 	};
 
 	const handleEditProject = (project: Project) => {
