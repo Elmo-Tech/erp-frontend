@@ -20,8 +20,40 @@ export const adminStatsApi = {
 	 * Requirement 14.1-14.5: Dashboard summary statistics
 	 */
 	getOverview: async (): Promise<AdminOverviewStats> => {
-		const response = await api.get<{ data: AdminOverviewStats }>("/admin/stats/overview");
-		return response.data.data;
+		interface BackendOverviewResponse {
+			profitability: {
+				totalRevenue: string;
+				totalProfit: string;
+				overallMargin: string;
+				activeProjects: number;
+				completedProjects: number;
+			};
+			quality: {
+				overallBounceRate: string;
+				qualityScore: string;
+				totalBounces: number;
+				tasksWithBounces: number;
+			};
+			attendance: {
+				totalLateMinutes: number;
+				averageIdleTime: string;
+				usersWithExcessiveIdle: unknown[];
+			};
+		}
+
+		const response = await api.get<{ data: BackendOverviewResponse }>("/admin/stats/overview");
+		const data = response.data.data;
+
+		// Transform nested backend response to flat frontend structure
+		return {
+			totalRevenue: parseFloat(data.profitability?.totalRevenue || "0"),
+			totalProfit: parseFloat(data.profitability?.totalProfit || "0"),
+			overallMargin: parseFloat(data.profitability?.overallMargin || "0"),
+			activeProjects: data.profitability?.activeProjects || 0,
+			completedProjects: data.profitability?.completedProjects || 0,
+			teamUtilization: 100 - parseFloat(data.attendance?.averageIdleTime || "0"), // Calculate utilization from idle time
+			qualityScore: parseFloat(data.quality?.qualityScore || "0") / 10, // Convert to 0-10 scale
+		};
 	},
 
 	/**
