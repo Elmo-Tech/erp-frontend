@@ -60,7 +60,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 	const [statusFilter, setStatusFilter] = useState<TaskStatus | undefined>();
 	const [priorityFilter, setPriorityFilter] = useState<TaskPriority | undefined>();
 	const [categoryFilter, setCategoryFilter] = useState<string | undefined>();
-	const [showMyTasksOnly] = useState(role !== "admin" && role !== "super-admin");
+	const [showMyTasksOnly] = useState(role !== "admin" && role !== "super-admin" && role !== "manager");
 	const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
 
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -575,52 +575,51 @@ function TaskRow({
 				</div>
 
 				{/* Actions */}
-				{onCreateChild && canCreateWeeklyTasks && (
-					<div className="opacity-0 group-hover:opacity-100 transition-opacity">
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8"
-								>
-									<MoreHorizontal className="h-4 w-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								align="end"
-								className="w-48"
+
+				<div className="opacity-0 group-hover:opacity-100 transition-opacity">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
 							>
-								{canEditThisTask && (
-									<DropdownMenuItem onClick={() => onEdit(task)}>
-										<Pencil className="h-4 w-4 mr-2" /> Edit Task
+								<MoreHorizontal className="h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							className="w-48"
+						>
+							{canEditThisTask && (
+								<DropdownMenuItem onClick={() => onEdit(task)}>
+									<Pencil className="h-4 w-4 mr-2" /> Edit Task
+								</DropdownMenuItem>
+							)}
+							{onCreateChild && canCreateWeeklyTasks && task.type === TaskType.MAIN && task.status !== TaskStatus.COMPLETED && (
+								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
+									<Plus className="h-4 w-4 mr-2" /> Add Weekly Task
+								</DropdownMenuItem>
+							)}
+							{onCreateChild && canCreateSubtasks && task.type === TaskType.WEEKLY && task.status !== TaskStatus.COMPLETED && (
+								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
+									<Plus className="h-4 w-4 mr-2" /> Add Subtask
+								</DropdownMenuItem>
+							)}
+							{onDelete && (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onClick={() => onDelete(task)}
+										className="text-destructive focus:text-destructive"
+									>
+										<Trash2 className="h-4 w-4 mr-2" /> Delete
 									</DropdownMenuItem>
-								)}
-								{onCreateChild && canCreateWeeklyTasks && task.type === TaskType.MAIN && task.status !== TaskStatus.COMPLETED && (
-									<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
-										<Plus className="h-4 w-4 mr-2" /> Add Weekly Task
-									</DropdownMenuItem>
-								)}
-								{onCreateChild && canCreateSubtasks && task.type === TaskType.WEEKLY && task.status !== TaskStatus.COMPLETED && (
-									<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
-										<Plus className="h-4 w-4 mr-2" /> Add Subtask
-									</DropdownMenuItem>
-								)}
-								{onDelete && (
-									<>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onClick={() => onDelete(task)}
-											className="text-destructive focus:text-destructive"
-										>
-											<Trash2 className="h-4 w-4 mr-2" /> Delete
-										</DropdownMenuItem>
-									</>
-								)}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</div>
-				)}
+								</>
+							)}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 			</div>
 
 			{/* Children */}
