@@ -10,10 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Calendar, Clock, Play } from "lucide-react";
+import { Calendar, Clock, Play, Square, Loader2 } from "lucide-react";
 import { Task, TaskStatus, TaskStatusLabels, TaskPriorityLabels } from "../../types/task";
 import { PriorityColors } from "./constants";
 import { StatusIcons } from "./StatusIcons";
+import { useStartTimer, useStopTimer, useActiveTimer } from "@/features/sales/hooks";
+import { TrackableType } from "@/features/sales/types";
+import { toast } from "sonner";
 
 interface TaskDetailDialogProps {
 	task: Task | null;
@@ -22,9 +25,40 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDialogProps) {
+	const { data: activeTimerData } = useActiveTimer();
+	const startTimer = useStartTimer();
+	const stopTimer = useStopTimer();
+
 	if (!task) return null;
 
 	const hasSubtasks = task.hasChildren || (task.children && task.children.length > 0);
+
+	// Check if active timer is for a task
+	const activeTaskId = activeTimerData?.isActive && activeTimerData?.timeEntry ? (String(activeTimerData.timeEntry.trackableType).toLowerCase().includes("task") ? activeTimerData.timeEntry.trackableId : null) : null;
+	const isTimerRunningOnThis = activeTaskId === task.taskId;
+	const isTimerRunningOnOther = activeTaskId !== null && activeTaskId !== task.taskId;
+	const isTimerLoading = startTimer.isPending || stopTimer.isPending;
+
+	const handleStartTimer = async () => {
+		try {
+			await startTimer.mutateAsync({
+				trackableType: "task" as TrackableType,
+				trackableId: task.taskId,
+			});
+			toast.success(`Timer started for "${task.title}"`);
+		} catch {
+			toast.error("Failed to start timer");
+		}
+	};
+
+	const handleStopTimer = async () => {
+		try {
+			await stopTimer.mutateAsync();
+			toast.success("Timer stopped");
+		} catch {
+			toast.error("Failed to stop timer");
+		}
+	};
 
 	return (
 		<FormDialog
@@ -60,12 +94,28 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 				>
 					Close
 				</Button>
-				{task.canStartTimer && task.status !== TaskStatus.COMPLETED && (
-					<Button className="gap-2">
-						<Play className="h-4 w-4" />
-						Start Timer
-					</Button>
-				)}
+				{task.canStartTimer &&
+					task.status !== TaskStatus.COMPLETED &&
+					(isTimerRunningOnThis ? (
+						<Button
+							variant="destructive"
+							className="gap-2"
+							onClick={handleStopTimer}
+							disabled={isTimerLoading}
+						>
+							{isTimerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4" />}
+							Stop Timer
+						</Button>
+					) : (
+						<Button
+							className="gap-2"
+							onClick={handleStartTimer}
+							disabled={isTimerLoading || isTimerRunningOnOther}
+						>
+							{isTimerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+							{isTimerRunningOnOther ? "Stop other timer first" : "Start Timer"}
+						</Button>
+					))}
 			</div>
 		</FormDialog>
 	);
