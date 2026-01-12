@@ -206,6 +206,19 @@ export const ADMIN_PERMISSIONS = {
 	AWARD_POINTS: "award_points",
 	DEDUCT_POINTS: "deduct_points",
 	VIEW_POINT_TRANSACTIONS: "view_point_transactions",
+
+	// Change Requests
+	VIEW_CHANGE_REQUESTS: "view_change_requests",
+	CREATE_CHANGE_REQUESTS: "create_change_requests",
+	APPROVE_CHANGE_REQUESTS: "approve_change_requests",
+	REJECT_CHANGE_REQUESTS: "reject_change_requests",
+	MANAGE_CHANGE_REQUESTS: "manage_change_requests",
+
+	// Milestones Management
+	CREATE_MILESTONES: "create_milestones",
+	EDIT_MILESTONES: "edit_milestones",
+	DELETE_MILESTONES: "delete_milestones",
+	MANAGE_MILESTONES: "manage_milestones",
 } as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];
@@ -460,6 +473,19 @@ export const usePermissions = () => {
 			canAwardPoints: hasPermission(ADMIN_PERMISSIONS.AWARD_POINTS),
 			canDeductPoints: hasPermission(ADMIN_PERMISSIONS.DEDUCT_POINTS),
 			canViewPointTransactions: hasPermission(ADMIN_PERMISSIONS.VIEW_POINT_TRANSACTIONS),
+
+			// Change Requests
+			canViewChangeRequests: hasPermission(ADMIN_PERMISSIONS.VIEW_CHANGE_REQUESTS),
+			canCreateChangeRequests: hasPermission(ADMIN_PERMISSIONS.CREATE_CHANGE_REQUESTS),
+			canApproveChangeRequests: hasPermission(ADMIN_PERMISSIONS.APPROVE_CHANGE_REQUESTS),
+			canRejectChangeRequests: hasPermission(ADMIN_PERMISSIONS.REJECT_CHANGE_REQUESTS),
+			canManageChangeRequests: hasPermission(ADMIN_PERMISSIONS.MANAGE_CHANGE_REQUESTS),
+
+			// Milestones Management
+			canCreateMilestones: hasPermission(ADMIN_PERMISSIONS.CREATE_MILESTONES),
+			canEditMilestones: hasPermission(ADMIN_PERMISSIONS.EDIT_MILESTONES),
+			canDeleteMilestones: hasPermission(ADMIN_PERMISSIONS.DELETE_MILESTONES),
+			canManageMilestones: hasPermission(ADMIN_PERMISSIONS.MANAGE_MILESTONES),
 		}),
 		[hasPermission]
 	);

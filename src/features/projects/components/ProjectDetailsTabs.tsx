@@ -9,8 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "../hooks/useProjects";
 import { UpdateProjectForm } from "./projects";
-import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab } from "./tabs";
-import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History } from "lucide-react";
+import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab, BudgetTab } from "./tabs";
+import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
@@ -27,7 +27,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 
 	// Permission checks
-	const { canEditProjects, canViewTasks, canViewProjectMembers, canViewProjectFiles, canViewWiki, canViewProjectHistory, canViewProjectBudget } = usePermissions();
+	const { canEditProjects, canViewTasks, canViewProjectMembers, canViewProjectFiles, canViewWiki, canViewProjectHistory, canViewProjectBudget, canViewChangeRequests } = usePermissions();
 
 	if (isLoading) {
 		return (
@@ -200,6 +200,24 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 							History
 						</TabsTrigger>
 					)}
+					{canViewChangeRequests && (
+						<TabsTrigger
+							value="change-requests"
+							className="gap-2"
+						>
+							<FileEdit className="h-4 w-4" />
+							CRs
+						</TabsTrigger>
+					)}
+					{canViewProjectBudget && (
+						<TabsTrigger
+							value="budget"
+							className="gap-2"
+						>
+							<Wallet className="h-4 w-4" />
+							Budget
+						</TabsTrigger>
+					)}
 				</TabsList>
 
 				{/* Overview Tab */}
@@ -300,6 +318,20 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 				{canViewProjectHistory && (
 					<TabsContent value="history">
 						<HistoryTab projectId={projectId} />
+					</TabsContent>
+				)}
+
+				{/* Change Requests Tab */}
+				{canViewChangeRequests && (
+					<TabsContent value="change-requests">
+						<ChangeRequestsTab projectId={projectId} />
+					</TabsContent>
+				)}
+
+				{/* Budget Tab */}
+				{canViewProjectBudget && (
+					<TabsContent value="budget">
+						<BudgetTab projectId={projectId} />
 					</TabsContent>
 				)}
 			</Tabs>

@@ -8,3 +8,5 @@ export { WikiViewerDialog } from "./WikiViewerDialog";
 export { FilesTab } from "./FilesTab";
 export { FileFormDialog } from "./FileFormDialog";
 export { HistoryTab } from "./HistoryTab";
+export { ChangeRequestsTab } from "./ChangeRequestsTab";
+export { BudgetTab } from "./BudgetTab";

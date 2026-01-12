@@ -9,6 +9,7 @@ import { Form } from "@/components/ui/form";
 import { FormDialog, FormInput, FormSelect, FormTextarea, FormDatePicker } from "@/components/shared";
 import { useCreateTask, useUpdateTask, useTags } from "@/features/dashboard/hooks/useTasks";
 import { useProjectMembers } from "../../hooks/useProjectMembers";
+import { useAuthStore } from "@/store/authStore";
 import { useTaskCategories } from "@/features/admin/hooks/useEnums";
 import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels, TaskPriority, TaskPriorityLabels } from "@/features/dashboard/types/task";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +35,7 @@ const taskSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskSchema>;
 
-const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.MAIN): TaskFormData => {
+const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.MAIN, currentUserId?: number): TaskFormData => {
 	if (task) {
 		return {
 			title: task.title,
@@ -60,7 +61,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 		status: TaskStatus.TODO,
 		type: defaultType,
 		priority: TaskPriority.MEDIUM,
-		assignedTo: "none",
+		assignedTo: currentUserId ? currentUserId.toString() : "none",
 		taskCategory: "none",
 		estimatedHours: 0,
 		dueDate: null,
@@ -83,13 +84,14 @@ interface TaskFormDialogProps {
 
 export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, defaultType = TaskType.MAIN, parentTask }: TaskFormDialogProps) {
 	const isEditing = !!task;
+	const { user } = useAuthStore();
 	const { data: membersData } = useProjectMembers(projectId);
 	const { data: tags } = useTags();
 	const { data: taskCategoriesData } = useTaskCategories();
 	const createTask = useCreateTask();
 	const updateTask = useUpdateTask();
 
-	const defaultValues = useMemo(() => getDefaultValues(task, defaultType), [task, defaultType]);
+	const defaultValues = useMemo(() => getDefaultValues(task, defaultType, user?.userId), [task, defaultType, user?.userId]);
 
 	const form = useForm<TaskFormData>({
 		resolver: zodResolver(taskSchema),
@@ -317,15 +319,24 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							options={statusOptions}
 						/>
 					</div>
-
-					<FormSelect
-						control={form.control}
-						name="taskCategory"
-						label="Category"
-						placeholder="Select category..."
-						options={taskCategoryOptions}
-						description="Determines which developers can see this task"
-					/>
+					<div className="grid grid-cols-2 gap-4">
+						<FormSelect
+							control={form.control}
+							name="assignedTo"
+							label="Primary Assignee"
+							placeholder="Select assignee..."
+							options={assigneeOptions}
+							description="Primary assignee is responsible for this task"
+						/>
+						<FormSelect
+							control={form.control}
+							name="taskCategory"
+							label="Category"
+							placeholder="Select category..."
+							options={taskCategoryOptions}
+							description="Determines which developers can see this task"
+						/>
+					</div>
 
 					<FormTextarea
 						control={form.control}
@@ -335,22 +346,15 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 						rows={3}
 					/>
 
-					<FormTextarea
+					{/* <FormTextarea
 						control={form.control}
 						name="acceptanceCriteria"
 						label="Acceptance Criteria"
 						placeholder="What needs to be done for this task to be complete..."
 						rows={2}
-					/>
+					/> */}
 
-					<div className="grid grid-cols-2 gap-4">
-						<FormSelect
-							control={form.control}
-							name="assignedTo"
-							label="Primary Assignee"
-							placeholder="Select assignee..."
-							options={assigneeOptions}
-						/>
+					<div className="grid grid-cols-3 gap-4">
 						<FormInput
 							control={form.control}
 							name="estimatedHours"
@@ -359,9 +363,6 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							min={0}
 							step={0.5}
 						/>
-					</div>
-
-					<div className="grid grid-cols-3 gap-4">
 						<FormDatePicker
 							control={form.control}
 							name="startDate"
@@ -372,6 +373,10 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							name="dueDate"
 							label="Due Date"
 						/>
+					</div>
+
+					{/* <div className="grid grid-cols-2 gap-4">
+						
 						<FormInput
 							control={form.control}
 							name="sprintNumber"
@@ -380,7 +385,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							min={1}
 							placeholder="Sprint #"
 						/>
-					</div>
+					</div> */}
 
 					{/* Tags */}
 					{tags && tags.length > 0 && (
@@ -406,14 +411,14 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					)}
 
 					{/* Internal Notes - Admin Only */}
-					<FormTextarea
+					{/* <FormTextarea
 						control={form.control}
 						name="internalReviewerNotes"
 						label="Internal Notes (Admin Only)"
 						placeholder="Notes visible only to admins..."
 						rows={2}
 						description="These notes are only visible to users with admin permissions"
-					/>
+					/> */}
 				</div>
 			</Form>
 		</FormDialog>
