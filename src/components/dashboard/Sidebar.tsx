@@ -51,6 +51,12 @@ const navGroups: NavGroup[] = [
 				icon: TrendingUp,
 				permission: "view_leads",
 			},
+			{
+				title: "Sales Dashboard",
+				href: "/dashboard/sales/manager",
+				icon: BarChart3,
+				permission: "view_sales_dashboard",
+			},
 		],
 	},
 	{

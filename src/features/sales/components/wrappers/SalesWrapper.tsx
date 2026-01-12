@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { UserPlus, FileText, LayoutGrid, List } from "lucide-react";
+import { UserPlus, FileText, LayoutGrid, List, Download } from "lucide-react";
 import { LeadKanban } from "../LeadKanban";
 import { LeadsTable, CreateLeadForm } from "../leads";
 import { ContractsTable, CreateContractForm } from "../contracts";
+import { ExportDialog } from "../ExportDialog";
 import { LeadStatus } from "../../types/lead";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
@@ -17,6 +18,7 @@ export function SalesWrapper() {
 	const [leadViewMode, setLeadViewMode] = useState<LeadViewMode>("kanban");
 	const [showLeadForm, setShowLeadForm] = useState(false);
 	const [showContractForm, setShowContractForm] = useState(false);
+	const [showExportDialog, setShowExportDialog] = useState(false);
 	const [defaultLeadStatus, setDefaultLeadStatus] = useState<LeadStatus | undefined>();
 
 	const { canCreateLeads, canViewLeads, canCreateContracts, canViewContracts } = usePermissions();
@@ -59,6 +61,13 @@ export function SalesWrapper() {
 						</Button>
 					)}
 				</div>
+				<Button
+					variant="outline"
+					onClick={() => setShowExportDialog(true)}
+				>
+					<Download className="mr-2 h-4 w-4" />
+					Export
+				</Button>
 			</div>
 
 			<Tabs
@@ -128,6 +137,13 @@ export function SalesWrapper() {
 					onOpenChange={handleContractFormClose}
 				/>
 			)}
+
+			{/* Export Dialog */}
+			<ExportDialog
+				open={showExportDialog}
+				onOpenChange={setShowExportDialog}
+				defaultType="leads"
+			/>
 		</>
 	);
 }
