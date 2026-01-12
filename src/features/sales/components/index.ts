@@ -24,6 +24,11 @@ export { ContractDetailsTabs } from "./ContractDetailsTabs";
 export { ConvertLeadDialog } from "./ConvertLeadDialog";
 
 // ============================================
+// DASHBOARD (Manager)
+// ============================================
+export { PipelineOverview, AlertsPanel, TeamPerformanceTable, BottleneckAnalysis } from "./dashboard";
+
+// ============================================
 // WRAPPERS
 // ============================================
 export { SalesWrapper } from "./wrappers";
@@ -33,3 +38,5 @@ export { SalesWrapper } from "./wrappers";
 // ============================================
 export { ActivityFormDialog } from "./ActivityFormDialog";
 export { MeetingFormDialog } from "./MeetingFormDialog";
+export { GlobalSearchDialog, useGlobalSearchShortcut } from "./GlobalSearchDialog";
+export { ExportDialog } from "./ExportDialog";
