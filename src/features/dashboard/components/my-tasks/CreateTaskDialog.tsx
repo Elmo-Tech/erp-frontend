@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useCreateTask, useTags } from "../../hooks/useTasks";
 import { useTaskCategories } from "@/features/admin/hooks/useEnums";
-import { useUsers } from "@/features/admin/hooks/useUsers";
+import { useEmployees } from "@/features/hr/hooks";
 import { TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels, TaskPriority, TaskPriorityLabels } from "../../types/task";
 
 const taskSchema = z.object({
@@ -49,7 +49,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 	const createTask = useCreateTask();
 	const { data: tags } = useTags();
 	const { data: taskCategoriesData } = useTaskCategories();
-	const { data: usersData } = useUsers();
+	const { data: employeesData } = useEmployees({ perPage: 100 });
 
 	// Get today's date in YYYY-MM-DD format
 	const today = new Date().toISOString().split("T")[0];
@@ -154,16 +154,16 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 
 	const assigneeOptions = useMemo(() => {
 		const options = [{ value: "none", label: "Unassigned" }];
-		if (usersData?.users) {
+		if (employeesData?.employees) {
 			options.push(
-				...usersData.users.map((user) => ({
-					value: user.userId.toString(),
-					label: user.name,
+				...employeesData.employees.map((employee) => ({
+					value: employee.userId.toString(),
+					label: employee.name,
 				}))
 			);
 		}
 		return options;
-	}, [usersData]);
+	}, [employeesData]);
 
 	return (
 		<FormDialog
