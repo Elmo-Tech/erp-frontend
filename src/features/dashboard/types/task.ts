@@ -201,7 +201,7 @@ export interface Task {
  * Task creation payload
  */
 export interface CreateTaskPayload {
-	projectId: number;
+	projectId?: number;
 	parentId?: number | null;
 	assignedTo?: number | null;
 	title: string;

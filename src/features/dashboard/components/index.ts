@@ -20,5 +20,8 @@ export type { default as AttendanceDashboardType } from "./attendance/Attendance
 
 export { MyAssignedTasks } from "./MyAssignedTasks";
 
+// My Tasks Page (refactored into smaller components)
+export { MyTasksPage } from "./my-tasks";
+
 // Attendance
 export { MyAttendanceWrapper, AttendanceHistoryTable } from "./attendance";

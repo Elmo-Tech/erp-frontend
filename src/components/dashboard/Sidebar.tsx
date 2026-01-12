@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useSidebarStore } from "@/store/sidebarStore";
@@ -62,11 +62,11 @@ const navGroups: NavGroup[] = [
 				icon: FolderKanban,
 				permission: "view_projects",
 			},
-			// {
-			// 	title: "My Tasks",
-			// 	href: "/dashboard/my-tasks",
-			// 	icon: ListTodo,
-			// },
+			{
+				title: "My Tasks",
+				href: "/dashboard/my-tasks",
+				icon: ListTodo,
+			},
 			{
 				title: "Wiki",
 				href: "/dashboard/wiki",

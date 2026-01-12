@@ -139,6 +139,9 @@ export const useUpdateTask = () => {
 			// Invalidate all task lists
 			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 
+			// Invalidate my-assigned tasks (for My Tasks page)
+			queryClient.invalidateQueries({ queryKey: [...taskKeys.all, "my-assigned"] });
+
 			// Invalidate project tasks
 			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(updatedTask.projectId) });
 

@@ -19,7 +19,18 @@ export { useProjectHistory, usePrefetchProjectHistory, useInvalidateProjectHisto
 export { useProjectMembers, useAddProjectMember, useUpdateProjectMember, useRemoveProjectMember, projectMemberKeys } from "./useProjectMembers";
 
 // Change requests hooks
-export { useChangeRequests, useChangeRequest, useCreateChangeRequest, useUpdateChangeRequest, useApproveChangeRequest, useRejectChangeRequest, useDeleteChangeRequest, changeRequestKeys } from "./useChangeRequests";
+export {
+	useChangeRequests,
+	useChangeRequest,
+	useChangeRequestSummary,
+	useCreateChangeRequest,
+	useUpdateChangeRequest,
+	useSubmitChangeRequest,
+	useApproveChangeRequest,
+	useRejectChangeRequest,
+	useImplementChangeRequest,
+	changeRequestKeys,
+} from "./useChangeRequests";
 
 // Milestones hooks
-export { useMilestones, useMilestone, useCreateMilestone, useUpdateMilestone, useDeleteMilestone, useMarkMilestonePaid, useLinkMilestoneInvoice, milestoneKeys } from "./useMilestones";
+export { useMilestone, useCreateMilestoneInvoice, useLinkMilestoneInvoice, useMarkMilestonePaid, milestoneKeys } from "./useMilestones";
