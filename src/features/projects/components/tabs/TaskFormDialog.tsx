@@ -54,6 +54,10 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 			internalReviewerNotes: task.internalReviewerNotes || "",
 		};
 	}
+
+	// Get today's date in YYYY-MM-DD format
+	const today = new Date().toISOString().split("T")[0];
+
 	return {
 		title: "",
 		description: "",
@@ -65,7 +69,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 		taskCategory: "none",
 		estimatedHours: 0,
 		dueDate: null,
-		startDate: null,
+		startDate: today, // Set today's date as default
 		sprintNumber: null,
 		tagIds: [],
 		internalReviewerNotes: "",

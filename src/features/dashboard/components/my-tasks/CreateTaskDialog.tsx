@@ -20,6 +20,7 @@ const taskSchema = z.object({
 	projectId: z.string().optional(),
 	priority: z.nativeEnum(TaskPriority),
 	dueDate: z.string().optional().nullable(),
+	startDate: z.string().optional().nullable(),
 	estimatedHours: z.number().min(0, "Must be 0 or greater").optional(),
 });
 
@@ -35,6 +36,9 @@ interface CreateTaskDialogProps {
 export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }: CreateTaskDialogProps) {
 	const createTask = useCreateTask();
 
+	// Get today's date in YYYY-MM-DD format
+	const today = new Date().toISOString().split("T")[0];
+
 	const form = useForm<TaskFormData>({
 		resolver: zodResolver(taskSchema),
 		defaultValues: {
@@ -43,6 +47,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 			projectId: "",
 			priority: TaskPriority.MEDIUM,
 			dueDate: "",
+			startDate: today, // Set today's date as default
 			estimatedHours: 0,
 		},
 	});
@@ -55,6 +60,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 				projectId: data.projectId && data.projectId !== "my" ? Number(data.projectId) : undefined,
 				priority: data.priority,
 				dueDate: data.dueDate || undefined,
+				startDate: data.startDate || undefined,
 				estimatedHours: data.estimatedHours || undefined,
 				assignedTo: currentUserId,
 				status: TaskStatus.TODO,
@@ -118,12 +124,19 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 						description="Leave empty for a personal task."
 					/>
 
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-3 gap-4">
 						<FormSelect
 							control={form.control}
 							name="priority"
 							label="Priority"
 							options={priorityOptions}
+						/>
+
+						<FormInput
+							control={form.control}
+							name="startDate"
+							label="Start Date"
+							type="date"
 						/>
 
 						<FormInput
