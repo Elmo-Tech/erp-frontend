@@ -4,11 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/shared/data-display/DataTable";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
-import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
+import { ConfirmDialog, FormDialog } from "@/components/shared";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { useCodeReviews, useApproveCodeReview, useRequestCodeRevision } from "../hooks";
 import type { CodeReview, CodeReviewStatus } from "../types";
 import { getCodeReviewsColumns } from "./columns/codeReviewsColumns";
@@ -150,37 +148,23 @@ export function CodeReviewsTable({ asReviewer, asDeveloper }: CodeReviewsTablePr
 				isLoading={approveMutation.isPending}
 			/>
 
-			<Dialog
+			<FormDialog
 				open={revisionDialogOpen}
 				onOpenChange={setRevisionDialogOpen}
+				title="Request Revision"
+				description={`Provide suggestions for improvement for the code review of "${selectedReview?.taskTitle}".`}
+				submitLabel="Request Revision"
+				isLoading={revisionMutation.isPending}
+				isSubmitDisabled={!revisionSuggestions.trim()}
+				onSubmit={handleRequestRevision}
 			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Request Revision</DialogTitle>
-						<DialogDescription>Provide suggestions for improvement for the code review of &quot;{selectedReview?.taskTitle}&quot;.</DialogDescription>
-					</DialogHeader>
-					<Textarea
-						placeholder="Enter your suggestions for improvement..."
-						value={revisionSuggestions}
-						onChange={(e) => setRevisionSuggestions(e.target.value)}
-						rows={4}
-					/>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => setRevisionDialogOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button
-							onClick={handleRequestRevision}
-							disabled={!revisionSuggestions.trim() || revisionMutation.isPending}
-						>
-							{revisionMutation.isPending ? "Submitting..." : "Request Revision"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+				<Textarea
+					placeholder="Enter your suggestions for improvement..."
+					value={revisionSuggestions}
+					onChange={(e) => setRevisionSuggestions(e.target.value)}
+					rows={4}
+				/>
+			</FormDialog>
 		</>
 	);
 }

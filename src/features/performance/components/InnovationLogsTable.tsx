@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { DataTable } from "@/components/shared/data-display/DataTable";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
-import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
+import { ConfirmDialog, FormDialog } from "@/components/shared";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useInnovationLogs, useVerifyInnovationLog, useRejectInnovationLog, useDeleteInnovationLog } from "../hooks";
 import type { InnovationLog, InnovationCategory, ImpactLevel } from "../types";
@@ -200,55 +199,52 @@ export function InnovationLogsTable() {
 			/>
 
 			{/* View Dialog */}
-			<Dialog
+			<FormDialog
 				open={viewDialogOpen}
 				onOpenChange={setViewDialogOpen}
+				title={selectedLog?.toolName || ""}
+				description="Innovation log details"
+				showFooter={false}
 			>
-				<DialogContent className="sm:max-w-[500px]">
-					<DialogHeader>
-						<DialogTitle>{selectedLog?.toolName}</DialogTitle>
-						<DialogDescription>Innovation log details</DialogDescription>
-					</DialogHeader>
-					{selectedLog && (
-						<div className="space-y-4">
+				{selectedLog && (
+					<div className="space-y-4">
+						<div>
+							<p className="text-sm font-medium text-muted-foreground">Employee</p>
+							<p>{selectedLog.userName}</p>
+						</div>
+						<div>
+							<p className="text-sm font-medium text-muted-foreground">Category</p>
+							<p className="capitalize">{selectedLog.category.replace("_", " ")}</p>
+						</div>
+						<div>
+							<p className="text-sm font-medium text-muted-foreground">Description</p>
+							<p>{selectedLog.description}</p>
+						</div>
+						{selectedLog.impactDescription && (
 							<div>
-								<p className="text-sm font-medium text-muted-foreground">Employee</p>
-								<p>{selectedLog.userName}</p>
+								<p className="text-sm font-medium text-muted-foreground">Impact</p>
+								<p>{selectedLog.impactDescription}</p>
 							</div>
+						)}
+						<div className="grid grid-cols-2 gap-4">
 							<div>
-								<p className="text-sm font-medium text-muted-foreground">Category</p>
-								<p className="capitalize">{selectedLog.category.replace("_", " ")}</p>
+								<p className="text-sm font-medium text-muted-foreground">Impact Level</p>
+								<p className="capitalize">{selectedLog.impactLevel}</p>
 							</div>
-							<div>
-								<p className="text-sm font-medium text-muted-foreground">Description</p>
-								<p>{selectedLog.description}</p>
-							</div>
-							{selectedLog.impactDescription && (
+							{selectedLog.timeSavedMinutes && (
 								<div>
-									<p className="text-sm font-medium text-muted-foreground">Impact</p>
-									<p>{selectedLog.impactDescription}</p>
+									<p className="text-sm font-medium text-muted-foreground">Time Saved</p>
+									<p>{selectedLog.timeSavedMinutes} minutes</p>
 								</div>
 							)}
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<p className="text-sm font-medium text-muted-foreground">Impact Level</p>
-									<p className="capitalize">{selectedLog.impactLevel}</p>
-								</div>
-								{selectedLog.timeSavedMinutes && (
-									<div>
-										<p className="text-sm font-medium text-muted-foreground">Time Saved</p>
-										<p>{selectedLog.timeSavedMinutes} minutes</p>
-									</div>
-								)}
-							</div>
-							<div>
-								<p className="text-sm font-medium text-muted-foreground">Status</p>
-								<p>{selectedLog.isVerified ? "Verified" : "Pending Verification"}</p>
-							</div>
 						</div>
-					)}
-				</DialogContent>
-			</Dialog>
+						<div>
+							<p className="text-sm font-medium text-muted-foreground">Status</p>
+							<p>{selectedLog.isVerified ? "Verified" : "Pending Verification"}</p>
+						</div>
+					</div>
+				)}
+			</FormDialog>
 
 			{/* Verify Dialog */}
 			<ConfirmDialog

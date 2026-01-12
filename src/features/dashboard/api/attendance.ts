@@ -14,13 +14,13 @@ import { TodayAttendance, Attendance, TodayAttendanceResponse, ClockOutResponse 
 interface AttendanceHistoryApiResponse {
 	success: boolean;
 	data: {
-		records: Array<{
+		attendances: Array<{
 			attendanceId: number;
 			date: string;
 			clockIn: string | null;
 			clockOut: string | null;
-			workedDuration: string;
-			idleDuration: string;
+			workedMinutes: number;
+			idleMinutes: number;
 			lateMinutes: number;
 		}>;
 		pagination: {
@@ -31,6 +31,19 @@ interface AttendanceHistoryApiResponse {
 		};
 	};
 }
+
+/**
+ * Helper to format minutes to duration string
+ */
+const formatMinutesToDuration = (minutes: number): string => {
+	if (!minutes || minutes <= 0) return "0m";
+	const hours = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	if (hours > 0) {
+		return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+	}
+	return `${mins}m`;
+};
 
 /**
  * API functions for attendance operations
@@ -62,6 +75,15 @@ export const attendanceApi = {
 		const response = await api.get<AttendanceHistoryApiResponse>("/attendance/history", {
 			params: { page, perPage },
 		});
-		return response.data.data;
+		// Transform API response to include formatted durations
+		const data = response.data.data;
+		return {
+			attendances: data.attendances.map((att) => ({
+				...att,
+				workedDuration: formatMinutesToDuration(att.workedMinutes),
+				idleDuration: formatMinutesToDuration(att.idleMinutes),
+			})),
+			pagination: data.pagination,
+		};
 	},
 };

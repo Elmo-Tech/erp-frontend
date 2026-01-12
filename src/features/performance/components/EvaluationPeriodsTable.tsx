@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/shared/data-display/DataTable";
-import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog, FormDialog } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/shared/forms/DatePicker";
@@ -109,60 +108,45 @@ export function EvaluationPeriodsTable() {
 			/>
 
 			{/* Create Period Dialog */}
-			<Dialog
+			<FormDialog
 				open={createDialogOpen}
 				onOpenChange={setCreateDialogOpen}
+				title="Create Evaluation Period"
+				description="Create a new evaluation period for performance reviews."
+				submitLabel="Create"
+				isLoading={createMutation.isPending}
+				onSubmit={handleCreate}
 			>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Create Evaluation Period</DialogTitle>
-						<DialogDescription>Create a new evaluation period for performance reviews.</DialogDescription>
-					</DialogHeader>
-					<div className="space-y-4">
+				<div className="space-y-4">
+					<div className="space-y-2">
+						<Label htmlFor="name">Period Name</Label>
+						<Input
+							id="name"
+							placeholder="e.g., Q1 2026"
+							value={newPeriod.name}
+							onChange={(e) => setNewPeriod((prev) => ({ ...prev, name: e.target.value }))}
+						/>
+					</div>
+					<div className="grid grid-cols-2 gap-4">
 						<div className="space-y-2">
-							<Label htmlFor="name">Period Name</Label>
-							<Input
-								id="name"
-								placeholder="e.g., Q1 2026"
-								value={newPeriod.name}
-								onChange={(e) => setNewPeriod((prev) => ({ ...prev, name: e.target.value }))}
+							<Label htmlFor="startDate">Start Date</Label>
+							<DatePicker
+								value={newPeriod.startDate}
+								onChange={(value) => setNewPeriod((prev) => ({ ...prev, startDate: value }))}
+								placeholder="Select start date"
 							/>
 						</div>
-						<div className="grid grid-cols-2 gap-4">
-							<div className="space-y-2">
-								<Label htmlFor="startDate">Start Date</Label>
-								<DatePicker
-									value={newPeriod.startDate}
-									onChange={(value) => setNewPeriod((prev) => ({ ...prev, startDate: value }))}
-									placeholder="Select start date"
-								/>
-							</div>
-							<div className="space-y-2">
-								<Label htmlFor="endDate">End Date</Label>
-								<DatePicker
-									value={newPeriod.endDate}
-									onChange={(value) => setNewPeriod((prev) => ({ ...prev, endDate: value }))}
-									placeholder="Select end date"
-								/>
-							</div>
+						<div className="space-y-2">
+							<Label htmlFor="endDate">End Date</Label>
+							<DatePicker
+								value={newPeriod.endDate}
+								onChange={(value) => setNewPeriod((prev) => ({ ...prev, endDate: value }))}
+								placeholder="Select end date"
+							/>
 						</div>
 					</div>
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={() => setCreateDialogOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button
-							onClick={handleCreate}
-							disabled={createMutation.isPending}
-						>
-							{createMutation.isPending ? "Creating..." : "Create"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+				</div>
+			</FormDialog>
 
 			{/* Activate Period Dialog */}
 			<ConfirmDialog

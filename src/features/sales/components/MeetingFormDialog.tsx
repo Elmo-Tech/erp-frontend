@@ -1,14 +1,12 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { FormInput, FormSelect } from "@/components/shared";
-import { Loader2 } from "lucide-react";
+import { FormDialog, FormInput, FormSelect } from "@/components/shared";
 import { useScheduleMeeting } from "../hooks/useLeads";
 import { toast } from "sonner";
 
@@ -87,89 +85,67 @@ export function MeetingFormDialog({ open, onOpenChange, leadId }: MeetingFormDia
 	const watchLocation = form.watch("location");
 
 	return (
-		<Dialog
+		<FormDialog
 			open={open}
 			onOpenChange={handleOpenChange}
+			title="Schedule Meeting"
+			description="Set up a meeting with this lead"
+			submitLabel="Schedule Meeting"
+			isLoading={scheduleMeeting.isPending}
+			onSubmit={form.handleSubmit(onSubmit)}
 		>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Schedule Meeting</DialogTitle>
-					<DialogDescription>Set up a meeting with this lead</DialogDescription>
-				</DialogHeader>
+			<Form {...form}>
+				<div className="space-y-4">
+					<FormInput
+						control={form.control}
+						name="title"
+						label="Meeting Title"
+						placeholder="e.g., Project Requirements Discussion"
+					/>
 
-				<Form {...form}>
-					<form
-						onSubmit={form.handleSubmit(onSubmit)}
-						className="space-y-4"
-					>
+					<div className="grid grid-cols-2 gap-4">
+						<FormSelect
+							control={form.control}
+							name="location"
+							label="Location"
+							options={LOCATION_OPTIONS}
+						/>
+
+						<FormSelect
+							control={form.control}
+							name="durationMinutes"
+							label="Duration"
+							options={DURATION_OPTIONS}
+						/>
+					</div>
+
+					<FormField
+						control={form.control}
+						name="scheduledAt"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>Date & Time</FormLabel>
+								<FormControl>
+									<Input
+										type="datetime-local"
+										{...field}
+									/>
+								</FormControl>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					{watchLocation === "online" && (
 						<FormInput
 							control={form.control}
-							name="title"
-							label="Meeting Title"
-							placeholder="e.g., Project Requirements Discussion"
+							name="meetingLink"
+							label="Meeting Link"
+							placeholder="https://meet.google.com/..."
 						/>
-
-						<div className="grid grid-cols-2 gap-4">
-							<FormSelect
-								control={form.control}
-								name="location"
-								label="Location"
-								options={LOCATION_OPTIONS}
-							/>
-
-							<FormSelect
-								control={form.control}
-								name="durationMinutes"
-								label="Duration"
-								options={DURATION_OPTIONS}
-							/>
-						</div>
-
-						<FormField
-							control={form.control}
-							name="scheduledAt"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Date & Time</FormLabel>
-									<FormControl>
-										<Input
-											type="datetime-local"
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
-						{watchLocation === "online" && (
-							<FormInput
-								control={form.control}
-								name="meetingLink"
-								label="Meeting Link"
-								placeholder="https://meet.google.com/..."
-							/>
-						)}
-
-						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => handleOpenChange(false)}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={scheduleMeeting.isPending}
-							>
-								{scheduleMeeting.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-								Schedule Meeting
-							</Button>
-						</DialogFooter>
-					</form>
-				</Form>
-			</DialogContent>
-		</Dialog>
+					)}
+				</div>
+			</Form>
+		</FormDialog>
 	);
 }

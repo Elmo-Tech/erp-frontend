@@ -234,7 +234,19 @@ export const useAttendanceHistory = (page: number = 1, perPage: number = 10) => 
 		queryKey: [...attendanceKeys.history(), page, perPage],
 		queryFn: async () => {
 			const response = await attendanceApi.getAttendanceHistory(page, perPage);
-			return response;
+			// Map API response to expected format
+			return {
+				records: response.attendances.map((att) => ({
+					attendanceId: att.attendanceId,
+					date: att.date,
+					clockIn: att.clockIn,
+					clockOut: att.clockOut,
+					workedDuration: att.workedDuration || "0m",
+					idleDuration: att.idleDuration || "0m",
+					lateMinutes: att.lateMinutes || 0,
+				})),
+				pagination: response.pagination,
+			};
 		},
 		staleTime: 5 * 60 * 1000, // 5 minutes
 		gcTime: 10 * 60 * 1000, // 10 minutes

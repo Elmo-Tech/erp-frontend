@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormDialog } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { FormInput } from "@/components/shared/forms/FormInput";
@@ -95,140 +95,149 @@ export function PortalAccessDialog({ open, onOpenChange, client }: PortalAccessD
 
 	const isLoading = createAccess.isPending || revokeAccess.isPending || resetPassword.isPending;
 
+	const getTitle = () => {
+		if (credentials) return "Portal Access Created";
+		return mode === "create" ? "Create Portal Access" : "Manage Portal Access";
+	};
+
+	const getDescription = () => {
+		if (credentials) return undefined;
+		return mode === "create" ? `Give ${client.name} access to the client portal to view projects and invoices.` : `Manage portal access for ${client.name}.`;
+	};
+
 	return (
-		<Dialog
+		<FormDialog
 			open={open}
 			onOpenChange={onOpenChange}
+			title={
+				<span className="flex items-center gap-2">
+					<Key className="h-5 w-5" />
+					{getTitle()}
+				</span>
+			}
+			description={getDescription()}
+			showFooter={false}
+			size="md"
 		>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<Key className="h-5 w-5" />
-						{mode === "create" ? "Create Portal Access" : "Manage Portal Access"}
-					</DialogTitle>
-					<DialogDescription>{mode === "create" ? `Give ${client.name} access to the client portal to view projects and invoices.` : `Manage portal access for ${client.name}.`}</DialogDescription>
-				</DialogHeader>
+			{credentials ? (
+				<div className="space-y-4">
+					<Alert className="border-green-200 bg-green-50 dark:bg-green-900/20">
+						<Check className="h-4 w-4 text-green-600" />
+						<AlertTitle className="text-green-800 dark:text-green-200">Access Created!</AlertTitle>
+						<AlertDescription className="text-green-700 dark:text-green-300">
+							{form.getValues("sendWelcomeEmail") ? "Credentials have been sent to the client's email." : "Share these credentials with the client securely."}
+						</AlertDescription>
+					</Alert>
 
-				{credentials ? (
-					<div className="space-y-4">
-						<Alert className="border-green-200 bg-green-50 dark:bg-green-900/20">
-							<Check className="h-4 w-4 text-green-600" />
-							<AlertTitle className="text-green-800 dark:text-green-200">Access Created!</AlertTitle>
-							<AlertDescription className="text-green-700 dark:text-green-300">
-								{form.getValues("sendWelcomeEmail") ? "Credentials have been sent to the client's email." : "Share these credentials with the client securely."}
-							</AlertDescription>
-						</Alert>
-
-						<div className="p-4 bg-muted rounded-lg space-y-2">
-							<div className="flex items-center justify-between">
-								<span className="text-sm text-muted-foreground">Email:</span>
-								<span className="font-mono text-sm">{credentials.email}</span>
-							</div>
-							<div className="flex items-center justify-between">
-								<span className="text-sm text-muted-foreground">Password:</span>
-								<div className="flex items-center gap-2">
-									<span className="font-mono text-sm">{showPassword ? credentials.password : "••••••••"}</span>
-									<Button
-										variant="ghost"
-										size="icon"
-										className="h-6 w-6"
-										onClick={() => setShowPassword(!showPassword)}
-									>
-										{showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-									</Button>
-								</div>
+					<div className="p-4 bg-muted rounded-lg space-y-2">
+						<div className="flex items-center justify-between">
+							<span className="text-sm text-muted-foreground">Email:</span>
+							<span className="font-mono text-sm">{credentials.email}</span>
+						</div>
+						<div className="flex items-center justify-between">
+							<span className="text-sm text-muted-foreground">Password:</span>
+							<div className="flex items-center gap-2">
+								<span className="font-mono text-sm">{showPassword ? credentials.password : "••••••••"}</span>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-6 w-6"
+									onClick={() => setShowPassword(!showPassword)}
+								>
+									{showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+								</Button>
 							</div>
 						</div>
-
-						<Button
-							variant="outline"
-							className="w-full"
-							onClick={copyCredentials}
-						>
-							{copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-							{copied ? "Copied!" : "Copy Credentials"}
-						</Button>
-
-						<DialogFooter>
-							<Button onClick={() => onOpenChange(false)}>Done</Button>
-						</DialogFooter>
 					</div>
-				) : mode === "create" ? (
-					<Form {...form}>
-						<form
-							onSubmit={form.handleSubmit(handleCreate)}
-							className="space-y-4"
-						>
-							<FormInput
-								control={form.control}
-								name="password"
-								label="Password (optional)"
-								type="password"
-								placeholder="Leave empty to auto-generate"
-							/>
-							<FormCheckbox
-								control={form.control}
-								name="sendWelcomeEmail"
-								label="Send welcome email with credentials"
-							/>
 
-							<DialogFooter>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => onOpenChange(false)}
-								>
-									Cancel
-								</Button>
-								<Button
-									type="submit"
-									disabled={isLoading}
-								>
-									{isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-									Create Access
-								</Button>
-							</DialogFooter>
-						</form>
-					</Form>
-				) : (
-					<div className="space-y-4">
-						<Alert>
-							<Mail className="h-4 w-4" />
-							<AlertDescription>
-								This client has portal access with email: <strong>{client.email}</strong>
-							</AlertDescription>
-						</Alert>
+					<Button
+						variant="outline"
+						className="w-full"
+						onClick={copyCredentials}
+					>
+						{copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+						{copied ? "Copied!" : "Copy Credentials"}
+					</Button>
 
-						<div className="flex flex-col gap-2">
-							<Button
-								variant="outline"
-								onClick={handleResetPassword}
-								disabled={isLoading}
-							>
-								{resetPassword.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-								Reset Password
-							</Button>
-							<Button
-								variant="destructive"
-								onClick={handleRevoke}
-								disabled={isLoading}
-							>
-								{revokeAccess.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-								Revoke Access
-							</Button>
-						</div>
+					<div className="flex justify-end">
+						<Button onClick={() => onOpenChange(false)}>Done</Button>
+					</div>
+				</div>
+			) : mode === "create" ? (
+				<Form {...form}>
+					<form
+						onSubmit={form.handleSubmit(handleCreate)}
+						className="space-y-4"
+					>
+						<FormInput
+							control={form.control}
+							name="password"
+							label="Password (optional)"
+							type="password"
+							placeholder="Leave empty to auto-generate"
+						/>
+						<FormCheckbox
+							control={form.control}
+							name="sendWelcomeEmail"
+							label="Send welcome email with credentials"
+						/>
 
-						<DialogFooter>
+						<div className="flex justify-end gap-2">
 							<Button
+								type="button"
 								variant="outline"
 								onClick={() => onOpenChange(false)}
 							>
-								Close
+								Cancel
 							</Button>
-						</DialogFooter>
+							<Button
+								type="submit"
+								disabled={isLoading}
+							>
+								{isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+								Create Access
+							</Button>
+						</div>
+					</form>
+				</Form>
+			) : (
+				<div className="space-y-4">
+					<Alert>
+						<Mail className="h-4 w-4" />
+						<AlertDescription>
+							This client has portal access with email: <strong>{client.email}</strong>
+						</AlertDescription>
+					</Alert>
+
+					<div className="flex flex-col gap-2">
+						<Button
+							variant="outline"
+							onClick={handleResetPassword}
+							disabled={isLoading}
+						>
+							{resetPassword.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+							Reset Password
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleRevoke}
+							disabled={isLoading}
+						>
+							{revokeAccess.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+							Revoke Access
+						</Button>
 					</div>
-				)}
-			</DialogContent>
-		</Dialog>
+
+					<div className="flex justify-end">
+						<Button
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
+							Close
+						</Button>
+					</div>
+				</div>
+			)}
+		</FormDialog>
 	);
 }

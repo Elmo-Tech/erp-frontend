@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 interface FormDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	title: string;
-	description?: string;
+	title: ReactNode;
+	description?: ReactNode;
 	children: ReactNode;
 	onSubmit?: () => void;
 	submitLabel?: string;

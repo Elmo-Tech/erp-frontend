@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { FormDialog } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -27,41 +26,25 @@ export function SignContractDialog({ open, onOpenChange, onSign, isLoading }: Si
 	};
 
 	return (
-		<Dialog
+		<FormDialog
 			open={open}
 			onOpenChange={handleOpenChange}
+			title="Sign Contract"
+			description="Enter the client representative name to sign"
+			submitLabel="Sign Contract"
+			isLoading={isLoading}
+			isSubmitDisabled={!signedByClient.trim()}
+			onSubmit={handleSign}
 		>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Sign Contract</DialogTitle>
-					<DialogDescription>Enter the client representative name to sign</DialogDescription>
-				</DialogHeader>
-				<div className="space-y-4 py-4">
-					<div className="space-y-2">
-						<Label htmlFor="signedBy">Client Representative Name</Label>
-						<Input
-							id="signedBy"
-							value={signedByClient}
-							onChange={(e) => setSignedByClient(e.target.value)}
-							placeholder="Enter full name"
-						/>
-					</div>
-				</div>
-				<DialogFooter>
-					<Button
-						variant="outline"
-						onClick={() => handleOpenChange(false)}
-					>
-						Cancel
-					</Button>
-					<Button
-						onClick={handleSign}
-						disabled={isLoading || !signedByClient.trim()}
-					>
-						{isLoading ? "Signing..." : "Sign Contract"}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			<div className="space-y-2">
+				<Label htmlFor="signedBy">Client Representative Name</Label>
+				<Input
+					id="signedBy"
+					value={signedByClient}
+					onChange={(e) => setSignedByClient(e.target.value)}
+					placeholder="Enter full name"
+				/>
+			</div>
+		</FormDialog>
 	);
 }

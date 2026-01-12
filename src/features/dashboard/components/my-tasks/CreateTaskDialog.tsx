@@ -3,18 +3,27 @@
  * Form for creating new tasks
  */
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form } from "@/components/ui/form";
+import { FormDialog, FormInput, FormSelect, FormTextarea } from "@/components/shared";
 import { toast } from "sonner";
 import { useCreateTask } from "../../hooks/useTasks";
 import { TaskStatus, TaskType, TaskPriority, TaskPriorityLabels } from "../../types/task";
-import { PriorityColors } from "./constants";
+
+const taskSchema = z.object({
+	title: z.string().min(1, "Title is required"),
+	description: z.string().optional(),
+	projectId: z.string().optional(),
+	priority: z.nativeEnum(TaskPriority),
+	dueDate: z.string().optional().nullable(),
+	estimatedHours: z.number().min(0, "Must be 0 or greater").optional(),
+});
+
+type TaskFormData = z.infer<typeof taskSchema>;
 
 interface CreateTaskDialogProps {
 	open: boolean;
@@ -24,33 +33,29 @@ interface CreateTaskDialogProps {
 }
 
 export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }: CreateTaskDialogProps) {
-	const [formData, setFormData] = useState({
-		title: "",
-		description: "",
-		projectId: "",
-		priority: TaskPriority.MEDIUM,
-		dueDate: "",
-		estimatedHours: "",
-	});
-
 	const createTask = useCreateTask();
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+	const form = useForm<TaskFormData>({
+		resolver: zodResolver(taskSchema),
+		defaultValues: {
+			title: "",
+			description: "",
+			projectId: "",
+			priority: TaskPriority.MEDIUM,
+			dueDate: "",
+			estimatedHours: 0,
+		},
+	});
 
-		if (!formData.title.trim()) {
-			toast.error("Title is required");
-			return;
-		}
-
+	const handleSubmit = async (data: TaskFormData) => {
 		try {
 			await createTask.mutateAsync({
-				title: formData.title,
-				description: formData.description || undefined,
-				projectId: formData.projectId ? Number(formData.projectId) : undefined,
-				priority: formData.priority,
-				dueDate: formData.dueDate || undefined,
-				estimatedHours: formData.estimatedHours ? Number(formData.estimatedHours) : undefined,
+				title: data.title,
+				description: data.description || undefined,
+				projectId: data.projectId && data.projectId !== "my" ? Number(data.projectId) : undefined,
+				priority: data.priority,
+				dueDate: data.dueDate || undefined,
+				estimatedHours: data.estimatedHours || undefined,
 				assignedTo: currentUserId,
 				status: TaskStatus.TODO,
 				type: TaskType.MAIN,
@@ -58,149 +63,88 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 
 			toast.success("Task created successfully");
 			onOpenChange(false);
-			resetForm();
+			form.reset();
 		} catch {
 			toast.error("Failed to create task");
 		}
 	};
 
-	const resetForm = () => {
-		setFormData({
-			title: "",
-			description: "",
-			projectId: "",
-			priority: TaskPriority.MEDIUM,
-			dueDate: "",
-			estimatedHours: "",
-		});
-	};
+	const priorityOptions = Object.values(TaskPriority).map((priority) => ({
+		value: priority,
+		label: TaskPriorityLabels[priority],
+	}));
+
+	const projectOptions = [
+		{ value: "my", label: "Personal task (no project)" },
+		...projects.map((project) => ({
+			value: project.projectId.toString(),
+			label: project.title,
+		})),
+	];
 
 	return (
-		<Dialog
+		<FormDialog
 			open={open}
 			onOpenChange={onOpenChange}
+			title="Create New Task"
+			submitLabel="Create Task"
+			isLoading={createTask.isPending}
+			onSubmit={form.handleSubmit(handleSubmit)}
+			size="lg"
 		>
-			<DialogContent className="sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle>Create New Task</DialogTitle>
-				</DialogHeader>
-				<form
-					onSubmit={handleSubmit}
-					className="space-y-4"
-				>
-					<div className="space-y-2">
-						<Label htmlFor="title">Title *</Label>
-						<Input
-							id="title"
-							value={formData.title}
-							onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-							placeholder="What needs to be done?"
-							autoFocus
-						/>
-					</div>
+			<Form {...form}>
+				<div className="space-y-4">
+					<FormInput
+						control={form.control}
+						name="title"
+						label="Title *"
+						placeholder="What needs to be done?"
+					/>
 
-					<div className="space-y-2">
-						<Label htmlFor="description">Description</Label>
-						<Textarea
-							id="description"
-							value={formData.description}
-							onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-							placeholder="Add more details..."
-							rows={3}
-						/>
-					</div>
+					<FormTextarea
+						control={form.control}
+						name="description"
+						label="Description"
+						placeholder="Add more details..."
+						rows={3}
+					/>
 
-					<div className="space-y-2">
-						<Label htmlFor="project">Project (Optional)</Label>
-						<Select
-							value={formData.projectId}
-							onValueChange={(v) => setFormData({ ...formData, projectId: v })}
-						>
-							<SelectTrigger>
-								<SelectValue placeholder="Personal task (no project)" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="my">Personal task</SelectItem>
-								{projects.map((project) => (
-									<SelectItem
-										key={project.projectId}
-										value={project.projectId.toString()}
-									>
-										{project.title}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<p className="text-xs text-muted-foreground">Leave empty for a personal task.</p>
-					</div>
+					<FormSelect
+						control={form.control}
+						name="projectId"
+						label="Project (Optional)"
+						placeholder="Personal task (no project)"
+						options={projectOptions}
+						description="Leave empty for a personal task."
+					/>
 
 					<div className="grid grid-cols-2 gap-4">
-						<div className="space-y-2">
-							<Label htmlFor="priority">Priority</Label>
-							<Select
-								value={formData.priority}
-								onValueChange={(v) => setFormData({ ...formData, priority: v as TaskPriority })}
-							>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{Object.values(TaskPriority).map((priority) => (
-										<SelectItem
-											key={priority}
-											value={priority}
-										>
-											<div className="flex items-center gap-2">
-												<div className={cn("h-2 w-2 rounded-full", PriorityColors[priority])} />
-												{TaskPriorityLabels[priority]}
-											</div>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+						<FormSelect
+							control={form.control}
+							name="priority"
+							label="Priority"
+							options={priorityOptions}
+						/>
 
-						<div className="space-y-2">
-							<Label htmlFor="dueDate">Due Date</Label>
-							<Input
-								id="dueDate"
-								type="date"
-								value={formData.dueDate}
-								onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-							/>
-						</div>
-					</div>
-
-					<div className="space-y-2">
-						<Label htmlFor="estimatedHours">Estimated Hours</Label>
-						<Input
-							id="estimatedHours"
-							type="number"
-							min="0"
-							step="0.5"
-							value={formData.estimatedHours}
-							onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
-							placeholder="0"
+						<FormInput
+							control={form.control}
+							name="dueDate"
+							label="Due Date"
+							type="date"
 						/>
 					</div>
 
-					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => onOpenChange(false)}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							disabled={createTask.isPending}
-						>
-							{createTask.isPending ? "Creating..." : "Create Task"}
-						</Button>
-					</DialogFooter>
-				</form>
-			</DialogContent>
-		</Dialog>
+					<FormInput
+						control={form.control}
+						name="estimatedHours"
+						label="Estimated Hours"
+						type="number"
+						min={0}
+						step={0.5}
+						placeholder="0"
+					/>
+				</div>
+			</Form>
+		</FormDialog>
 	);
 }

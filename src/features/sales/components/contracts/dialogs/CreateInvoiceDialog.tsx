@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { FormDialog } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,64 +44,49 @@ export function CreateInvoiceDialog({ open, onOpenChange, onCreateInvoice, isLoa
 	};
 
 	return (
-		<Dialog
+		<FormDialog
 			open={open}
 			onOpenChange={handleOpenChange}
+			title="Create Invoice from Milestone"
+			description="Create an invoice for this milestone"
+			submitLabel="Create Invoice"
+			isLoading={isLoading}
+			onSubmit={handleCreate}
 		>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Create Invoice from Milestone</DialogTitle>
-					<DialogDescription>Create an invoice for this milestone</DialogDescription>
-				</DialogHeader>
-				<div className="space-y-4 py-4">
-					<div className="space-y-2">
-						<Label htmlFor="invoiceDueDate">Due Date</Label>
-						<Input
-							id="invoiceDueDate"
-							type="date"
-							value={dueDate}
-							onChange={(e) => setDueDate(e.target.value)}
-						/>
-					</div>
-					<div className="space-y-2">
-						<Label htmlFor="invoiceNotes">Notes (Optional)</Label>
-						<Textarea
-							id="invoiceNotes"
-							value={notes}
-							onChange={(e) => setNotes(e.target.value)}
-							placeholder="Additional notes..."
-							rows={3}
-						/>
-					</div>
-					<div className="flex items-center space-x-2">
-						<Checkbox
-							id="sendImmediately"
-							checked={sendImmediately}
-							onCheckedChange={(checked) => setSendImmediately(checked === true)}
-						/>
-						<Label
-							htmlFor="sendImmediately"
-							className="text-sm font-normal cursor-pointer"
-						>
-							Send invoice immediately
-						</Label>
-					</div>
+			<div className="space-y-4">
+				<div className="space-y-2">
+					<Label htmlFor="invoiceDueDate">Due Date</Label>
+					<Input
+						id="invoiceDueDate"
+						type="date"
+						value={dueDate}
+						onChange={(e) => setDueDate(e.target.value)}
+					/>
 				</div>
-				<DialogFooter>
-					<Button
-						variant="outline"
-						onClick={() => handleOpenChange(false)}
+				<div className="space-y-2">
+					<Label htmlFor="invoiceNotes">Notes (Optional)</Label>
+					<Textarea
+						id="invoiceNotes"
+						value={notes}
+						onChange={(e) => setNotes(e.target.value)}
+						placeholder="Additional notes..."
+						rows={3}
+					/>
+				</div>
+				<div className="flex items-center space-x-2">
+					<Checkbox
+						id="sendImmediately"
+						checked={sendImmediately}
+						onCheckedChange={(checked) => setSendImmediately(checked === true)}
+					/>
+					<Label
+						htmlFor="sendImmediately"
+						className="text-sm font-normal cursor-pointer"
 					>
-						Cancel
-					</Button>
-					<Button
-						onClick={handleCreate}
-						disabled={isLoading}
-					>
-						{isLoading ? "Creating..." : "Create Invoice"}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+						Send invoice immediately
+					</Label>
+				</div>
+			</div>
+		</FormDialog>
 	);
 }

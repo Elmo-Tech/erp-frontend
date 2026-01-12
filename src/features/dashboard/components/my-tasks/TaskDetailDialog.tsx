@@ -3,7 +3,7 @@
  * Shows full task details with subtasks
  */
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { FormDialog } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -27,48 +27,47 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 	const hasSubtasks = task.hasChildren || (task.children && task.children.length > 0);
 
 	return (
-		<Dialog
+		<FormDialog
 			open={!!task}
 			onOpenChange={() => onClose()}
-		>
-			<DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-				<DialogHeader>
-					<div className="flex items-start gap-3">
-						<div className={cn("w-1 h-8 rounded-full shrink-0", PriorityColors[task.priority])} />
-						<div className="flex-1">
-							<DialogTitle className="text-xl">{task.title}</DialogTitle>
-							{task.project && <p className="text-sm text-muted-foreground mt-1">{task.project.title}</p>}
-						</div>
+			title={
+				<div className="flex items-start gap-3">
+					<div className={cn("w-1 h-8 rounded-full shrink-0", PriorityColors[task.priority])} />
+					<div className="flex-1">
+						<span className="text-xl">{task.title}</span>
+						{task.project && <p className="text-sm text-muted-foreground mt-1 font-normal">{task.project.title}</p>}
 					</div>
-				</DialogHeader>
-
-				<div className="space-y-6 py-4">
-					<TaskMetaSection
-						task={task}
-						onStatusChange={onStatusChange}
-					/>
-					{task.description && <TaskDescriptionSection description={task.description} />}
-					{task.tags && task.tags.length > 0 && <TaskTagsSection tags={task.tags} />}
-					{hasSubtasks && task.children && <TaskSubtasksSection subtasks={task.children} />}
-					{task.assignees && task.assignees.length > 0 && <TaskAssigneesSection assignees={task.assignees} />}
 				</div>
+			}
+			showFooter={false}
+			size="xxl"
+		>
+			<div className="space-y-6 py-4">
+				<TaskMetaSection
+					task={task}
+					onStatusChange={onStatusChange}
+				/>
+				{task.description && <TaskDescriptionSection description={task.description} />}
+				{task.tags && task.tags.length > 0 && <TaskTagsSection tags={task.tags} />}
+				{hasSubtasks && task.children && <TaskSubtasksSection subtasks={task.children} />}
+				{task.assignees && task.assignees.length > 0 && <TaskAssigneesSection assignees={task.assignees} />}
+			</div>
 
-				<DialogFooter>
-					<Button
-						variant="outline"
-						onClick={onClose}
-					>
-						Close
+			<div className="flex justify-end gap-2 pt-4 border-t">
+				<Button
+					variant="outline"
+					onClick={onClose}
+				>
+					Close
+				</Button>
+				{task.canStartTimer && task.status !== TaskStatus.COMPLETED && (
+					<Button className="gap-2">
+						<Play className="h-4 w-4" />
+						Start Timer
 					</Button>
-					{task.canStartTimer && task.status !== TaskStatus.COMPLETED && (
-						<Button className="gap-2">
-							<Play className="h-4 w-4" />
-							Start Timer
-						</Button>
-					)}
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				)}
+			</div>
+		</FormDialog>
 	);
 }
 

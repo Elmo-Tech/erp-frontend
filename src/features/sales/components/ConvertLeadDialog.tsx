@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormDialog } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { FormInput } from "@/components/shared/forms/FormInput";
@@ -87,161 +87,160 @@ export function ConvertLeadDialog({ open, onOpenChange, lead }: ConvertLeadDialo
 	const isLoading = convertLead.isPending;
 
 	return (
-		<Dialog
+		<FormDialog
 			open={open}
 			onOpenChange={onOpenChange}
+			title={
+				<span className="flex items-center gap-2">
+					<UserPlus className="h-5 w-5" />
+					Convert Lead to Client
+				</span>
+			}
+			description={`Convert "${lead.name}" to a client to start creating projects and invoices.`}
+			showFooter={false}
+			size="xxl"
 		>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<UserPlus className="h-5 w-5" />
-						Convert Lead to Client
-					</DialogTitle>
-					<DialogDescription>Convert &quot;{lead.name}&quot; to a client to start creating projects and invoices.</DialogDescription>
-				</DialogHeader>
-
-				{checkingConvert ? (
-					<div className="flex items-center justify-center py-8">
-						<Loader2 className="h-6 w-6 animate-spin" />
-					</div>
-				) : !canConvertData?.canConvert ? (
-					<Alert variant="destructive">
+			{checkingConvert ? (
+				<div className="flex items-center justify-center py-8">
+					<Loader2 className="h-6 w-6 animate-spin" />
+				</div>
+			) : !canConvertData?.canConvert ? (
+				<Alert variant="destructive">
+					<AlertCircle className="h-4 w-4" />
+					<AlertDescription>{canConvertData?.reason}</AlertDescription>
+				</Alert>
+			) : canConvertData?.existingClientId ? (
+				<div className="space-y-4">
+					<Alert>
 						<AlertCircle className="h-4 w-4" />
-						<AlertDescription>{canConvertData?.reason}</AlertDescription>
+						<AlertDescription>
+							A client with email &quot;{lead.email}&quot; already exists: <strong>{canConvertData.existingClientName}</strong>. The lead will be linked to this existing client.
+						</AlertDescription>
 					</Alert>
-				) : canConvertData?.existingClientId ? (
-					<div className="space-y-4">
-						<Alert>
-							<AlertCircle className="h-4 w-4" />
-							<AlertDescription>
-								A client with email &quot;{lead.email}&quot; already exists: <strong>{canConvertData.existingClientName}</strong>. The lead will be linked to this existing client.
-							</AlertDescription>
-						</Alert>
-						<DialogFooter>
-							<Button
-								variant="outline"
-								onClick={() => onOpenChange(false)}
-							>
-								Cancel
-							</Button>
-							<Button
-								onClick={handleQuickConvert}
-								disabled={isLoading}
-							>
-								{isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-								Link to Existing Client
-							</Button>
-						</DialogFooter>
-					</div>
-				) : !showForm ? (
-					<div className="space-y-4">
-						<Alert className="border-green-200 bg-green-50 dark:bg-green-900/20">
-							<CheckCircle2 className="h-4 w-4 text-green-600" />
-							<AlertDescription className="text-green-800 dark:text-green-200">This lead can be converted to a client. You can convert quickly with the lead&apos;s existing data or customize the client details.</AlertDescription>
-						</Alert>
-						<DialogFooter className="flex-col sm:flex-row gap-2">
-							<Button
-								variant="outline"
-								onClick={() => onOpenChange(false)}
-							>
-								Cancel
-							</Button>
-							<Button
-								variant="secondary"
-								onClick={() => setShowForm(true)}
-							>
-								Customize Details
-							</Button>
-							<Button
-								onClick={handleQuickConvert}
-								disabled={isLoading}
-							>
-								{isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-								Quick Convert
-							</Button>
-						</DialogFooter>
-					</div>
-				) : (
-					<Form {...form}>
-						<form
-							onSubmit={form.handleSubmit(onSubmit)}
-							className="space-y-4"
+					<div className="flex justify-end gap-2">
+						<Button
+							variant="outline"
+							onClick={() => onOpenChange(false)}
 						>
-							<div className="grid grid-cols-2 gap-4">
-								<FormInput
-									control={form.control}
-									name="name"
-									label="Name"
-								/>
-								<FormInput
-									control={form.control}
-									name="email"
-									label="Email"
-									type="email"
-								/>
-								<FormInput
-									control={form.control}
-									name="phone"
-									label="Phone"
-								/>
-								<FormInput
-									control={form.control}
-									name="company"
-									label="Company"
-								/>
-								<FormInput
-									control={form.control}
-									name="position"
-									label="Position"
-								/>
-								<FormInput
-									control={form.control}
-									name="website"
-									label="Website"
-								/>
-								<FormInput
-									control={form.control}
-									name="city"
-									label="City"
-								/>
-								<FormInput
-									control={form.control}
-									name="country"
-									label="Country"
-								/>
-							</div>
+							Cancel
+						</Button>
+						<Button
+							onClick={handleQuickConvert}
+							disabled={isLoading}
+						>
+							{isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+							Link to Existing Client
+						</Button>
+					</div>
+				</div>
+			) : !showForm ? (
+				<div className="space-y-4">
+					<Alert className="border-green-200 bg-green-50 dark:bg-green-900/20">
+						<CheckCircle2 className="h-4 w-4 text-green-600" />
+						<AlertDescription className="text-green-800 dark:text-green-200">This lead can be converted to a client. You can convert quickly with the lead&apos;s existing data or customize the client details.</AlertDescription>
+					</Alert>
+					<div className="flex flex-col sm:flex-row justify-end gap-2">
+						<Button
+							variant="outline"
+							onClick={() => onOpenChange(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="secondary"
+							onClick={() => setShowForm(true)}
+						>
+							Customize Details
+						</Button>
+						<Button
+							onClick={handleQuickConvert}
+							disabled={isLoading}
+						>
+							{isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+							Quick Convert
+						</Button>
+					</div>
+				</div>
+			) : (
+				<Form {...form}>
+					<form
+						onSubmit={form.handleSubmit(onSubmit)}
+						className="space-y-4"
+					>
+						<div className="grid grid-cols-2 gap-4">
 							<FormInput
 								control={form.control}
-								name="address"
-								label="Address"
+								name="name"
+								label="Name"
 							/>
-							<FormTextarea
+							<FormInput
 								control={form.control}
-								name="notes"
-								label="Notes"
-								rows={3}
+								name="email"
+								label="Email"
+								type="email"
 							/>
+							<FormInput
+								control={form.control}
+								name="phone"
+								label="Phone"
+							/>
+							<FormInput
+								control={form.control}
+								name="company"
+								label="Company"
+							/>
+							<FormInput
+								control={form.control}
+								name="position"
+								label="Position"
+							/>
+							<FormInput
+								control={form.control}
+								name="website"
+								label="Website"
+							/>
+							<FormInput
+								control={form.control}
+								name="city"
+								label="City"
+							/>
+							<FormInput
+								control={form.control}
+								name="country"
+								label="Country"
+							/>
+						</div>
+						<FormInput
+							control={form.control}
+							name="address"
+							label="Address"
+						/>
+						<FormTextarea
+							control={form.control}
+							name="notes"
+							label="Notes"
+							rows={3}
+						/>
 
-							<DialogFooter>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => setShowForm(false)}
-								>
-									Back
-								</Button>
-								<Button
-									type="submit"
-									disabled={isLoading}
-								>
-									{isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-									Convert to Client
-								</Button>
-							</DialogFooter>
-						</form>
-					</Form>
-				)}
-			</DialogContent>
-		</Dialog>
+						<div className="flex justify-end gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setShowForm(false)}
+							>
+								Back
+							</Button>
+							<Button
+								type="submit"
+								disabled={isLoading}
+							>
+								{isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+								Convert to Client
+							</Button>
+						</div>
+					</form>
+				</Form>
+			)}
+		</FormDialog>
 	);
 }

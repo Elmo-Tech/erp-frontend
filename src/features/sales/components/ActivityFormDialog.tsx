@@ -3,11 +3,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { FormInput, FormSelect, FormTextarea } from "@/components/shared";
-import { Loader2 } from "lucide-react";
+import { FormDialog, FormInput, FormSelect, FormTextarea } from "@/components/shared";
 import { useAddLeadActivity } from "../hooks/useLeads";
 import { toast } from "sonner";
 
@@ -65,69 +62,47 @@ export function ActivityFormDialog({ open, onOpenChange, leadId }: ActivityFormD
 	};
 
 	return (
-		<Dialog
+		<FormDialog
 			open={open}
 			onOpenChange={handleOpenChange}
+			title="Add Activity"
+			description="Log an interaction with this lead"
+			submitLabel="Add Activity"
+			isLoading={addActivity.isPending}
+			onSubmit={form.handleSubmit(onSubmit)}
 		>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Add Activity</DialogTitle>
-					<DialogDescription>Log an interaction with this lead</DialogDescription>
-				</DialogHeader>
+			<Form {...form}>
+				<div className="space-y-4">
+					<FormSelect
+						control={form.control}
+						name="type"
+						label="Activity Type"
+						options={TYPE_OPTIONS}
+					/>
 
-				<Form {...form}>
-					<form
-						onSubmit={form.handleSubmit(onSubmit)}
-						className="space-y-4"
-					>
-						<FormSelect
-							control={form.control}
-							name="type"
-							label="Activity Type"
-							options={TYPE_OPTIONS}
-						/>
+					<FormInput
+						control={form.control}
+						name="title"
+						label="Title"
+						placeholder="e.g., Initial discovery call"
+					/>
 
-						<FormInput
-							control={form.control}
-							name="title"
-							label="Title"
-							placeholder="e.g., Initial discovery call"
-						/>
+					<FormTextarea
+						control={form.control}
+						name="description"
+						label="Description"
+						placeholder="Details about the activity..."
+						rows={3}
+					/>
 
-						<FormTextarea
-							control={form.control}
-							name="description"
-							label="Description"
-							placeholder="Details about the activity..."
-							rows={3}
-						/>
-
-						<FormInput
-							control={form.control}
-							name="outcome"
-							label="Outcome"
-							placeholder="e.g., Scheduled follow-up meeting"
-						/>
-
-						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => handleOpenChange(false)}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={addActivity.isPending}
-							>
-								{addActivity.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-								Add Activity
-							</Button>
-						</DialogFooter>
-					</form>
-				</Form>
-			</DialogContent>
-		</Dialog>
+					<FormInput
+						control={form.control}
+						name="outcome"
+						label="Outcome"
+						placeholder="e.g., Scheduled follow-up meeting"
+					/>
+				</div>
+			</Form>
+		</FormDialog>
 	);
 }

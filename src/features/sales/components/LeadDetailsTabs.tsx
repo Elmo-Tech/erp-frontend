@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormDialog } from "@/components/shared";
 import { useLead, useLeadActivities, useLeadMeetings } from "../hooks/useLeads";
 import { useQuotations } from "../hooks/useQuotations";
 import { UpdateLeadForm } from "./leads";
@@ -164,21 +164,19 @@ export function LeadDetailsTabs({ leadId }: LeadDetailsTabsProps) {
 				leadId={leadId}
 			/>
 
-			<Dialog
+			<FormDialog
 				open={quotationDialogOpen}
 				onOpenChange={setQuotationDialogOpen}
+				title={`Create Quotation for ${lead.name}`}
+				showFooter={false}
+				size="full"
 			>
-				<DialogContent className="max-w-4xl! max-h-[90vh] overflow-y-auto">
-					<DialogHeader>
-						<DialogTitle>Create Quotation for {lead.name}</DialogTitle>
-					</DialogHeader>
-					<QuotationBuilder
-						initialData={{ leadId: lead.leadId }}
-						onSuccess={() => setQuotationDialogOpen(false)}
-						onCancel={() => setQuotationDialogOpen(false)}
-					/>
-				</DialogContent>
-			</Dialog>
+				<QuotationBuilder
+					initialData={{ leadId: lead.leadId }}
+					onSuccess={() => setQuotationDialogOpen(false)}
+					onCancel={() => setQuotationDialogOpen(false)}
+				/>
+			</FormDialog>
 		</div>
 	);
 }
