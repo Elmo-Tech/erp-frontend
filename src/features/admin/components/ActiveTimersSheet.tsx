@@ -64,7 +64,10 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 			onOpenChange={setOpen}
 		>
 			<SheetTrigger asChild>{children}</SheetTrigger>
-			<SheetContent className="w-[500px]! sm:w-[600px]!">
+			<SheetContent
+				side="right"
+				className="w-[400px]!"
+			>
 				<SheetHeader>
 					<SheetTitle className="flex items-center gap-2">
 						<Timer className="h-5 w-5" />
@@ -83,7 +86,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 
 				<Separator className="my-4" />
 
-				<ScrollArea className="h-[calc(100vh-120px)]">
+				<ScrollArea className="h-[calc(100vh-250px)] pr-4">
 					{isLoading ? (
 						<div className="space-y-4">
 							{Array.from({ length: 3 }).map((_, i) => (
