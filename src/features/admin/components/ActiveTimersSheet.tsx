@@ -33,8 +33,9 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 	};
 
 	const formatElapsedTime = (minutes: number): string => {
-		const hours = Math.floor(minutes / 60);
-		const remainingMinutes = minutes % 60;
+		const roundedMinutes = Math.round(minutes);
+		const hours = Math.floor(roundedMinutes / 60);
+		const remainingMinutes = roundedMinutes % 60;
 
 		if (hours === 0) {
 			return `${remainingMinutes}m`;
@@ -63,7 +64,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 			onOpenChange={setOpen}
 		>
 			<SheetTrigger asChild>{children}</SheetTrigger>
-			<SheetContent className="w-[500px] sm:w-[600px]">
+			<SheetContent className="w-[500px]! sm:w-[600px]!">
 				<SheetHeader>
 					<SheetTitle className="flex items-center gap-2">
 						<Timer className="h-5 w-5" />
@@ -162,7 +163,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 												</div>
 												<div className="flex items-center gap-1">
 													<Clock className="h-3 w-3" />
-													{timer.elapsedMinutes} minutes
+													{Math.round(timer.elapsedMinutes)} minutes
 												</div>
 											</div>
 
