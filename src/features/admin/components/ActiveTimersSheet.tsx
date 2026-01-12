@@ -86,7 +86,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 
 				<Separator className="my-4" />
 
-				<ScrollArea className="h-[calc(100vh-250px)] pr-4">
+				<ScrollArea className="h-[calc(100vh-250px)] p-2">
 					{isLoading ? (
 						<div className="space-y-4">
 							{Array.from({ length: 3 }).map((_, i) => (
@@ -198,13 +198,33 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 				</ScrollArea>
 
 				{activeTimers.length > 0 && (
-					<>
-						<Separator className="my-4" />
-						<div className="flex items-center justify-between text-sm text-muted-foreground">
-							<span>Total active timers: {activeTimers.length}</span>
-							<span>Auto-refreshes every 30 seconds</span>
+					<div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-3">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+									<User className="h-4 w-4 text-primary" />
+								</div>
+								<div>
+									<p className="text-sm font-medium">{activeTimers.length} Active</p>
+									<p className="text-xs text-muted-foreground">Team members working</p>
+								</div>
+							</div>
+							<div className="flex items-center gap-2">
+								<div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
+									<Clock className="h-4 w-4 text-green-600" />
+								</div>
+								<div className="text-right">
+									<p className="text-sm font-medium">{formatElapsedTime(activeTimers.reduce((acc, t) => acc + t.elapsedMinutes, 0))}</p>
+									<p className="text-xs text-muted-foreground">Total time today</p>
+								</div>
+							</div>
 						</div>
-					</>
+						<Separator />
+						<div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+							<div className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" />
+							<span>Live • Auto-refreshes every 30s</span>
+						</div>
+					</div>
 				)}
 			</SheetContent>
 		</Sheet>

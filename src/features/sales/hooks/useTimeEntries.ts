@@ -327,7 +327,7 @@ export const useActiveTimers = () => {
 	return useQuery<ActiveTimer[], Error>({
 		queryKey: [...timeEntryKeys.all, "activeTimers"],
 		queryFn: timeEntriesApi.getActiveTimers,
-		refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+		refetchInterval: 500000, // Refetch every 500 seconds for real-time updates
 		staleTime: 10 * 1000, // 10 seconds (very fresh for active timers)
 		gcTime: 2 * 60 * 1000, // 2 minutes
 	});
