@@ -12,7 +12,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import { AttendanceFilters, Attendance } from "../types/attendance";
 import { AttendanceFormDialog } from "./AttendanceFormDialog";
 import { getAttendanceColumns } from "./columns/attendanceColumns";
-import { useUsers } from "../hooks/useUsers";
+import { useEmployees } from "@/features/hr/hooks";
 
 export function AttendanceManagement() {
 	const [filters, setFilters] = useState<AttendanceFilters>({});
@@ -21,7 +21,7 @@ export function AttendanceManagement() {
 	const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
 
 	const { data, isLoading, error } = useAttendanceList(filters, page);
-	const { data: usersData } = useUsers();
+	const { data: employeesData } = useEmployees({ perPage: 100 });
 	const { canManageAttendance, canViewAllAttendance } = usePermissions();
 
 	const handleUserFilterChange = (value: string | undefined) => {
@@ -69,9 +69,9 @@ export function AttendanceManagement() {
 
 	// User options for filter
 	const userOptions =
-		usersData?.users?.map((user) => ({
-			value: user.userId.toString(),
-			label: user.name,
+		employeesData?.employees?.map((employee) => ({
+			value: employee.userId.toString(),
+			label: employee.name,
 		})) || [];
 
 	// Get columns
