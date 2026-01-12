@@ -96,7 +96,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 			submitLabel="Create Task"
 			isLoading={createTask.isPending}
 			onSubmit={form.handleSubmit(handleSubmit)}
-			size="lg"
+			size="xxl"
 		>
 			<Form {...form}>
 				<div className="space-y-4">

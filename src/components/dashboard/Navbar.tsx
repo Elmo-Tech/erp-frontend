@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, User, Settings, Menu } from "lucide-react";
+import { LogOut, User, Settings, Menu, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -10,12 +10,19 @@ import { useSidebarStore } from "@/store/sidebarStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
 import { NavbarTimer } from "@/components/NavbarTimer";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { ActiveTimersSheet } from "@/features/admin/components/ActiveTimersSheet";
+import { useActiveTimers } from "@/features/sales/hooks";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
 export function Navbar() {
 	const { user, role } = useAuthStore();
 	const { toggleMobileOpen } = useSidebarStore();
 	const { mutate: logout, isPending: isLoggingOut } = useLogout();
+
+	// Only fetch active timers for admin/super-admin
+	const isAdmin = role === "admin" || role === "super-admin";
+	const { data: activeTimers = [] } = useActiveTimers();
 
 	const getInitials = (name: string) => {
 		return name
@@ -71,6 +78,28 @@ export function Navbar() {
 			<div className="flex items-center gap-3">
 				{/* Timer Widget - Compact version for navbar */}
 				<NavbarTimer />
+
+				{/* Active Timers - Admin/Super Admin only */}
+				{isAdmin && (
+					<ActiveTimersSheet>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="relative gap-2"
+						>
+							<Timer className="h-4 w-4" />
+							<span className="hidden sm:inline">Active Timers</span>
+							{activeTimers.length > 0 && (
+								<Badge
+									variant="destructive"
+									className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center"
+								>
+									{activeTimers.length}
+								</Badge>
+							)}
+						</Button>
+					</ActiveTimersSheet>
+				)}
 
 				{/* Theme Toggle */}
 				<ThemeToggle />

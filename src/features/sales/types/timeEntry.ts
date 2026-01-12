@@ -58,3 +58,15 @@ export interface TimeEntryFilters {
 	page?: number;
 	perPage?: number;
 }
+
+export interface ActiveTimer {
+	timeEntryId: number;
+	userId: number;
+	userName: string;
+	trackableId: number;
+	trackableType: string;
+	trackableDisplayName: string;
+	startTime: string;
+	elapsedMinutes: number;
+	createdAt: string;
+}

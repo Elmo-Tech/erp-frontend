@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { timeEntriesApi } from "../api/timeEntries";
-import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryFilters, TimeEntryListResponse, UpdateTimeEntryPayload } from "../types/timeEntry";
+import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryFilters, TimeEntryListResponse, UpdateTimeEntryPayload, ActiveTimer } from "../types/timeEntry";
 
 /**
  * TanStack Query hooks for time entry management
@@ -314,6 +315,39 @@ export const useUpdateTimeEntry = () => {
 					queryKey: taskKeys.lists(),
 				});
 			}
+		},
+	});
+};
+
+/**
+ * Hook to get all active timers (Admin only)
+ * Requirement 11.5: Frontend hooks for admin timer monitoring
+ */
+export const useActiveTimers = () => {
+	return useQuery<ActiveTimer[], Error>({
+		queryKey: [...timeEntryKeys.all, "activeTimers"],
+		queryFn: timeEntriesApi.getActiveTimers,
+		refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
+		staleTime: 10 * 1000, // 10 seconds (very fresh for active timers)
+		gcTime: 2 * 60 * 1000, // 2 minutes
+	});
+};
+
+/**
+ * Hook to stop a timer as admin (Admin only)
+ * Requirement 11.6: Frontend hooks for admin timer control
+ */
+export const useStopTimerAdmin = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, number>({
+		mutationFn: timeEntriesApi.stopTimerAdmin,
+		onSuccess: () => {
+			// Invalidate active timers to refresh the list
+			queryClient.invalidateQueries({ queryKey: [...timeEntryKeys.all, "activeTimers"] });
+			// Also invalidate regular time entries and active timer
+			queryClient.invalidateQueries({ queryKey: timeEntryKeys.all });
+			queryClient.invalidateQueries({ queryKey: timeEntryKeys.active() });
 		},
 	});
 };

@@ -1,0 +1,208 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client";
+
+import { useState } from "react";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Clock, User, Play, Square, AlertCircle, Timer } from "lucide-react";
+import { useActiveTimers, useStopTimerAdmin } from "@/features/sales/hooks";
+import { ActiveTimer } from "@/features/sales/types";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+interface ActiveTimersSheetProps {
+	children: React.ReactNode;
+}
+
+export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
+	const [open, setOpen] = useState(false);
+	const { data: activeTimers = [], isLoading, error } = useActiveTimers();
+	const stopTimerMutation = useStopTimerAdmin();
+
+	const handleStopTimer = async (timer: ActiveTimer) => {
+		try {
+			await stopTimerMutation.mutateAsync(timer.timeEntryId);
+			toast.success(`Stopped timer for ${timer.userName}`);
+		} catch (error) {
+			toast.error("Failed to stop timer");
+		}
+	};
+
+	const formatElapsedTime = (minutes: number): string => {
+		const hours = Math.floor(minutes / 60);
+		const remainingMinutes = minutes % 60;
+
+		if (hours === 0) {
+			return `${remainingMinutes}m`;
+		}
+
+		return `${hours}h ${remainingMinutes}m`;
+	};
+
+	const getTrackableTypeLabel = (type: string): string => {
+		if (type.includes("Task")) return "Task";
+		if (type.includes("Lead")) return "Lead";
+		if (type.includes("Quotation")) return "Quotation";
+		return "Unknown";
+	};
+
+	const getTrackableTypeColor = (type: string): string => {
+		if (type.includes("Task")) return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+		if (type.includes("Lead")) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+		if (type.includes("Quotation")) return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
+		return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+	};
+
+	return (
+		<Sheet
+			open={open}
+			onOpenChange={setOpen}
+		>
+			<SheetTrigger asChild>{children}</SheetTrigger>
+			<SheetContent className="w-[500px] sm:w-[600px]">
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<Timer className="h-5 w-5" />
+						Active Timers
+						{activeTimers.length > 0 && (
+							<Badge
+								variant="secondary"
+								className="ml-2"
+							>
+								{activeTimers.length}
+							</Badge>
+						)}
+					</SheetTitle>
+					<SheetDescription>Monitor and manage all currently running timers across the system.</SheetDescription>
+				</SheetHeader>
+
+				<Separator className="my-4" />
+
+				<ScrollArea className="h-[calc(100vh-120px)]">
+					{isLoading ? (
+						<div className="space-y-4">
+							{Array.from({ length: 3 }).map((_, i) => (
+								<Card
+									key={i}
+									className="animate-pulse"
+								>
+									<CardHeader className="pb-3">
+										<div className="flex items-center justify-between">
+											<div className="h-4 bg-gray-200 rounded w-32"></div>
+											<div className="h-6 bg-gray-200 rounded w-16"></div>
+										</div>
+									</CardHeader>
+									<CardContent>
+										<div className="space-y-2">
+											<div className="h-3 bg-gray-200 rounded w-full"></div>
+											<div className="h-3 bg-gray-200 rounded w-3/4"></div>
+										</div>
+									</CardContent>
+								</Card>
+							))}
+						</div>
+					) : error ? (
+						<Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+							<CardContent className="pt-6">
+								<div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+									<AlertCircle className="h-4 w-4" />
+									<span>Failed to load active timers</span>
+								</div>
+							</CardContent>
+						</Card>
+					) : activeTimers.length === 0 ? (
+						<Card>
+							<CardContent className="pt-6">
+								<div className="text-center text-muted-foreground">
+									<Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+									<p className="text-lg font-medium mb-2">No Active Timers</p>
+									<p className="text-sm">All team members are currently offline or have stopped their timers.</p>
+								</div>
+							</CardContent>
+						</Card>
+					) : (
+						<div className="space-y-4">
+							{activeTimers.map((timer) => (
+								<Card
+									key={timer.timeEntryId}
+									className="relative"
+								>
+									<CardHeader className="pb-3">
+										<div className="flex items-center justify-between">
+											<CardTitle className="text-base flex items-center gap-2">
+												<User className="h-4 w-4" />
+												{timer.userName}
+											</CardTitle>
+											<div className="flex items-center gap-2">
+												<Badge className={cn("text-xs", getTrackableTypeColor(timer.trackableType))}>{getTrackableTypeLabel(timer.trackableType)}</Badge>
+												<Badge
+													variant="outline"
+													className="text-xs font-mono"
+												>
+													{formatElapsedTime(timer.elapsedMinutes)}
+												</Badge>
+											</div>
+										</div>
+									</CardHeader>
+									<CardContent>
+										<div className="space-y-3">
+											<div>
+												<p className="font-medium text-sm mb-1">Working on:</p>
+												<p className="text-sm text-muted-foreground">{timer.trackableDisplayName}</p>
+											</div>
+
+											<div className="flex items-center justify-between text-xs text-muted-foreground">
+												<div className="flex items-center gap-1">
+													<Play className="h-3 w-3" />
+													Started: {new Date(timer.startTime).toLocaleTimeString()}
+												</div>
+												<div className="flex items-center gap-1">
+													<Clock className="h-3 w-3" />
+													{timer.elapsedMinutes} minutes
+												</div>
+											</div>
+
+											<Separator />
+
+											<div className="flex justify-end">
+												<Button
+													variant="destructive"
+													size="sm"
+													onClick={() => handleStopTimer(timer)}
+													disabled={stopTimerMutation.isPending}
+													className="gap-2"
+												>
+													<Square className="h-3 w-3" />
+													{stopTimerMutation.isPending ? "Stopping..." : "Stop Timer"}
+												</Button>
+											</div>
+										</div>
+									</CardContent>
+
+									{/* Running indicator */}
+									<div className="absolute top-2 right-2">
+										<div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+									</div>
+								</Card>
+							))}
+						</div>
+					)}
+				</ScrollArea>
+
+				{activeTimers.length > 0 && (
+					<>
+						<Separator className="my-4" />
+						<div className="flex items-center justify-between text-sm text-muted-foreground">
+							<span>Total active timers: {activeTimers.length}</span>
+							<span>Auto-refreshes every 30 seconds</span>
+						</div>
+					</>
+				)}
+			</SheetContent>
+		</Sheet>
+	);
+}

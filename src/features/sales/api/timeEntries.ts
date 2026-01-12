@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryListResponse, TimeEntryFilters, UpdateTimeEntryPayload } from "../types/timeEntry";
+import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryListResponse, TimeEntryFilters, UpdateTimeEntryPayload, ActiveTimer } from "../types/timeEntry";
 
 /**
  * API functions for time entry management
@@ -106,5 +106,22 @@ export const timeEntriesApi = {
 	update: async (id: number, payload: UpdateTimeEntryPayload): Promise<TimeEntry> => {
 		const response = await api.put<{ data: TimeEntry }>(`/time-entries/${id}`, payload);
 		return response.data.data;
+	},
+
+	/**
+	 * Get all active timers (Admin only)
+	 * Requirement 8.5: GET /api/v1/time-entries/active-timers endpoint for admin monitoring
+	 */
+	getActiveTimers: async (): Promise<ActiveTimer[]> => {
+		const response = await api.get<{ data: ActiveTimer[] }>("/time-entries/active-timers");
+		return response.data.data;
+	},
+
+	/**
+	 * Stop a timer as admin (Admin only)
+	 * Requirement 8.6: POST /api/v1/time-entries/{id}/stop-admin endpoint for admin control
+	 */
+	stopTimerAdmin: async (timeEntryId: number): Promise<void> => {
+		await api.post(`/time-entries/${timeEntryId}/stop-admin`);
 	},
 };

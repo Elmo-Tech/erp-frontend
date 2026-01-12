@@ -15,5 +15,5 @@ export type { ProposalTemplate, ContractTemplate, TemplatePlaceholder, CreateTem
 export { TemplateType, ContractTemplateType } from "./template";
 
 // Time Entry types
-export type { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryListResponse, TimeEntryFilters } from "./timeEntry";
+export type { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryListResponse, TimeEntryFilters, ActiveTimer } from "./timeEntry";
 export { TrackableType } from "./timeEntry";
