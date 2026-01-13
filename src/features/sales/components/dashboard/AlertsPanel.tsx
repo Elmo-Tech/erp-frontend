@@ -2,10 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAlerts } from "../../hooks/useSalesDashboard";
-import { AlertTriangle, AlertCircle, Info, Clock, FileText, Receipt, Calendar, MessageSquare, ChevronRight, Loader2 } from "lucide-react";
+import { AlertTriangle, AlertCircle, Info, Clock, FileText, Receipt, MessageSquare, ChevronRight, Loader2 } from "lucide-react";
 import type { Alert, AlertSeverity, AlertType } from "../../types/dashboard";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
@@ -63,7 +62,7 @@ function AlertItem({ alert }: AlertItemProps) {
 				<p className="text-xs mt-0.5 opacity-80 line-clamp-2">{alert.message}</p>
 				{alert.expiresAt && <p className="text-xs mt-1 opacity-60">Expires {formatDistanceToNow(new Date(alert.expiresAt), { addSuffix: true })}</p>}
 			</div>
-			{link && <ChevronRight className="h-4 w-4 opacity-50 flex-shrink-0" />}
+			{link && <ChevronRight className="h-4 w-4 opacity-50 shrink-0" />}
 		</div>
 	);
 

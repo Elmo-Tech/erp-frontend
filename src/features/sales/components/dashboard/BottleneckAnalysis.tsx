@@ -66,7 +66,7 @@ function ReasonsList({ title, reasons, emptyMessage }: ReasonsListProps) {
 								<span className="text-muted-foreground truncate flex-1 mr-2">{reason.reason || "Not specified"}</span>
 								<Badge
 									variant="outline"
-									className="flex-shrink-0"
+									className="shrink-0"
 								>
 									{reason.count}
 								</Badge>
