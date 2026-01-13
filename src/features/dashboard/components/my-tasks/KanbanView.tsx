@@ -22,15 +22,17 @@ import { useTimerStore } from "@/store/timerStore";
 import { useStartTimer, useStopTimer } from "@/features/sales/hooks";
 import { TrackableType } from "@/features/sales/types";
 import { toast } from "sonner";
+import React, { useEffect } from "react";
 
 interface KanbanViewProps {
 	tasksByStatus: Record<TaskStatus, Task[]>;
 	currentUserId?: number;
+	highlightedTaskId?: number | null;
 	onStatusChange: (task: Task, status: TaskStatus) => void;
 	onViewTask: (task: Task) => void;
 }
 
-export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onViewTask }: KanbanViewProps) {
+export function KanbanView({ tasksByStatus, currentUserId, highlightedTaskId, onStatusChange, onViewTask }: KanbanViewProps) {
 	const { activeTimer } = useTimerStore();
 	const startTimer = useStartTimer();
 	const stopTimer = useStopTimer();
@@ -41,6 +43,16 @@ export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onVie
 	// Check if active timer is for a task using global store (real-time)
 	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
 	const isTaskTimer = activeTimer?.trackableType?.toLowerCase().includes("task");
+
+	// Auto-scroll to highlighted task
+	useEffect(() => {
+		if (highlightedTaskId) {
+			const element = document.getElementById(`task-${highlightedTaskId}`);
+			if (element) {
+				element.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
+		}
+	}, [highlightedTaskId]);
 
 	const handleStartTimer = async (task: Task) => {
 		if (activeTimer) {
@@ -101,6 +113,7 @@ export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onVie
 									<KanbanCard
 										task={task}
 										currentUserId={currentUserId}
+										isHighlighted={highlightedTaskId === task.taskId}
 										onStatusChange={onStatusChange}
 										onViewTask={onViewTask}
 										activeTaskId={isTaskTimer ? activeTaskId : null}
@@ -140,8 +153,12 @@ function DraggableCard({ task, children }: { task: Task; children: React.ReactNo
 
 	const style = {
 		transform: CSS.Translate.toString(transform),
-		opacity: isDragging ? 0.5 : 1,
 	};
+
+	// When dragging, show a placeholder to maintain space
+	if (isDragging) {
+		return <div className="h-[140px] rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 animate-pulse" />;
+	}
 
 	return (
 		<div
@@ -159,6 +176,7 @@ function DraggableCard({ task, children }: { task: Task; children: React.ReactNo
 function KanbanCard({
 	task,
 	currentUserId,
+	isHighlighted,
 	onStatusChange,
 	onViewTask,
 	activeTaskId,
@@ -169,6 +187,7 @@ function KanbanCard({
 }: {
 	task: Task;
 	currentUserId?: number;
+	isHighlighted?: boolean;
 	onStatusChange: (task: Task, status: TaskStatus) => void;
 	onViewTask: (task: Task) => void;
 	activeTaskId: number | null;
@@ -186,11 +205,13 @@ function KanbanCard({
 
 	return (
 		<Card
+			id={`task-${task.taskId}`}
 			className={cn(
 				"cursor-grab active:cursor-grabbing transition-all hover:shadow-md border-l-4 group",
 				PriorityBorderColors[task.priority],
 				task.status === TaskStatus.COMPLETED && "opacity-60",
-				isTimerRunningOnThis && "ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20"
+				isTimerRunningOnThis && "ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20",
+				isHighlighted && "ring-2 ring-yellow-500 bg-yellow-50 dark:bg-yellow-900/30 animate-pulse"
 			)}
 		>
 			<CardContent className="p-3 space-y-2">

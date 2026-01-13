@@ -19,16 +19,19 @@ import { TrackableType } from "@/features/sales/types";
 import { useTimerStore } from "@/store/timerStore";
 import { toast } from "sonner";
 
+import React, { useEffect } from "react";
+
 interface ListViewProps {
 	tasks: Task[];
 	expandedTasks: Set<number>;
 	currentUserId?: number;
+	highlightedTaskId?: number | null;
 	onToggleExpand: (id: number) => void;
 	onStatusChange: (task: Task, status: TaskStatus) => void;
 	onViewTask: (task: Task) => void;
 }
 
-export function ListView({ tasks, expandedTasks, currentUserId, onToggleExpand, onStatusChange, onViewTask }: ListViewProps) {
+export function ListView({ tasks, expandedTasks, currentUserId, highlightedTaskId, onToggleExpand, onStatusChange, onViewTask }: ListViewProps) {
 	const { activeTimer } = useTimerStore();
 	const startTimer = useStartTimer();
 	const stopTimer = useStopTimer();
@@ -36,6 +39,16 @@ export function ListView({ tasks, expandedTasks, currentUserId, onToggleExpand, 
 	// Check if active timer is for a task using global store (real-time)
 	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
 	const isTaskTimer = activeTimer?.trackableType?.toLowerCase().includes("task");
+
+	// Auto-scroll to highlighted task
+	useEffect(() => {
+		if (highlightedTaskId) {
+			const element = document.getElementById(`task-${highlightedTaskId}`);
+			if (element) {
+				element.scrollIntoView({ behavior: "smooth", block: "center" });
+			}
+		}
+	}, [highlightedTaskId]);
 
 	const handleStartTimer = async (task: Task) => {
 		// Prevent starting if another timer is running
@@ -74,6 +87,7 @@ export function ListView({ tasks, expandedTasks, currentUserId, onToggleExpand, 
 							isExpanded={expandedTasks.has(task.taskId)}
 							onToggle={() => onToggleExpand(task.taskId)}
 							currentUserId={currentUserId}
+							isHighlighted={highlightedTaskId === task.taskId}
 							onStatusChange={onStatusChange}
 							onViewTask={onViewTask}
 							expandedTasks={expandedTasks}
@@ -83,6 +97,7 @@ export function ListView({ tasks, expandedTasks, currentUserId, onToggleExpand, 
 							onStopTimer={handleStopTimer}
 							isTimerLoading={startTimer.isPending || stopTimer.isPending}
 							hasActiveTimer={!!activeTimer}
+							highlightedTaskId={highlightedTaskId}
 						/>
 					))}
 				</div>
@@ -96,6 +111,8 @@ interface ListItemProps {
 	isExpanded: boolean;
 	onToggle: () => void;
 	currentUserId?: number;
+	isHighlighted?: boolean;
+	highlightedTaskId?: number | null;
 	onStatusChange: (task: Task, status: TaskStatus) => void;
 	onViewTask: (task: Task) => void;
 	expandedTasks: Set<number>;
@@ -108,7 +125,24 @@ interface ListItemProps {
 	hasActiveTimer: boolean;
 }
 
-function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, onViewTask, expandedTasks, onToggleExpand, level = 0, activeTaskId, onStartTimer, onStopTimer, isTimerLoading, hasActiveTimer }: ListItemProps) {
+function ListItem({
+	task,
+	isExpanded,
+	onToggle,
+	currentUserId,
+	isHighlighted,
+	highlightedTaskId,
+	onStatusChange,
+	onViewTask,
+	expandedTasks,
+	onToggleExpand,
+	level = 0,
+	activeTaskId,
+	onStartTimer,
+	onStopTimer,
+	isTimerLoading,
+	hasActiveTimer,
+}: ListItemProps) {
 	const hasChildren = task.hasChildren || (task.children && task.children.length > 0);
 	const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== TaskStatus.COMPLETED;
 	const myAssignment = task.assignees?.find((a) => a.userId === currentUserId);
@@ -118,11 +152,13 @@ function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, o
 	return (
 		<>
 			<div
+				id={`task-${task.taskId}`}
 				className={cn(
 					"flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors group",
 					task.status === TaskStatus.COMPLETED && "opacity-60",
 					level > 0 && "bg-muted/30",
-					isTimerRunningOnThis && "bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500"
+					isTimerRunningOnThis && "bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500",
+					isHighlighted && "ring-2 ring-yellow-500 bg-yellow-50 dark:bg-yellow-900/30 animate-pulse"
 				)}
 				style={{ paddingLeft: `${16 + level * 24}px` }}
 			>
@@ -302,6 +338,8 @@ function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, o
 							isExpanded={expandedTasks.has(child.taskId)}
 							onToggle={() => onToggleExpand(child.taskId)}
 							currentUserId={currentUserId}
+							isHighlighted={highlightedTaskId === child.taskId}
+							highlightedTaskId={highlightedTaskId}
 							onStatusChange={onStatusChange}
 							onViewTask={onViewTask}
 							expandedTasks={expandedTasks}

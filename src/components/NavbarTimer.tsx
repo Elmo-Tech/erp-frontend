@@ -55,7 +55,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 
 	const handleNavigateToTask = () => {
 		if (activeTimer && activeTimer.trackableType.includes("Task")) {
-			router.push(`/dashboard/tasks?highlight=${activeTimer.trackableId}`);
+			router.push(`/dashboard/my-tasks?highlight=${activeTimer.trackableId}`);
 		}
 	};
 

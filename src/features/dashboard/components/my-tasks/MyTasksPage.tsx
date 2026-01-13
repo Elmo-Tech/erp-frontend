@@ -5,7 +5,8 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragEndEvent } from "@dnd-kit/core";
@@ -28,6 +29,9 @@ import { LoadingSkeleton } from "./LoadingSkeleton";
 
 export function MyTasksPage() {
 	const { user } = useAuthStore();
+	const searchParams = useSearchParams();
+	const highlightParam = searchParams.get("highlight");
+	const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null);
 	const [view, setView] = useState<"kanban" | "list">("kanban");
 	const [filters, setFilters] = useState<TaskFilters>({ page: 1, perPage: 100 });
 	const [searchTerm, setSearchTerm] = useState("");
@@ -39,6 +43,19 @@ export function MyTasksPage() {
 	const { data: tasksData, isLoading } = useMyAssignedTasks(filters);
 	const { data: projectsData } = useProjects({ page: 1, perPage: 100 });
 	const updateTask = useUpdateTask();
+
+	// Handle highlight from URL
+	useEffect(() => {
+		if (highlightParam) {
+			const taskId = parseInt(highlightParam, 10);
+			if (!isNaN(taskId)) {
+				setHighlightedTaskId(taskId);
+				// Clear highlight after 5 seconds
+				const timer = setTimeout(() => setHighlightedTaskId(null), 5000);
+				return () => clearTimeout(timer);
+			}
+		}
+	}, [highlightParam]);
 
 	// DnD sensors
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }), useSensor(KeyboardSensor));
@@ -81,20 +98,13 @@ export function MyTasksPage() {
 		return tasks;
 	}, [tasksData?.tasks, searchTerm, filters.status, filters.priority, filters.projectId]);
 
-	// Group LEAF tasks by their own status for Kanban (not parent's status)
-	const tasksByStatus = useMemo(() => {
-		const grouped: Record<TaskStatus, Task[]> = {
-			[TaskStatus.TODO]: [],
-			[TaskStatus.IN_PROGRESS]: [],
-			[TaskStatus.REVIEW]: [],
-			[TaskStatus.TESTING]: [],
-			[TaskStatus.COMPLETED]: [],
-		};
+	// All leaf tasks (flattened) - used for Kanban drag/drop
+	const allLeafTasks = useMemo(() => {
+		return extractAllLeafTasks(tasksData?.tasks || []);
+	}, [tasksData?.tasks, extractAllLeafTasks]);
 
-		// Extract all leaf tasks from the hierarchy first
-		const allLeafTasks = extractAllLeafTasks(tasksData?.tasks || []);
-
-		// Apply filters to leaf tasks
+	// Filtered leaf tasks for Kanban
+	const filteredLeafTasks = useMemo(() => {
 		let leafTasks = allLeafTasks;
 		if (searchTerm) {
 			leafTasks = leafTasks.filter((t) => t.title.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -108,16 +118,28 @@ export function MyTasksPage() {
 		if (filters.projectId) {
 			leafTasks = leafTasks.filter((t) => t.projectId === Number(filters.projectId));
 		}
+		return leafTasks;
+	}, [allLeafTasks, searchTerm, filters.status, filters.priority, filters.projectId]);
+
+	// Group LEAF tasks by their own status for Kanban (not parent's status)
+	const tasksByStatus = useMemo(() => {
+		const grouped: Record<TaskStatus, Task[]> = {
+			[TaskStatus.TODO]: [],
+			[TaskStatus.IN_PROGRESS]: [],
+			[TaskStatus.REVIEW]: [],
+			[TaskStatus.TESTING]: [],
+			[TaskStatus.COMPLETED]: [],
+		};
 
 		// Group by each task's own status
-		leafTasks.forEach((task) => {
+		filteredLeafTasks.forEach((task) => {
 			if (grouped[task.status]) {
 				grouped[task.status].push(task);
 			}
 		});
 
 		return grouped;
-	}, [tasksData?.tasks, searchTerm, filters.status, filters.priority, filters.projectId, extractAllLeafTasks]);
+	}, [filteredLeafTasks]);
 
 	// Stats
 	const stats = useMemo(
@@ -155,9 +177,9 @@ export function MyTasksPage() {
 
 	const hasActiveFilters = searchTerm || filters.status || filters.priority || filters.projectId;
 
-	// Drag handlers
+	// Drag handlers - use filteredLeafTasks for Kanban view
 	const handleDragStart = (event: DragStartEvent) => {
-		const task = filteredTasks.find((t) => t.taskId === event.active.id);
+		const task = filteredLeafTasks.find((t) => t.taskId === event.active.id);
 		if (task) setActiveTask(task);
 	};
 
@@ -168,7 +190,7 @@ export function MyTasksPage() {
 
 		const taskId = active.id as number;
 		const newStatus = over.id as TaskStatus;
-		const task = filteredTasks.find((t) => t.taskId === taskId);
+		const task = filteredLeafTasks.find((t) => t.taskId === taskId);
 
 		if (!task || task.status === newStatus) return;
 
@@ -278,6 +300,7 @@ export function MyTasksPage() {
 						<KanbanView
 							tasksByStatus={tasksByStatus}
 							currentUserId={user?.userId}
+							highlightedTaskId={highlightedTaskId}
 							onStatusChange={handleStatusChange}
 							onViewTask={setSelectedTask}
 						/>
@@ -288,6 +311,7 @@ export function MyTasksPage() {
 						tasks={filteredTasks}
 						expandedTasks={expandedTasks}
 						currentUserId={user?.userId}
+						highlightedTaskId={highlightedTaskId}
 						onToggleExpand={toggleExpand}
 						onStatusChange={handleStatusChange}
 						onViewTask={setSelectedTask}

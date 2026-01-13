@@ -40,7 +40,7 @@ export function NotificationDropdown() {
 		// Navigate based on type
 		const data = notification.data as { task_id?: number; project_id?: number };
 		if (data.task_id) {
-			router.push(`/dashboard/tasks?highlight=${data.task_id}`);
+			router.push(`/dashboard/my-tasks?highlight=${data.task_id}`);
 		} else if (data.project_id) {
 			router.push(`/dashboard/projects/${data.project_id}`);
 		}
