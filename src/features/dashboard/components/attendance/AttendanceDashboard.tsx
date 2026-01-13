@@ -5,12 +5,13 @@
  * Requirements: 14.1, 14.2, 14.3, 14.4, 14.5
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Clock, LogIn, LogOut, AlertCircle, CheckCircle2, Loader2, Coffee, Play } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Clock, LogIn, LogOut, AlertCircle, CheckCircle2, Loader2, Coffee, Play, AlertTriangle } from "lucide-react";
 import { useAttendanceStatus, useClockOut } from "../../hooks/useAttendance";
 import { useTimerStore } from "@/store/timerStore";
 import { cn } from "@/lib/utils";
@@ -27,13 +28,24 @@ interface AttendanceDashboardProps {
  */
 export const AttendanceDashboard: React.FC<AttendanceDashboardProps> = ({ className = "", compact = false }) => {
 	const { summary, isLoading, error, refetch, isClocked, isClockedOut, hasActiveTimer } = useAttendanceStatus();
+	const [showTimerWarning, setShowTimerWarning] = useState(false);
 
 	const clockOutMutation = useClockOut();
 	const { activeTimer } = useTimerStore();
 	const timerIsRunning = activeTimer?.isActive ?? false;
 
-	// Handle manual clock out
-	const handleClockOut = async () => {
+	// Handle manual clock out with timer check
+	const handleClockOutClick = () => {
+		// Check if timer is running
+		if (timerIsRunning || hasActiveTimer) {
+			setShowTimerWarning(true);
+			return;
+		}
+		// No timer running, proceed with clock out
+		performClockOut();
+	};
+
+	const performClockOut = async () => {
 		try {
 			await clockOutMutation.mutateAsync();
 		} catch (error) {
@@ -149,7 +161,7 @@ export const AttendanceDashboard: React.FC<AttendanceDashboardProps> = ({ classN
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={handleClockOut}
+						onClick={handleClockOutClick}
 						disabled={clockOutMutation.isPending}
 						className="shrink-0"
 					>
@@ -238,7 +250,7 @@ export const AttendanceDashboard: React.FC<AttendanceDashboardProps> = ({ classN
 								<Separator />
 								<Button
 									variant="outline"
-									onClick={handleClockOut}
+									onClick={handleClockOutClick}
 									disabled={clockOutMutation.isPending}
 									className="w-full"
 								>
@@ -267,6 +279,25 @@ export const AttendanceDashboard: React.FC<AttendanceDashboardProps> = ({ classN
 				{/* Error Messages */}
 				{clockOutMutation.isError && <div className="text-xs text-destructive text-center">Failed to clock out. Please try again.</div>}
 			</CardContent>
+
+			{/* Timer Warning Dialog */}
+			<AlertDialog
+				open={showTimerWarning}
+				onOpenChange={setShowTimerWarning}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle className="flex items-center gap-2">
+							<AlertTriangle className="h-5 w-5 text-amber-500" />
+							Timer Still Running
+						</AlertDialogTitle>
+						<AlertDialogDescription>You have an active timer running. Please stop the timer first before clocking out to ensure your work time is recorded correctly.</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Got it</AlertDialogCancel>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</Card>
 	);
 };
