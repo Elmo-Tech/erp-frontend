@@ -2,9 +2,9 @@
  * Kanban View Component
  * Drag and drop kanban board for tasks
  * Shows only "leaf tasks" (tasks that can have timer started - no children)
+ * Tasks are pre-grouped by their own status from MyTasksPage
  */
 
-import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,8 @@ import { useDroppable, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
-import { MoreVertical, Eye, GitBranch, Folder, Calendar, Clock, Timer, Play, Square, Loader2 } from "lucide-react";
-import { Task, TaskStatus, TaskStatusLabels, TaskPriority, TaskPriorityLabels, TaskType, TaskTypeLabels } from "../../types/task";
+import { MoreVertical, Eye, Folder, Calendar, Clock, Timer, Play, Square, Loader2 } from "lucide-react";
+import { Task, TaskStatus, TaskStatusLabels, TaskPriorityLabels, TaskType, TaskTypeLabels } from "../../types/task";
 import { KanbanColumns, PriorityColors, PriorityBorderColors } from "./constants";
 import { StatusIcons } from "./StatusIcons";
 import { useTimerStore } from "@/store/timerStore";
@@ -30,50 +30,13 @@ interface KanbanViewProps {
 	onViewTask: (task: Task) => void;
 }
 
-/**
- * Recursively extract all leaf tasks (tasks with canStartTimer = true)
- * from a task hierarchy
- */
-function extractLeafTasks(tasks: Task[]): Task[] {
-	const leafTasks: Task[] = [];
-
-	function traverse(task: Task) {
-		// If task can start timer (is a leaf), add it
-		if (task.canStartTimer) {
-			leafTasks.push(task);
-		}
-		// If task has children, traverse them
-		if (task.children && task.children.length > 0) {
-			task.children.forEach(traverse);
-		}
-	}
-
-	tasks.forEach(traverse);
-	return leafTasks;
-}
-
 export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onViewTask }: KanbanViewProps) {
 	const { activeTimer } = useTimerStore();
 	const startTimer = useStartTimer();
 	const stopTimer = useStopTimer();
 
-	// Extract only leaf tasks for each status
-	const leafTasksByStatus = useMemo(() => {
-		const result: Record<TaskStatus, Task[]> = {
-			[TaskStatus.TODO]: [],
-			[TaskStatus.IN_PROGRESS]: [],
-			[TaskStatus.REVIEW]: [],
-			[TaskStatus.TESTING]: [],
-			[TaskStatus.COMPLETED]: [],
-		};
-
-		// For each status, extract leaf tasks from the hierarchy
-		Object.entries(tasksByStatus).forEach(([status, tasks]) => {
-			result[status as TaskStatus] = extractLeafTasks(tasks);
-		});
-
-		return result;
-	}, [tasksByStatus]);
+	// Tasks are already leaf tasks grouped by their own status from MyTasksPage
+	// No need to extract again
 
 	// Check if active timer is for a task using global store (real-time)
 	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
@@ -122,7 +85,7 @@ export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onVie
 								variant="secondary"
 								className="text-xs font-medium"
 							>
-								{leafTasksByStatus[column.status].length}
+								{tasksByStatus[column.status].length}
 							</Badge>
 						</div>
 					</div>
@@ -130,7 +93,7 @@ export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onVie
 					{/* Column Content */}
 					<div className={cn("rounded-b-xl border border-t-0", column.borderColor, column.color)}>
 						<DroppableColumn status={column.status}>
-							{leafTasksByStatus[column.status].map((task) => (
+							{tasksByStatus[column.status].map((task) => (
 								<DraggableCard
 									key={task.taskId}
 									task={task}
@@ -148,7 +111,7 @@ export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onVie
 									/>
 								</DraggableCard>
 							))}
-							{leafTasksByStatus[column.status].length === 0 && <div className="flex h-32 items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg m-1">Drop tasks here</div>}
+							{tasksByStatus[column.status].length === 0 && <div className="flex h-32 items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg m-1">Drop tasks here</div>}
 						</DroppableColumn>
 					</div>
 				</div>

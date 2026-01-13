@@ -43,7 +43,27 @@ export function MyTasksPage() {
 	// DnD sensors
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }), useSensor(KeyboardSensor));
 
-	// Filter tasks locally
+	/**
+	 * Extract all leaf tasks (tasks with canStartTimer = true) from hierarchy
+	 * This flattens the tree to get only actionable tasks
+	 */
+	const extractAllLeafTasks = useCallback((tasks: Task[]): Task[] => {
+		const leafTasks: Task[] = [];
+
+		function traverse(task: Task) {
+			if (task.canStartTimer) {
+				leafTasks.push(task);
+			}
+			if (task.children && task.children.length > 0) {
+				task.children.forEach(traverse);
+			}
+		}
+
+		tasks.forEach(traverse);
+		return leafTasks;
+	}, []);
+
+	// Filter tasks locally (for ListView - keeps hierarchy)
 	const filteredTasks = useMemo(() => {
 		let tasks = tasksData?.tasks || [];
 		if (searchTerm) {
@@ -61,7 +81,7 @@ export function MyTasksPage() {
 		return tasks;
 	}, [tasksData?.tasks, searchTerm, filters.status, filters.priority, filters.projectId]);
 
-	// Group tasks by status for Kanban
+	// Group LEAF tasks by their own status for Kanban (not parent's status)
 	const tasksByStatus = useMemo(() => {
 		const grouped: Record<TaskStatus, Task[]> = {
 			[TaskStatus.TODO]: [],
@@ -70,13 +90,34 @@ export function MyTasksPage() {
 			[TaskStatus.TESTING]: [],
 			[TaskStatus.COMPLETED]: [],
 		};
-		filteredTasks.forEach((task) => {
+
+		// Extract all leaf tasks from the hierarchy first
+		const allLeafTasks = extractAllLeafTasks(tasksData?.tasks || []);
+
+		// Apply filters to leaf tasks
+		let leafTasks = allLeafTasks;
+		if (searchTerm) {
+			leafTasks = leafTasks.filter((t) => t.title.toLowerCase().includes(searchTerm.toLowerCase()));
+		}
+		if (filters.status) {
+			leafTasks = leafTasks.filter((t) => t.status === filters.status);
+		}
+		if (filters.priority) {
+			leafTasks = leafTasks.filter((t) => t.priority === filters.priority);
+		}
+		if (filters.projectId) {
+			leafTasks = leafTasks.filter((t) => t.projectId === Number(filters.projectId));
+		}
+
+		// Group by each task's own status
+		leafTasks.forEach((task) => {
 			if (grouped[task.status]) {
 				grouped[task.status].push(task);
 			}
 		});
+
 		return grouped;
-	}, [filteredTasks]);
+	}, [tasksData?.tasks, searchTerm, filters.status, filters.priority, filters.projectId, extractAllLeafTasks]);
 
 	// Stats
 	const stats = useMemo(
