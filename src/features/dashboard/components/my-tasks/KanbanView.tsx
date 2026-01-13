@@ -1,8 +1,10 @@
 /**
  * Kanban View Component
  * Drag and drop kanban board for tasks
+ * Shows only "leaf tasks" (tasks that can have timer started - no children)
  */
 
+import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,10 +14,14 @@ import { useDroppable, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { format, isPast, isToday, isTomorrow } from "date-fns";
-import { MoreVertical, Eye, GitBranch, Folder, Calendar, Clock } from "lucide-react";
-import { Task, TaskStatus, TaskStatusLabels, TaskPriority, TaskPriorityLabels } from "../../types/task";
+import { MoreVertical, Eye, GitBranch, Folder, Calendar, Clock, Timer, Play, Square, Loader2 } from "lucide-react";
+import { Task, TaskStatus, TaskStatusLabels, TaskPriority, TaskPriorityLabels, TaskType, TaskTypeLabels } from "../../types/task";
 import { KanbanColumns, PriorityColors, PriorityBorderColors } from "./constants";
 import { StatusIcons } from "./StatusIcons";
+import { useTimerStore } from "@/store/timerStore";
+import { useStartTimer, useStopTimer } from "@/features/sales/hooks";
+import { TrackableType } from "@/features/sales/types";
+import { toast } from "sonner";
 
 interface KanbanViewProps {
 	tasksByStatus: Record<TaskStatus, Task[]>;
@@ -24,7 +30,80 @@ interface KanbanViewProps {
 	onViewTask: (task: Task) => void;
 }
 
+/**
+ * Recursively extract all leaf tasks (tasks with canStartTimer = true)
+ * from a task hierarchy
+ */
+function extractLeafTasks(tasks: Task[]): Task[] {
+	const leafTasks: Task[] = [];
+
+	function traverse(task: Task) {
+		// If task can start timer (is a leaf), add it
+		if (task.canStartTimer) {
+			leafTasks.push(task);
+		}
+		// If task has children, traverse them
+		if (task.children && task.children.length > 0) {
+			task.children.forEach(traverse);
+		}
+	}
+
+	tasks.forEach(traverse);
+	return leafTasks;
+}
+
 export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onViewTask }: KanbanViewProps) {
+	const { activeTimer } = useTimerStore();
+	const startTimer = useStartTimer();
+	const stopTimer = useStopTimer();
+
+	// Extract only leaf tasks for each status
+	const leafTasksByStatus = useMemo(() => {
+		const result: Record<TaskStatus, Task[]> = {
+			[TaskStatus.TODO]: [],
+			[TaskStatus.IN_PROGRESS]: [],
+			[TaskStatus.REVIEW]: [],
+			[TaskStatus.TESTING]: [],
+			[TaskStatus.COMPLETED]: [],
+		};
+
+		// For each status, extract leaf tasks from the hierarchy
+		Object.entries(tasksByStatus).forEach(([status, tasks]) => {
+			result[status as TaskStatus] = extractLeafTasks(tasks);
+		});
+
+		return result;
+	}, [tasksByStatus]);
+
+	// Check if active timer is for a task using global store (real-time)
+	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
+	const isTaskTimer = activeTimer?.trackableType?.toLowerCase().includes("task");
+
+	const handleStartTimer = async (task: Task) => {
+		if (activeTimer) {
+			toast.error("Please stop the current timer first");
+			return;
+		}
+		try {
+			await startTimer.mutateAsync({
+				trackableType: "task" as TrackableType,
+				trackableId: task.taskId,
+			});
+			toast.success(`Timer started for "${task.title}"`);
+		} catch {
+			toast.error("Failed to start timer");
+		}
+	};
+
+	const handleStopTimer = async () => {
+		try {
+			await stopTimer.mutateAsync();
+			toast.success("Timer stopped");
+		} catch {
+			toast.error("Failed to stop timer");
+		}
+	};
+
 	return (
 		<div className="flex gap-4 overflow-x-auto pb-4">
 			{KanbanColumns.map((column) => (
@@ -43,7 +122,7 @@ export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onVie
 								variant="secondary"
 								className="text-xs font-medium"
 							>
-								{tasksByStatus[column.status].length}
+								{leafTasksByStatus[column.status].length}
 							</Badge>
 						</div>
 					</div>
@@ -51,7 +130,7 @@ export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onVie
 					{/* Column Content */}
 					<div className={cn("rounded-b-xl border border-t-0", column.borderColor, column.color)}>
 						<DroppableColumn status={column.status}>
-							{tasksByStatus[column.status].map((task) => (
+							{leafTasksByStatus[column.status].map((task) => (
 								<DraggableCard
 									key={task.taskId}
 									task={task}
@@ -61,10 +140,15 @@ export function KanbanView({ tasksByStatus, currentUserId, onStatusChange, onVie
 										currentUserId={currentUserId}
 										onStatusChange={onStatusChange}
 										onViewTask={onViewTask}
+										activeTaskId={isTaskTimer ? activeTaskId : null}
+										hasActiveTimer={!!activeTimer}
+										onStartTimer={handleStartTimer}
+										onStopTimer={handleStopTimer}
+										isTimerLoading={startTimer.isPending || stopTimer.isPending}
 									/>
 								</DraggableCard>
 							))}
-							{tasksByStatus[column.status].length === 0 && <div className="flex h-32 items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg m-1">Drop tasks here</div>}
+							{leafTasksByStatus[column.status].length === 0 && <div className="flex h-32 items-center justify-center text-sm text-muted-foreground border-2 border-dashed rounded-lg m-1">Drop tasks here</div>}
 						</DroppableColumn>
 					</div>
 				</div>
@@ -109,19 +193,55 @@ function DraggableCard({ task, children }: { task: Task; children: React.ReactNo
 }
 
 // Kanban Card
-function KanbanCard({ task, currentUserId, onStatusChange, onViewTask }: { task: Task; currentUserId?: number; onStatusChange: (task: Task, status: TaskStatus) => void; onViewTask: (task: Task) => void }) {
+function KanbanCard({
+	task,
+	currentUserId,
+	onStatusChange,
+	onViewTask,
+	activeTaskId,
+	hasActiveTimer,
+	onStartTimer,
+	onStopTimer,
+	isTimerLoading,
+}: {
+	task: Task;
+	currentUserId?: number;
+	onStatusChange: (task: Task, status: TaskStatus) => void;
+	onViewTask: (task: Task) => void;
+	activeTaskId: number | null;
+	hasActiveTimer: boolean;
+	onStartTimer: (task: Task) => void;
+	onStopTimer: () => void;
+	isTimerLoading: boolean;
+}) {
 	const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== TaskStatus.COMPLETED;
 	const isDueToday = task.dueDate && isToday(new Date(task.dueDate));
 	const isDueTomorrow = task.dueDate && isTomorrow(new Date(task.dueDate));
 	const myAssignment = task.assignees?.find((a) => a.userId === currentUserId);
-	const hasSubtasks = task.hasChildren || (task.children && task.children.length > 0);
+	const isTimerRunningOnThis = activeTaskId === task.taskId;
+	const isTimerRunningOnOther = hasActiveTimer && !isTimerRunningOnThis;
 
 	return (
-		<Card className={cn("cursor-grab active:cursor-grabbing transition-all hover:shadow-md border-l-4 group", PriorityBorderColors[task.priority], task.status === TaskStatus.COMPLETED && "opacity-60")}>
+		<Card
+			className={cn(
+				"cursor-grab active:cursor-grabbing transition-all hover:shadow-md border-l-4 group",
+				PriorityBorderColors[task.priority],
+				task.status === TaskStatus.COMPLETED && "opacity-60",
+				isTimerRunningOnThis && "ring-2 ring-green-500 bg-green-50 dark:bg-green-900/20"
+			)}
+		>
 			<CardContent className="p-3 space-y-2">
-				{/* Header with menu */}
+				{/* Header with timer indicator and menu */}
 				<div className="flex items-start justify-between gap-2">
-					<h4 className={cn("font-medium text-sm line-clamp-2 flex-1", task.status === TaskStatus.COMPLETED && "line-through")}>{task.title}</h4>
+					<div className="flex items-center gap-2 flex-1 min-w-0">
+						{isTimerRunningOnThis && (
+							<div className="flex items-center gap-1 shrink-0">
+								<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+								<Timer className="h-3 w-3 text-green-600" />
+							</div>
+						)}
+						<h4 className={cn("font-medium text-sm line-clamp-2 flex-1", task.status === TaskStatus.COMPLETED && "line-through")}>{task.title}</h4>
+					</div>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
@@ -141,12 +261,6 @@ function KanbanCard({ task, currentUserId, onStatusChange, onViewTask }: { task:
 								<Eye className="h-4 w-4 mr-2" />
 								View Details
 							</DropdownMenuItem>
-							{hasSubtasks && (
-								<DropdownMenuItem onClick={() => onViewTask(task)}>
-									<GitBranch className="h-4 w-4 mr-2" />
-									View Subtasks ({task.children?.length || 0})
-								</DropdownMenuItem>
-							)}
 							<DropdownMenuSeparator />
 							<div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Move to</div>
 							{Object.values(TaskStatus).map((status) => (
@@ -163,7 +277,7 @@ function KanbanCard({ task, currentUserId, onStatusChange, onViewTask }: { task:
 					</DropdownMenu>
 				</div>
 
-				{/* Project & Subtasks indicator */}
+				{/* Project & Task Type */}
 				<div className="flex items-center gap-2 flex-wrap">
 					{task.project && (
 						<div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -171,15 +285,12 @@ function KanbanCard({ task, currentUserId, onStatusChange, onViewTask }: { task:
 							<span className="truncate max-w-[120px]">{task.project.title}</span>
 						</div>
 					)}
-					{hasSubtasks && (
-						<Badge
-							variant="outline"
-							className="text-[10px] h-5 gap-1"
-						>
-							<GitBranch className="h-3 w-3" />
-							{task.children?.length || "+"} subtasks
-						</Badge>
-					)}
+					<Badge
+						variant="outline"
+						className={cn("text-[10px] h-5", task.type === TaskType.WEEKLY && "border-cyan-300 text-cyan-700 bg-cyan-50", task.type === TaskType.SUBTASK && "border-slate-300 text-slate-600 bg-slate-50")}
+					>
+						{TaskTypeLabels[task.type]}
+					</Badge>
 				</div>
 
 				{/* Meta Row */}
@@ -212,25 +323,65 @@ function KanbanCard({ task, currentUserId, onStatusChange, onViewTask }: { task:
 					</div>
 				)}
 
-				{/* Footer */}
+				{/* Footer with Timer Button */}
 				<div className="flex items-center justify-between pt-2 border-t">
-					{myAssignment ? (
-						<Badge
-							variant="secondary"
-							className="text-[10px] h-5"
-						>
-							{myAssignment.role}
-							{myAssignment.isPrimary && " ★"}
-						</Badge>
-					) : (
-						<span />
-					)}
-					<Tooltip>
-						<TooltipTrigger>
-							<div className={cn("h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-slate-900", PriorityColors[task.priority])} />
-						</TooltipTrigger>
-						<TooltipContent>{TaskPriorityLabels[task.priority]} Priority</TooltipContent>
-					</Tooltip>
+					<div className="flex items-center gap-2">
+						{myAssignment ? (
+							<Badge
+								variant="secondary"
+								className="text-[10px] h-5"
+							>
+								{myAssignment.role}
+								{myAssignment.isPrimary && " ★"}
+							</Badge>
+						) : (
+							<span />
+						)}
+					</div>
+					<div className="flex items-center gap-2">
+						{/* Timer Button */}
+						{task.status !== TaskStatus.COMPLETED && task.canStartTimer && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									{isTimerRunningOnThis ? (
+										<Button
+											size="sm"
+											variant="destructive"
+											className="h-6 w-6 p-0"
+											onClick={(e) => {
+												e.stopPropagation();
+												onStopTimer();
+											}}
+											disabled={isTimerLoading}
+										>
+											{isTimerLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Square className="h-3 w-3" />}
+										</Button>
+									) : (
+										<Button
+											size="sm"
+											variant="ghost"
+											className="h-6 w-6 p-0"
+											onClick={(e) => {
+												e.stopPropagation();
+												onStartTimer(task);
+											}}
+											disabled={isTimerLoading || isTimerRunningOnOther}
+										>
+											{isTimerLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+										</Button>
+									)}
+								</TooltipTrigger>
+								<TooltipContent>{isTimerRunningOnThis ? "Stop Timer" : isTimerRunningOnOther ? "Stop other timer first" : "Start Timer"}</TooltipContent>
+							</Tooltip>
+						)}
+						{/* Priority Indicator */}
+						<Tooltip>
+							<TooltipTrigger>
+								<div className={cn("h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-slate-900", PriorityColors[task.priority])} />
+							</TooltipTrigger>
+							<TooltipContent>{TaskPriorityLabels[task.priority]} Priority</TooltipContent>
+						</Tooltip>
+					</div>
 				</div>
 			</CardContent>
 		</Card>

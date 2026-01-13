@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { timeEntriesApi } from "../api/timeEntries";
 import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryFilters, TimeEntryListResponse, UpdateTimeEntryPayload, ActiveTimer } from "../types/timeEntry";
+import { useTimerStore } from "@/store/timerStore";
 
 /**
  * TanStack Query hooks for time entry management
@@ -98,13 +99,25 @@ export const useTimeEntriesByUser = (userId: number, enabled = true) => {
 /**
  * Hook to start a timer for a trackable entity
  * Requirement 11.4: Frontend hooks for time tracking operations
+ * Updates global timer store immediately for real-time UI updates
  */
 export const useStartTimer = () => {
 	const queryClient = useQueryClient();
+	const { setActiveTimer } = useTimerStore.getState();
 
 	return useMutation<TimeEntry, Error, StartTimerPayload>({
 		mutationFn: timeEntriesApi.start,
 		onSuccess: (newTimeEntry) => {
+			// Update global timer store immediately for real-time UI
+			setActiveTimer({
+				timeEntryId: newTimeEntry.timeEntryId,
+				startTime: newTimeEntry.startTime,
+				trackableType: newTimeEntry.trackableType,
+				trackableId: newTimeEntry.trackableId,
+				trackableDisplayName: newTimeEntry.trackableDisplayName,
+				isActive: true,
+			});
+
 			// Invalidate active timer query to show the new active timer
 			queryClient.invalidateQueries({ queryKey: timeEntryKeys.active() });
 
@@ -136,13 +149,18 @@ export const useStartTimer = () => {
 /**
  * Hook to stop the active timer
  * Requirement 11.4: Frontend hooks for time tracking operations
+ * Updates global timer store immediately for real-time UI updates
  */
 export const useStopTimer = () => {
 	const queryClient = useQueryClient();
+	const { setActiveTimer } = useTimerStore.getState();
 
 	return useMutation<TimeEntry, Error, void>({
 		mutationFn: timeEntriesApi.stop,
 		onSuccess: (stoppedTimeEntry) => {
+			// Update global timer store immediately for real-time UI
+			setActiveTimer(null);
+
 			// Invalidate active timer query to clear the active timer
 			queryClient.invalidateQueries({ queryKey: timeEntryKeys.active() });
 

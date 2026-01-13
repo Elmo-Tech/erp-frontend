@@ -10,11 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Calendar, Clock, Play, Square, Loader2 } from "lucide-react";
+import { Calendar, Clock, Play, Square, Loader2, Timer } from "lucide-react";
 import { Task, TaskStatus, TaskStatusLabels, TaskPriorityLabels } from "../../types/task";
 import { PriorityColors } from "./constants";
 import { StatusIcons } from "./StatusIcons";
-import { useStartTimer, useStopTimer, useActiveTimer } from "@/features/sales/hooks";
+import { useStartTimer, useStopTimer } from "@/features/sales/hooks";
+import { useTimerStore } from "@/store/timerStore";
 import { TrackableType } from "@/features/sales/types";
 import { toast } from "sonner";
 
@@ -25,7 +26,7 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDialogProps) {
-	const { data: activeTimerData } = useActiveTimer();
+	const { activeTimer } = useTimerStore();
 	const startTimer = useStartTimer();
 	const stopTimer = useStopTimer();
 
@@ -33,13 +34,18 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 
 	const hasSubtasks = task.hasChildren || (task.children && task.children.length > 0);
 
-	// Check if active timer is for a task
-	const activeTaskId = activeTimerData?.isActive && activeTimerData?.timeEntry ? (String(activeTimerData.timeEntry.trackableType).toLowerCase().includes("task") ? activeTimerData.timeEntry.trackableId : null) : null;
-	const isTimerRunningOnThis = activeTaskId === task.taskId;
-	const isTimerRunningOnOther = activeTaskId !== null && activeTaskId !== task.taskId;
+	// Check if active timer is for a task using global store (real-time)
+	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
+	const isTaskTimer = activeTimer?.trackableType?.toLowerCase().includes("task");
+	const isTimerRunningOnThis = isTaskTimer && activeTaskId === task.taskId;
+	const isTimerRunningOnOther = !!activeTimer && !isTimerRunningOnThis;
 	const isTimerLoading = startTimer.isPending || stopTimer.isPending;
 
 	const handleStartTimer = async () => {
+		if (activeTimer) {
+			toast.error("Please stop the current timer first");
+			return;
+		}
 		try {
 			await startTimer.mutateAsync({
 				trackableType: "task" as TrackableType,
@@ -68,7 +74,15 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 				<div className="flex items-start gap-3">
 					<div className={cn("w-1 h-8 rounded-full shrink-0", PriorityColors[task.priority])} />
 					<div className="flex-1">
-						<span className="text-xl">{task.title}</span>
+						<div className="flex items-center gap-2">
+							{isTimerRunningOnThis && (
+								<div className="flex items-center gap-1">
+									<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+									<Timer className="h-4 w-4 text-green-600" />
+								</div>
+							)}
+							<span className="text-xl">{task.title}</span>
+						</div>
 						{task.project && <p className="text-sm text-muted-foreground mt-1 font-normal">{task.project.title}</p>}
 					</div>
 				</div>

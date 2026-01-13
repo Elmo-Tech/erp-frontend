@@ -1,6 +1,6 @@
 /**
  * List View Component
- * Table/list view for tasks with expandable subtasks
+ * Table/list view for tasks with expandable subtasks (hierarchical display)
  */
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,12 +10,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { format, isPast } from "date-fns";
-import { ChevronRight, ChevronDown, Play, Square, MoreVertical, Eye, Edit, GitBranch, Calendar, Clock, CheckCircle2, Loader2 } from "lucide-react";
-import { Task, TaskStatus, TaskStatusLabels } from "../../types/task";
+import { ChevronRight, ChevronDown, Play, Square, MoreVertical, Eye, Edit, GitBranch, Calendar, Clock, CheckCircle2, Loader2, Timer } from "lucide-react";
+import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels } from "../../types/task";
 import { PriorityColors, StatusColors } from "./constants";
 import { StatusIcons } from "./StatusIcons";
 import { useStartTimer, useStopTimer, useActiveTimer } from "@/features/sales/hooks";
 import { TrackableType } from "@/features/sales/types";
+import { useTimerStore } from "@/store/timerStore";
 import { toast } from "sonner";
 
 interface ListViewProps {
@@ -28,14 +29,20 @@ interface ListViewProps {
 }
 
 export function ListView({ tasks, expandedTasks, currentUserId, onToggleExpand, onStatusChange, onViewTask }: ListViewProps) {
-	const { data: activeTimerData } = useActiveTimer();
+	const { activeTimer } = useTimerStore();
 	const startTimer = useStartTimer();
 	const stopTimer = useStopTimer();
 
-	// Check if active timer is for a task - trackableType can be enum or string from API
-	const activeTaskId = activeTimerData?.isActive && activeTimerData?.timeEntry ? (String(activeTimerData.timeEntry.trackableType).toLowerCase().includes("task") ? activeTimerData.timeEntry.trackableId : null) : null;
+	// Check if active timer is for a task using global store (real-time)
+	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
+	const isTaskTimer = activeTimer?.trackableType?.toLowerCase().includes("task");
 
 	const handleStartTimer = async (task: Task) => {
+		// Prevent starting if another timer is running
+		if (activeTimer) {
+			toast.error("Please stop the current timer first");
+			return;
+		}
 		try {
 			await startTimer.mutateAsync({
 				trackableType: "task" as TrackableType,
@@ -71,10 +78,11 @@ export function ListView({ tasks, expandedTasks, currentUserId, onToggleExpand, 
 							onViewTask={onViewTask}
 							expandedTasks={expandedTasks}
 							onToggleExpand={onToggleExpand}
-							activeTaskId={activeTaskId}
+							activeTaskId={isTaskTimer ? activeTaskId : null}
 							onStartTimer={handleStartTimer}
 							onStopTimer={handleStopTimer}
 							isTimerLoading={startTimer.isPending || stopTimer.isPending}
+							hasActiveTimer={!!activeTimer}
 						/>
 					))}
 				</div>
@@ -97,19 +105,25 @@ interface ListItemProps {
 	onStartTimer: (task: Task) => void;
 	onStopTimer: () => void;
 	isTimerLoading: boolean;
+	hasActiveTimer: boolean;
 }
 
-function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, onViewTask, expandedTasks, onToggleExpand, level = 0, activeTaskId, onStartTimer, onStopTimer, isTimerLoading }: ListItemProps) {
+function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, onViewTask, expandedTasks, onToggleExpand, level = 0, activeTaskId, onStartTimer, onStopTimer, isTimerLoading, hasActiveTimer }: ListItemProps) {
 	const hasChildren = task.hasChildren || (task.children && task.children.length > 0);
 	const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== TaskStatus.COMPLETED;
 	const myAssignment = task.assignees?.find((a) => a.userId === currentUserId);
 	const isTimerRunningOnThis = activeTaskId === task.taskId;
-	const isTimerRunningOnOther = activeTaskId !== null && activeTaskId !== task.taskId;
+	const isTimerRunningOnOther = hasActiveTimer && !isTimerRunningOnThis;
 
 	return (
 		<>
 			<div
-				className={cn("flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors group", task.status === TaskStatus.COMPLETED && "opacity-60", level > 0 && "bg-muted/30")}
+				className={cn(
+					"flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors group",
+					task.status === TaskStatus.COMPLETED && "opacity-60",
+					level > 0 && "bg-muted/30",
+					isTimerRunningOnThis && "bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500"
+				)}
 				style={{ paddingLeft: `${16 + level * 24}px` }}
 			>
 				{/* Expand Button */}
@@ -122,6 +136,14 @@ function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, o
 
 				{/* Priority Indicator */}
 				<div className={cn("w-1 h-10 rounded-full shrink-0", PriorityColors[task.priority])} />
+
+				{/* Active Timer Indicator */}
+				{isTimerRunningOnThis && (
+					<div className="flex items-center gap-1 shrink-0">
+						<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+						<Timer className="h-4 w-4 text-green-600" />
+					</div>
+				)}
 
 				{/* Status Dropdown */}
 				<DropdownMenu>
@@ -151,6 +173,18 @@ function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, o
 				>
 					<div className="flex items-center gap-2">
 						<h4 className={cn("font-medium truncate", task.status === TaskStatus.COMPLETED && "line-through")}>{task.title}</h4>
+						{/* Task Type Badge */}
+						<Badge
+							variant="outline"
+							className={cn(
+								"text-[10px] h-5 shrink-0",
+								task.type === TaskType.MAIN && "border-indigo-300 text-indigo-700 bg-indigo-50",
+								task.type === TaskType.WEEKLY && "border-cyan-300 text-cyan-700 bg-cyan-50",
+								task.type === TaskType.SUBTASK && "border-slate-300 text-slate-600 bg-slate-50"
+							)}
+						>
+							{TaskTypeLabels[task.type]}
+						</Badge>
 						{hasChildren && (
 							<Badge
 								variant="outline"
@@ -258,7 +292,7 @@ function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, o
 				</div>
 			</div>
 
-			{/* Children */}
+			{/* Children - Render recursively */}
 			{isExpanded && hasChildren && task.children && (
 				<div>
 					{task.children.map((child) => (
@@ -277,6 +311,7 @@ function ListItem({ task, isExpanded, onToggle, currentUserId, onStatusChange, o
 							onStartTimer={onStartTimer}
 							onStopTimer={onStopTimer}
 							isTimerLoading={isTimerLoading}
+							hasActiveTimer={hasActiveTimer}
 						/>
 					))}
 				</div>
