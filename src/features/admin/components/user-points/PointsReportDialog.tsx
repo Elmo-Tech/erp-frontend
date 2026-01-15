@@ -88,7 +88,7 @@ export function PointsReportDialog({ open, onClose }: PointsReportDialogProps) {
 		{
 			key: "reason",
 			header: "Reason",
-			render: (activity: any) => <p className="w-48 whitespace-nowrap overflow-hidden text-ellipsis">{activity.reason}</p>,
+			render: (activity: any) => activity.reason,
 		},
 		{
 			key: "type",
@@ -108,7 +108,7 @@ export function PointsReportDialog({ open, onClose }: PointsReportDialogProps) {
 			onOpenChange={(o) => !o && onClose()}
 			title="Points Activity Report"
 			description="Generate detailed reports of points activities within a date range"
-			size="xxxl"
+			size="6xl"
 			showFooter={false}
 		>
 			<div className="space-y-6">
