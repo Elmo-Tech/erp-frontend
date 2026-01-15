@@ -114,7 +114,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				title: "Employee Review",
-				href: "/dashboard/admin/employee-review",
+				href: "/dashboard/employee-review",
 				icon: UserCheck,
 				permission: "view_admin_stats",
 			},

@@ -62,7 +62,7 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 								value={selectedUserId?.toString()}
 								onValueChange={(value) => setSelectedUserId(Number(value))}
 							>
-								<SelectTrigger>
+								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Select employee" />
 								</SelectTrigger>
 								<SelectContent>
