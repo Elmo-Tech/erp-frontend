@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useSidebarStore } from "@/store/sidebarStore";
@@ -110,6 +110,12 @@ const navGroups: NavGroup[] = [
 				title: "Reports",
 				href: "/dashboard/admin",
 				icon: BarChart3,
+				permission: "view_admin_stats",
+			},
+			{
+				title: "Employee Review",
+				href: "/dashboard/admin/employee-review",
+				icon: UserCheck,
 				permission: "view_admin_stats",
 			},
 			{
