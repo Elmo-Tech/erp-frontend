@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useProject, useUpdateProject, useApproveUI } from "../hooks/useProjects";
-import { Project, UpdateProjectPayload } from "../types/project";
+import { Project } from "../types/project";
 import { ProjectStatus, getAvailableProjectTransitions } from "@/lib/statusHelpers";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
 import { updateProjectSchema, UpdateProjectFormData } from "../schemas/projectSchema";

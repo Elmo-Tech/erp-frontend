@@ -66,9 +66,9 @@ export function PointsReportDialog({ open, onClose }: PointsReportDialogProps) {
 
 	const columns = [
 		{
-			key: "createdAt",
+			key: "created_at",
 			header: "Date",
-			render: (activity: any) => new Date(activity.createdAt).toLocaleDateString(),
+			render: (activity: any) => new Date(activity.created_at).toLocaleDateString(),
 		},
 		{
 			key: "user",
@@ -76,19 +76,19 @@ export function PointsReportDialog({ open, onClose }: PointsReportDialogProps) {
 			render: (activity: any) => activity.user?.name || "Unknown",
 		},
 		{
-			key: "pointsChange",
+			key: "points_change",
 			header: "Points Change",
 			render: (activity: any) => (
-				<Badge variant={activity.pointsChange > 0 ? "default" : "destructive"}>
-					{activity.pointsChange > 0 ? "+" : ""}
-					{activity.pointsChange}
+				<Badge variant={activity.points_change > 0 ? "default" : "destructive"}>
+					{activity.points_change > 0 ? "+" : ""}
+					{activity.points_change}
 				</Badge>
 			),
 		},
 		{
 			key: "reason",
 			header: "Reason",
-			render: (activity: any) => activity.reason,
+			render: (activity: any) => <p className="w-48 whitespace-nowrap overflow-hidden text-ellipsis">{activity.reason}</p>,
 		},
 		{
 			key: "type",
@@ -98,7 +98,7 @@ export function PointsReportDialog({ open, onClose }: PointsReportDialogProps) {
 		{
 			key: "createdBy",
 			header: "Created By",
-			render: (activity: any) => activity.createdBy || "System",
+			render: (activity: any) => activity.created_by?.name || "System",
 		},
 	];
 

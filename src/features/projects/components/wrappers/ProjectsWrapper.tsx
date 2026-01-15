@@ -21,11 +21,6 @@ export function ProjectsWrapper() {
 		setShowCreateDialog(true);
 	};
 
-	const handleEditProject = (project: Project) => {
-		setSelectedProject(project);
-		setShowUpdateDialog(true);
-	};
-
 	const handleUpdateClose = () => {
 		setShowUpdateDialog(false);
 		setSelectedProject(null);

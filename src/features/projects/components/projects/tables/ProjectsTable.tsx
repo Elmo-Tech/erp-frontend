@@ -25,7 +25,7 @@ interface ProjectsTableProps {
 
 export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, className = "" }: ProjectsTableProps) {
 	const router = useRouter();
-	const { canDeleteProjects, canEditProjects } = usePermissions();
+	const { canDeleteProjects, canEditProjects, canViewProjectBudget } = usePermissions();
 	const deleteProject = useDeleteProject();
 
 	const [filters, setFilters] = useState<ProjectFilters>({
@@ -122,6 +122,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		onDelete: canDeleteProjects ? (project) => setProjectToDelete(project) : undefined,
 		canDeleteProjects,
 		canEditProjects,
+		canViewProjectBudget,
 	});
 
 	return (

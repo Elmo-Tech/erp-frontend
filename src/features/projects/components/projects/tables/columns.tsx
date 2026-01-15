@@ -14,10 +14,11 @@ interface ProjectColumnsOptions {
 	onDelete?: (project: Project) => void;
 	canDeleteProjects?: boolean;
 	canEditProjects?: boolean;
+	canViewProjectBudget?: boolean;
 }
 
 export function getProjectsColumns(options: ProjectColumnsOptions = {}): Column<Project>[] {
-	const { onView, onEdit, onDelete, canDeleteProjects, canEditProjects } = options;
+	const { onView, onEdit, onDelete, canDeleteProjects, canEditProjects, canViewProjectBudget } = options;
 
 	const columns: Column<Project>[] = [
 		{
@@ -51,7 +52,7 @@ export function getProjectsColumns(options: ProjectColumnsOptions = {}): Column<
 		{
 			key: "budget",
 			header: "Budget",
-			render: (project) => <span className="font-mono">{formatCurrency(project.budget)}</span>,
+			render: (project) => <span className="font-mono">{canViewProjectBudget ? formatCurrency(project.budget) : "****"}</span>, // Hide budget if user doesn't have permission to viewformatCurrency(project.budget)}</span>,
 		},
 		{
 			key: "deadline",
