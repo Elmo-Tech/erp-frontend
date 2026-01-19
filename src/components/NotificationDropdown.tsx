@@ -84,7 +84,7 @@ export function NotificationDropdown() {
 						<Button
 							variant="ghost"
 							size="sm"
-							className="h-auto p-1 text-xs"
+							className="h-auto p-1 text-xs text-white!"
 							onClick={handleMarkAllAsRead}
 						>
 							<CheckCheck className="h-3 w-3 mr-1" />
