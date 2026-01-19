@@ -88,8 +88,6 @@ export function DeductPointsDialog({ open, onClose, user }: DeductPointsDialogPr
 						label="Points to Deduct"
 						type="number"
 						placeholder="Enter points amount"
-						min={1}
-						max={Math.min(1000, user?.totalPoints || 1000)}
 					/>
 
 					<FormTextarea
