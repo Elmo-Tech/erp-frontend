@@ -94,6 +94,8 @@ export function SetPointsDialog({ open, onClose, user }: SetPointsDialogProps) {
 						label="New Points Total"
 						type="number"
 						placeholder="Enter new points total"
+						min={0}
+						max={10000}
 					/>
 
 					<FormTextarea

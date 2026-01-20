@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { api } from "@/lib/axios";
 import {
 	AddPointsFormData,
@@ -11,6 +12,7 @@ import {
 	UserPoint,
 	PointsReportFilters,
 	PointsReportResponse,
+	PointTransactionTypeOption,
 } from "../types/userPoints";
 
 export const userPointsApi = {
@@ -76,6 +78,12 @@ export const userPointsApi = {
 		});
 
 		const response = await api.get(`/user-points/report?${params}`);
+		return response.data.data;
+	},
+
+	// Get point transaction types
+	getTransactionTypes: async (): Promise<PointTransactionTypeOption[]> => {
+		const response = await api.get("/user-points/transaction-types");
 		return response.data.data;
 	},
 };

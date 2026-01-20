@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
 import { FormInput } from "@/components/shared/forms/FormInput";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
+import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { UserWithPoints, DeductPointsFormData } from "../../../types/userPoints";
-import { useDeductPoints } from "../../../hooks/useUserPoints";
+import { useDeductPoints, usePointTransactionTypes } from "../../../hooks/useUserPoints";
 
 const formSchema = z.object({
+	type: z.string().min(1, "Please select a deduction type"),
 	points: z.number().min(1, "Points must be at least 1").max(1000, "Points cannot exceed 1000"),
 	reason: z.string().min(3, "Reason must be at least 3 characters").max(255, "Reason cannot exceed 255 characters"),
 });
@@ -21,6 +23,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const getDefaultValues = (): FormValues => ({
 	points: 5,
+	type: "",
 	reason: "",
 });
 
@@ -32,6 +35,7 @@ interface DeductPointsDialogProps {
 
 export function DeductPointsDialog({ open, onClose, user }: DeductPointsDialogProps) {
 	const deductPointsMutation = useDeductPoints();
+	const { data: transactionTypes = [], isLoading: isLoadingTypes } = usePointTransactionTypes();
 
 	const defaultValues = useMemo(() => getDefaultValues(), []);
 
@@ -41,11 +45,21 @@ export function DeductPointsDialog({ open, onClose, user }: DeductPointsDialogPr
 		values: defaultValues,
 	});
 
+	useEffect(() => {
+		if (!open) return;
+		if (!transactionTypes.length) return;
+		const negativeType = transactionTypes.find((type) => !type.is_positive);
+		if (negativeType) {
+			form.setValue("type", negativeType.value, { shouldValidate: true });
+		}
+	}, [open, transactionTypes, form]);
+
 	const onSubmit = async (values: FormValues) => {
 		if (!user) return;
 
 		const data: DeductPointsFormData = {
 			userId: user.userId,
+			type: values.type as DeductPointsFormData["type"],
 			points: values.points,
 			reason: values.reason,
 		};
@@ -60,6 +74,14 @@ export function DeductPointsDialog({ open, onClose, user }: DeductPointsDialogPr
 	};
 
 	const isPending = deductPointsMutation.isPending;
+	const negativeTypeOptions = useMemo(() => {
+		return transactionTypes
+			.filter((type) => !type.is_positive)
+			.map((type) => ({
+				value: type.value,
+				label: type.label,
+			}));
+	}, [transactionTypes]);
 
 	return (
 		<FormDialog
@@ -82,12 +104,23 @@ export function DeductPointsDialog({ open, onClose, user }: DeductPointsDialogPr
 						</div>
 					)}
 
+					<FormSelect
+						control={form.control}
+						name="type"
+						label="Deduction Category"
+						placeholder={isLoadingTypes ? "Loading categories..." : "Select category"}
+						options={negativeTypeOptions}
+						disabled={isLoadingTypes}
+					/>
+
 					<FormInput
 						control={form.control}
 						name="points"
 						label="Points to Deduct"
 						type="number"
 						placeholder="Enter points amount"
+						min={1}
+						max={1000}
 					/>
 
 					<FormTextarea

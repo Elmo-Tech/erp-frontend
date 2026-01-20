@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { LogOut, User, Settings, Menu, Timer, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

@@ -12,14 +12,15 @@ import { FormInput } from "@/components/shared/forms/FormInput";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { UserWithPoints, AddPointsFormData } from "../../../types/userPoints";
-import { useAddPoints } from "../../../hooks/useUserPoints";
+import { useAddPoints, usePointTransactionTypes } from "../../../hooks/useUserPoints";
 import { useEmployees } from "@/features/hr/hooks";
 
 const formSchema = z.object({
 	userId: z.number().min(1, "Please select a user"),
+	type: z.string().min(1, "Please select a points category"),
 	points: z
 		.number()
-		.min(-1000, "Points cannot be less than -1000")
+		.min(1, "Points must be at least 1")
 		.max(1000, "Points cannot exceed 1000")
 		.refine((val) => val !== 0, "Points cannot be zero"),
 	reason: z.string().min(3, "Reason must be at least 3 characters").max(255, "Reason cannot exceed 255 characters"),
@@ -29,6 +30,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const getDefaultValues = (userId?: number): FormValues => ({
 	userId: userId || 0,
+	type: "",
 	points: 10,
 	reason: "",
 });
@@ -42,6 +44,7 @@ interface AddPointsDialogProps {
 export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	const addPointsMutation = useAddPoints();
 	const { data: employeesData, isLoading: isLoadingUsers } = useEmployees({ perPage: 100 });
+	const { data: transactionTypes = [], isLoading: isLoadingTypes } = usePointTransactionTypes();
 
 	const defaultValues = useMemo(() => getDefaultValues(user?.userId), [user?.userId]);
 
@@ -64,6 +67,15 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 		}
 	}, [open, user?.userId, form]);
 
+	useEffect(() => {
+		if (!open) return;
+		if (!transactionTypes.length) return;
+		const positiveType = transactionTypes.find((type) => type.is_positive);
+		if (positiveType) {
+			form.setValue("type", positiveType.value, { shouldValidate: true });
+		}
+	}, [open, transactionTypes, form]);
+
 	const selectedUserId = form.watch("userId");
 	const selectedUser = employeesData?.employees.find((u) => u.userId === selectedUserId);
 
@@ -78,6 +90,7 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	const onSubmit = async (values: FormValues) => {
 		const data: AddPointsFormData = {
 			userId: values.userId,
+			type: values.type as AddPointsFormData["type"],
 			points: values.points,
 			reason: values.reason,
 		};
@@ -92,15 +105,21 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 	};
 
 	const isPending = addPointsMutation.isPending;
-	const pointsValue = form.watch("points");
-	const isNegative = pointsValue < 0;
+	const positiveTypeOptions = useMemo(() => {
+		return transactionTypes
+			.filter((type) => type.is_positive)
+			.map((type) => ({
+				value: type.value,
+				label: type.label,
+			}));
+	}, [transactionTypes]);
 
 	return (
 		<FormDialog
 			open={open}
 			onOpenChange={(o) => !o && onClose()}
-			title={isNegative ? "Deduct Points" : "Add Points"}
-			description="Add or deduct points from a user"
+			title="Add Points"
+			description="Add points to a user"
 			size="md"
 			showFooter={false}
 		>
@@ -119,6 +138,15 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 						onValueChange={(value) => form.setValue("userId", parseInt(value))}
 					/>
 
+					<FormSelect
+						control={form.control}
+						name="type"
+						label="Points Category"
+						placeholder={isLoadingTypes ? "Loading categories..." : "Select category"}
+						options={positiveTypeOptions}
+						disabled={isLoadingTypes}
+					/>
+
 					{selectedUser && (
 						<div className="p-3 bg-muted rounded-lg">
 							<div className="text-sm font-medium">{selectedUser.name}</div>
@@ -130,10 +158,10 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 						control={form.control}
 						name="points"
 						label="Points"
-						description="Use positive values to add, negative to deduct"
+						description="Use positive values to add points"
 						type="number"
-						placeholder="Enter points (e.g., 10 or -5)"
-						min={-1000}
+						placeholder="Enter points (e.g., 10)"
+						min={1}
 						max={1000}
 					/>
 
@@ -141,7 +169,7 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 						control={form.control}
 						name="reason"
 						label="Reason"
-						placeholder="Why are you adding/deducting these points?"
+						placeholder="Why are you adding these points?"
 						rows={3}
 					/>
 
@@ -157,9 +185,9 @@ export function AddPointsDialog({ open, onClose, user }: AddPointsDialogProps) {
 						<Button
 							type="submit"
 							disabled={isPending}
-							variant={isNegative ? "destructive" : "default"}
+							variant="default"
 						>
-							{isPending ? "Processing..." : isNegative ? "Deduct Points" : "Add Points"}
+							{isPending ? "Processing..." : "Add Points"}
 						</Button>
 					</div>
 				</form>

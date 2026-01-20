@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { userPointsApi } from "../api/userPointsApi";
-import { AddPointsFormData, DeductPointsFormData, SetPointsFormData, UserPointsFilters, PointsReportFilters } from "../types/userPoints";
+import { AddPointsFormData, DeductPointsFormData, SetPointsFormData, UserPointsFilters, PointsReportFilters, PointTransactionTypeOption } from "../types/userPoints";
 
 // Query Keys
 export const userPointsKeys = {
@@ -13,6 +13,7 @@ export const userPointsKeys = {
 	leaderboard: (limit: number) => [...userPointsKeys.all, "leaderboard", limit] as const,
 	statistics: () => [...userPointsKeys.all, "statistics"] as const,
 	report: (filters: PointsReportFilters, page: number, perPage: number) => [...userPointsKeys.all, "report", { filters, page, perPage }] as const,
+	transactionTypes: () => [...userPointsKeys.all, "transactionTypes"] as const,
 };
 
 // Get all users with points
@@ -53,6 +54,14 @@ export function usePointsReport(filters: PointsReportFilters = {}, page = 1, per
 	return useQuery({
 		queryKey: userPointsKeys.report(filters, page, perPage),
 		queryFn: () => userPointsApi.getPointsReport(filters, page, perPage),
+	});
+}
+
+// Get point transaction types
+export function usePointTransactionTypes() {
+	return useQuery<PointTransactionTypeOption[]>({
+		queryKey: userPointsKeys.transactionTypes(),
+		queryFn: () => userPointsApi.getTransactionTypes(),
 	});
 }
 
