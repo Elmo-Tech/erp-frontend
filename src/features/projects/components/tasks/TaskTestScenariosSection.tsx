@@ -211,6 +211,7 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 						<ScenarioCard
 							key={scenario.scenarioId}
 							scenario={scenario}
+							task={task}
 							onComplete={() => handleComplete(scenario)}
 							onVerify={() => {
 								verifyForm.reset({ passed: true, notes: "" });
@@ -318,13 +319,24 @@ interface ScenarioCardProps {
 	onComplete: () => void;
 	onVerify: () => void;
 	isCompleting: boolean;
+	task: Task; // Add task to check reviewer status
 }
 
-function ScenarioCard({ scenario, onComplete, onVerify, isCompleting }: ScenarioCardProps) {
+function ScenarioCard({ scenario, onComplete, onVerify, isCompleting, task }: ScenarioCardProps) {
 	const config = statusConfig[scenario.status];
 	const StatusIcon = config.icon;
 	const isPending = scenario.status === TestScenarioStatus.PENDING;
 	const isCompleted = !!scenario.completedAt && !scenario.verifiedAt;
+	const { role, user } = useAuthStore();
+
+	// Check if user is Admin/Super Admin
+	const isAdmin = role === "admin" || role === "super-admin";
+
+	// Check if user is assigned as reviewer in this task
+	const isTaskReviewer = task.assignees?.some((assignee) => assignee.userId === user?.userId && assignee.role === "reviewer") || false;
+
+	// Can verify if Admin or Task Reviewer
+	const canVerify = isAdmin || isTaskReviewer;
 
 	return (
 		<div className={cn("p-3 rounded-lg border", config.bgColor)}>
@@ -369,24 +381,37 @@ function ScenarioCard({ scenario, onComplete, onVerify, isCompleting }: Scenario
 					)}
 				</div>
 				<div className="flex gap-1">
+					{/* Anyone can check/complete test scenarios */}
 					{isPending && (
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={onComplete}
 							disabled={isCompleting}
+							title="Mark as checked"
 						>
 							<Check className="h-4 w-4" />
 						</Button>
 					)}
-					{isCompleted && (
+					{/* Only Admin or Task Reviewers can verify */}
+					{isCompleted && canVerify && (
 						<Button
 							variant="ghost"
 							size="sm"
 							onClick={onVerify}
+							title="Verify test scenario (Admin/Task Reviewer only)"
 						>
 							Verify
 						</Button>
+					)}
+					{/* Show info if user can't verify */}
+					{isCompleted && !canVerify && (
+						<Badge
+							variant="outline"
+							className="text-xs"
+						>
+							Awaiting Verification
+						</Badge>
 					)}
 				</div>
 			</div>
