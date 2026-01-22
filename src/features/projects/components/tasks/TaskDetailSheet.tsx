@@ -53,13 +53,18 @@ const DeliveryStatusCard = ({ deliveryStatus }: { deliveryStatus: DeliveryStatus
 		}
 	};
 
+	// Only show due date if:
+	// 1. Task is not completed, OR
+	// 2. Task is completed AND has delay_days (meaning it had a due date when completed)
+	const shouldShowDueDate = deliveryStatus.dueDate && (!deliveryStatus.isCompleted || deliveryStatus.delayDays !== null);
+
 	return (
 		<div className={cn("p-3 rounded-lg border", getStatusColor())}>
 			<div className="flex items-center gap-2">
 				{getStatusIcon()}
 				<span className="text-sm font-medium">{deliveryStatus.statusText}</span>
 			</div>
-			{deliveryStatus.dueDate && <div className="mt-1 text-xs opacity-75">Due: {format(new Date(deliveryStatus.dueDate), "MMM d, yyyy")}</div>}
+			{shouldShowDueDate && <div className="mt-1 text-xs opacity-75">Due: {format(new Date(deliveryStatus.dueDate), "MMM d, yyyy")}</div>}
 			{deliveryStatus.completedAt && <div className="mt-1 text-xs opacity-75">Completed: {format(new Date(deliveryStatus.completedAt), "MMM d, yyyy 'at' HH:mm")}</div>}
 		</div>
 	);
