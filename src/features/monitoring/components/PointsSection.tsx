@@ -25,7 +25,7 @@ export function PointsSection({ points }: PointsSectionProps) {
 	return (
 		<div className="space-y-6">
 			{/* Points Overview */}
-			<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+			<div className="grid grid-cols-1 md:grid-cols-5 gap-4">
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Current Points</CardTitle>
@@ -33,6 +33,7 @@ export function PointsSection({ points }: PointsSectionProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{points.currentPoints}</div>
+						<p className="text-xs text-muted-foreground">Total accumulated</p>
 					</CardContent>
 				</Card>
 
@@ -43,6 +44,7 @@ export function PointsSection({ points }: PointsSectionProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold text-green-600">+{points.pointsEarned}</div>
+						<p className="text-xs text-muted-foreground">This period</p>
 					</CardContent>
 				</Card>
 
@@ -53,6 +55,7 @@ export function PointsSection({ points }: PointsSectionProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold text-red-600">-{points.pointsDeducted}</div>
+						<p className="text-xs text-muted-foreground">This period</p>
 					</CardContent>
 				</Card>
 
@@ -66,6 +69,18 @@ export function PointsSection({ points }: PointsSectionProps) {
 							{points.netChange >= 0 ? "+" : ""}
 							{points.netChange}
 						</div>
+						<p className="text-xs text-muted-foreground">Net change</p>
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Transactions</CardTitle>
+						<AlertTriangle className="h-4 w-4 text-blue-600" />
+					</CardHeader>
+					<CardContent>
+						<div className="text-2xl font-bold">{points.transactions.length}</div>
+						<p className="text-xs text-muted-foreground">Total transactions</p>
 					</CardContent>
 				</Card>
 			</div>

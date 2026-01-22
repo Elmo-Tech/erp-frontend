@@ -18,6 +18,7 @@ import { ProjectsSection } from "./ProjectsSection";
 import { AttendanceSection } from "./AttendanceSection";
 import { ProductivityMetrics } from "./ProductivityMetrics";
 import { PointsSection } from "./PointsSection";
+import { DeliveryLogsSection } from "./DeliveryLogsSection";
 import { toast } from "sonner";
 import axios from "@/lib/axios";
 
@@ -56,7 +57,7 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 			if (dateFrom) params.append("dateFrom", format(dateFrom, "yyyy-MM-dd"));
 			if (dateTo) params.append("dateTo", format(dateTo, "yyyy-MM-dd"));
 
-			const response = await axios.get(`/api/v1/admin/stats/employee-review/${selectedUserId}/export?${params}`, {
+			const response = await axios.get(`/admin/stats/employee-review/${selectedUserId}/export?${params}`, {
 				responseType: "blob",
 			});
 
@@ -251,6 +252,9 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 
 					{/* Tasks Section */}
 					<TasksSection tasks={reviewData.tasks} />
+
+					{/* Delivery Logs Section */}
+					<DeliveryLogsSection tasks={reviewData.tasks} />
 
 					{/* Projects Section */}
 					<ProjectsSection projects={reviewData.projects} />
