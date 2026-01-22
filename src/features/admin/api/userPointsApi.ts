@@ -13,6 +13,7 @@ import {
 	PointsReportFilters,
 	PointsReportResponse,
 	PointTransactionTypeOption,
+	UnifiedPointsHistoryResponse,
 } from "../types/userPoints";
 
 export const userPointsApi = {
@@ -84,6 +85,17 @@ export const userPointsApi = {
 	// Get point transaction types
 	getTransactionTypes: async (): Promise<PointTransactionTypeOption[]> => {
 		const response = await api.get("/user-points/transaction-types");
+		return response.data.data;
+	},
+
+	// Get unified user points history (from both systems)
+	getUnifiedHistory: async (userId: number, filters: { dateFrom?: string; dateTo?: string } = {}, limit = 50): Promise<UnifiedPointsHistoryResponse> => {
+		const params = new URLSearchParams({
+			limit: limit.toString(),
+			...Object.fromEntries(Object.entries(filters).filter(([_, value]) => value !== undefined && value !== "")),
+		});
+
+		const response = await api.get(`/user-points/unified-history/${userId}?${params}`);
 		return response.data.data;
 	},
 };

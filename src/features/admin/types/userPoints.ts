@@ -48,6 +48,32 @@ export interface UserWithPoints {
 	createdAt: string;
 }
 
+export interface UnifiedPointTransaction {
+	id: string;
+	points: number;
+	type: string;
+	reason: string;
+	createdAt: string;
+	createdBy: string;
+	balanceAfter: number;
+	source: "automatic" | "manual";
+	sourceType?: string;
+	sourceId?: number;
+}
+
+export interface UnifiedPointsHistoryResponse {
+	transactions: UnifiedPointTransaction[];
+	summary: {
+		totalEarned: number;
+		totalDeducted: number;
+		netPoints: number;
+		transactionCount: number;
+		byType: Record<string, { count: number; total: number }>;
+		bySource: Record<string, { count: number; total: number }>;
+	};
+	currentPoints: number;
+}
+
 export interface LeaderboardUser {
 	userId: number;
 	name: string;

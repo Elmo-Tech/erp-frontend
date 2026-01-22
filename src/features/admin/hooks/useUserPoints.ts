@@ -65,6 +65,15 @@ export function usePointTransactionTypes() {
 	});
 }
 
+// Get unified user points history
+export function useUnifiedPointsHistory(userId: number, filters: { dateFrom?: string; dateTo?: string } = {}, limit = 50) {
+	return useQuery({
+		queryKey: [...userPointsKeys.history(userId), "unified", filters, limit],
+		queryFn: () => userPointsApi.getUnifiedHistory(userId, filters, limit),
+		enabled: !!userId,
+	});
+}
+
 // Add points mutation
 export function useAddPoints() {
 	const queryClient = useQueryClient();
