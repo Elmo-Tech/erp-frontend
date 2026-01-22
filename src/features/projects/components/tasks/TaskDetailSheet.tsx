@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Task, TaskType } from "@/features/dashboard/types/task";
+import { Task, TaskType, DeliveryStatus } from "@/features/dashboard/types/task";
 import { useTask, useTaskActivities, useTestScenarios } from "@/features/dashboard/hooks/useTasks";
 import { TaskAssigneesSection } from "./TaskAssigneesSection";
 import { TaskTestScenariosSection } from "./TaskTestScenariosSection";
@@ -17,7 +17,7 @@ import { TaskActivitySection } from "./TaskActivitySection";
 import { TaskTimerWidget } from "./TaskTimerWidget";
 import { TaskTimeEntriesSection } from "./TaskTimeEntriesSection";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle2, Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -49,6 +49,42 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 	const getProgressPercentage = () => {
 		if (!task || task.estimatedHours === 0) return 0;
 		return Math.min((task.totalTimeSpent / 60 / task.estimatedHours) * 100, 100);
+	};
+
+	const DeliveryStatusCard = ({ deliveryStatus }: { deliveryStatus: DeliveryStatus }) => {
+		const getStatusIcon = () => {
+			if (deliveryStatus.isCompleted) {
+				if (deliveryStatus.isEarly) return <TrendingUp className="h-4 w-4 text-green-600" />;
+				if (deliveryStatus.isOverdue) return <TrendingDown className="h-4 w-4 text-red-600" />;
+				return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+			}
+			if (deliveryStatus.isOverdue) return <AlertCircle className="h-4 w-4 text-red-600" />;
+			return <Calendar className="h-4 w-4 text-blue-600" />;
+		};
+
+		const getStatusColor = () => {
+			switch (deliveryStatus.statusColor) {
+				case "success":
+					return "bg-green-50 border-green-200 text-green-800";
+				case "warning":
+					return "bg-yellow-50 border-yellow-200 text-yellow-800";
+				case "destructive":
+					return "bg-red-50 border-red-200 text-red-800";
+				default:
+					return "bg-blue-50 border-blue-200 text-blue-800";
+			}
+		};
+
+		return (
+			<div className={cn("p-3 rounded-lg border", getStatusColor())}>
+				<div className="flex items-center gap-2">
+					{getStatusIcon()}
+					<span className="text-sm font-medium">{deliveryStatus.statusText}</span>
+				</div>
+				{deliveryStatus.dueDate && <div className="mt-1 text-xs opacity-75">Due: {format(new Date(deliveryStatus.dueDate), "MMM d, yyyy")}</div>}
+				{deliveryStatus.completedAt && <div className="mt-1 text-xs opacity-75">Completed: {format(new Date(deliveryStatus.completedAt), "MMM d, yyyy 'at' HH:mm")}</div>}
+			</div>
+		);
 	};
 
 	return (
@@ -137,6 +173,13 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 								<p className="font-semibold">{task.testCompletionPercentage}%</p>
 							</div>
 						</div>
+
+						{/* Delivery Status */}
+						{(task.dueDate || task.deliveryStatus.isCompleted) && (
+							<div className="px-6">
+								<DeliveryStatusCard deliveryStatus={task.deliveryStatus} />
+							</div>
+						)}
 
 						{/* Progress Bar */}
 						<div className="px-6 py-2">

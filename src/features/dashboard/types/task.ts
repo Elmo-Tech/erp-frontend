@@ -177,6 +177,14 @@ export interface Task {
 	canStartTimer: boolean; // Timer only allowed on leaf tasks (no children)
 	hasChildren: boolean;
 	internalReviewerNotes?: string; // Only present if user has view_internal_notes permission
+
+	// Delivery tracking
+	completedAt: string | null;
+	delayDays: number | null;
+	deliveryStatus: DeliveryStatus;
+	isOverdue: boolean;
+	daysUntilDue: number | null;
+
 	assignee?: SimpleAssignee;
 	assignees?: TaskAssignee[];
 	teamAssignees?: TaskAssignee[] | null; // Available team members from Main Task (for Weekly/Subtasks only)
@@ -195,6 +203,21 @@ export interface Task {
 	updatedAt: string;
 	createdBy: number;
 	updatedBy: number;
+}
+
+/**
+ * Delivery status information
+ */
+export interface DeliveryStatus {
+	isCompleted: boolean;
+	completedAt: string | null;
+	dueDate: string | null;
+	delayDays: number | null;
+	isOverdue: boolean;
+	isEarly: boolean;
+	isOnTime: boolean;
+	statusText: string;
+	statusColor: "default" | "success" | "warning" | "destructive";
 }
 
 /**

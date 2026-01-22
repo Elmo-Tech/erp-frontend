@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { usePermissions, ADMIN_PERMISSIONS } from "@/features/admin/hooks/usePermissions";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useAuthStore } from "@/store/authStore";
 
 const addScenarioSchema = z.object({
@@ -72,7 +72,7 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 	const addScenario = useAddTestScenario();
 	const completeScenario = useCompleteTestScenario();
 	const verifyScenario = useVerifyTestScenario();
-	const { canVerifyTestScenarios, canManageTaskTestScenarios } = usePermissions();
+	const { canManageTaskTestScenarios } = usePermissions();
 	const { user, role } = useAuthStore();
 
 	// Permission logic:
@@ -339,14 +339,15 @@ function ScenarioCard({ scenario, onComplete, onVerify, isCompleting, task }: Sc
 	const canVerify = isAdmin || isTaskReviewer;
 
 	return (
-		<div className={cn("p-3 rounded-lg border", config.bgColor)}>
-			<div className="flex items-start gap-3">
-				<div className={cn("mt-0.5", config.color)}>
+		<div className={cn("border rounded-lg transition-all duration-200 hover:shadow-sm", config.bgColor)}>
+			{/* Header */}
+			<div className="flex items-start gap-3 p-4">
+				<div className={cn("mt-0.5 shrink-0", config.color)}>
 					<StatusIcon className="h-5 w-5" />
 				</div>
 				<div className="flex-1 min-w-0">
-					<div className="flex items-center gap-2">
-						<p className="font-medium text-sm">{scenario.title}</p>
+					<div className="flex items-center gap-2 mb-2">
+						<h4 className="font-medium text-sm text-foreground">{scenario.title}</h4>
 						<Badge
 							variant="outline"
 							className={cn("text-xs", config.color)}
@@ -354,33 +355,8 @@ function ScenarioCard({ scenario, onComplete, onVerify, isCompleting, task }: Sc
 							{config.label}
 						</Badge>
 					</div>
-					{scenario.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{scenario.description}</p>}
-					{scenario.expectedResult && (
-						<p className="text-xs text-muted-foreground mt-1">
-							<span className="font-medium">Expected:</span> {scenario.expectedResult}
-						</p>
-					)}
-					<div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
-						{scenario.completedBy && (
-							<span>
-								Completed by {scenario.completedBy.name}
-								{scenario.completedAt && ` on ${format(new Date(scenario.completedAt), "MMM d")}`}
-							</span>
-						)}
-						{scenario.verifiedBy && (
-							<span>
-								Verified by {scenario.verifiedBy.name}
-								{scenario.verifiedAt && ` on ${format(new Date(scenario.verifiedAt), "MMM d")}`}
-							</span>
-						)}
-					</div>
-					{scenario.reviewerNotes && (
-						<div className="mt-2 p-2 bg-background rounded text-xs">
-							<span className="font-medium">Reviewer notes:</span> {scenario.reviewerNotes}
-						</div>
-					)}
 				</div>
-				<div className="flex gap-1">
+				<div className="flex gap-1 shrink-0">
 					{/* Anyone can check/complete test scenarios */}
 					{isPending && (
 						<Button
@@ -389,6 +365,7 @@ function ScenarioCard({ scenario, onComplete, onVerify, isCompleting, task }: Sc
 							onClick={onComplete}
 							disabled={isCompleting}
 							title="Mark as checked"
+							className="h-8 w-8 p-0"
 						>
 							<Check className="h-4 w-4" />
 						</Button>
@@ -399,22 +376,62 @@ function ScenarioCard({ scenario, onComplete, onVerify, isCompleting, task }: Sc
 							variant="ghost"
 							size="sm"
 							onClick={onVerify}
-							title="Verify test scenario (Admin/Task Reviewer only)"
+							title="Verify test result"
+							className="h-8 w-8 p-0"
 						>
-							Verify
+							<AlertCircle className="h-4 w-4" />
 						</Button>
-					)}
-					{/* Show info if user can't verify */}
-					{isCompleted && !canVerify && (
-						<Badge
-							variant="outline"
-							className="text-xs"
-						>
-							Awaiting Verification
-						</Badge>
 					)}
 				</div>
 			</div>
+
+			{/* Content */}
+			{(scenario.description || scenario.expectedResult) && (
+				<div className="px-4 pb-3 space-y-3">
+					{scenario.description && (
+						<div className="bg-background/50 rounded-md p-3">
+							<p className="text-xs font-medium text-muted-foreground mb-1">DESCRIPTION</p>
+							<p className="text-sm text-foreground whitespace-pre-wrap">{scenario.description}</p>
+						</div>
+					)}
+					{scenario.expectedResult && (
+						<div className="bg-background/50 rounded-md p-3">
+							<p className="text-xs font-medium text-muted-foreground mb-1">EXPECTED RESULT</p>
+							<p className="text-sm text-foreground whitespace-pre-wrap">{scenario.expectedResult}</p>
+						</div>
+					)}
+				</div>
+			)}
+
+			{/* Footer with metadata */}
+			{(scenario.completedBy || scenario.verifiedBy || scenario.reviewerNotes) && (
+				<div className="border-t bg-background/30 px-4 py-3 space-y-2">
+					{scenario.completedBy && (
+						<div className="flex items-center gap-2 text-xs text-muted-foreground">
+							<CheckCircle2 className="h-3 w-3 text-green-600" />
+							<span>
+								Completed by <span className="font-medium">{scenario.completedBy.name}</span>
+								{scenario.completedAt && ` on ${format(new Date(scenario.completedAt), "MMM d, yyyy 'at' HH:mm")}`}
+							</span>
+						</div>
+					)}
+					{scenario.verifiedBy && (
+						<div className="flex items-center gap-2 text-xs text-muted-foreground">
+							<AlertCircle className="h-3 w-3 text-blue-600" />
+							<span>
+								Verified by <span className="font-medium">{scenario.verifiedBy.name}</span>
+								{scenario.verifiedAt && ` on ${format(new Date(scenario.verifiedAt), "MMM d, yyyy 'at' HH:mm")}`}
+							</span>
+						</div>
+					)}
+					{scenario.reviewerNotes && (
+						<div className="bg-background rounded-md p-2 mt-2">
+							<p className="text-xs font-medium text-muted-foreground mb-1">REVIEWER NOTES</p>
+							<p className="text-xs text-foreground whitespace-pre-wrap">{scenario.reviewerNotes}</p>
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }
