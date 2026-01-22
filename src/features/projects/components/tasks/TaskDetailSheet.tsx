@@ -64,7 +64,7 @@ const DeliveryStatusCard = ({ deliveryStatus }: { deliveryStatus: DeliveryStatus
 				{getStatusIcon()}
 				<span className="text-sm font-medium">{deliveryStatus.statusText}</span>
 			</div>
-			{shouldShowDueDate && <div className="mt-1 text-xs opacity-75">Due: {format(new Date(deliveryStatus.dueDate), "MMM d, yyyy")}</div>}
+			{shouldShowDueDate && <div className="mt-1 text-xs opacity-75">Due: {format(new Date(deliveryStatus.dueDate as string), "MMM d, yyyy")}</div>}
 			{deliveryStatus.completedAt && <div className="mt-1 text-xs opacity-75">Completed: {format(new Date(deliveryStatus.completedAt), "MMM d, yyyy 'at' HH:mm")}</div>}
 		</div>
 	);
@@ -182,7 +182,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 
 						{/* Delivery Status */}
 						{(task.dueDate || task.deliveryStatus.isCompleted) && (
-							<div className="px-6">
+							<div className="px-6 py-2">
 								<DeliveryStatusCard deliveryStatus={task.deliveryStatus} />
 							</div>
 						)}

@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEmployeeReview } from "../hooks/useEmployeeReview";
 import { OverviewCards } from "./OverviewCards";
@@ -17,6 +17,9 @@ import { TasksSection } from "./TasksSection";
 import { ProjectsSection } from "./ProjectsSection";
 import { AttendanceSection } from "./AttendanceSection";
 import { ProductivityMetrics } from "./ProductivityMetrics";
+import { PointsSection } from "./PointsSection";
+import { toast } from "sonner";
+import axios from "@/lib/axios";
 
 interface User {
 	id: number;
@@ -31,6 +34,7 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 	const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 	const [dateFrom, setDateFrom] = useState<Date>();
 	const [dateTo, setDateTo] = useState<Date>();
+	const [isExporting, setIsExporting] = useState(false);
 
 	const { data, isLoading, error } = useEmployeeReview({
 		userId: selectedUserId!,
@@ -40,12 +44,64 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 
 	const reviewData = data?.data;
 
+	const handleExport = async () => {
+		if (!selectedUserId) {
+			toast.error("Please select an employee first");
+			return;
+		}
+
+		setIsExporting(true);
+		try {
+			const params = new URLSearchParams();
+			if (dateFrom) params.append("dateFrom", format(dateFrom, "yyyy-MM-dd"));
+			if (dateTo) params.append("dateTo", format(dateTo, "yyyy-MM-dd"));
+
+			const response = await axios.get(`/api/v1/admin/stats/employee-review/${selectedUserId}/export?${params}`, {
+				responseType: "blob",
+			});
+
+			// Create download link
+			const url = window.URL.createObjectURL(new Blob([response.data]));
+			const link = document.createElement("a");
+			link.href = url;
+
+			// Get employee name for filename
+			const employeeName = users.find((u) => u.id === selectedUserId)?.name || "employee";
+			const dateRange = dateFrom && dateTo ? `_${format(dateFrom, "yyyy-MM-dd")}_to_${format(dateTo, "yyyy-MM-dd")}` : "";
+
+			link.setAttribute("download", `employee_review_${employeeName.replace(/\s+/g, "_")}${dateRange}.pdf`);
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			window.URL.revokeObjectURL(url);
+
+			toast.success("Report exported successfully");
+		} catch (error) {
+			console.error("Export error:", error);
+			toast.error("Failed to export report");
+		} finally {
+			setIsExporting(false);
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div>
-				<h1 className="text-3xl font-bold">Employee Performance Review</h1>
-				<p className="text-muted-foreground mt-2">Comprehensive review of employee work and performance</p>
+			<div className="flex items-center justify-between">
+				<div>
+					<h1 className="text-3xl font-bold">Employee Performance Review</h1>
+					<p className="text-muted-foreground mt-2">Comprehensive review of employee work and performance</p>
+				</div>
+				{selectedUserId && (
+					<Button
+						onClick={handleExport}
+						disabled={isExporting}
+						className="flex items-center gap-2"
+					>
+						{isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+						{isExporting ? "Exporting..." : "Export Report"}
+					</Button>
+				)}
 			</div>
 
 			{/* Filters */}
@@ -186,6 +242,9 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 
 					{/* Productivity Metrics */}
 					<ProductivityMetrics productivity={reviewData.productivity} />
+
+					{/* Points Section */}
+					<PointsSection points={reviewData.points} />
 
 					{/* Time Tracking Chart */}
 					<TimeTrackingChart timeTracking={reviewData.timeTracking} />

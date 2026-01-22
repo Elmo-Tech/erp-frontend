@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Target, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
+import { Clock, Target, TrendingUp, Calendar, AlertTriangle, Award, Plus, Minus } from "lucide-react";
 import { OverviewMetrics } from "../types/employeeReview";
 
 interface OverviewCardsProps {
@@ -31,6 +31,30 @@ export function OverviewCards({ overview }: OverviewCardsProps) {
 			icon: TrendingUp,
 			color: "text-purple-600",
 			bgColor: "bg-purple-100 dark:bg-purple-900/20",
+		},
+		{
+			title: "Points Earned",
+			value: `+${overview.pointsEarned}`,
+			subtitle: "this period",
+			icon: Plus,
+			color: "text-green-600",
+			bgColor: "bg-green-100 dark:bg-green-900/20",
+		},
+		{
+			title: "Points Deducted",
+			value: `-${overview.pointsDeducted}`,
+			subtitle: "this period",
+			icon: Minus,
+			color: "text-red-600",
+			bgColor: "bg-red-100 dark:bg-red-900/20",
+		},
+		{
+			title: "Net Points Change",
+			value: overview.netPointsChange >= 0 ? `+${overview.netPointsChange}` : `${overview.netPointsChange}`,
+			subtitle: "net change",
+			icon: Award,
+			color: overview.netPointsChange >= 0 ? "text-green-600" : "text-red-600",
+			bgColor: overview.netPointsChange >= 0 ? "bg-green-100 dark:bg-green-900/20" : "bg-red-100 dark:bg-red-900/20",
 		},
 		{
 			title: "Attendance Days",

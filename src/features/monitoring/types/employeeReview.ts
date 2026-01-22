@@ -4,6 +4,7 @@ export interface EmployeeInfo {
 	email: string;
 	avatar: string | null;
 	specialization: string | null;
+	totalPoints: number; // إضافة النقاط الحالية
 }
 
 export interface ReviewPeriod {
@@ -18,6 +19,10 @@ export interface OverviewMetrics {
 	averageBounceRate: string;
 	attendanceDays: number;
 	productivityScore: string;
+	// إضافة إحصائيات النقاط
+	pointsEarned: number;
+	pointsDeducted: number;
+	netPointsChange: number;
 }
 
 export interface TimeTrackingByType {
@@ -48,6 +53,11 @@ export interface TaskWithBounce {
 	reopenCount: number;
 	estimatedHours: number | null;
 	totalTimeSpent: number;
+	// إضافة معلومات التسليم
+	dueDate: string | null;
+	completedAt: string | null;
+	delayDays: number | null;
+	isOverdue: boolean;
 }
 
 export interface RecentTask {
@@ -58,6 +68,11 @@ export interface RecentTask {
 	priority: string;
 	createdAt: string;
 	updatedAt: string;
+	// إضافة معلومات التسليم
+	dueDate: string | null;
+	completedAt: string | null;
+	delayDays: number | null;
+	isOverdue: boolean;
 }
 
 export interface TasksData {
@@ -111,6 +126,32 @@ export interface ProductivityMetrics {
 	productivityScore: string;
 }
 
+// إضافة interfaces للنقاط
+export interface PointTransaction {
+	transactionId: number;
+	points: number;
+	type: string;
+	reason: string;
+	createdAt: string;
+	createdBy: string;
+	balanceAfter: number;
+}
+
+export interface PointsData {
+	currentPoints: number;
+	pointsEarned: number;
+	pointsDeducted: number;
+	netChange: number;
+	transactions: PointTransaction[];
+	monthlyBreakdown: {
+		[key: string]: {
+			earned: number;
+			deducted: number;
+			net: number;
+		};
+	};
+}
+
 export interface EmployeeReviewData {
 	employee: EmployeeInfo;
 	period: ReviewPeriod;
@@ -120,6 +161,7 @@ export interface EmployeeReviewData {
 	projects: ProjectsData;
 	attendance: AttendanceData;
 	productivity: ProductivityMetrics;
+	points: PointsData; // إضافة بيانات النقاط
 }
 
 export interface EmployeeReviewFilters {

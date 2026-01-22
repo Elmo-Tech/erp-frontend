@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TasksData } from "../types/employeeReview";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp, CalendarX } from "lucide-react";
+import { format, parseISO } from "date-fns";
 
 interface TasksSectionProps {
 	tasks: TasksData;
@@ -26,6 +27,41 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 			low: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
 		};
 		return colors[priority] || colors.medium;
+	};
+
+	const getDeliveryStatusColor = (task: any) => {
+		if (task.status === "completed") {
+			if (task.delayDays && task.delayDays > 0) {
+				return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400";
+			}
+			return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+		}
+		if (task.isOverdue) {
+			return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
+		}
+		return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
+	};
+
+	const getDeliveryStatusText = (task: any) => {
+		if (task.status === "completed") {
+			if (task.delayDays && task.delayDays > 0) {
+				return `Late by ${task.delayDays} days`;
+			}
+			return "On Time";
+		}
+		if (task.isOverdue) {
+			return "Overdue";
+		}
+		return "In Progress";
+	};
+
+	const formatDate = (dateString: string | null) => {
+		if (!dateString) return "No due date";
+		try {
+			return format(parseISO(dateString), "MMM d, yyyy");
+		} catch {
+			return "Invalid date";
+		}
 	};
 
 	return (
@@ -88,6 +124,8 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 									<TableHead>Task</TableHead>
 									<TableHead>Project</TableHead>
 									<TableHead>Status</TableHead>
+									<TableHead>Due Date</TableHead>
+									<TableHead>Delivery Status</TableHead>
 									<TableHead className="text-right">Bounces</TableHead>
 									<TableHead className="text-right">Time Spent</TableHead>
 								</TableRow>
@@ -99,6 +137,15 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 										<TableCell>{task.projectTitle || "N/A"}</TableCell>
 										<TableCell>
 											<Badge className={getStatusColor(task.status)}>{task.status.replace("_", " ")}</Badge>
+										</TableCell>
+										<TableCell>
+											<div className="flex items-center gap-1">
+												<Calendar className="h-3 w-3 text-muted-foreground" />
+												<span className="text-sm">{formatDate(task.dueDate)}</span>
+											</div>
+										</TableCell>
+										<TableCell>
+											<Badge className={getDeliveryStatusColor(task)}>{getDeliveryStatusText(task)}</Badge>
 										</TableCell>
 										<TableCell className="text-right">
 											<Badge variant="destructive">{task.reopenCount}</Badge>
@@ -125,6 +172,8 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 								<TableHead>Project</TableHead>
 								<TableHead>Status</TableHead>
 								<TableHead>Priority</TableHead>
+								<TableHead>Due Date</TableHead>
+								<TableHead>Delivery Status</TableHead>
 								<TableHead>Updated</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -138,6 +187,15 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 									</TableCell>
 									<TableCell>
 										<Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+									</TableCell>
+									<TableCell>
+										<div className="flex items-center gap-1">
+											<Calendar className="h-3 w-3 text-muted-foreground" />
+											<span className="text-sm">{formatDate(task.dueDate)}</span>
+										</div>
+									</TableCell>
+									<TableCell>
+										<Badge className={getDeliveryStatusColor(task)}>{getDeliveryStatusText(task)}</Badge>
 									</TableCell>
 									<TableCell>{task.updatedAt}</TableCell>
 								</TableRow>
