@@ -53,10 +53,10 @@ const DeliveryStatusCard = ({ deliveryStatus }: { deliveryStatus: DeliveryStatus
 		}
 	};
 
-	// Only show due date if:
-	// 1. Task is not completed, OR
-	// 2. Task is completed AND has delay_days (meaning it had a due date when completed)
-	const shouldShowDueDate = deliveryStatus.dueDate && (!deliveryStatus.isCompleted || deliveryStatus.delayDays !== null);
+	// Show due date if:
+	// 1. Task has a due date, AND
+	// 2. Either task is not completed OR task is completed but we have delay information
+	const shouldShowDueDate = deliveryStatus.dueDate && (!deliveryStatus.isCompleted || deliveryStatus.delayDays !== null || deliveryStatus.statusText !== "Completed (no due date)");
 
 	return (
 		<div className={cn("p-3 rounded-lg border", getStatusColor())}>
