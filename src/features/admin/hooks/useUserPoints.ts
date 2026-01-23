@@ -68,7 +68,7 @@ export function usePointTransactionTypes() {
 // Get unified user points history
 export function useUnifiedPointsHistory(userId: number, filters: { dateFrom?: string; dateTo?: string } = {}, limit = 50) {
 	return useQuery({
-		queryKey: [...userPointsKeys.history(userId), "unified", filters, limit],
+		queryKey: [...userPointsKeys.history(userId, 1, limit), "unified", filters, limit],
 		queryFn: () => userPointsApi.getUnifiedHistory(userId, filters, limit),
 		enabled: !!userId,
 	});
@@ -146,7 +146,7 @@ export function useDeletePointTransaction() {
 
 	return useMutation({
 		mutationFn: (transactionId: string) => userPointsApi.deleteTransaction(transactionId),
-		onSuccess: (data) => {
+		onSuccess: () => {
 			toast.success("Transaction deleted successfully");
 			// Invalidate all related queries
 			queryClient.invalidateQueries({ queryKey: userPointsKeys.all });
