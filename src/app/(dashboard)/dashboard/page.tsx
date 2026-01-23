@@ -10,6 +10,7 @@ import { useMyAssignedTasks } from "@/features/dashboard/hooks/useTasks";
 import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview } from "@/features/dashboard/types";
+import { PendingReviewsWidget } from "@/features/performance";
 
 export default function DashboardPage() {
 	const { user } = useAuthStore();
@@ -229,7 +230,7 @@ function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
 	return (
 		<>
 			<StatsGrid stats={stats} />
-			<div className="grid gap-4 md:grid-cols-2">
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 				<Card>
 					<CardHeader>
 						<CardTitle>My Tasks</CardTitle>
@@ -315,6 +316,11 @@ function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
 						</div>
 					</CardContent>
 				</Card>
+
+				{/* Pending Code Reviews Widget */}
+				<div className="lg:col-span-1">
+					<PendingReviewsWidget />
+				</div>
 			</div>
 		</>
 	);

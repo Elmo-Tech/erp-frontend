@@ -7,8 +7,8 @@ import { FilterBar } from "@/components/shared/filters/FilterBar";
 import { ConfirmDialog, FormDialog } from "@/components/shared";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCodeReviews, useApproveCodeReview, useRequestCodeRevision } from "../hooks";
-import type { CodeReview, CodeReviewStatus } from "../types";
+import { useCodeReviews, useApproveCodeReview, useRequestRevision } from "../hooks";
+import type { CodeReview, CodeReviewStatus } from "../types/codeReview";
 import { getCodeReviewsColumns } from "./columns/codeReviewsColumns";
 import { FileCode } from "lucide-react";
 import { toast } from "sonner";
@@ -40,7 +40,7 @@ export function CodeReviewsTable({ asReviewer, asDeveloper }: CodeReviewsTablePr
 
 	const { data, isLoading, error } = useCodeReviews(filters);
 	const approveMutation = useApproveCodeReview();
-	const revisionMutation = useRequestCodeRevision();
+	const revisionMutation = useRequestRevision();
 
 	const { canApproveCodeReviews } = usePermissions();
 
@@ -107,7 +107,7 @@ export function CodeReviewsTable({ asReviewer, asDeveloper }: CodeReviewsTablePr
 				title="Code Reviews"
 				titleBadge={data?.pagination ? `${(data.pagination as { total: number }).total} reviews` : undefined}
 				columns={columns}
-				data={data?.codeReviews || []}
+				data={data?.items || []}
 				keyExtractor={(review) => review.reviewId}
 				isLoading={isLoading}
 				error={error}
