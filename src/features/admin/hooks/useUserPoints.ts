@@ -139,3 +139,29 @@ export function useSetPoints() {
 		},
 	});
 }
+
+// Delete point transaction mutation
+export function useDeletePointTransaction() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (transactionId: string) => userPointsApi.deleteTransaction(transactionId),
+		onSuccess: (data) => {
+			toast.success("Transaction deleted successfully");
+			// Invalidate all related queries
+			queryClient.invalidateQueries({ queryKey: userPointsKeys.all });
+			queryClient.invalidateQueries({ queryKey: ["employees"] });
+			queryClient.invalidateQueries({ queryKey: ["users"] });
+			// Force refetch to ensure immediate update
+			queryClient.refetchQueries({ queryKey: ["employees"] });
+		},
+		onError: (error: any) => {
+			const message = error.response?.data?.message || "Failed to delete transaction";
+			if (error.response?.status === 403) {
+				toast.error("You can only delete manual transactions");
+			} else {
+				toast.error(message);
+			}
+		},
+	});
+}

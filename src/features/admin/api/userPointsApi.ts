@@ -98,4 +98,10 @@ export const userPointsApi = {
 		const response = await api.get(`/user-points/unified-history/${userId}?${params}`);
 		return response.data.data;
 	},
+
+	// Delete a point transaction
+	deleteTransaction: async (transactionId: string): Promise<{ deletedTransaction: any; newUserTotal: number }> => {
+		const response = await api.delete(`/user-points/transaction/${transactionId}`);
+		return response.data.data;
+	},
 };
