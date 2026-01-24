@@ -4,13 +4,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useCreateCodeReview } from "../hooks";
+import { useTasks } from "@/features/dashboard/hooks";
+import { useUsers } from "@/features/admin/hooks";
+import { TaskStatus } from "@/features/dashboard/types/task";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const createCodeReviewSchema = z.object({
 	taskId: z.number().positive("Task is required"),
@@ -35,6 +39,10 @@ interface CreateCodeReviewFormProps {
 
 export function CreateCodeReviewForm({ onSuccess, onCancel, defaultTaskId, defaultDeveloperId }: CreateCodeReviewFormProps) {
 	const createCodeReview = useCreateCodeReview();
+
+	// Fetch tasks and users for dropdowns
+	const { data: tasksData } = useTasks({ status: TaskStatus.COMPLETED }); // Only completed tasks can be reviewed
+	const { data: usersData } = useUsers();
 
 	const form = useForm<CreateCodeReviewFormData>({
 		resolver: zodResolver(createCodeReviewSchema),
@@ -70,12 +78,25 @@ export function CreateCodeReviewForm({ onSuccess, onCancel, defaultTaskId, defau
 
 	const averageScore = calculateAverage();
 
+	// Get selected task and developer info for display
+	const watchedTaskId = form.watch("taskId");
+	const watchedDeveloperId = form.watch("developerId");
+	const selectedTask = tasksData?.tasks?.find((task) => task.taskId === watchedTaskId);
+	const selectedDeveloper = usersData?.users?.find((user) => user.userId === watchedDeveloperId);
+
 	return (
 		<Card className="w-full max-w-2xl">
 			<CardHeader>
 				<div className="flex items-center justify-between">
-					<CardTitle>Create Code Review</CardTitle>
-					{averageScore > 0 && <Badge variant={averageScore >= 7 ? "default" : "secondary"}>Avg: {averageScore.toFixed(1)}/10</Badge>}
+					<div>
+						<CardTitle>Create Code Review</CardTitle>
+						{selectedTask && selectedDeveloper && (
+							<p className="text-sm text-muted-foreground mt-1">
+								Reviewing &quot;{selectedTask.title}&quot; by {selectedDeveloper.name}
+							</p>
+						)}
+					</div>
+					{averageScore > 0 && <Badge variant={averageScore >= 7 ? "default" : averageScore >= 5 ? "secondary" : "destructive"}>Avg: {averageScore.toFixed(1)}/10</Badge>}
 				</div>
 			</CardHeader>
 
@@ -86,21 +107,38 @@ export function CreateCodeReviewForm({ onSuccess, onCancel, defaultTaskId, defau
 						className="space-y-6"
 					>
 						{/* Basic Info */}
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid grid-cols-1 gap-4">
 							<FormField
 								control={form.control}
 								name="taskId"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Task ID</FormLabel>
-										<FormControl>
-											<Input
-												type="number"
-												placeholder="Enter task ID"
-												{...field}
-												onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-											/>
-										</FormControl>
+										<FormLabel>Task</FormLabel>
+										<Select
+											onValueChange={(value) => field.onChange(parseInt(value))}
+											value={field.value?.toString() || ""}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Select a task to review" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{tasksData?.tasks?.map((task) => (
+													<SelectItem
+														key={task.taskId}
+														value={task.taskId.toString()}
+													>
+														<div className="flex flex-col">
+															<span className="font-medium">{task.title}</span>
+															<span className="text-xs text-muted-foreground">
+																Project: {task.project?.title || "No Project"} • ID: {task.taskId}
+															</span>
+														</div>
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
 										<FormMessage />
 									</FormItem>
 								)}
@@ -111,15 +149,51 @@ export function CreateCodeReviewForm({ onSuccess, onCancel, defaultTaskId, defau
 								name="developerId"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Developer ID</FormLabel>
-										<FormControl>
-											<Input
-												type="number"
-												placeholder="Enter developer ID"
-												{...field}
-												onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-											/>
-										</FormControl>
+										<FormLabel>Developer</FormLabel>
+										<Select
+											onValueChange={(value) => field.onChange(parseInt(value))}
+											value={field.value?.toString() || ""}
+										>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Select the developer" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{!usersData ? (
+													<SelectItem
+														value=""
+														disabled
+													>
+														Loading users...
+													</SelectItem>
+												) : usersData?.users?.length === 0 ? (
+													<SelectItem
+														value=""
+														disabled
+													>
+														No users available
+													</SelectItem>
+												) : (
+													usersData?.users?.map((user) => (
+														<SelectItem
+															key={user.userId}
+															value={user.userId.toString()}
+														>
+															<div className="flex items-center gap-2">
+																<Avatar className="h-6 w-6">
+																	<AvatarFallback className="text-xs">{user.name.charAt(0)}</AvatarFallback>
+																</Avatar>
+																<div className="flex flex-col">
+																	<span className="font-medium">{user.name}</span>
+																	<span className="text-xs text-muted-foreground">{user.email}</span>
+																</div>
+															</div>
+														</SelectItem>
+													))
+												)}
+											</SelectContent>
+										</Select>
 										<FormMessage />
 									</FormItem>
 								)}
