@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +20,7 @@ import { Task, TaskDeliverable } from "@/features/dashboard/types/task";
 import { DeliverableStatus } from "@/lib/statusHelpers";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useAuthStore } from "@/store/authStore";
-import { useTaskDeliverables, useCreateTaskDeliverable, useSubmitTaskDeliverable, useReviewTaskDeliverable } from "@/features/projects/hooks/useTaskDeliverables";
+import { useTaskDeliverables, useCreateTaskDeliverable, useUpdateTaskDeliverable, useDeleteTaskDeliverable, useSubmitTaskDeliverable, useReviewTaskDeliverable } from "@/features/projects/hooks/useTaskDeliverables";
 
 interface TaskDeliverablesSectionProps {
 	task: Task;
@@ -258,6 +258,8 @@ function DeliverableCard({
 	canReview,
 	onSubmit,
 	onReview,
+	onEdit,
+	onDelete,
 }: {
 	deliverable: TaskDeliverable;
 	canEdit: boolean;
@@ -265,6 +267,8 @@ function DeliverableCard({
 	canReview: boolean;
 	onSubmit: (deliverableId: number, submissionNotes?: string) => Promise<void>;
 	onReview: (deliverableId: number, data: ReviewFormData) => Promise<void>;
+	onEdit: (deliverable: TaskDeliverable) => void;
+	onDelete: (deliverableId: number) => void;
 }) {
 	const [submitOpen, setSubmitOpen] = useState(false);
 	const [reviewOpen, setReviewOpen] = useState(false);
@@ -342,6 +346,7 @@ function DeliverableCard({
 								size="sm"
 								variant="ghost"
 								className="h-8 w-8 p-0"
+								onClick={() => onEdit(deliverable)}
 							>
 								<Edit className="h-4 w-4" />
 							</Button>
@@ -349,6 +354,7 @@ function DeliverableCard({
 								size="sm"
 								variant="ghost"
 								className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+								onClick={() => onDelete(deliverable.deliverableId)}
 							>
 								<Trash2 className="h-4 w-4" />
 							</Button>
@@ -564,8 +570,15 @@ export function TaskDeliverablesSection({ task, deliverables = [] }: TaskDeliver
 	// Fetch deliverables from API
 	const { data: apiDeliverables, refetch } = useTaskDeliverables(task.taskId);
 	const createDeliverable = useCreateTaskDeliverable();
+	const updateDeliverable = useUpdateTaskDeliverable();
+	const deleteDeliverable = useDeleteTaskDeliverable();
 	const submitDeliverable = useSubmitTaskDeliverable();
 	const reviewDeliverable = useReviewTaskDeliverable();
+
+	// State for edit and delete dialogs
+	const [editDialogOpen, setEditDialogOpen] = useState(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [selectedDeliverable, setSelectedDeliverable] = useState<TaskDeliverable | null>(null);
 
 	// Use API data if available, fallback to props
 	const currentDeliverables = apiDeliverables || deliverables;
@@ -581,6 +594,18 @@ export function TaskDeliverablesSection({ task, deliverables = [] }: TaskDeliver
 
 	// Assignees cannot submit - only Admins and Reviewers can manage everything
 	const canSubmit = false;
+
+	// Edit form
+	const editForm = useForm<DeliverableFormData>({
+		resolver: zodResolver(deliverableSchema),
+		defaultValues: {
+			title: "",
+			description: "",
+			acceptanceCriteria: "",
+			isBonus: false,
+			order: 0,
+		},
+	});
 
 	const handleRefresh = () => {
 		refetch();
@@ -601,6 +626,65 @@ export function TaskDeliverablesSection({ task, deliverables = [] }: TaskDeliver
 		} catch (error) {
 			console.error("Failed to create deliverable:", error);
 			throw error;
+		}
+	};
+
+	const handleEditDeliverable = (deliverable: TaskDeliverable) => {
+		setSelectedDeliverable(deliverable);
+		editForm.reset({
+			title: deliverable.title,
+			description: deliverable.description || "",
+			acceptanceCriteria: deliverable.acceptanceCriteria || "",
+			isBonus: deliverable.isBonus,
+			order: deliverable.order,
+		});
+		setEditDialogOpen(true);
+	};
+
+	const handleUpdateDeliverable = async (data: DeliverableFormData) => {
+		if (!selectedDeliverable) return;
+
+		try {
+			await updateDeliverable.mutateAsync({
+				taskId: task.taskId,
+				deliverableId: selectedDeliverable.deliverableId,
+				data: {
+					title: data.title,
+					description: data.description,
+					acceptanceCriteria: data.acceptanceCriteria,
+					isBonus: data.isBonus,
+					order: data.order,
+				},
+			});
+			setEditDialogOpen(false);
+			setSelectedDeliverable(null);
+			editForm.reset();
+		} catch (error) {
+			console.error("Failed to update deliverable:", error);
+			throw error;
+		}
+	};
+
+	const handleDeleteDeliverable = (deliverableId: number) => {
+		const deliverable = currentDeliverables.find((d) => d.deliverableId === deliverableId);
+		if (deliverable) {
+			setSelectedDeliverable(deliverable);
+			setDeleteDialogOpen(true);
+		}
+	};
+
+	const confirmDeleteDeliverable = async () => {
+		if (!selectedDeliverable) return;
+
+		try {
+			await deleteDeliverable.mutateAsync({
+				taskId: task.taskId,
+				deliverableId: selectedDeliverable.deliverableId,
+			});
+			setDeleteDialogOpen(false);
+			setSelectedDeliverable(null);
+		} catch (error) {
+			console.error("Failed to delete deliverable:", error);
 		}
 	};
 
@@ -669,6 +753,8 @@ export function TaskDeliverablesSection({ task, deliverables = [] }: TaskDeliver
 							canReview={canReview}
 							onSubmit={handleSubmitDeliverable}
 							onReview={handleReviewDeliverable}
+							onEdit={handleEditDeliverable}
+							onDelete={handleDeleteDeliverable}
 						/>
 					))}
 				</div>
@@ -679,6 +765,166 @@ export function TaskDeliverablesSection({ task, deliverables = [] }: TaskDeliver
 					{canEdit && <p className="text-xs mt-1">Click &quot;Add Deliverable&quot; to create the first one</p>}
 				</div>
 			)}
+
+			{/* Edit Deliverable Dialog */}
+			<Dialog
+				open={editDialogOpen}
+				onOpenChange={setEditDialogOpen}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Edit Deliverable</DialogTitle>
+					</DialogHeader>
+					<Form {...editForm}>
+						<form
+							onSubmit={editForm.handleSubmit(handleUpdateDeliverable)}
+							className="space-y-4"
+						>
+							<FormField
+								control={editForm.control}
+								name="title"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Title</FormLabel>
+										<FormControl>
+											<Input
+												placeholder="Enter deliverable title"
+												{...field}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={editForm.control}
+								name="description"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Description</FormLabel>
+										<FormControl>
+											<Textarea
+												placeholder="Describe what needs to be delivered"
+												className="min-h-[80px]"
+												{...field}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={editForm.control}
+								name="acceptanceCriteria"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Acceptance Criteria</FormLabel>
+										<FormControl>
+											<Textarea
+												placeholder="Define what makes this deliverable acceptable"
+												className="min-h-[60px]"
+												{...field}
+											/>
+										</FormControl>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<div className="flex items-center justify-between">
+								<FormField
+									control={editForm.control}
+									name="isBonus"
+									render={({ field }) => (
+										<FormItem className="flex items-center space-x-2">
+											<FormControl>
+												<Switch
+													checked={field.value}
+													onCheckedChange={field.onChange}
+												/>
+											</FormControl>
+											<FormLabel className="text-sm font-normal">Bonus Deliverable</FormLabel>
+										</FormItem>
+									)}
+								/>
+
+								<FormField
+									control={editForm.control}
+									name="order"
+									render={({ field }) => (
+										<FormItem className="w-20">
+											<FormLabel>Order</FormLabel>
+											<FormControl>
+												<Input
+													type="number"
+													min="0"
+													{...field}
+													onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+												/>
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+							</div>
+
+							<div className="flex justify-end gap-2">
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => {
+										setEditDialogOpen(false);
+										setSelectedDeliverable(null);
+										editForm.reset();
+									}}
+								>
+									Cancel
+								</Button>
+								<Button type="submit">Update</Button>
+							</div>
+						</form>
+					</Form>
+				</DialogContent>
+			</Dialog>
+
+			{/* Delete Confirmation Dialog */}
+			<Dialog
+				open={deleteDialogOpen}
+				onOpenChange={setDeleteDialogOpen}
+			>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>Delete Deliverable</DialogTitle>
+						<DialogDescription>Are you sure you want to delete this deliverable? This action cannot be undone.</DialogDescription>
+					</DialogHeader>
+					{selectedDeliverable && (
+						<div className="py-4">
+							<p className="text-sm font-medium">{selectedDeliverable.title}</p>
+							{selectedDeliverable.description && <p className="text-sm text-muted-foreground mt-1">{selectedDeliverable.description}</p>}
+						</div>
+					)}
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => {
+								setDeleteDialogOpen(false);
+								setSelectedDeliverable(null);
+							}}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							variant="destructive"
+							onClick={confirmDeleteDeliverable}
+						>
+							Delete
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
