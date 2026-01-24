@@ -10,12 +10,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "../hooks/useProjects";
 import { UpdateProjectForm } from "./projects";
 import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab, BudgetTab } from "./tabs";
-import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Wallet, CheckSquare } from "lucide-react";
+import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Badge } from "@/components/ui/badge";
-import { useAuthStore } from "@/store/authStore";
 
 interface ProjectDetailsTabsProps {
 	projectId: number;
@@ -27,11 +26,8 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 	const [activeTab, setActiveTab] = useState("overview");
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 
-	// Get user role from auth store
-	const { role } = useAuthStore();
-
 	// Permission checks
-	const { canEditProjects, canViewTasks, canViewProjectMembers, canViewProjectFiles, canViewWiki, canViewProjectHistory, canViewProjectBudget, canViewChangeRequests, canManageTasks } = usePermissions();
+	const { canEditProjects, canViewTasks, canViewProjectMembers, canViewProjectFiles, canViewWiki, canViewProjectHistory, canViewProjectBudget, canViewChangeRequests } = usePermissions();
 
 	if (isLoading) {
 		return (
@@ -166,15 +162,6 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 						>
 							<ListTodo className="h-4 w-4" />
 							Tasks
-						</TabsTrigger>
-					)}
-					{canViewTasks && (role === "admin" || role === "super-admin" || canManageTasks) && (
-						<TabsTrigger
-							value="deliverables"
-							className="gap-2"
-						>
-							<CheckSquare className="h-4 w-4" />
-							Deliverables
 						</TabsTrigger>
 					)}
 					{canViewProjectMembers && (
