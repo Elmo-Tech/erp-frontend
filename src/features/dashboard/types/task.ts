@@ -4,8 +4,8 @@
  */
 
 // Re-export enums from centralized statusHelpers
-export { TaskStatus, TaskStatusLabels, TaskStatusColors, TaskPriority, TaskPriorityLabels, TaskPriorityColors } from "@/lib/statusHelpers";
-import { TaskStatus, TaskPriority } from "@/lib/statusHelpers";
+export { TaskStatus, TaskStatusLabels, TaskStatusColors, TaskPriority, TaskPriorityLabels, TaskPriorityColors, DeliverableStatus, DeliverableStatusLabels, DeliverableStatusColors } from "@/lib/statusHelpers";
+import { TaskStatus, TaskPriority, DeliverableStatus } from "@/lib/statusHelpers";
 
 /**
  * Task type enum matching backend TaskType
@@ -145,6 +145,31 @@ export interface TaskActivity {
 }
 
 /**
+ * Task deliverable interface
+ */
+export interface TaskDeliverable {
+	deliverableId: number;
+	taskId: number;
+	title: string;
+	description?: string;
+	acceptanceCriteria?: string;
+	status: DeliverableStatus;
+	submissionNotes?: string;
+	reviewNotes?: string;
+	submittedAt?: string;
+	reviewedAt?: string;
+	reviewedBy?: {
+		userId: number;
+		name: string;
+	};
+	pointsAwarded: number;
+	isBonus: boolean;
+	order: number;
+	createdAt: string;
+	updatedAt: string;
+}
+
+/**
  * Simple assignee info (legacy support)
  */
 export interface SimpleAssignee {
@@ -190,6 +215,7 @@ export interface Task {
 	teamAssignees?: TaskAssignee[] | null; // Available team members from Main Task (for Weekly/Subtasks only)
 	tags?: Tag[];
 	testScenarios?: TaskTestScenario[];
+	deliverables?: TaskDeliverable[]; // Task deliverables (for weekly tasks)
 	children?: Task[];
 	project?: {
 		projectId: number;

@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "../hooks/useProjects";
 import { UpdateProjectForm } from "./projects";
-import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab, BudgetTab, ProjectDeliverablesTab } from "./tabs";
+import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab, BudgetTab } from "./tabs";
 import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Wallet, CheckSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -28,7 +28,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 
 	// Get user role from auth store
-	const { user, role } = useAuthStore();
+	const { role } = useAuthStore();
 
 	// Permission checks
 	const { canEditProjects, canViewTasks, canViewProjectMembers, canViewProjectFiles, canViewWiki, canViewProjectHistory, canViewProjectBudget, canViewChangeRequests, canManageTasks } = usePermissions();
@@ -300,13 +300,6 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 				{canViewTasks && (
 					<TabsContent value="tasks">
 						<TasksTab projectId={projectId} />
-					</TabsContent>
-				)}
-
-				{/* Deliverables Tab */}
-				{canViewTasks && (role === "admin" || role === "super-admin" || canManageTasks) && (
-					<TabsContent value="deliverables">
-						<ProjectDeliverablesTab projectId={projectId} />
 					</TabsContent>
 				)}
 

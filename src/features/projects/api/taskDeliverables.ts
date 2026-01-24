@@ -1,77 +1,45 @@
-import api from "@/lib/axios";
-import { TaskDeliverable, DeliverablesResponse, CreateDeliverableData, UpdateDeliverableData, SubmitDeliverableData, ReviewDeliverableData, ReorderDeliverablesData } from "../types/taskDeliverable";
-
 /**
+ * Task Deliverables API
  * API functions for task deliverables management
  */
+
+import api from "@/lib/axios";
+import { ApiResponse } from "@/features/monitoring/types/api";
+import { TaskDeliverable, CreateDeliverableData, UpdateDeliverableData, SubmitDeliverableData, ReviewDeliverableData, DeliverablesResponse } from "../types/taskDeliverable";
+
 export const taskDeliverablesApi = {
 	/**
 	 * Get all deliverables for a task
 	 */
-	getAll: async (taskId: number): Promise<DeliverablesResponse> => {
-		const response = await api.get<{ data: DeliverablesResponse }>(`/tasks/${taskId}/deliverables`);
-		return response.data.data;
-	},
+	getAll: (taskId: number) => api.get<ApiResponse<DeliverablesResponse>>(`/tasks/${taskId}/deliverables`).then((res) => res.data.data),
 
 	/**
-	 * Create a new deliverable for a task
+	 * Get a single deliverable
 	 */
-	create: async (taskId: number, payload: CreateDeliverableData): Promise<TaskDeliverable> => {
-		const response = await api.post<{ data: TaskDeliverable }>(`/tasks/${taskId}/deliverables`, payload);
-		return response.data.data;
-	},
+	getById: (taskId: number, deliverableId: number) => api.get<ApiResponse<{ deliverable: TaskDeliverable }>>(`/tasks/${taskId}/deliverables/${deliverableId}`).then((res) => res.data.data.deliverable),
 
 	/**
-	 * Update an existing deliverable
+	 * Create a new deliverable
 	 */
-	update: async (deliverableId: number, payload: UpdateDeliverableData): Promise<TaskDeliverable> => {
-		const response = await api.put<{ data: TaskDeliverable }>(`/deliverables/${deliverableId}`, payload);
-		return response.data.data;
-	},
+	create: (taskId: number, data: CreateDeliverableData) => api.post<ApiResponse<{ deliverable: TaskDeliverable }>>(`/tasks/${taskId}/deliverables`, data).then((res) => res.data.data.deliverable),
+
+	/**
+	 * Update a deliverable
+	 */
+	update: (taskId: number, deliverableId: number, data: UpdateDeliverableData) => api.put<ApiResponse<{ deliverable: TaskDeliverable }>>(`/tasks/${taskId}/deliverables/${deliverableId}`, data).then((res) => res.data.data.deliverable),
 
 	/**
 	 * Delete a deliverable
 	 */
-	delete: async (deliverableId: number): Promise<void> => {
-		await api.delete(`/deliverables/${deliverableId}`);
-	},
+	delete: (taskId: number, deliverableId: number) => api.delete<ApiResponse<null>>(`/tasks/${taskId}/deliverables/${deliverableId}`).then((res) => res.data),
 
 	/**
 	 * Submit a deliverable for review
 	 */
-	submit: async (deliverableId: number, payload: SubmitDeliverableData): Promise<TaskDeliverable> => {
-		const response = await api.post<{ data: TaskDeliverable }>(`/deliverables/${deliverableId}/submit`, payload);
-		return response.data.data;
-	},
+	submit: (taskId: number, deliverableId: number, data: SubmitDeliverableData) => api.post<ApiResponse<{ deliverable: TaskDeliverable }>>(`/tasks/${taskId}/deliverables/${deliverableId}/submit`, data).then((res) => res.data.data.deliverable),
 
 	/**
-	 * Start reviewing a deliverable
+	 * Review a deliverable (approve/reject)
 	 */
-	startReview: async (deliverableId: number): Promise<TaskDeliverable> => {
-		const response = await api.post<{ data: TaskDeliverable }>(`/deliverables/${deliverableId}/start-review`);
-		return response.data.data;
-	},
-
-	/**
-	 * Approve a deliverable
-	 */
-	approve: async (deliverableId: number, payload: ReviewDeliverableData): Promise<TaskDeliverable> => {
-		const response = await api.post<{ data: TaskDeliverable }>(`/deliverables/${deliverableId}/approve`, payload);
-		return response.data.data;
-	},
-
-	/**
-	 * Reject a deliverable
-	 */
-	reject: async (deliverableId: number, payload: ReviewDeliverableData): Promise<TaskDeliverable> => {
-		const response = await api.post<{ data: TaskDeliverable }>(`/deliverables/${deliverableId}/reject`, payload);
-		return response.data.data;
-	},
-
-	/**
-	 * Reorder deliverables for a task
-	 */
-	reorder: async (taskId: number, payload: ReorderDeliverablesData): Promise<void> => {
-		await api.post(`/tasks/${taskId}/deliverables/reorder`, payload);
-	},
+	review: (taskId: number, deliverableId: number, data: ReviewDeliverableData) => api.post<ApiResponse<{ deliverable: TaskDeliverable }>>(`/tasks/${taskId}/deliverables/${deliverableId}/review`, data).then((res) => res.data.data.deliverable),
 };

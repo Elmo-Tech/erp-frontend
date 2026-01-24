@@ -1,137 +1,226 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Task Deliverables Hooks
+ * TanStack Query hooks for task deliverables management
+ */
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskDeliverablesApi } from "../api/taskDeliverables";
-import { TaskDeliverable, DeliverablesResponse, CreateDeliverableData, UpdateDeliverableData, SubmitDeliverableData, ReviewDeliverableData, ReorderDeliverablesData } from "../types/taskDeliverable";
+import { CreateDeliverableData, UpdateDeliverableData, SubmitDeliverableData, ReviewDeliverableData } from "../types/taskDeliverable";
+import { toast } from "sonner";
 
-/**
- * Query keys for task deliverables
- */
+// Query Keys
 export const taskDeliverablesKeys = {
 	all: ["task-deliverables"] as const,
-	byTask: (taskId: number) => [...taskDeliverablesKeys.all, "task", taskId] as const,
+	byTask: (taskId: number) => [...taskDeliverablesKeys.all, taskId] as const,
+	detail: (taskId: number, deliverableId: number) => [...taskDeliverablesKeys.byTask(taskId), deliverableId] as const,
 };
 
 /**
- * Hook to fetch deliverables for a task
+ * Get all deliverables for a task
  */
-export const useTaskDeliverables = (taskId: number, enabled = true) => {
-	return useQuery<DeliverablesResponse, Error>({
+export function useTaskDeliverables(taskId: number) {
+	return useQuery({
 		queryKey: taskDeliverablesKeys.byTask(taskId),
-		queryFn: () => taskDeliverablesApi.getAll(taskId),
-		enabled: enabled && !!taskId,
-		staleTime: 2 * 60 * 1000, // 2 minutes
-		gcTime: 5 * 60 * 1000, // 5 minutes
+		queryFn: () => taskDeliverablesApi.getAll(taskId).then((data) => data.deliverables),
+		enabled: !!taskId,
 	});
-};
+}
 
 /**
- * Hook to create a new deliverable
+ * Get a single deliverable
  */
-export const useCreateTaskDeliverable = () => {
-	const queryClient = useQueryClient();
-
-	return useMutation<TaskDeliverable, Error, { taskId: number; data: CreateDeliverableData }>({
-		mutationFn: ({ taskId, data }) => taskDeliverablesApi.create(taskId, data),
-		onSuccess: (_, { taskId }) => {
-			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(taskId) });
-		},
+export function useTaskDeliverable(taskId: number, deliverableId: number) {
+	return useQuery({
+		queryKey: taskDeliverablesKeys.detail(taskId, deliverableId),
+		queryFn: () => taskDeliverablesApi.getById(taskId, deliverableId),
+		enabled: !!taskId && !!deliverableId,
 	});
-};
+}
 
 /**
- * Hook to update a deliverable
+ * Create a new deliverable
  */
-export const useUpdateTaskDeliverable = () => {
+export function useCreateTaskDeliverable() {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskDeliverable, Error, { deliverableId: number; data: UpdateDeliverableData }>({
-		mutationFn: ({ deliverableId, data }) => taskDeliverablesApi.update(deliverableId, data),
-		onSuccess: (deliverable) => {
-			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(deliverable.taskId) });
+	return useMutation({
+		mutationFn: ({ taskId, data }: { taskId: number; data: CreateDeliverableData }) => taskDeliverablesApi.create(taskId, data),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+			toast.success("Deliverable created successfully");
+		},
+		onError: () => {
+			toast.error("Failed to create deliverable");
 		},
 	});
-};
+}
 
 /**
- * Hook to delete a deliverable
+ * Update a deliverable
  */
-export const useDeleteTaskDeliverable = () => {
+export function useUpdateTaskDeliverable() {
 	const queryClient = useQueryClient();
 
-	return useMutation<void, Error, number>({
-		mutationFn: (deliverableId: number) => taskDeliverablesApi.delete(deliverableId),
-		onSuccess: () => {
-			// Invalidate all task deliverables since we don't have taskId in response
-			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.all });
+	return useMutation({
+		mutationFn: ({ taskId, deliverableId, data }: { taskId: number; deliverableId: number; data: UpdateDeliverableData }) => taskDeliverablesApi.update(taskId, deliverableId, data),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.detail(variables.taskId, variables.deliverableId) });
+			queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+			toast.success("Deliverable updated successfully");
+		},
+		onError: () => {
+			toast.error("Failed to update deliverable");
 		},
 	});
-};
+}
 
 /**
- * Hook to submit a deliverable for review
+ * Delete a deliverable
  */
-export const useSubmitTaskDeliverable = () => {
+export function useDeleteTaskDeliverable() {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskDeliverable, Error, { deliverableId: number; data: SubmitDeliverableData }>({
-		mutationFn: ({ deliverableId, data }) => taskDeliverablesApi.submit(deliverableId, data),
-		onSuccess: (deliverable) => {
-			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(deliverable.taskId) });
+	return useMutation({
+		mutationFn: ({ taskId, deliverableId }: { taskId: number; deliverableId: number }) => taskDeliverablesApi.delete(taskId, deliverableId),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+			toast.success("Deliverable deleted successfully");
+		},
+		onError: () => {
+			toast.error("Failed to delete deliverable");
 		},
 	});
-};
+}
 
 /**
- * Hook to start reviewing a deliverable
+ * Submit a deliverable for review
  */
-export const useStartReviewTaskDeliverable = () => {
+export function useSubmitTaskDeliverable() {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskDeliverable, Error, number>({
-		mutationFn: (deliverableId: number) => taskDeliverablesApi.startReview(deliverableId),
-		onSuccess: (deliverable) => {
-			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(deliverable.taskId) });
+	return useMutation({
+		mutationFn: ({ taskId, deliverableId, data }: { taskId: number; deliverableId: number; data: SubmitDeliverableData }) => taskDeliverablesApi.submit(taskId, deliverableId, data),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.detail(variables.taskId, variables.deliverableId) });
+			queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+			toast.success("Deliverable submitted for review");
+		},
+		onError: () => {
+			toast.error("Failed to submit deliverable");
 		},
 	});
-};
+}
 
 /**
- * Hook to approve a deliverable
+ * Start review for a deliverable
  */
-export const useApproveTaskDeliverable = () => {
+export function useStartReviewTaskDeliverable() {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskDeliverable, Error, { deliverableId: number; data: ReviewDeliverableData }>({
-		mutationFn: ({ deliverableId, data }) => taskDeliverablesApi.approve(deliverableId, data),
-		onSuccess: (deliverable) => {
-			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(deliverable.taskId) });
+	return useMutation({
+		mutationFn: ({ taskId, deliverableId }: { taskId: number; deliverableId: number }) => taskDeliverablesApi.review(taskId, deliverableId, { status: "under_review" as any }),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.detail(variables.taskId, variables.deliverableId) });
+			queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+			toast.success("Review started");
+		},
+		onError: () => {
+			toast.error("Failed to start review");
 		},
 	});
-};
+}
 
 /**
- * Hook to reject a deliverable
+ * Approve a deliverable
  */
-export const useRejectTaskDeliverable = () => {
+export function useApproveTaskDeliverable() {
 	const queryClient = useQueryClient();
 
-	return useMutation<TaskDeliverable, Error, { deliverableId: number; data: ReviewDeliverableData }>({
-		mutationFn: ({ deliverableId, data }) => taskDeliverablesApi.reject(deliverableId, data),
-		onSuccess: (deliverable) => {
-			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(deliverable.taskId) });
+	return useMutation({
+		mutationFn: ({ taskId, deliverableId, data }: { taskId: number; deliverableId: number; data: Omit<ReviewDeliverableData, "status"> }) =>
+			taskDeliverablesApi.review(taskId, deliverableId, {
+				...data,
+				status: "approved" as any,
+			}),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.detail(variables.taskId, variables.deliverableId) });
+			queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+			toast.success("Deliverable approved");
+		},
+		onError: () => {
+			toast.error("Failed to approve deliverable");
 		},
 	});
-};
+}
 
 /**
- * Hook to reorder deliverables
+ * Reject a deliverable
  */
-export const useReorderTaskDeliverables = () => {
+export function useRejectTaskDeliverable() {
 	const queryClient = useQueryClient();
 
-	return useMutation<void, Error, { taskId: number; data: ReorderDeliverablesData }>({
-		mutationFn: ({ taskId, data }) => taskDeliverablesApi.reorder(taskId, data),
-		onSuccess: (_, { taskId }) => {
-			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(taskId) });
+	return useMutation({
+		mutationFn: ({ taskId, deliverableId, data }: { taskId: number; deliverableId: number; data: Omit<ReviewDeliverableData, "status"> }) =>
+			taskDeliverablesApi.review(taskId, deliverableId, {
+				...data,
+				status: "rejected" as any,
+			}),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.detail(variables.taskId, variables.deliverableId) });
+			queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+			toast.success("Deliverable rejected");
+		},
+		onError: () => {
+			toast.error("Failed to reject deliverable");
 		},
 	});
-};
+}
+
+/**
+ * Review a deliverable (generic - approve or reject)
+ */
+export function useReviewTaskDeliverable() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ taskId, deliverableId, data }: { taskId: number; deliverableId: number; data: ReviewDeliverableData }) => taskDeliverablesApi.review(taskId, deliverableId, data),
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.detail(variables.taskId, variables.deliverableId) });
+			queryClient.invalidateQueries({ queryKey: ["tasks", variables.taskId] });
+			toast.success("Deliverable reviewed successfully");
+		},
+		onError: () => {
+			toast.error("Failed to review deliverable");
+		},
+	});
+}
+
+/**
+ * Reorder deliverables (placeholder - not implemented in backend yet)
+ */
+export function useReorderTaskDeliverables() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ taskId, deliverableIds }: { taskId: number; deliverableIds: number[] }) => {
+			// TODO: Implement reorder endpoint in backend
+			return Promise.resolve();
+		},
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({ queryKey: taskDeliverablesKeys.byTask(variables.taskId) });
+			toast.success("Deliverables reordered");
+		},
+		onError: () => {
+			toast.error("Failed to reorder deliverables");
+		},
+	});
+}

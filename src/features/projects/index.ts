@@ -6,7 +6,7 @@ export { ProjectDetailsTabs } from "./components/ProjectDetailsTabs";
 export { ProjectStatusBadge } from "./components/ProjectStatusBadge";
 
 // Tabs
-export { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab, BudgetTab, ProjectDeliverablesTab, ReviewApprovalTab, DeliverableCard, DeliverableFormDialog, DeliverableSubmitDialog, DeliverableReviewDialog } from "./components/tabs";
+export { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab, BudgetTab } from "./components/tabs";
 
 // Wiki
 export { WikiList } from "./components/WikiList";
@@ -14,6 +14,9 @@ export { WikiViewer } from "./components/WikiViewer";
 
 // History
 export { HistoryLog } from "./components/HistoryLog";
+
+// Tasks
+export { TaskDeliverablesSection } from "./components/tasks";
 
 // ============================================
 // Hooks

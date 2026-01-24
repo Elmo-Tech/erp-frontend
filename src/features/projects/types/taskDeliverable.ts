@@ -1,43 +1,36 @@
+/**
+ * Task Deliverable Types
+ * Types for task deliverables feature
+ */
+
+export enum DeliverableStatus {
+	PENDING = "pending",
+	SUBMITTED = "submitted",
+	UNDER_REVIEW = "under_review",
+	APPROVED = "approved",
+	REJECTED = "rejected",
+}
+
 export interface TaskDeliverable {
 	deliverableId: number;
 	taskId: number;
 	title: string;
-	description: string;
-	acceptanceCriteria: string;
+	description?: string;
+	acceptanceCriteria?: string;
 	status: DeliverableStatus;
-	statusLabel: string;
-	statusColor: string;
-	submissionNotes: string;
-	reviewNotes: string;
-	submittedAt: string | null;
-	reviewedAt: string | null;
+	submissionNotes?: string;
+	reviewNotes?: string;
+	submittedAt?: string;
+	reviewedAt?: string;
+	reviewedBy?: {
+		userId: number;
+		name: string;
+	};
 	pointsAwarded: number;
 	isBonus: boolean;
 	order: number;
-	canBeSubmitted: boolean;
-	canBeReviewed: boolean;
-	isCompleted: boolean;
-	reviewer?: {
-		userId: number;
-		name: string;
-		email: string;
-		avatar: string;
-	};
 	createdAt: string;
 	updatedAt: string;
-}
-
-export type DeliverableStatus = "pending" | "submitted" | "under_review" | "approved" | "rejected";
-
-export interface DeliverablesSummary {
-	total: number;
-	pending: number;
-	submitted: number;
-	underReview: number;
-	approved: number;
-	rejected: number;
-	totalPointsAwarded: number;
-	totalPointsDeducted: number;
 }
 
 export interface CreateDeliverableData {
@@ -61,9 +54,9 @@ export interface SubmitDeliverableData {
 }
 
 export interface ReviewDeliverableData {
-	pointsAwarded?: number;
-	pointsDeducted?: number;
+	status: DeliverableStatus.APPROVED | DeliverableStatus.REJECTED;
 	reviewNotes?: string;
+	pointsAwarded?: number;
 }
 
 export interface ReorderDeliverablesData {
@@ -72,5 +65,13 @@ export interface ReorderDeliverablesData {
 
 export interface DeliverablesResponse {
 	deliverables: TaskDeliverable[];
-	summary: DeliverablesSummary;
+}
+
+export interface DeliverablesSummary {
+	total: number;
+	pending: number;
+	submitted: number;
+	underReview: number;
+	approved: number;
+	rejected: number;
 }
