@@ -586,14 +586,17 @@ export function TaskDeliverablesSection({ task, deliverables = [] }: TaskDeliver
 	// Check if user is the reviewer assigned to this task
 	const isTaskReviewer = task.assignees?.some((assignee) => assignee.userId === user?.userId && assignee.role === "reviewer") ?? false;
 
+	// Check if user is a regular assignee (not reviewer)
+	const isRegularAssignee = task.assignees?.some((assignee) => assignee.userId === user?.userId && assignee.role !== "reviewer") ?? false;
+
 	// Only Admins and the assigned Reviewer can manage deliverables for Weekly Tasks
 	const canEdit = task.type === "weekly" && (canEditWeeklyTasks || isTaskReviewer);
 
 	// Only Admins and the assigned Reviewer can review
 	const canReview = canEdit;
 
-	// Assignees cannot submit - only Admins and Reviewers can manage everything
-	const canSubmit = false;
+	// Regular assignees (developers) can submit, but cannot edit/delete/review
+	const canSubmit = task.type === "weekly" && isRegularAssignee && !canEdit;
 
 	// Edit form
 	const editForm = useForm<DeliverableFormData>({
