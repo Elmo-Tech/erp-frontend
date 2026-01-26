@@ -22,11 +22,14 @@ export function AdminDeleteDeliverableDialog({ open, onOpenChange, deliverable }
 	const deleteMutation = useAdminDeleteDeliverable();
 
 	const handleDelete = () => {
-		deleteMutation.mutate(deliverable.deliverableId, {
-			onSuccess: () => {
-				onOpenChange(false);
+		deleteMutation.mutate(
+			{ deliverableId: deliverable.deliverableId, taskId: deliverable.taskId },
+			{
+				onSuccess: () => {
+					onOpenChange(false);
+				},
 			},
-		});
+		);
 	};
 
 	return (

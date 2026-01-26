@@ -75,7 +75,6 @@ export function AdminForceApproveDialog({ open, onOpenChange, deliverable }: Adm
 								control={form.control}
 								name="isBonus"
 								label="Is Bonus"
-								className="pt-8"
 							/>
 						</div>
 

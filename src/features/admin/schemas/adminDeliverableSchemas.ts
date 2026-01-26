@@ -24,7 +24,7 @@ export const adminUpdateDeliverableSchema = z.object({
  */
 export const adminChangeStatusSchema = z.object({
 	status: z.enum(["pending", "submitted", "under_review", "approved", "rejected"], {
-		required_error: "Status is required",
+		message: "Status is required",
 	}),
 	reason: z.string().min(3, "Reason must be at least 3 characters").max(500, "Reason must be less than 500 characters"),
 });
@@ -35,7 +35,7 @@ export const adminChangeStatusSchema = z.object({
 export const adminForceApproveSchema = z.object({
 	reviewNotes: z.string().min(3, "Review notes are required (min 3 characters)").max(1000, "Review notes must be less than 1000 characters"),
 	pointsAwarded: z.number().int().min(0, "Points must be non-negative").max(100, "Points cannot exceed 100"),
-	isBonus: z.boolean().default(false),
+	isBonus: z.boolean(),
 });
 
 /**
@@ -43,7 +43,7 @@ export const adminForceApproveSchema = z.object({
  */
 export const adminForceRejectSchema = z.object({
 	reviewNotes: z.string().min(3, "Review notes are required (min 3 characters)").max(1000, "Review notes must be less than 1000 characters"),
-	pointsAwarded: z.number().int().min(0, "Points must be non-negative").max(100, "Points cannot exceed 100").default(0),
+	pointsAwarded: z.number().int().min(0, "Points must be non-negative").max(100, "Points cannot exceed 100"),
 });
 
 // Export inferred types
