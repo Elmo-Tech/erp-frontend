@@ -24,7 +24,7 @@ api.interceptors.request.use(
 	},
 	(error: AxiosError) => {
 		return Promise.reject(error);
-	}
+	},
 );
 
 // Response interceptor - Handle 401
@@ -39,7 +39,7 @@ api.interceptors.response.use(
 			}
 		}
 		return Promise.reject(error);
-	}
+	},
 );
 
 export default api;

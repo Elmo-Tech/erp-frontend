@@ -21,6 +21,7 @@ import { DeliverableStatus } from "@/lib/statusHelpers";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useAuthStore } from "@/store/authStore";
 import { useTaskDeliverables, useCreateTaskDeliverable, useUpdateTaskDeliverable, useDeleteTaskDeliverable, useSubmitTaskDeliverable, useReviewTaskDeliverable } from "@/features/projects/hooks/useTaskDeliverables";
+import { AdminDeliverableActions } from "@/features/admin";
 
 interface TaskDeliverablesSectionProps {
 	task: Task;
@@ -256,6 +257,7 @@ function DeliverableCard({
 	canEdit,
 	canSubmit,
 	canReview,
+	canManageDeliverables,
 	onSubmit,
 	onReview,
 	onEdit,
@@ -265,6 +267,7 @@ function DeliverableCard({
 	canEdit: boolean;
 	canSubmit: boolean;
 	canReview: boolean;
+	canManageDeliverables: boolean;
 	onSubmit: (deliverableId: number, submissionNotes?: string) => Promise<void>;
 	onReview: (deliverableId: number, data: ReviewFormData) => Promise<void>;
 	onEdit: (deliverable: TaskDeliverable) => void;
@@ -340,26 +343,32 @@ function DeliverableCard({
 						</div>
 					</div>
 
-					{canEdit && deliverable.status === DeliverableStatus.PENDING && (
-						<div className="flex gap-1">
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-8 w-8 p-0"
-								onClick={() => onEdit(deliverable)}
-							>
-								<Edit className="h-4 w-4" />
-							</Button>
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-								onClick={() => onDelete(deliverable.deliverableId)}
-							>
-								<Trash2 className="h-4 w-4" />
-							</Button>
-						</div>
-					)}
+					<div className="flex gap-1">
+						{/* Admin Actions - Always visible to admins */}
+						{canManageDeliverables && <AdminDeliverableActions deliverable={deliverable} />}
+
+						{/* Regular Edit/Delete - Only for pending deliverables */}
+						{canEdit && deliverable.status === DeliverableStatus.PENDING && (
+							<>
+								<Button
+									size="sm"
+									variant="ghost"
+									className="h-8 w-8 p-0"
+									onClick={() => onEdit(deliverable)}
+								>
+									<Edit className="h-4 w-4" />
+								</Button>
+								<Button
+									size="sm"
+									variant="ghost"
+									className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+									onClick={() => onDelete(deliverable.deliverableId)}
+								>
+									<Trash2 className="h-4 w-4" />
+								</Button>
+							</>
+						)}
+					</div>
 				</div>
 			</CardHeader>
 
@@ -565,7 +574,10 @@ function DeliverableCard({
 
 export function TaskDeliverablesSection({ task, deliverables = [] }: TaskDeliverablesSectionProps) {
 	const { canEditWeeklyTasks } = usePermissions();
-	const { user } = useAuthStore();
+	const { user, hasPermission } = useAuthStore();
+
+	// Check if user has admin deliverable management permission
+	const canManageDeliverables = hasPermission("manage_deliverables");
 
 	// Fetch deliverables from API
 	const { data: apiDeliverables, refetch } = useTaskDeliverables(task.taskId);
@@ -754,6 +766,7 @@ export function TaskDeliverablesSection({ task, deliverables = [] }: TaskDeliver
 							canEdit={canEdit}
 							canSubmit={canSubmit}
 							canReview={canReview}
+							canManageDeliverables={canManageDeliverables}
 							onSubmit={handleSubmitDeliverable}
 							onReview={handleReviewDeliverable}
 							onEdit={handleEditDeliverable}
