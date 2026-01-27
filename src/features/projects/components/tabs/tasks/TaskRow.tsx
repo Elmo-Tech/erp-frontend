@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PriorityIndicator } from "./constants";
 import { StatusIcon } from "./StatusIcon";
+import { MarkCompleteButton } from "@/features/dashboard/components/MarkCompleteButton";
 
 export interface TaskRowProps {
 	task: Task;
@@ -84,7 +85,7 @@ export function TaskRow({
 
 	return (
 		<>
-			<div className={cn("grid grid-cols-[1fr_120px_140px_100px_50px] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors group", task.status === TaskStatus.COMPLETED && "opacity-60")}>
+			<div className={cn("grid grid-cols-[1fr_120px_140px_100px_100px] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors group", task.status === TaskStatus.COMPLETED && "opacity-60")}>
 				{/* Task Info */}
 				<div
 					className="flex items-center gap-3 min-w-0"
@@ -206,7 +207,8 @@ export function TaskRow({
 				</div>
 
 				{/* Actions */}
-				<div className="opacity-0 group-hover:opacity-100 transition-opacity">
+				<div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+					<MarkCompleteButton task={task} />
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button

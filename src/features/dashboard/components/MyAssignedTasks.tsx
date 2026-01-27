@@ -14,6 +14,7 @@ import { Search, Clock, User, Calendar, CheckCircle2, ChevronRight, ChevronDown,
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { format, isPast, isToday } from "date-fns";
+import { MarkCompleteButton } from "./MarkCompleteButton";
 
 // Priority indicator colors
 const PriorityIndicator: Record<TaskPriority, string> = {
@@ -350,14 +351,17 @@ function TaskCard({ task, level, isExpanded, onToggle, expandedTasks, onToggleEx
 							{/* Quick Actions */}
 							<div className="flex items-center gap-2 shrink-0">
 								{task.status !== TaskStatus.COMPLETED && (
-									<Button
-										size="sm"
-										variant="outline"
-										className="h-7 px-2 text-xs"
-									>
-										<Play className="h-3 w-3 mr-1" />
-										Start
-									</Button>
+									<>
+										<Button
+											size="sm"
+											variant="outline"
+											className="h-7 px-2 text-xs"
+										>
+											<Play className="h-3 w-3 mr-1" />
+											Start
+										</Button>
+										<MarkCompleteButton task={task} />
+									</>
 								)}
 								{task.status === TaskStatus.COMPLETED && (
 									<Badge

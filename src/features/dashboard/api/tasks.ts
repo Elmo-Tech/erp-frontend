@@ -134,6 +134,15 @@ export const tasksApi = {
 	},
 
 	/**
+	 * Mark a task as complete with timeline validation
+	 */
+	markComplete: async (id: number, reason?: string): Promise<Task> => {
+		const payload = reason ? { reason } : {};
+		const response = await api.post<{ data: Task }>(`/tasks/${id}/mark-complete`, payload);
+		return response.data.data;
+	},
+
+	/**
 	 * Delete a task
 	 */
 	deleteTask: async (id: number): Promise<void> => {

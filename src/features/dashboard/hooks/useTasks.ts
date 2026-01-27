@@ -173,6 +173,44 @@ export const useUpdateTask = () => {
 };
 
 /**
+ * Hook to mark a task as complete with timeline validation
+ */
+export const useMarkComplete = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<Task, Error, { id: number; reason?: string }>({
+		mutationFn: ({ id, reason }) => tasksApi.markComplete(id, reason),
+		onSuccess: (updatedTask) => {
+			// Update the specific task in cache
+			queryClient.setQueryData(taskKeys.detail(updatedTask.taskId), updatedTask);
+
+			// Invalidate all task lists
+			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+
+			// Invalidate my-assigned tasks (for My Tasks page)
+			queryClient.invalidateQueries({ queryKey: [...taskKeys.all, "my-assigned"] });
+
+			// Invalidate project tasks
+			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(updatedTask.projectId) });
+
+			// Invalidate all children queries
+			queryClient.invalidateQueries({ queryKey: taskKeys.children() });
+
+			// Invalidate parent task to update aggregated time
+			if (updatedTask.parentId) {
+				queryClient.invalidateQueries({ queryKey: taskKeys.detail(updatedTask.parentId) });
+			}
+
+			// Invalidate project details
+			queryClient.invalidateQueries({ queryKey: ["projects", "detail", updatedTask.projectId] });
+
+			// Invalidate activities to show completion activity
+			queryClient.invalidateQueries({ queryKey: taskKeys.activities(updatedTask.taskId) });
+		},
+	});
+};
+
+/**
  * Hook to delete a task
  */
 export const useDeleteTask = () => {
