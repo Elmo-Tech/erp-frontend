@@ -25,17 +25,15 @@ export interface PointTransactionTypeOption {
 }
 
 export interface UserPoint {
-	userPointId: number;
+	id: number;
 	userId: number;
-	pointsChange: number;
-	pointsBefore: number;
-	pointsAfter: number;
+	points: number;
+	type: string;
 	reason: string;
-	type: "manual" | "automatic";
-	transactionType?: PointTransactionType;
 	createdBy: string;
 	createdAt: string;
 	updatedAt: string;
+	balanceAfter?: number;
 }
 
 export interface UserWithPoints {

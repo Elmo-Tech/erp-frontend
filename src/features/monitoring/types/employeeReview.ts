@@ -128,7 +128,7 @@ export interface ProductivityMetrics {
 
 // إضافة interfaces للنقاط
 export interface PointTransaction {
-	transactionId: number;
+	transactionId: string;
 	points: number;
 	type: string;
 	reason: string;

@@ -33,7 +33,7 @@ export function UserPointsHistoryDialog({ open, onClose, user }: UserPointsHisto
 		if (!transactionToDelete) return;
 
 		// Create transaction ID in the format expected by backend
-		const formattedId = `up_${transactionToDelete.id}`;
+		const formattedId = `pt_${transactionToDelete.id}`;
 
 		try {
 			await deleteTransaction.mutateAsync(formattedId);
@@ -81,19 +81,19 @@ export function UserPointsHistoryDialog({ open, onClose, user }: UserPointsHisto
 							<div className="space-y-3">
 								{data?.pointsHistory.map((point) => (
 									<div
-										key={point.userPointId}
+										key={point.id}
 										className="flex items-start gap-3 p-3 border rounded-lg"
 									>
-										<div className="shrink-0 mt-1">{point.pointsChange > 0 ? <TrendingUp className="h-4 w-4 text-green-600" /> : <TrendingDown className="h-4 w-4 text-red-600" />}</div>
+										<div className="shrink-0 mt-1">{point.points > 0 ? <TrendingUp className="h-4 w-4 text-green-600" /> : <TrendingDown className="h-4 w-4 text-red-600" />}</div>
 
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center gap-2 mb-1">
 												<Badge
-													variant={point.pointsChange > 0 ? "default" : "destructive"}
+													variant={point.points > 0 ? "default" : "destructive"}
 													className="text-xs"
 												>
-													{point.pointsChange > 0 ? "+" : ""}
-													{point.pointsChange} pts
+													{point.points > 0 ? "+" : ""}
+													{point.points} pts
 												</Badge>
 												<Badge
 													variant="outline"
@@ -105,9 +105,7 @@ export function UserPointsHistoryDialog({ open, onClose, user }: UserPointsHisto
 
 											<div className="text-sm font-medium mb-1">{point.reason}</div>
 
-											<div className="text-xs text-muted-foreground">
-												{point.pointsBefore} → {point.pointsAfter} pts
-											</div>
+											<div className="text-xs text-muted-foreground">Balance: {point.balanceAfter ?? "N/A"} pts</div>
 
 											<div className="text-xs text-muted-foreground mt-1">
 												By {point.createdBy} • {formatDateTimeDisplay(point.createdAt)}
@@ -115,12 +113,12 @@ export function UserPointsHistoryDialog({ open, onClose, user }: UserPointsHisto
 										</div>
 
 										{/* Delete Button - Only show for manual transactions */}
-										{point.type === "manual" && (
+										{(point.type === "manual" || point.type.includes("Manual")) && (
 											<div className="shrink-0">
 												<Button
 													variant="ghost"
 													size="sm"
-													onClick={() => handleDeleteClick(point.userPointId, point.reason)}
+													onClick={() => handleDeleteClick(point.id, point.reason)}
 													disabled={deleteTransaction.isPending}
 													className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
 												>
