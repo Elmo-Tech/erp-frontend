@@ -1,15 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PointsData } from "../types/employeeReview";
-import { TrendingUp, TrendingDown, Award, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Award, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+import { useState } from "react";
 
 interface PointsSectionProps {
 	points: PointsData;
+	onPageChange?: (page: number) => void;
 }
 
-export function PointsSection({ points }: PointsSectionProps) {
+export function PointsSection({ points, onPageChange }: PointsSectionProps) {
+	const [currentPage, setCurrentPage] = useState(1);
+
 	const getPointsColor = (pointsValue: number) => {
 		if (pointsValue > 0) return "text-green-600";
 		if (pointsValue < 0) return "text-red-600";
@@ -21,6 +26,14 @@ export function PointsSection({ points }: PointsSectionProps) {
 		if (pointsValue < 0) return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
 		return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
 	};
+
+	const handlePageChange = (newPage: number) => {
+		setCurrentPage(newPage);
+		onPageChange?.(newPage);
+	};
+
+	const pagination = points.transactionsPagination;
+	const hasPagination = pagination && pagination.totalPages > 1;
 
 	return (
 		<div className="space-y-6">
@@ -116,8 +129,13 @@ export function PointsSection({ points }: PointsSectionProps) {
 
 			{/* Recent Transactions */}
 			<Card>
-				<CardHeader>
-					<CardTitle>Recent Point Transactions</CardTitle>
+				<CardHeader className="flex flex-row items-center justify-between">
+					<CardTitle>Point Transactions</CardTitle>
+					{hasPagination && (
+						<div className="text-sm text-muted-foreground">
+							Showing {pagination.showing} of {pagination.total} transactions
+						</div>
+					)}
 				</CardHeader>
 				<CardContent>
 					<Table>
@@ -132,10 +150,12 @@ export function PointsSection({ points }: PointsSectionProps) {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{points.transactions.slice(0, 10).map((transaction) => (
+							{points.transactions.map((transaction) => (
 								<TableRow key={transaction.transactionId}>
 									<TableCell className="font-medium">{format(new Date(transaction.createdAt), "MMM d, yyyy HH:mm")}</TableCell>
-									<TableCell>{transaction.type}</TableCell>
+									<TableCell>
+										<span className="text-xs px-2 py-1 rounded-full bg-muted">{transaction.type}</span>
+									</TableCell>
 									<TableCell>
 										<Badge className={getPointsBadgeColor(transaction.points)}>
 											{transaction.points >= 0 ? "+" : ""}
@@ -158,6 +178,35 @@ export function PointsSection({ points }: PointsSectionProps) {
 						<div className="text-center py-8 text-muted-foreground">
 							<AlertTriangle className="h-8 w-8 mx-auto mb-2" />
 							<p>No point transactions found for this period</p>
+						</div>
+					)}
+
+					{/* Pagination Controls */}
+					{hasPagination && (
+						<div className="flex items-center justify-between mt-4 pt-4 border-t">
+							<div className="text-sm text-muted-foreground">
+								Page {pagination.currentPage} of {pagination.totalPages}
+							</div>
+							<div className="flex items-center gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => handlePageChange(currentPage - 1)}
+									disabled={currentPage === 1}
+								>
+									<ChevronLeft className="h-4 w-4 mr-1" />
+									Previous
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => handlePageChange(currentPage + 1)}
+									disabled={currentPage === pagination.totalPages}
+								>
+									Next
+									<ChevronRight className="h-4 w-4 ml-1" />
+								</Button>
+							</div>
 						</div>
 					)}
 				</CardContent>

@@ -135,6 +135,17 @@ export interface PointTransaction {
 	createdAt: string;
 	createdBy: string;
 	balanceAfter: number;
+	source?: string;
+	sourceType?: string | null;
+	sourceId?: number | null;
+}
+
+export interface PointsPagination {
+	total: number;
+	perPage: number;
+	currentPage: number;
+	totalPages: number;
+	showing: number;
 }
 
 export interface PointsData {
@@ -143,6 +154,8 @@ export interface PointsData {
 	pointsDeducted: number;
 	netChange: number;
 	transactions: PointTransaction[];
+	transactionsPagination: PointsPagination;
+	pagination: PointsPagination; // Alias for transactionsPagination
 	monthlyBreakdown: {
 		[key: string]: {
 			earned: number;
@@ -150,6 +163,108 @@ export interface PointsData {
 			net: number;
 		};
 	};
+	bySource: {
+		automatic: {
+			count: number;
+			earned: number;
+			deducted: number;
+		};
+		manual: {
+			count: number;
+			earned: number;
+			deducted: number;
+		};
+	};
+	summary: {
+		totalTransactions: number;
+		automaticTransactions: number;
+		manualTransactions: number;
+	};
+}
+
+// Grace Period Info
+export interface GracePeriodInfo {
+	allowedDays: number;
+	daysUsed: number;
+	remainingDays: number;
+	isExpired: boolean;
+	firstLateDate: string | null;
+	gracePeriodEndDate: string | null;
+	daysOverLimit: number;
+}
+
+// Deduction Info
+export interface DailyDeduction {
+	date: string;
+	lateMinutes: number;
+	deduction: number;
+	clockIn: string | null;
+}
+
+export interface MonthlyDeduction {
+	lateMinutes: number;
+	deductions: number;
+	lateDays: number;
+}
+
+export interface DeductionInfo {
+	totalLateMinutes: number;
+	deductionRate: number;
+	totalDeductions: number;
+	daysWithDeductions: number;
+	dailyDeductions: DailyDeduction[];
+	monthlyDeductions: {
+		[key: string]: MonthlyDeduction;
+	};
+	gracePeriodDays: number;
+	averageDeductionPerDay: number;
+}
+
+// Task Performance Analysis
+export interface MonthlyTaskPerformance {
+	total: number;
+	onTime: number;
+	late: number;
+	onTimeRate: number;
+}
+
+export interface TaskPerformanceAnalysis {
+	totalCompleted: number;
+	onTimeCount: number;
+	lateCount: number;
+	onTimeRate: string;
+	averageDelayDays: string;
+	byMonth: {
+		[key: string]: MonthlyTaskPerformance;
+	};
+}
+
+// Quality Metrics
+export interface QualityMetrics {
+	totalTasks: number;
+	tasksWithBounces: number;
+	tasksWithoutBounces: number;
+	firstTimePassRate: string;
+	averageBounceRate: string;
+	totalBounces: number;
+}
+
+// Productivity Trends
+export interface WeeklyTimeTracking {
+	week: string;
+	totalHours: number;
+	entries: number;
+}
+
+export interface WeeklyTaskCompletion {
+	week: string;
+	completed: number;
+	onTime: number;
+}
+
+export interface ProductivityTrends {
+	weeklyTimeTracking: WeeklyTimeTracking[];
+	weeklyTaskCompletion: WeeklyTaskCompletion[];
 }
 
 export interface EmployeeReviewData {
@@ -161,11 +276,18 @@ export interface EmployeeReviewData {
 	projects: ProjectsData;
 	attendance: AttendanceData;
 	productivity: ProductivityMetrics;
-	points: PointsData; // إضافة بيانات النقاط
+	points: PointsData;
+	gracePeriod: GracePeriodInfo;
+	deductions: DeductionInfo;
+	taskPerformance: TaskPerformanceAnalysis;
+	qualityMetrics: QualityMetrics;
+	trends: ProductivityTrends;
 }
 
 export interface EmployeeReviewFilters {
 	userId: number;
 	dateFrom?: string;
 	dateTo?: string;
+	page?: number;
+	perPage?: number;
 }

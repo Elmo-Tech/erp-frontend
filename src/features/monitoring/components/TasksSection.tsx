@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TasksData } from "../types/employeeReview";
-import { AlertTriangle, CheckCircle2, Clock, Calendar, TrendingDown, TrendingUp, CalendarX } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 interface TasksSectionProps {

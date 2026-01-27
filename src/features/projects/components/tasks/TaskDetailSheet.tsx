@@ -21,6 +21,7 @@ import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Clock, AlertCircle, CheckCircle2, Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { useTaskDeliverables } from "../../hooks/useTaskDeliverables";
 
 interface TaskDetailSheetProps {
 	taskId: number | null;
@@ -76,6 +77,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 	const { data: task, isLoading } = useTask(taskId ?? 0, !!taskId && open);
 	const { data: activities } = useTaskActivities(taskId ?? 0, !!taskId && open);
 	const { data: testScenarios } = useTestScenarios(taskId ?? 0, !!taskId && open);
+	const { data: apiDeliverables } = useTaskDeliverables(taskId ?? 0);
 	const { canEditMainTasks, canEditWeeklyTasks, canEditSubtasks } = usePermissions();
 
 	if (!taskId) return null;
@@ -212,7 +214,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 								<TabsTrigger value="details">Details</TabsTrigger>
 								<TabsTrigger value="assignees">Team ({task.assignees?.length || 0})</TabsTrigger>
 								{/* Only show Deliverables tab for Weekly Tasks */}
-								{task.type === TaskType.WEEKLY && <TabsTrigger value="deliverables">Deliverables ({task.deliverables?.length || 0})</TabsTrigger>}
+								{task.type === TaskType.WEEKLY && <TabsTrigger value="deliverables">Deliverables ({apiDeliverables?.length || 0})</TabsTrigger>}
 								<TabsTrigger value="tests">Tests ({testScenarios?.length || 0})</TabsTrigger>
 								<TabsTrigger value="time">Time</TabsTrigger>
 								<TabsTrigger value="activity">Activity</TabsTrigger>
@@ -317,7 +319,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 									>
 										<TaskDeliverablesSection
 											task={task}
-											deliverables={task.deliverables || []}
+											deliverables={apiDeliverables || []}
 										/>
 									</TabsContent>
 								)}

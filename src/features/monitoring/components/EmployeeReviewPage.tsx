@@ -19,6 +19,11 @@ import { AttendanceSection } from "./AttendanceSection";
 import { ProductivityMetrics } from "./ProductivityMetrics";
 import { PointsSection } from "./PointsSection";
 import { DeliveryLogsSection } from "./DeliveryLogsSection";
+import { GracePeriodSection } from "./GracePeriodSection";
+import { DeductionsSection } from "./DeductionsSection";
+import { TaskPerformanceSection } from "./TaskPerformanceSection";
+import { QualityMetricsSection } from "./QualityMetricsSection";
+import { ProductivityTrendsSection } from "./ProductivityTrendsSection";
 import { toast } from "sonner";
 import axios from "@/lib/axios";
 
@@ -36,11 +41,14 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 	const [dateFrom, setDateFrom] = useState<Date>();
 	const [dateTo, setDateTo] = useState<Date>();
 	const [isExporting, setIsExporting] = useState(false);
+	const [pointsPage, setPointsPage] = useState(1);
 
 	const { data, isLoading, error } = useEmployeeReview({
 		userId: selectedUserId!,
 		dateFrom: dateFrom ? format(dateFrom, "yyyy-MM-dd") : undefined,
 		dateTo: dateTo ? format(dateTo, "yyyy-MM-dd") : undefined,
+		page: pointsPage,
+		perPage: 50,
 	});
 
 	const reviewData = data?.data;
@@ -244,8 +252,26 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 					{/* Productivity Metrics */}
 					<ProductivityMetrics productivity={reviewData.productivity} />
 
-					{/* Points Section */}
-					<PointsSection points={reviewData.points} />
+					{/* Points Section with Pagination */}
+					<PointsSection
+						points={reviewData.points}
+						onPageChange={setPointsPage}
+					/>
+
+					{/* Grace Period Section */}
+					{reviewData.gracePeriod && <GracePeriodSection data={reviewData.gracePeriod} />}
+
+					{/* Deductions Section */}
+					{reviewData.deductions && <DeductionsSection data={reviewData.deductions} />}
+
+					{/* Task Performance Analysis */}
+					{reviewData.taskPerformance && <TaskPerformanceSection data={reviewData.taskPerformance} />}
+
+					{/* Quality Metrics */}
+					{reviewData.qualityMetrics && <QualityMetricsSection data={reviewData.qualityMetrics} />}
+
+					{/* Productivity Trends */}
+					{reviewData.trends && <ProductivityTrendsSection data={reviewData.trends} />}
 
 					{/* Time Tracking Chart */}
 					<TimeTrackingChart timeTracking={reviewData.timeTracking} />
