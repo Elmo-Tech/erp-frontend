@@ -214,7 +214,7 @@ export function PointsReportDialog({ open, onClose }: PointsReportDialogProps) {
 						titleBadge={reportData.pagination ? `${reportData.pagination.total} activities` : undefined}
 						columns={columns}
 						data={reportData.activities}
-						keyExtractor={(activity) => activity.userPointId}
+						keyExtractor={(activity) => activity.id.toString()}
 						isLoading={isLoading}
 						pagination={reportData.pagination}
 						onPageChange={setCurrentPage}
