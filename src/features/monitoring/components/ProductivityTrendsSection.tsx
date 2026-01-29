@@ -35,7 +35,12 @@ export function ProductivityTrendsSection({ data }: ProductivityTrendsSectionPro
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="flex items-center justify-center h-32 text-muted-foreground">No productivity data available</div>
+					<div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+						<p>No productivity data available</p>
+						<p className="text-sm mt-2">
+							Time tracking entries: {weeklyTimeTracking.length}, Task completion entries: {weeklyTaskCompletion.length}
+						</p>
+					</div>
 				</CardContent>
 			</Card>
 		);
@@ -164,7 +169,14 @@ export function ProductivityTrendsSection({ data }: ProductivityTrendsSectionPro
 					</div>
 					<div className="space-y-1">
 						<p className="text-sm text-muted-foreground">On-Time Rate</p>
-						<p className="text-2xl font-bold text-green-500">{combinedData.length > 0 ? ((combinedData.reduce((sum, d) => sum + d.onTime, 0) / combinedData.reduce((sum, d) => sum + d.completed, 0)) * 100).toFixed(0) : 0}%</p>
+						<p className="text-2xl font-bold text-green-500">
+							{(() => {
+								const totalCompleted = combinedData.reduce((sum, d) => sum + d.completed, 0);
+								const totalOnTime = combinedData.reduce((sum, d) => sum + d.onTime, 0);
+								if (totalCompleted === 0) return "0%";
+								return `${Math.round((totalOnTime / totalCompleted) * 100)}%`;
+							})()}
+						</p>
 					</div>
 				</div>
 

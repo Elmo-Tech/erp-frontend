@@ -29,7 +29,7 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 						<Briefcase className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{projects.total}</div>
+						<div className="text-2xl font-bold">{projects?.total || 0}</div>
 					</CardContent>
 				</Card>
 
@@ -39,7 +39,7 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 						<Clock className="h-4 w-4 text-blue-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{projects.active}</div>
+						<div className="text-2xl font-bold">{projects?.active || 0}</div>
 					</CardContent>
 				</Card>
 
@@ -49,7 +49,7 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 						<CheckCircle2 className="h-4 w-4 text-green-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{projects.completed}</div>
+						<div className="text-2xl font-bold">{projects?.completed || 0}</div>
 					</CardContent>
 				</Card>
 			</div>
@@ -60,7 +60,7 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 					<CardTitle>Projects Worked On</CardTitle>
 				</CardHeader>
 				<CardContent>
-					{projects.projects.length > 0 ? (
+					{projects?.projects && projects.projects.length > 0 ? (
 						<Table>
 							<TableHeader>
 								<TableRow>
@@ -84,7 +84,10 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 							</TableBody>
 						</Table>
 					) : (
-						<p className="text-center text-muted-foreground py-8">No projects found for this period</p>
+						<div className="text-center py-8">
+							<p className="text-muted-foreground">No projects found for this period</p>
+							{projects && <p className="text-sm text-muted-foreground mt-2">Total projects in system: {projects.total || 0}</p>}
+						</div>
 					)}
 				</CardContent>
 			</Card>

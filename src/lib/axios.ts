@@ -20,6 +20,11 @@ api.interceptors.request.use(
 			config.headers.Authorization = `Bearer ${token}`;
 		}
 
+		// Add Accept-Language header
+		if (config.headers) {
+			config.headers["Accept-Language"] = "en";
+		}
+
 		return config;
 	},
 	(error: AxiosError) => {
