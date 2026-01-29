@@ -32,8 +32,8 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 		onPageChange?.(newPage);
 	};
 
-	const pagination = points.transactionsPagination;
-	const hasPagination = pagination && pagination.totalPages > 1;
+	const pagination = points?.transactionsPagination;
+	const hasPagination = pagination && (pagination?.totalPages || 0) > 1;
 
 	return (
 		<div className="space-y-6">
@@ -45,7 +45,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 						<Award className="h-4 w-4 text-yellow-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{points.currentPoints}</div>
+						<div className="text-2xl font-bold">{points?.currentPoints || 0}</div>
 						<p className="text-xs text-muted-foreground">Total accumulated</p>
 					</CardContent>
 				</Card>
@@ -56,7 +56,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 						<TrendingUp className="h-4 w-4 text-green-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold text-green-600">+{points.pointsEarned}</div>
+						<div className="text-2xl font-bold text-green-600">+{points?.pointsEarned || 0}</div>
 						<p className="text-xs text-muted-foreground">This period</p>
 					</CardContent>
 				</Card>
@@ -67,7 +67,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 						<TrendingDown className="h-4 w-4 text-red-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold text-red-600">-{points.pointsDeducted}</div>
+						<div className="text-2xl font-bold text-red-600">-{points?.pointsDeducted || 0}</div>
 						<p className="text-xs text-muted-foreground">This period</p>
 					</CardContent>
 				</Card>
@@ -75,12 +75,12 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Net Change</CardTitle>
-						{points.netChange >= 0 ? <TrendingUp className="h-4 w-4 text-green-600" /> : <TrendingDown className="h-4 w-4 text-red-600" />}
+						{(points?.netChange || 0) >= 0 ? <TrendingUp className="h-4 w-4 text-green-600" /> : <TrendingDown className="h-4 w-4 text-red-600" />}
 					</CardHeader>
 					<CardContent>
-						<div className={`text-2xl font-bold ${getPointsColor(points.netChange)}`}>
-							{points.netChange >= 0 ? "+" : ""}
-							{points.netChange}
+						<div className={`text-2xl font-bold ${getPointsColor(points?.netChange || 0)}`}>
+							{(points?.netChange || 0) >= 0 ? "+" : ""}
+							{points?.netChange || 0}
 						</div>
 						<p className="text-xs text-muted-foreground">Net change</p>
 					</CardContent>
@@ -92,21 +92,21 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 						<AlertTriangle className="h-4 w-4 text-blue-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{points.transactions.length}</div>
+						<div className="text-2xl font-bold">{(points?.transactions || []).length}</div>
 						<p className="text-xs text-muted-foreground">Total transactions</p>
 					</CardContent>
 				</Card>
 			</div>
 
 			{/* Monthly Breakdown */}
-			{Object.keys(points.monthlyBreakdown).length > 0 && (
+			{Object.keys(points?.monthlyBreakdown || {}).length > 0 && (
 				<Card>
 					<CardHeader>
 						<CardTitle>Monthly Breakdown</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-3">
-							{Object.entries(points.monthlyBreakdown).map(([month, data]) => (
+							{Object.entries(points?.monthlyBreakdown || {}).map(([month, data]) => (
 								<div
 									key={month}
 									className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
@@ -133,7 +133,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 					<CardTitle>Point Transactions</CardTitle>
 					{hasPagination && (
 						<div className="text-sm text-muted-foreground">
-							Showing {pagination.showing} of {pagination.total} transactions
+							Showing {pagination?.showing || 0} of {pagination?.total || 0} transactions
 						</div>
 					)}
 				</CardHeader>
@@ -150,7 +150,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{points.transactions.map((transaction) => (
+							{(points?.transactions || []).map((transaction) => (
 								<TableRow key={transaction.transactionId}>
 									<TableCell className="font-medium">{format(new Date(transaction.createdAt), "MMM d, yyyy HH:mm")}</TableCell>
 									<TableCell>
@@ -174,7 +174,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 							))}
 						</TableBody>
 					</Table>
-					{points.transactions.length === 0 && (
+					{(points?.transactions || []).length === 0 && (
 						<div className="text-center py-8 text-muted-foreground">
 							<AlertTriangle className="h-8 w-8 mx-auto mb-2" />
 							<p>No point transactions found for this period</p>
@@ -185,7 +185,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 					{hasPagination && (
 						<div className="flex items-center justify-between mt-4 pt-4 border-t">
 							<div className="text-sm text-muted-foreground">
-								Page {pagination.currentPage} of {pagination.totalPages}
+								Page {pagination?.currentPage || 1} of {pagination?.totalPages || 1}
 							</div>
 							<div className="flex items-center gap-2">
 								<Button
@@ -201,7 +201,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 									variant="outline"
 									size="sm"
 									onClick={() => handlePageChange(currentPage + 1)}
-									disabled={currentPage === pagination.totalPages}
+									disabled={currentPage === (pagination?.totalPages || 1)}
 								>
 									Next
 									<ChevronRight className="h-4 w-4 ml-1" />

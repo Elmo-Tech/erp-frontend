@@ -19,7 +19,7 @@ export function AttendanceSection({ attendance }: AttendanceSectionProps) {
 						<Calendar className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{attendance.totalDays}</div>
+						<div className="text-2xl font-bold">{attendance?.totalDays || 0}</div>
 					</CardContent>
 				</Card>
 
@@ -29,8 +29,8 @@ export function AttendanceSection({ attendance }: AttendanceSectionProps) {
 						<AlertCircle className="h-4 w-4 text-orange-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{attendance.lateDays}</div>
-						<p className="text-xs text-muted-foreground">{attendance.totalLateMinutes} minutes total</p>
+						<div className="text-2xl font-bold">{attendance?.lateDays || 0}</div>
+						<p className="text-xs text-muted-foreground">{attendance?.totalLateMinutes || 0} minutes total</p>
 					</CardContent>
 				</Card>
 
@@ -40,8 +40,8 @@ export function AttendanceSection({ attendance }: AttendanceSectionProps) {
 						<Clock className="h-4 w-4 text-red-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{(attendance.totalIdleMinutes / 60).toFixed(1)}h</div>
-						<p className="text-xs text-muted-foreground">{attendance.totalIdleMinutes} minutes</p>
+						<div className="text-2xl font-bold">{((attendance?.totalIdleMinutes || 0) / 60).toFixed(1)}h</div>
+						<p className="text-xs text-muted-foreground">{attendance?.totalIdleMinutes || 0} minutes</p>
 					</CardContent>
 				</Card>
 
@@ -51,7 +51,7 @@ export function AttendanceSection({ attendance }: AttendanceSectionProps) {
 						<Clock className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{attendance.averageIdlePerDay.toFixed(1)}m</div>
+						<div className="text-2xl font-bold">{(attendance?.averageIdlePerDay || 0).toFixed(1)}m</div>
 					</CardContent>
 				</Card>
 			</div>
@@ -62,7 +62,7 @@ export function AttendanceSection({ attendance }: AttendanceSectionProps) {
 					<CardTitle>Attendance Records</CardTitle>
 				</CardHeader>
 				<CardContent>
-					{attendance.attendanceList.length > 0 ? (
+					{(attendance?.attendanceList || []).length > 0 ? (
 						<div className="max-h-96 overflow-y-auto">
 							<Table>
 								<TableHeader>
@@ -76,7 +76,7 @@ export function AttendanceSection({ attendance }: AttendanceSectionProps) {
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{attendance.attendanceList.map((record, index) => (
+									{(attendance?.attendanceList || []).map((record, index) => (
 										<TableRow key={index}>
 											<TableCell className="font-medium">{record.date}</TableCell>
 											<TableCell>
@@ -84,7 +84,7 @@ export function AttendanceSection({ attendance }: AttendanceSectionProps) {
 													? new Date(record.clockIn).toLocaleTimeString("en-US", {
 															hour: "2-digit",
 															minute: "2-digit",
-													  })
+														})
 													: "N/A"}
 											</TableCell>
 											<TableCell>
@@ -92,7 +92,7 @@ export function AttendanceSection({ attendance }: AttendanceSectionProps) {
 													? new Date(record.clockOut).toLocaleTimeString("en-US", {
 															hour: "2-digit",
 															minute: "2-digit",
-													  })
+														})
 													: "N/A"}
 											</TableCell>
 											<TableCell>{record.isLate ? <Badge variant="destructive">Late</Badge> : <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">On Time</Badge>}</TableCell>

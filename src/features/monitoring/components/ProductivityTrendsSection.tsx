@@ -8,9 +8,13 @@ interface ProductivityTrendsSectionProps {
 }
 
 export function ProductivityTrendsSection({ data }: ProductivityTrendsSectionProps) {
+	// Safe array access with null checks
+	const weeklyTimeTracking = data?.weeklyTimeTracking || [];
+	const weeklyTaskCompletion = data?.weeklyTaskCompletion || [];
+
 	// Combine data for dual-axis chart
-	const combinedData = data.weeklyTimeTracking.map((timeData) => {
-		const taskData = data.weeklyTaskCompletion.find((t) => t.week === timeData.week);
+	const combinedData = weeklyTimeTracking.map((timeData) => {
+		const taskData = weeklyTaskCompletion.find((t) => t.week === timeData.week);
 		return {
 			week: timeData.week,
 			hours: timeData.totalHours,
@@ -19,6 +23,23 @@ export function ProductivityTrendsSection({ data }: ProductivityTrendsSectionPro
 			onTime: taskData?.onTime || 0,
 		};
 	});
+
+	// Show empty state if no data
+	if (combinedData.length === 0) {
+		return (
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						<TrendingUp className="h-5 w-5" />
+						Productivity Trends
+					</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<div className="flex items-center justify-center h-32 text-muted-foreground">No productivity data available</div>
+				</CardContent>
+			</Card>
+		);
+	}
 
 	return (
 		<Card>

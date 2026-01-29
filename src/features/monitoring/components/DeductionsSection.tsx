@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DeductionInfo } from "../types/employeeReview";
-import { TrendingDown, Clock, Calendar, AlertTriangle } from "lucide-react";
+import { TrendingDown, Clock, Calendar, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 interface DeductionsSectionProps {
@@ -10,7 +10,7 @@ interface DeductionsSectionProps {
 }
 
 export function DeductionsSection({ data }: DeductionsSectionProps) {
-	const monthlyEntries = Object.entries(data.monthlyDeductions);
+	const monthlyEntries = Object.entries(data?.monthlyDeductions || {});
 
 	return (
 		<Card>
@@ -25,22 +25,22 @@ export function DeductionsSection({ data }: DeductionsSectionProps) {
 				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 					<div className="space-y-1">
 						<p className="text-sm text-muted-foreground">Total Deductions</p>
-						<p className="text-2xl font-bold text-destructive">-{data.totalDeductions}</p>
+						<p className="text-2xl font-bold text-destructive">-{data?.totalDeductions || 0}</p>
 						<p className="text-xs text-muted-foreground">points</p>
 					</div>
 					<div className="space-y-1">
 						<p className="text-sm text-muted-foreground">Late Minutes</p>
-						<p className="text-2xl font-bold">{data.totalLateMinutes}</p>
+						<p className="text-2xl font-bold">{data?.totalLateMinutes || 0}</p>
 						<p className="text-xs text-muted-foreground">minutes</p>
 					</div>
 					<div className="space-y-1">
 						<p className="text-sm text-muted-foreground">Days with Deductions</p>
-						<p className="text-2xl font-bold">{data.daysWithDeductions}</p>
+						<p className="text-2xl font-bold">{data?.daysWithDeductions || 0}</p>
 						<p className="text-xs text-muted-foreground">days</p>
 					</div>
 					<div className="space-y-1">
 						<p className="text-sm text-muted-foreground">Avg per Day</p>
-						<p className="text-2xl font-bold text-destructive">-{data.averageDeductionPerDay}</p>
+						<p className="text-2xl font-bold text-destructive">-{data?.averageDeductionPerDay || 0}</p>
 						<p className="text-xs text-muted-foreground">points/day</p>
 					</div>
 				</div>
@@ -52,10 +52,10 @@ export function DeductionsSection({ data }: DeductionsSectionProps) {
 							<Clock className="h-4 w-4 text-muted-foreground" />
 							<span className="text-sm font-medium">Deduction Rate</span>
 						</div>
-						<Badge variant="outline">{data.deductionRate} points/minute</Badge>
+						<Badge variant="outline">{data?.deductionRate || 0} points/minute</Badge>
 					</div>
 					<p className="text-xs text-muted-foreground mt-2">
-						After {data.gracePeriodDays} grace days, each minute late = {data.deductionRate} point deduction
+						After {data?.gracePeriodDays || 0} grace days, each minute late = {data?.deductionRate || 0} point deduction
 					</p>
 				</div>
 
@@ -93,7 +93,7 @@ export function DeductionsSection({ data }: DeductionsSectionProps) {
 				)}
 
 				{/* Daily Deductions Table */}
-				{data.dailyDeductions.length > 0 && (
+				{(data?.dailyDeductions || []).length > 0 && (
 					<div className="space-y-3">
 						<h4 className="font-semibold flex items-center gap-2">
 							<AlertTriangle className="h-4 w-4" />
@@ -110,7 +110,7 @@ export function DeductionsSection({ data }: DeductionsSectionProps) {
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{data.dailyDeductions.map((deduction, index) => (
+									{(data?.dailyDeductions || []).map((deduction, index) => (
 										<TableRow key={index}>
 											<TableCell className="font-medium">{format(parseISO(deduction.date), "MMM dd, yyyy")}</TableCell>
 											<TableCell>{deduction.clockIn ? format(parseISO(deduction.clockIn), "HH:mm") : "-"}</TableCell>
@@ -134,7 +134,7 @@ export function DeductionsSection({ data }: DeductionsSectionProps) {
 				)}
 
 				{/* No Deductions Message */}
-				{data.daysWithDeductions === 0 && (
+				{(data?.daysWithDeductions || 0) === 0 && (
 					<div className="text-center py-8 text-muted-foreground">
 						<CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-green-500" />
 						<p className="font-medium">No point deductions in this period</p>
@@ -145,5 +145,3 @@ export function DeductionsSection({ data }: DeductionsSectionProps) {
 		</Card>
 	);
 }
-
-import { CheckCircle2 } from "lucide-react";

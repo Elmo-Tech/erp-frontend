@@ -75,7 +75,7 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 						<Clock className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{tasks.total}</div>
+						<div className="text-2xl font-bold">{tasks?.total || 0}</div>
 					</CardContent>
 				</Card>
 
@@ -85,8 +85,8 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 						<CheckCircle2 className="h-4 w-4 text-green-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{tasks.completed}</div>
-						<p className="text-xs text-muted-foreground">{tasks.total > 0 ? ((tasks.completed / tasks.total) * 100).toFixed(1) : 0}% completion rate</p>
+						<div className="text-2xl font-bold">{tasks?.completed || 0}</div>
+						<p className="text-xs text-muted-foreground">{(tasks?.total || 0) > 0 ? (((tasks?.completed || 0) / (tasks?.total || 1)) * 100).toFixed(1) : 0}% completion rate</p>
 					</CardContent>
 				</Card>
 
@@ -96,7 +96,7 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 						<Clock className="h-4 w-4 text-blue-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{tasks.inProgress}</div>
+						<div className="text-2xl font-bold">{tasks?.inProgress || 0}</div>
 					</CardContent>
 				</Card>
 
@@ -106,14 +106,14 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 						<AlertTriangle className="h-4 w-4 text-orange-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{tasks.totalBounces}</div>
-						<p className="text-xs text-muted-foreground">{tasks.tasksWithBounces.length} tasks affected</p>
+						<div className="text-2xl font-bold">{tasks?.totalBounces || 0}</div>
+						<p className="text-xs text-muted-foreground">{(tasks?.tasksWithBounces || []).length} tasks affected</p>
 					</CardContent>
 				</Card>
 			</div>
 
 			{/* Tasks with Bounces */}
-			{tasks.tasksWithBounces.length > 0 && (
+			{(tasks?.tasksWithBounces || []).length > 0 && (
 				<Card>
 					<CardHeader>
 						<CardTitle>Tasks with Bounces</CardTitle>
@@ -132,7 +132,7 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{tasks.tasksWithBounces.map((task) => (
+								{(tasks?.tasksWithBounces || []).map((task) => (
 									<TableRow key={task.taskId}>
 										<TableCell className="font-medium">{task.title}</TableCell>
 										<TableCell>{task.projectTitle || "N/A"}</TableCell>
@@ -179,7 +179,7 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{tasks.recentTasks.map((task) => (
+							{(tasks?.recentTasks || []).map((task) => (
 								<TableRow key={task.taskId}>
 									<TableCell className="font-medium">{task.title}</TableCell>
 									<TableCell>{task.projectTitle || "N/A"}</TableCell>

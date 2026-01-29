@@ -112,7 +112,7 @@ export function MyEvaluationsCard() {
 				<CardDescription>Your performance evaluation history</CardDescription>
 			</CardHeader>
 			<CardContent>
-				{evaluations.length === 0 ? (
+				{(evaluations || []).length === 0 ? (
 					<div className="text-center py-8 text-muted-foreground">
 						<ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
 						<p>No evaluations yet</p>
@@ -120,7 +120,7 @@ export function MyEvaluationsCard() {
 					</div>
 				) : (
 					<div className="space-y-4">
-						{evaluations.map((evaluation) => (
+						{(evaluations || []).map((evaluation) => (
 							<EvaluationItem
 								key={evaluation.evaluationId}
 								evaluation={evaluation}

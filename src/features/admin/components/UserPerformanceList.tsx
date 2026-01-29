@@ -117,7 +117,7 @@ export const UserPerformanceList: React.FC<UserPerformanceListProps> = ({ filter
 	}
 
 	// No data state
-	if (!data || !data.users || data.users.length === 0) {
+	if (!data || !data.users || (data.users || []).length === 0) {
 		return (
 			<Card className={className}>
 				<CardHeader>
