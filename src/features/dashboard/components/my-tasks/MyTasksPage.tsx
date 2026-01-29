@@ -49,6 +49,7 @@ export function MyTasksPage() {
 		if (highlightParam) {
 			const taskId = parseInt(highlightParam, 10);
 			if (!isNaN(taskId)) {
+				// eslint-disable-next-line react-hooks/set-state-in-effect
 				setHighlightedTaskId(taskId);
 				// Clear highlight after 5 seconds
 				const timer = setTimeout(() => setHighlightedTaskId(null), 5000);
@@ -151,7 +152,7 @@ export function MyTasksPage() {
 			testing: tasksByStatus[TaskStatus.TESTING].length,
 			completed: tasksByStatus[TaskStatus.COMPLETED].length,
 		}),
-		[filteredTasks, tasksByStatus]
+		[filteredTasks, tasksByStatus],
 	);
 
 	const toggleExpand = useCallback((taskId: number) => {

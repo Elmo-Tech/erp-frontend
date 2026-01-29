@@ -119,7 +119,7 @@ export function CreateCodeReviewForm({ onSuccess, onCancel, defaultTaskId, defau
 											value={field.value?.toString() || ""}
 										>
 											<FormControl>
-												<SelectTrigger>
+												<SelectTrigger className="w-full">
 													<SelectValue placeholder="Select a task to review" />
 												</SelectTrigger>
 											</FormControl>
@@ -155,21 +155,21 @@ export function CreateCodeReviewForm({ onSuccess, onCancel, defaultTaskId, defau
 											value={field.value?.toString() || ""}
 										>
 											<FormControl>
-												<SelectTrigger>
+												<SelectTrigger className="w-full">
 													<SelectValue placeholder="Select the developer" />
 												</SelectTrigger>
 											</FormControl>
 											<SelectContent>
 												{!usersData ? (
 													<SelectItem
-														value=""
+														value="loading"
 														disabled
 													>
 														Loading users...
 													</SelectItem>
 												) : usersData?.users?.length === 0 ? (
 													<SelectItem
-														value=""
+														value="no-users"
 														disabled
 													>
 														No users available
