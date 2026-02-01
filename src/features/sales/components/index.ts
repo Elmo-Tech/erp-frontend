@@ -27,6 +27,7 @@ export { ConvertLeadDialog } from "./ConvertLeadDialog";
 // DASHBOARD (Manager)
 // ============================================
 export { PipelineOverview, AlertsPanel, TeamPerformanceTable, BottleneckAnalysis } from "./dashboard";
+export { SalesDashboard } from "./SalesDashboard";
 
 // ============================================
 // WRAPPERS

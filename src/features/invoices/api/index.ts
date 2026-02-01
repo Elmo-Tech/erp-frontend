@@ -46,6 +46,18 @@ export const invoicesApi = {
 		return response.data.data;
 	},
 
+	markAsPaid: async (id: number): Promise<Invoice> => {
+		const response = await api.patch<{ data: Invoice }>(`/invoices/${id}/mark-paid`);
+		return response.data.data;
+	},
+
+	download: async (id: number): Promise<Blob> => {
+		const response = await api.get(`/invoices/${id}/download`, {
+			responseType: "blob",
+		});
+		return response.data;
+	},
+
 	delete: async (id: number): Promise<void> => {
 		await api.delete(`/invoices/${id}`);
 	},

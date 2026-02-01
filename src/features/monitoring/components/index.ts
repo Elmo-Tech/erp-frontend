@@ -11,3 +11,10 @@ export { DeductionsSection } from "./DeductionsSection";
 export { TaskPerformanceSection } from "./TaskPerformanceSection";
 export { QualityMetricsSection } from "./QualityMetricsSection";
 export { ProductivityTrendsSection } from "./ProductivityTrendsSection";
+
+// Analytics Dashboard Components
+export { AnalyticsDashboard } from "./AnalyticsDashboard";
+export { SalesFunnelChart } from "./SalesFunnelChart";
+export { RejectionReasonsChart } from "./RejectionReasonsChart";
+export { CashflowChart } from "./CashflowChart";
+export { UrgencyList } from "./UrgencyList";

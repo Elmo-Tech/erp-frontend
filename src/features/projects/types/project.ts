@@ -10,7 +10,31 @@ export interface ProjectClient {
 	phone?: string;
 }
 
+export interface ProjectTask {
+	taskId: number;
+	title: string;
+	status: string;
+	priority: string;
+	assignedTo?: number;
+	createdAt: string;
+}
+
+export interface ProjectContract {
+	contractId: number;
+	contractNumber: string;
+	status: string;
+	signedAt?: string;
+}
+
+export interface ProjectCreatedByUser {
+	userId: number;
+	name: string;
+	email: string;
+	avatar?: string;
+}
+
 export interface Project {
+	tasks: ProjectTask[];
 	projectId: number;
 	clientId: number;
 	quotationId: number | null;
@@ -19,11 +43,15 @@ export interface Project {
 	status: ProjectStatus;
 	previousStatus: ProjectStatus | null;
 	budget: number;
+	currency?: string;
+	estimatedHours?: number;
 	deadline: string | null;
 	uiApprovedAt: string | null;
 	progress?: number;
 	totalTimeSpent?: number;
 	client?: ProjectClient;
+	contract?: ProjectContract;
+	createdByUser?: ProjectCreatedByUser;
 	quotation?: {
 		quotationId: number;
 		finalPrice: number;

@@ -51,12 +51,12 @@ const navGroups: NavGroup[] = [
 				icon: TrendingUp,
 				permission: "view_leads",
 			},
-			{
-				title: "Sales Dashboard",
-				href: "/dashboard/sales/manager",
-				icon: BarChart3,
-				permission: "view_sales_dashboard",
-			},
+			// {
+			// 	title: "Sales Dashboard",
+			// 	href: "/dashboard/sales/manager",
+			// 	icon: BarChart3,
+			// 	permission: "view_sales_dashboard",
+			// },
 		],
 	},
 	{
@@ -287,7 +287,7 @@ export function Sidebar() {
 												className={cn(
 													"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
 													isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-													showCollapsed && "justify-center px-2"
+													showCollapsed && "justify-center px-2",
 												)}
 											>
 												<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary-foreground")} />

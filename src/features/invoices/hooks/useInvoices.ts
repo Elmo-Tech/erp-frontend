@@ -57,6 +57,18 @@ export const useUpdateInvoice = () => {
 	});
 };
 
+export const useMarkInvoiceAsPaid = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<Invoice, Error, number>({
+		mutationFn: invoicesApi.markAsPaid,
+		onSuccess: (updatedInvoice) => {
+			queryClient.setQueryData(invoiceKeys.detail(updatedInvoice.invoiceId), updatedInvoice);
+			queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() });
+		},
+	});
+};
+
 export const useDeleteInvoice = () => {
 	const queryClient = useQueryClient();
 

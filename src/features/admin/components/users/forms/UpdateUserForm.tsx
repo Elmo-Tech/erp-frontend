@@ -34,6 +34,7 @@ export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUs
 			roles: user.roles,
 			specialization: user.specialization || "",
 			isActive: user.isActive,
+			internalHourlyCost: user.internalHourlyCost || 0,
 		},
 	});
 
@@ -47,6 +48,7 @@ export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUs
 			roles: userData.roles,
 			specialization: userData.specialization || "",
 			isActive: userData.isActive,
+			internalHourlyCost: userData.internalHourlyCost || 0,
 		});
 	};
 

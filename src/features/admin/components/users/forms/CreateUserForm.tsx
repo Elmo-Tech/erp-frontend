@@ -32,6 +32,7 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 			roles: [],
 			specialization: "",
 			isActive: true,
+			internalHourlyCost: 0,
 		},
 	});
 
@@ -45,6 +46,7 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 			roles: [],
 			specialization: "",
 			isActive: true,
+			internalHourlyCost: 0,
 		});
 	};
 

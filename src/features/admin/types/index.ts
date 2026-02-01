@@ -386,6 +386,7 @@ export interface PermissionCheckResult {
  * User data for management
  */
 export interface User {
+	internalHourlyCost: number;
 	userId: number;
 	name: string;
 	email: string;

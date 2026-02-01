@@ -15,6 +15,7 @@ export const createUserSchema = z
 		roles: z.array(z.string()),
 		specialization: z.string().optional(),
 		isActive: z.boolean(),
+		internalHourlyCost: z.number().min(0, "Cost must be positive").optional(),
 	})
 	.refine((data) => data.password === data.password_confirmation, {
 		message: "Passwords do not match",
@@ -31,6 +32,7 @@ export const updateUserSchema = z
 		roles: z.array(z.string()).optional(),
 		specialization: z.string().optional(),
 		isActive: z.boolean().optional(),
+		internalHourlyCost: z.number().min(0, "Cost must be positive").optional(),
 	})
 	.refine(
 		(data) => {
@@ -42,7 +44,7 @@ export const updateUserSchema = z
 		{
 			message: "Passwords do not match",
 			path: ["password_confirmation"],
-		}
+		},
 	);
 
 export type CreateUserFormData = z.infer<typeof createUserSchema>;

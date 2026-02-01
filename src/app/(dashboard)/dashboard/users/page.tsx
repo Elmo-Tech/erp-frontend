@@ -1,7 +1,7 @@
 "use client";
 
-import { UsersWrapper } from "@/features/admin/components";
+import { UsersDashboard } from "@/features/admin/components/UsersDashboard";
 
 export default function UsersPage() {
-	return <UsersWrapper />;
+	return <UsersDashboard />;
 }

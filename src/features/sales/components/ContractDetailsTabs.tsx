@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useContract, useSignContract, useActivateContract, useMarkMilestonePaid, useUpdateContractStatus, useCreateMilestoneInvoice } from "../hooks/useContracts";
 import { useConvertQuotationToProject } from "@/features/projects/hooks/useProjects";
-import { UpdateContractForm, SignContractDialog, CreateInvoiceDialog } from "./contracts";
+import { UpdateContractForm, SignContractDialog, CreateInvoiceDialog, ContractSigner } from "./contracts";
 import { ContractStatus, MilestoneStatus } from "@/lib/statusHelpers";
 import { ArrowLeft, Pencil, FileSignature, Play } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -191,6 +191,7 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 					<TabsTrigger value="parties">Parties</TabsTrigger>
 					<TabsTrigger value="milestones">Milestones ({milestones.length})</TabsTrigger>
 					<TabsTrigger value="content">Contract Content</TabsTrigger>
+					{(contract.status === ContractStatus.PENDING_SIGNATURE || contract.status === ContractStatus.SIGNED) && <TabsTrigger value="signing">Signing</TabsTrigger>}
 				</TabsList>
 
 				<TabsContent value="details">
@@ -214,6 +215,11 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 				<TabsContent value="content">
 					<ContractContentTab content={contract.content} />
 				</TabsContent>
+				{(contract.status === ContractStatus.PENDING_SIGNATURE || contract.status === ContractStatus.SIGNED) && (
+					<TabsContent value="signing">
+						<ContractSigningTab contract={contract} />
+					</TabsContent>
+				)}
 			</Tabs>
 
 			{/* Dialogs */}
@@ -372,5 +378,21 @@ function ContractSummaryCards({ contract, totalPaid, progressPercentage }: Contr
 				</CardContent>
 			</Card>
 		</div>
+	);
+}
+
+interface ContractSigningTabProps {
+	contract: any;
+}
+
+function ContractSigningTab({ contract }: ContractSigningTabProps) {
+	return (
+		<ContractSigner
+			contract={contract}
+			onSigned={(updatedContract) => {
+				// The contract will be automatically updated via React Query
+				toast.success("Contract signed successfully!");
+			}}
+		/>
 	);
 }

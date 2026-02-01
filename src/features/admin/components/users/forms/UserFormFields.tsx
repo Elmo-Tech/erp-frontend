@@ -6,6 +6,7 @@ import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormSwitch } from "@/components/shared/forms/FormSwitch";
 import { FormCheckboxGroup } from "@/components/shared/forms/FormCheckboxGroup";
 import { TagInput } from "@/components/shared/forms/TagInput";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 interface UserFormFieldsProps {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,6 +17,12 @@ interface UserFormFieldsProps {
 }
 
 export function UserFormFields({ control, isEditing, roleOptions, specializationOptions }: UserFormFieldsProps) {
+	const { canViewInternalCosts, canManageInternalCosts } = usePermissions();
+
+	// Only show internal cost field if user has permission to view/manage internal costs
+	const showInternalCostField = canViewInternalCosts || canManageInternalCosts;
+	const canEditInternalCost = canManageInternalCosts;
+
 	return (
 		<div className="space-y-4">
 			<FormInput
@@ -64,6 +71,21 @@ export function UserFormFields({ control, isEditing, roleOptions, specialization
 				options={specializationOptions}
 				description="Determines which tasks the user can see and work on"
 			/>
+
+			{/* Internal Hourly Cost Field - Only visible to users with proper permissions */}
+			{showInternalCostField && (
+				<FormInput
+					control={control}
+					name="internalHourlyCost"
+					label="Internal Hourly Cost"
+					type="number"
+					step="0.01"
+					min={0}
+					placeholder="0.00"
+					description="Internal cost per hour for profitability calculations (confidential)"
+					disabled={!canEditInternalCost}
+				/>
+			)}
 
 			<FormCheckboxGroup
 				control={control}

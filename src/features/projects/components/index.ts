@@ -14,6 +14,7 @@ export { ProjectsWrapper } from "./wrappers";
 export { ProjectStatusBadge } from "./ProjectStatusBadge";
 export { ProjectDetails } from "./ProjectDetails";
 export { ProjectDetailsTabs } from "./ProjectDetailsTabs";
+export { ProjectWorkspace } from "./ProjectWorkspace";
 export { WikiViewer } from "./WikiViewer";
 export { WikiList } from "./WikiList";
 export { HistoryLog } from "./HistoryLog";

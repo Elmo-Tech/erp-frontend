@@ -9,3 +9,6 @@ export { CreateContractForm, UpdateContractForm, ContractFormFields } from "./fo
 
 // Tabs
 export { ContractDetailsTab, ContractPartiesTab, ContractMilestonesTab, ContractContentTab } from "./tabs";
+
+// Components
+export { ContractSigner } from "./ContractSigner";
