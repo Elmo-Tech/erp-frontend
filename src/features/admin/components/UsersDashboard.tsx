@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, UserPlus, Shield, Activity, Clock, Award, TrendingUp, UserCheck, UserX, Settings } from "lucide-react";
+import { Users, UserPlus, Shield, Activity, Clock, Award, TrendingUp, UserCheck, UserX } from "lucide-react";
 import { UsersTable, CreateUserForm, UpdateUserForm } from "./users";
 import { RolesMatrix } from "./RolesMatrix";
 import { UserPerformanceList } from "./UserPerformanceList";
@@ -32,9 +32,9 @@ export function UsersDashboard() {
 	const totalUsers = users.length;
 	const activeUsers = users.filter((u) => u.isActive).length;
 	const inactiveUsers = totalUsers - activeUsers;
-	const adminUsers = users.filter((u) => u.roles?.some((r) => r.name === "admin")).length;
-	const employeeUsers = users.filter((u) => u.roles?.some((r) => r.name === "employee")).length;
-	const clientUsers = users.filter((u) => u.roles?.some((r) => r.name === "client")).length;
+	const adminUsers = users.filter((u) => u.roles?.some((r) => r === "admin")).length;
+	const employeeUsers = users.filter((u) => u.roles?.some((r) => r === "employee")).length;
+	const clientUsers = users.filter((u) => u.roles?.some((r) => r === "client")).length;
 
 	const handleAdd = () => {
 		setCreateDialogOpen(true);
@@ -180,10 +180,10 @@ export function UsersDashboard() {
 											<Badge variant={user.isActive ? "default" : "secondary"}>{user.isActive ? "Active" : "Inactive"}</Badge>
 											{user.roles?.map((role) => (
 												<Badge
-													key={role.id}
+													key={role}
 													variant="outline"
 												>
-													{role.name}
+													{role}
 												</Badge>
 											))}
 										</div>

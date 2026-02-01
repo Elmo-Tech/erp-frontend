@@ -7,7 +7,7 @@ import { MoreHorizontal, Pencil, Trash2, UserCheck, UserX } from "lucide-react";
 
 interface UserActionsProps {
 	user: User;
-	onEdit: (user: User) => void;
+	onEdit?: (user: User) => void;
 	onDelete: (user: User) => void;
 	onToggleStatus: (user: User) => void;
 }
@@ -24,10 +24,12 @@ export function UserActions({ user, onEdit, onDelete, onToggleStatus }: UserActi
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				<DropdownMenuItem onClick={() => onEdit(user)}>
-					<Pencil className="h-4 w-4 mr-2" />
-					Edit
-				</DropdownMenuItem>
+				{onEdit && (
+					<DropdownMenuItem onClick={() => onEdit(user)}>
+						<Pencil className="h-4 w-4 mr-2" />
+						Edit
+					</DropdownMenuItem>
+				)}
 				<DropdownMenuItem onClick={() => onToggleStatus(user)}>
 					{user.isActive ? (
 						<>

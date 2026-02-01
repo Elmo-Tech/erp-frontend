@@ -3,11 +3,11 @@
 import { Badge } from "@/components/ui/badge";
 import { Column } from "@/components/shared/data-display/DataTable";
 import { User } from "../../../types";
-import { formatDate } from "@/lib/formatters";
+import { formatDateDisplay } from "@/lib/dateUtils";
 import { UserActions } from "./actions";
 
 interface UsersColumnsOptions {
-	onEdit: (user: User) => void;
+	onEdit?: (user: User) => void;
 	onDelete: (user: User) => void;
 	onToggleStatus: (user: User) => void;
 }
@@ -48,7 +48,7 @@ export function getUsersColumns({ onEdit, onDelete, onToggleStatus }: UsersColum
 		{
 			key: "createdAt",
 			header: "Created",
-			render: (user) => formatDate(user.createdAt),
+			render: (user) => formatDateDisplay(user.createdAt),
 		},
 		{
 			key: "actions",

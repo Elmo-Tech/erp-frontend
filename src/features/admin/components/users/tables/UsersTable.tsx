@@ -13,8 +13,8 @@ import { Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 
 interface UsersTableProps {
-	onEdit: (user: User) => void;
-	onAdd: () => void;
+	onEdit?: (user: User) => void;
+	onAdd?: () => void;
 }
 
 export function UsersTable({ onEdit, onAdd }: UsersTableProps) {
@@ -86,15 +86,17 @@ export function UsersTable({ onEdit, onAdd }: UsersTableProps) {
 					icon: Users,
 					title: "No users found",
 					description: "Get started by adding your first user.",
-					action: { label: "Add User", onClick: onAdd },
+					action: onAdd ? { label: "Add User", onClick: onAdd } : undefined,
 				}}
 				headerActions={
 					<FilterBar
 						actions={
-							<Button onClick={onAdd}>
-								<Plus className="h-4 w-4 mr-2" />
-								Add User
-							</Button>
+							onAdd ? (
+								<Button onClick={onAdd}>
+									<Plus className="h-4 w-4 mr-2" />
+									Add User
+								</Button>
+							) : null
 						}
 					>
 						<SearchInput

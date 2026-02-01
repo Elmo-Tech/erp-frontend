@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Column } from "@/components/shared/data-display/DataTable";
 import { ClientInvoice } from "../../types/clientInvoice";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/formatters";
+import { formatDateDisplay } from "@/lib/dateUtils";
 import { AlertTriangle, CreditCard, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,12 +55,12 @@ export function getInvoicesColumns({ onPayInvoice, payingInvoiceId }: InvoicesCo
 		{
 			key: "dueDate",
 			header: "Due Date",
-			render: (invoice) => <span className={cn(invoice.isOverdue && "text-red-600 font-medium")}>{formatDate(invoice.dueDate)}</span>,
+			render: (invoice) => <span className={cn(invoice.isOverdue && "text-red-600 font-medium")}>{formatDateDisplay(invoice.dueDate)}</span>,
 		},
 		{
 			key: "paidAt",
 			header: "Paid Date",
-			render: (invoice) => (invoice.paidAt ? <span className="text-green-600">{formatDate(invoice.paidAt)}</span> : <span className="text-muted-foreground">-</span>),
+			render: (invoice) => (invoice.paidAt ? <span className="text-green-600">{formatDateDisplay(invoice.paidAt)}</span> : <span className="text-muted-foreground">-</span>),
 		},
 		{
 			key: "actions",

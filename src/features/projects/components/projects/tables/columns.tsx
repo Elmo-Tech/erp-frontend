@@ -3,7 +3,8 @@
 import { Column } from "@/components/shared/data-display/DataTable";
 import { ProjectStatusBadge } from "@/components/shared/StatusBadge";
 import { Project } from "../../../types/project";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/formatters";
+import { formatDateDisplay } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
@@ -57,7 +58,7 @@ export function getProjectsColumns(options: ProjectColumnsOptions = {}): Column<
 		{
 			key: "deadline",
 			header: "Deadline",
-			render: (project) => <span className={project.deadline ? "" : "text-muted-foreground"}>{formatDate(project.deadline)}</span>,
+			render: (project) => <span className={project.deadline ? "" : "text-muted-foreground"}>{formatDateDisplay(project.deadline)}</span>,
 		},
 	];
 
