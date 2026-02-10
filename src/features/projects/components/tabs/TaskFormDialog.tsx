@@ -68,7 +68,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 		assignedTo: currentUserId ? currentUserId.toString() : "none",
 		taskCategory: "none",
 		estimatedHours: 0,
-		dueDate: null,
+		dueDate: today,
 		startDate: today, // Set today's date as default
 		sprintNumber: null,
 		tagIds: [],
@@ -145,7 +145,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					...membersData.members.map((member) => ({
 						value: member.userId.toString(),
 						label: member.user?.name || "Unknown",
-					}))
+					})),
 				);
 			}
 		} else {
@@ -156,7 +156,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					...teamAssignees.map((assignee) => ({
 						value: assignee.userId.toString(),
 						label: assignee.user?.name || "Unknown",
-					}))
+					})),
 				);
 			} else if (membersData?.members) {
 				// Fallback to project members if no team assignees
@@ -164,7 +164,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					...membersData.members.map((member) => ({
 						value: member.userId.toString(),
 						label: member.user?.name || "Unknown",
-					}))
+					})),
 				);
 			}
 		}
@@ -199,7 +199,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 		if (current.includes(tagId)) {
 			form.setValue(
 				"tagIds",
-				current.filter((id) => id !== tagId)
+				current.filter((id) => id !== tagId),
 			);
 		} else {
 			form.setValue("tagIds", [...current, tagId]);
