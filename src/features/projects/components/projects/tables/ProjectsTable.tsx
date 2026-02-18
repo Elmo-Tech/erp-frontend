@@ -132,15 +132,8 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		}
 	};
 
-	// Sort projects to show pinned ones first
-	const sortedProjects = useMemo(() => {
-		const projects = projectsResponse?.projects || [];
-		return [...projects].sort((a, b) => {
-			if (a.isPinned && !b.isPinned) return -1;
-			if (!a.isPinned && b.isPinned) return 1;
-			return 0;
-		});
-	}, [projectsResponse?.projects]);
+	// Sorting is now handled server-side, use projects directly
+	const projects = projectsResponse?.projects || [];
 
 	const columns = getProjectsColumns({
 		onView: handleViewProject,
@@ -158,7 +151,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 				title="Projects"
 				titleBadge={projectsResponse?.pagination ? `${projectsResponse.pagination.total} ${projectsResponse.pagination.total === 1 ? "project" : "projects"}` : undefined}
 				columns={columns}
-				data={sortedProjects}
+				data={projects}
 				keyExtractor={(project) => project.projectId}
 				isLoading={isLoading}
 				error={error}
