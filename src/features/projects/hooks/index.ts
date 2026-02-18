@@ -4,7 +4,7 @@
  */
 
 // Project hooks
-export { useProjects, useProject, useCreateProject, useUpdateProject, useDeleteProject, useApproveUI, usePrefetchProject, projectKeys } from "./useProjects";
+export { useProjects, useProject, useCreateProject, useUpdateProject, useDeleteProject, useApproveUI, usePrefetchProject, usePinnedProjects, usePinProject, useUnpinProject, projectKeys } from "./useProjects";
 
 // Quotation conversion hooks
 export { useConvertQuotation } from "./useConvertQuotation";

@@ -16,6 +16,7 @@ export const projectKeys = {
 	list: (filters?: ProjectFilters) => [...projectKeys.lists(), filters] as const,
 	details: () => [...projectKeys.all, "detail"] as const,
 	detail: (id: number) => [...projectKeys.details(), id] as const,
+	pinned: () => [...projectKeys.all, "pinned"] as const,
 };
 
 /**
@@ -210,6 +211,66 @@ export const useConvertQuotationToProject = () => {
 		},
 		onError: (error) => {
 			console.error("Failed to convert quotation to project:", error);
+		},
+	});
+};
+
+/**
+ * Hook to fetch all pinned projects for the current user
+ */
+export const usePinnedProjects = () => {
+	return useQuery<Project[], Error>({
+		queryKey: projectKeys.pinned(),
+		queryFn: () => projectsApi.getPinned(),
+		staleTime: 5 * 60 * 1000, // 5 minutes
+		gcTime: 10 * 60 * 1000, // 10 minutes
+	});
+};
+
+/**
+ * Hook to pin a project
+ */
+export const usePinProject = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, number>({
+		mutationFn: projectsApi.pin,
+		onSuccess: (_, projectId) => {
+			// Invalidate pinned projects list
+			queryClient.invalidateQueries({ queryKey: projectKeys.pinned() });
+
+			// Invalidate projects lists to update isPinned status
+			queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+
+			// Update the specific project in cache if it exists
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+		},
+		onError: (error) => {
+			console.error("Failed to pin project:", error);
+		},
+	});
+};
+
+/**
+ * Hook to unpin a project
+ */
+export const useUnpinProject = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, number>({
+		mutationFn: projectsApi.unpin,
+		onSuccess: (_, projectId) => {
+			// Invalidate pinned projects list
+			queryClient.invalidateQueries({ queryKey: projectKeys.pinned() });
+
+			// Invalidate projects lists to update isPinned status
+			queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+
+			// Update the specific project in cache if it exists
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+		},
+		onError: (error) => {
+			console.error("Failed to unpin project:", error);
 		},
 	});
 };

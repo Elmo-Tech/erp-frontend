@@ -63,6 +63,7 @@ export interface Project {
 	createdBy: number | null;
 	updatedBy: number | null;
 	canViewBudget?: boolean; // Permission flag from API
+	isPinned?: boolean; // Whether the project is pinned by the current user
 }
 
 export interface ProjectMember {

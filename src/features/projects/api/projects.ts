@@ -95,4 +95,26 @@ export const projectsApi = {
 		const response = await api.post<{ data: Project }>(`/projects/${id}/approve-ui`);
 		return response.data.data;
 	},
+
+	/**
+	 * Get all pinned projects for the current user
+	 */
+	getPinned: async (): Promise<Project[]> => {
+		const response = await api.get<{ data: Project[] }>("/projects/pinned");
+		return response.data.data;
+	},
+
+	/**
+	 * Pin a project
+	 */
+	pin: async (id: number): Promise<void> => {
+		await api.post(`/projects/${id}/pin`);
+	},
+
+	/**
+	 * Unpin a project
+	 */
+	unpin: async (id: number): Promise<void> => {
+		await api.delete(`/projects/${id}/pin`);
+	},
 };

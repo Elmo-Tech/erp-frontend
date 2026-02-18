@@ -8,7 +8,7 @@ import { SearchInput } from "@/components/shared/filters/SearchInput";
 import { FilterSelect, FilterOption } from "@/components/shared/filters/FilterSelect";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
 import { ConfirmDialog } from "@/components/shared";
-import { useProjects, useDeleteProject } from "../../../hooks/useProjects";
+import { useProjects, useDeleteProject, usePinProject, useUnpinProject } from "../../../hooks/useProjects";
 import { Project, ProjectFilters } from "../../../types/project";
 import { ProjectStatus, ProjectStatusLabels } from "@/lib/statusHelpers";
 import { getProjectsColumns } from "./columns";
@@ -27,6 +27,8 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 	const router = useRouter();
 	const { canDeleteProjects, canEditProjects, canViewProjectBudget } = usePermissions();
 	const deleteProject = useDeleteProject();
+	const pinProject = usePinProject();
+	const unpinProject = useUnpinProject();
 
 	const [filters, setFilters] = useState<ProjectFilters>({
 		search: "",
@@ -116,10 +118,35 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		}
 	};
 
+	const handlePinProject = async (project: Project) => {
+		try {
+			if (project.isPinned) {
+				await unpinProject.mutateAsync(project.projectId);
+				toast.success("Project unpinned successfully");
+			} else {
+				await pinProject.mutateAsync(project.projectId);
+				toast.success("Project pinned successfully");
+			}
+		} catch {
+			toast.error(project.isPinned ? "Failed to unpin project" : "Failed to pin project");
+		}
+	};
+
+	// Sort projects to show pinned ones first
+	const sortedProjects = useMemo(() => {
+		const projects = projectsResponse?.projects || [];
+		return [...projects].sort((a, b) => {
+			if (a.isPinned && !b.isPinned) return -1;
+			if (!a.isPinned && b.isPinned) return 1;
+			return 0;
+		});
+	}, [projectsResponse?.projects]);
+
 	const columns = getProjectsColumns({
 		onView: handleViewProject,
 		onEdit: onEditProject ? handleEditProject : undefined,
 		onDelete: canDeleteProjects ? (project) => setProjectToDelete(project) : undefined,
+		onPin: handlePinProject,
 		canDeleteProjects,
 		canEditProjects,
 		canViewProjectBudget,
@@ -131,7 +158,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 				title="Projects"
 				titleBadge={projectsResponse?.pagination ? `${projectsResponse.pagination.total} ${projectsResponse.pagination.total === 1 ? "project" : "projects"}` : undefined}
 				columns={columns}
-				data={projectsResponse?.projects || []}
+				data={sortedProjects}
 				keyExtractor={(project) => project.projectId}
 				isLoading={isLoading}
 				error={error}

@@ -7,21 +7,40 @@ import { formatCurrency } from "@/lib/formatters";
 import { formatDateDisplay } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Trash2, Pin } from "lucide-react";
 
 interface ProjectColumnsOptions {
 	onView?: (project: Project) => void;
 	onEdit?: (project: Project) => void;
 	onDelete?: (project: Project) => void;
+	onPin?: (project: Project) => void;
 	canDeleteProjects?: boolean;
 	canEditProjects?: boolean;
 	canViewProjectBudget?: boolean;
 }
 
 export function getProjectsColumns(options: ProjectColumnsOptions = {}): Column<Project>[] {
-	const { onView, onEdit, onDelete, canDeleteProjects, canEditProjects, canViewProjectBudget } = options;
+	const { onView, onEdit, onDelete, onPin, canDeleteProjects, canEditProjects, canViewProjectBudget } = options;
 
 	const columns: Column<Project>[] = [
+		{
+			key: "pin",
+			header: "",
+			render: (project) => (
+				<Button
+					variant="ghost"
+					size="icon"
+					className={`h-8 w-8 ${project.isPinned ? "text-primary" : "text-muted-foreground opacity-50 hover:opacity-100"}`}
+					onClick={(e) => {
+						e.stopPropagation();
+						onPin?.(project);
+					}}
+					title={project.isPinned ? "Unpin project" : "Pin project"}
+				>
+					<Pin className={`h-4 w-4 ${project.isPinned ? "fill-current" : ""}`} />
+				</Button>
+			),
+		},
 		{
 			key: "title",
 			header: "Title",
