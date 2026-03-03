@@ -6,6 +6,9 @@
 // Task hooks
 export * from "./useTasks";
 export * from "./useTaskTree";
+export * from "./useTaskDependencies";
+export * from "./useTaskTemplates";
+export * from "./useRecurringTasks";
 
 // Attendance hooks
 export * from "./useAttendance";

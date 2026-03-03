@@ -7,6 +7,6 @@ export function useCodeReviews(filters?: CodeReviewFilters & { perPage?: number;
 		queryKey: ["codeReviews", filters],
 		queryFn: () => codeReviewApi.getAll(filters).then((response) => response.data.data),
 		enabled,
-		staleTime: 30 * 1000, // 30 seconds
+		staleTime: 0, // Always fetch fresh data when filters change
 	});
 }

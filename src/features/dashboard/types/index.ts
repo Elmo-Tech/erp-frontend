@@ -6,3 +6,6 @@
 export * from "./task";
 export * from "./attendance";
 export * from "./stats";
+export * from "./taskDependency";
+export * from "./taskTemplate";
+export * from "./recurringTask";

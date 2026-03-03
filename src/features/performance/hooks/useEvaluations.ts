@@ -13,6 +13,6 @@ export function useEvaluations(filters?: UseEvaluationsFilters) {
 	return useQuery({
 		queryKey: ["evaluations", filters],
 		queryFn: () => getEvaluations(filters),
-		staleTime: 5 * 60 * 1000, // 5 minutes
+		staleTime: 0, // Always fetch fresh data when filters change
 	});
 }

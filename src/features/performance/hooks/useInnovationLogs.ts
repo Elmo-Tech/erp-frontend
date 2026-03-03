@@ -14,6 +14,6 @@ export function useInnovationLogs(filters?: UseInnovationLogsFilters) {
 	return useQuery({
 		queryKey: ["innovationLogs", filters],
 		queryFn: () => getInnovationLogs(filters),
-		staleTime: 5 * 60 * 1000, // 5 minutes
+		staleTime: 0, // Always fetch fresh data when filters change
 	});
 }

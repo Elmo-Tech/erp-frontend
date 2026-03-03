@@ -36,6 +36,35 @@ export interface AttendanceFormData {
 	clockIn: string;
 	clockOut?: string | null;
 	notes?: string;
+	isGraceDay?: boolean;
+	deductionMinutes?: number;
+}
+
+export interface DeductionType {
+	id: number;
+	name: string;
+	description?: string;
+	isActive: boolean;
+}
+
+export interface EmployeeDeduction {
+	id: number;
+	userId: number;
+	deductionTypeId: number;
+	deductionDate: string;
+	amount: number;
+	reason: string;
+	status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+	attendanceId?: number;
+	lateMinutes?: number;
+	approvedBy?: number;
+	approvedAt?: string;
+	createdAt: string;
+	user?: {
+		userId: number;
+		name: string;
+	};
+	deductionType?: DeductionType;
 }
 
 export interface PaginatedResponse<T> {

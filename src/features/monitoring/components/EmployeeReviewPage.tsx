@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2, Download } from "lucide-react";
+import { CalendarIcon, Loader2, Download, TrendingUp, CheckSquare, Clock, Star, Folder } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEmployeeReview } from "../hooks/useEmployeeReview";
 import { OverviewCards } from "./OverviewCards";
@@ -219,74 +219,103 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 				</Card>
 			)}
 
-			{/* Review Data */}
+			{/* Review Data - Organized into sections */}
 			{reviewData && (
-				<div className="space-y-6">
-					{/* Employee Info */}
-					<Card>
-						<CardContent className="pt-6">
-							<div className="flex items-center gap-4">
-								{reviewData.employee.avatar ? (
-									<img
-										src={reviewData.employee.avatar}
-										alt={reviewData.employee.name}
-										className="h-16 w-16 rounded-full object-cover"
-									/>
-								) : (
-									<div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-										<span className="text-2xl font-bold text-primary">{reviewData.employee.name.charAt(0)}</span>
+				<div className="space-y-8">
+					{/* Section 1: Employee Info & Overview */}
+					<div className="space-y-4">
+						{/* Employee Info */}
+						<Card>
+							<CardContent className="pt-6">
+								<div className="flex items-center gap-4">
+									{reviewData.employee.avatar ? (
+										<img
+											src={reviewData.employee.avatar}
+											alt={reviewData.employee.name}
+											className="h-16 w-16 rounded-full object-cover"
+										/>
+									) : (
+										<div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+											<span className="text-2xl font-bold text-primary">{reviewData.employee.name.charAt(0)}</span>
+										</div>
+									)}
+									<div>
+										<h2 className="text-2xl font-bold">{reviewData.employee.name}</h2>
+										<p className="text-muted-foreground">{reviewData.employee.email}</p>
+										{reviewData.employee.specialization && <p className="text-sm text-muted-foreground capitalize">{reviewData.employee.specialization}</p>}
 									</div>
-								)}
-								<div>
-									<h2 className="text-2xl font-bold">{reviewData.employee.name}</h2>
-									<p className="text-muted-foreground">{reviewData.employee.email}</p>
-									{reviewData.employee.specialization && <p className="text-sm text-muted-foreground capitalize">{reviewData.employee.specialization}</p>}
 								</div>
-							</div>
-						</CardContent>
-					</Card>
+							</CardContent>
+						</Card>
 
-					{/* Overview Cards */}
-					<OverviewCards overview={reviewData.overview} />
+						{/* Overview Cards */}
+						<OverviewCards overview={reviewData.overview} />
+					</div>
 
-					{/* Productivity Metrics */}
-					<ProductivityMetrics productivity={reviewData.productivity} />
+					{/* Section 2: Attendance & Punctuality */}
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold flex items-center gap-2">
+							<CalendarIcon className="h-5 w-5" />
+							Attendance & Punctuality
+						</h3>
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							{reviewData.gracePeriod && <GracePeriodSection data={reviewData.gracePeriod} />}
+							{reviewData.deductions && <DeductionsSection data={reviewData.deductions} />}
+						</div>
+						{reviewData.attendance && <AttendanceSection attendance={reviewData.attendance} />}
+					</div>
 
-					{/* Points Section with Pagination */}
-					<PointsSection
-						points={reviewData.points}
-						onPageChange={setPointsPage}
-					/>
+					{/* Section 3: Performance Metrics */}
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold flex items-center gap-2">
+							<TrendingUp className="h-5 w-5" />
+							Performance Metrics
+						</h3>
+						<ProductivityMetrics productivity={reviewData.productivity} />
+						{reviewData.trends && <ProductivityTrendsSection data={reviewData.trends} />}
+					</div>
 
-					{/* Grace Period Section */}
-					{reviewData.gracePeriod && <GracePeriodSection data={reviewData.gracePeriod} />}
+					{/* Section 4: Task Analysis */}
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold flex items-center gap-2">
+							<CheckSquare className="h-5 w-5" />
+							Task Analysis
+						</h3>
+						{reviewData.taskPerformance && <TaskPerformanceSection data={reviewData.taskPerformance} />}
+						{reviewData.qualityMetrics && <QualityMetricsSection data={reviewData.qualityMetrics} />}
+						<TasksSection tasks={reviewData.tasks} />
+						<DeliveryLogsSection tasks={reviewData.tasks} />
+					</div>
 
-					{/* Deductions Section */}
-					{reviewData.deductions && <DeductionsSection data={reviewData.deductions} />}
+					{/* Section 5: Time Tracking */}
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold flex items-center gap-2">
+							<Clock className="h-5 w-5" />
+							Time Tracking
+						</h3>
+						<TimeTrackingChart timeTracking={reviewData.timeTracking} />
+					</div>
 
-					{/* Task Performance Analysis */}
-					{reviewData.taskPerformance && <TaskPerformanceSection data={reviewData.taskPerformance} />}
+					{/* Section 6: Points */}
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold flex items-center gap-2">
+							<Star className="h-5 w-5" />
+							Points
+						</h3>
+						<PointsSection
+							points={reviewData.points}
+							onPageChange={setPointsPage}
+						/>
+					</div>
 
-					{/* Quality Metrics */}
-					{reviewData.qualityMetrics && <QualityMetricsSection data={reviewData.qualityMetrics} />}
-
-					{/* Productivity Trends */}
-					{reviewData.trends && <ProductivityTrendsSection data={reviewData.trends} />}
-
-					{/* Time Tracking Chart */}
-					<TimeTrackingChart timeTracking={reviewData.timeTracking} />
-
-					{/* Tasks Section */}
-					<TasksSection tasks={reviewData.tasks} />
-
-					{/* Delivery Logs Section */}
-					<DeliveryLogsSection tasks={reviewData.tasks} />
-
-					{/* Projects Section */}
-					<ProjectsSection projects={reviewData.projects} />
-
-					{/* Attendance Section */}
-					<AttendanceSection attendance={reviewData.attendance} />
+					{/* Section 7: Projects */}
+					<div className="space-y-4">
+						<h3 className="text-lg font-semibold flex items-center gap-2">
+							<Folder className="h-5 w-5" />
+							Projects
+						</h3>
+						<ProjectsSection projects={reviewData.projects} />
+					</div>
 				</div>
 			)}
 		</div>
