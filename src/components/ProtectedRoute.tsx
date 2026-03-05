@@ -13,12 +13,19 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles, requiredPermission }: ProtectedRouteProps) {
 	const router = useRouter();
-	const { isAuthenticated, role, hasPermission } = useAuthStore();
+	const { isAuthenticated, role, hasPermission, tokenExpiresAt, logout } = useAuthStore();
 	const [isChecking, setIsChecking] = useState(true);
 
 	useEffect(() => {
 		// Wait for hydration
 		const timer = setTimeout(() => {
+			// Check if token is expired
+			if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date()) {
+				logout();
+				router.push("/login");
+				return;
+			}
+
 			if (!isAuthenticated) {
 				router.push("/login");
 				return;
@@ -40,7 +47,7 @@ export function ProtectedRoute({ children, allowedRoles, requiredPermission }: P
 		}, 100);
 
 		return () => clearTimeout(timer);
-	}, [isAuthenticated, role, allowedRoles, requiredPermission, hasPermission, router]);
+	}, [isAuthenticated, role, allowedRoles, requiredPermission, hasPermission, tokenExpiresAt, logout, router]);
 
 	if (isChecking) {
 		return (

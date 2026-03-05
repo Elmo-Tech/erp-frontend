@@ -8,9 +8,15 @@ import { useAuthStore } from "@/store/authStore";
 
 export default function LoginPage() {
 	const router = useRouter();
-	const { isAuthenticated, role } = useAuthStore();
+	const { isAuthenticated, role, tokenExpiresAt, logout } = useAuthStore();
 
 	useEffect(() => {
+		// Check if token is expired
+		if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date()) {
+			logout();
+			return;
+		}
+
 		if (isAuthenticated) {
 			if (role === "client") {
 				router.push("/client");
@@ -18,7 +24,7 @@ export default function LoginPage() {
 				router.push("/dashboard");
 			}
 		}
-	}, [isAuthenticated, role, router]);
+	}, [isAuthenticated, role, tokenExpiresAt, logout, router]);
 
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">
