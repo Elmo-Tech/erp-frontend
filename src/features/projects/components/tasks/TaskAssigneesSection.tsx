@@ -57,16 +57,18 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 	const { canManageTaskTeam } = usePermissions();
 	const { user, role } = useAuthStore();
 
-	// Permission logic:
-	// - Main/Weekly Tasks: Only users with manage_task_team permission can add/remove team
-	// - Subtasks: Team is inherited (view-only), no one can add/remove
-	const isMainOrWeeklyTask = task.type === TaskType.MAIN || task.type === TaskType.WEEKLY;
-	const isSubtask = task.type === TaskType.SUBTASK;
+	// Permission logic (UPDATED):
+	// - All task types (Main/Weekly/Subtask): Users with manage_task_team permission can add/remove team
+	// - When adding to Main Task: propagates to Weekly Tasks only (not Subtasks)
+	// - When removing from Main Task: removes from Weekly Tasks only (not Subtasks)
+	// - Weekly/Subtasks: can be managed independently
 	const isMainTask = task.type === TaskType.MAIN;
+	const isWeeklyTask = task.type === TaskType.WEEKLY;
+	const isSubtask = task.type === TaskType.SUBTASK;
 
 	// Check if user is admin/super-admin or has manage_task_team permission
 	const isAdminOrSuperAdmin = role === "admin" || role === "super-admin";
-	const canEditAssignees = isMainOrWeeklyTask && (isAdminOrSuperAdmin || canManageTaskTeam);
+	const canEditAssignees = isAdminOrSuperAdmin || canManageTaskTeam;
 
 	const form = useForm<AddAssigneeFormData>({
 		resolver: zodResolver(addAssigneeSchema),
@@ -164,17 +166,23 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 				)}
 			</div>
 
-			{/* Info notice for non-main tasks */}
+			{/* Info notice based on task type */}
+			{isMainTask && (
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>Adding a team member to this Main Task will automatically add them to all Weekly Tasks (but not Subtasks). Weekly Tasks and Subtasks can be managed independently.</AlertDescription>
+				</Alert>
+			)}
+			{isWeeklyTask && (
+				<Alert>
+					<Info className="h-4 w-4" />
+					<AlertDescription>You can add or remove team members from this Weekly Task independently. Changes won&apos;t affect the Main Task or Subtasks.</AlertDescription>
+				</Alert>
+			)}
 			{isSubtask && (
 				<Alert>
 					<Info className="h-4 w-4" />
-					<AlertDescription>Team members are inherited from the main task and cannot be modified on subtasks.</AlertDescription>
-				</Alert>
-			)}
-			{!isMainOrWeeklyTask && !isSubtask && (
-				<Alert>
-					<Info className="h-4 w-4" />
-					<AlertDescription>You can assign team members from the main task&apos;s team. Add members to the main task first to expand the available team.</AlertDescription>
+					<AlertDescription>You can add or remove team members from this Subtask independently. Changes won&apos;t affect the Main Task or Weekly Tasks.</AlertDescription>
 				</Alert>
 			)}
 
