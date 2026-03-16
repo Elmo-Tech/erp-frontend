@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TasksData } from "../types/employeeReview";
+import { PeriodTask, TasksData } from "../types/employeeReview";
 import { Calendar, Clock, CheckCircle2, AlertTriangle, TrendingDown } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -11,13 +10,15 @@ interface DeliveryLogsSectionProps {
 }
 
 export function DeliveryLogsSection({ tasks }: DeliveryLogsSectionProps) {
+	const periodTasks = tasks.periodTasks || [];
+
 	// Calculate delivery statistics
-	const completedTasks = tasks.recentTasks.filter((task) => task.status === "completed");
-	const overdueTasks = tasks.recentTasks.filter((task) => task.isOverdue);
+	const completedTasks = periodTasks.filter((task) => task.status === "completed");
+	const overdueTasks = periodTasks.filter((task) => task.isOverdue);
 	const onTimeTasks = completedTasks.filter((task) => !task.delayDays || task.delayDays <= 0);
 	const lateTasks = completedTasks.filter((task) => task.delayDays && task.delayDays > 0);
 
-	const getDeliveryStatusColor = (task: any) => {
+	const getDeliveryStatusColor = (task: PeriodTask) => {
 		if (task.status === "completed") {
 			if (task.delayDays && task.delayDays > 0) {
 				return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400";
@@ -30,7 +31,10 @@ export function DeliveryLogsSection({ tasks }: DeliveryLogsSectionProps) {
 		return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
 	};
 
-	const getDeliveryStatusText = (task: any) => {
+	const getDeliveryStatusText = (task: PeriodTask) => {
+		if (task.deliveryStatusLabel) {
+			return task.deliveryStatusLabel;
+		}
 		if (task.status === "completed") {
 			if (task.delayDays && task.delayDays > 0) {
 				return `Delivered ${task.delayDays} days late`;
@@ -194,7 +198,7 @@ export function DeliveryLogsSection({ tasks }: DeliveryLogsSectionProps) {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{tasks.recentTasks
+							{[...periodTasks]
 								.sort((a, b) => {
 									// Sort by completion date (completed tasks first), then by due date
 									if (a.completedAt && b.completedAt) {
@@ -227,13 +231,13 @@ export function DeliveryLogsSection({ tasks }: DeliveryLogsSectionProps) {
 											<Badge className={getDeliveryStatusColor(task)}>{getDeliveryStatusText(task)}</Badge>
 										</TableCell>
 										<TableCell>
-											<Badge variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "default" : "secondary"}>{task.priority}</Badge>
+											<Badge variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "default" : "secondary"}>{task.priority || "n/a"}</Badge>
 										</TableCell>
 									</TableRow>
 								))}
 						</TableBody>
 					</Table>
-					{tasks.recentTasks.length === 0 && (
+					{periodTasks.length === 0 && (
 						<div className="text-center py-8 text-muted-foreground">
 							<Calendar className="h-8 w-8 mx-auto mb-2" />
 							<p>No tasks found for this period</p>

@@ -47,33 +47,33 @@ export interface TimeTrackingData {
 
 export interface TaskWithBounce {
 	taskId: number;
+	projectId?: number | null;
 	title: string;
 	projectTitle: string | null;
 	status: string;
+	priority?: string;
 	reopenCount: number;
 	estimatedHours: number | null;
 	totalTimeSpent: number;
+	loggedHours?: number;
+	overallTaskHours?: number;
 	// إضافة معلومات التسليم
 	dueDate: string | null;
 	completedAt: string | null;
 	delayDays: number | null;
 	isOverdue: boolean;
+	startedAt?: string | null;
+	endedAt?: string | null;
+	createdAt?: string;
+	updatedAt?: string;
+	activityDate?: string | null;
+	deliveryStatus?: string;
+	deliveryStatusLabel?: string;
+	deliveredOnTime?: boolean | null;
 }
 
-export interface RecentTask {
-	taskId: number;
-	title: string;
-	projectTitle: string | null;
-	status: string;
-	priority: string;
-	createdAt: string;
-	updatedAt: string;
-	// إضافة معلومات التسليم
-	dueDate: string | null;
-	completedAt: string | null;
-	delayDays: number | null;
-	isOverdue: boolean;
-}
+export type RecentTask = TaskWithBounce;
+export type PeriodTask = TaskWithBounce;
 
 export interface TasksData {
 	total: number;
@@ -83,15 +83,24 @@ export interface TasksData {
 	byPriority: Record<string, number>;
 	tasksWithBounces: TaskWithBounce[];
 	recentTasks: RecentTask[];
+	periodTasks: PeriodTask[];
 	totalBounces: number;
 }
 
 export interface ProjectInfo {
 	projectId: number;
 	title: string;
+	name?: string;
 	clientName: string | null;
 	status: string;
 	userTimeSpent: number;
+	totalHours?: number;
+	totalTasks: number;
+	completedTasks: number;
+	inProgressTasks: number;
+	onTimeDeliveries: number;
+	lateDeliveries: number;
+	keyDeliverables?: string;
 }
 
 export interface ProjectsData {
@@ -162,6 +171,10 @@ export interface PointsData {
 			deducted: number;
 			net: number;
 		};
+	};
+	window?: {
+		dateFrom: string;
+		dateTo: string;
 	};
 	bySource: {
 		automatic: {

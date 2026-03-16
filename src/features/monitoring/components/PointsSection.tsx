@@ -5,7 +5,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { PointsData } from "../types/employeeReview";
 import { TrendingUp, TrendingDown, Award, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
-import { useState } from "react";
 
 interface PointsSectionProps {
 	points: PointsData;
@@ -13,8 +12,6 @@ interface PointsSectionProps {
 }
 
 export function PointsSection({ points, onPageChange }: PointsSectionProps) {
-	const [currentPage, setCurrentPage] = useState(1);
-
 	const getPointsColor = (pointsValue: number) => {
 		if (pointsValue > 0) return "text-green-600";
 		if (pointsValue < 0) return "text-red-600";
@@ -28,12 +25,16 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 	};
 
 	const handlePageChange = (newPage: number) => {
-		setCurrentPage(newPage);
 		onPageChange?.(newPage);
 	};
 
 	const pagination = points?.transactionsPagination;
 	const hasPagination = pagination && (pagination?.totalPages || 0) > 1;
+	const currentPage = pagination?.currentPage || 1;
+	const windowLabel =
+		points?.window?.dateFrom && points?.window?.dateTo
+			? `${format(new Date(points.window.dateFrom), "MMM d, yyyy")} - ${format(new Date(points.window.dateTo), "MMM d, yyyy")}`
+			: "Last 2 months";
 
 	return (
 		<div className="space-y-6">
@@ -57,7 +58,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold text-green-600">+{points?.pointsEarned || 0}</div>
-						<p className="text-xs text-muted-foreground">This period</p>
+						<p className="text-xs text-muted-foreground">Last 2 months</p>
 					</CardContent>
 				</Card>
 
@@ -68,7 +69,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold text-red-600">-{points?.pointsDeducted || 0}</div>
-						<p className="text-xs text-muted-foreground">This period</p>
+						<p className="text-xs text-muted-foreground">Last 2 months</p>
 					</CardContent>
 				</Card>
 
@@ -82,7 +83,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 							{(points?.netChange || 0) >= 0 ? "+" : ""}
 							{points?.netChange || 0}
 						</div>
-						<p className="text-xs text-muted-foreground">Net change</p>
+						<p className="text-xs text-muted-foreground">Last 2 months</p>
 					</CardContent>
 				</Card>
 
@@ -93,7 +94,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{(points?.transactions || []).length}</div>
-						<p className="text-xs text-muted-foreground">Total transactions</p>
+						<p className="text-xs text-muted-foreground">Shown from last 2 months</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -103,6 +104,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 				<Card>
 					<CardHeader>
 						<CardTitle>Monthly Breakdown</CardTitle>
+						<p className="text-sm text-muted-foreground">{windowLabel}</p>
 					</CardHeader>
 					<CardContent>
 						<div className="space-y-3">
@@ -130,7 +132,10 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 			{/* Recent Transactions */}
 			<Card>
 				<CardHeader className="flex flex-row items-center justify-between">
-					<CardTitle>Point Transactions</CardTitle>
+					<div>
+						<CardTitle>Point Transactions</CardTitle>
+						<p className="text-sm text-muted-foreground mt-1">Always limited to the last 2 months from report date</p>
+					</div>
 					{hasPagination && (
 						<div className="text-sm text-muted-foreground">
 							Showing {pagination?.showing || 0} of {pagination?.total || 0} transactions
@@ -177,7 +182,7 @@ export function PointsSection({ points, onPageChange }: PointsSectionProps) {
 					{(points?.transactions || []).length === 0 && (
 						<div className="text-center py-8 text-muted-foreground">
 							<AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-							<p>No point transactions found for this period</p>
+							<p>No point transactions found in the last 2 months</p>
 						</div>
 					)}
 

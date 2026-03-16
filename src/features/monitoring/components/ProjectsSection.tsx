@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ProjectsData } from "../types/employeeReview";
-import { Briefcase, CheckCircle2, Clock } from "lucide-react";
+import { Briefcase, Clock, ListChecks } from "lucide-react";
 
 interface ProjectsSectionProps {
 	projects: ProjectsData;
@@ -45,11 +45,14 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Completed</CardTitle>
-						<CheckCircle2 className="h-4 w-4 text-green-600" />
+						<CardTitle className="text-sm font-medium">Worked Tasks</CardTitle>
+						<ListChecks className="h-4 w-4 text-emerald-600" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">{projects?.completed || 0}</div>
+						<div className="text-2xl font-bold">
+							{(projects?.projects || []).reduce((sum, project) => sum + (project.totalTasks || 0), 0)}
+						</div>
+						<p className="text-xs text-muted-foreground">Primary tasks in selected period</p>
 					</CardContent>
 				</Card>
 			</div>
@@ -66,7 +69,10 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 								<TableRow>
 									<TableHead>Project</TableHead>
 									<TableHead>Client</TableHead>
-									<TableHead>Status</TableHead>
+									<TableHead>Stage</TableHead>
+									<TableHead className="text-right">Tasks</TableHead>
+									<TableHead className="text-right">On Time</TableHead>
+									<TableHead className="text-right">Late</TableHead>
 									<TableHead className="text-right">Time Spent</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -78,6 +84,9 @@ export function ProjectsSection({ projects }: ProjectsSectionProps) {
 										<TableCell>
 											<Badge className={getStatusColor(project.status)}>{project.status.replace("_", " ")}</Badge>
 										</TableCell>
+										<TableCell className="text-right font-medium">{project.totalTasks}</TableCell>
+										<TableCell className="text-right text-green-600 font-medium">{project.onTimeDeliveries}</TableCell>
+										<TableCell className="text-right text-orange-600 font-medium">{project.lateDeliveries}</TableCell>
 										<TableCell className="text-right font-medium">{project.userTimeSpent.toFixed(1)}h</TableCell>
 									</TableRow>
 								))}

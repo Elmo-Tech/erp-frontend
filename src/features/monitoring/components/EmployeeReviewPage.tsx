@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -42,6 +42,10 @@ export function EmployeeReviewPage({ users }: EmployeeReviewPageProps) {
 	const [dateTo, setDateTo] = useState<Date>();
 	const [isExporting, setIsExporting] = useState(false);
 	const [pointsPage, setPointsPage] = useState(1);
+
+	useEffect(() => {
+		setPointsPage(1);
+	}, [selectedUserId, dateFrom, dateTo]);
 
 	const { data, isLoading, error } = useEmployeeReview({
 		userId: selectedUserId!,

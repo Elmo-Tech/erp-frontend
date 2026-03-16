@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TasksData } from "../types/employeeReview";
+import { PeriodTask, TasksData } from "../types/employeeReview";
 import { AlertTriangle, CheckCircle2, Clock, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -30,7 +29,7 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 		return colors[priority] || colors.medium;
 	};
 
-	const getDeliveryStatusColor = (task: any) => {
+	const getDeliveryStatusColor = (task: PeriodTask) => {
 		if (task.status === "completed") {
 			if (task.delayDays && task.delayDays > 0) {
 				return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400";
@@ -43,7 +42,10 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 		return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
 	};
 
-	const getDeliveryStatusText = (task: any) => {
+	const getDeliveryStatusText = (task: PeriodTask) => {
+		if (task.deliveryStatusLabel) {
+			return task.deliveryStatusLabel;
+		}
 		if (task.status === "completed") {
 			if (task.delayDays && task.delayDays > 0) {
 				return `Late by ${task.delayDays} days`;
@@ -160,10 +162,10 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 				</Card>
 			)}
 
-			{/* Recent Tasks */}
+			{/* Period Tasks */}
 			<Card>
 				<CardHeader>
-					<CardTitle>Recent Tasks</CardTitle>
+					<CardTitle>Task Activity In Selected Period</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<Table>
@@ -173,13 +175,14 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 								<TableHead>Project</TableHead>
 								<TableHead>Status</TableHead>
 								<TableHead>Priority</TableHead>
+								<TableHead>Worked Hours</TableHead>
 								<TableHead>Due Date</TableHead>
 								<TableHead>Delivery Status</TableHead>
-								<TableHead>Updated</TableHead>
+								<TableHead>Last Activity</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{(tasks?.recentTasks || []).map((task) => (
+							{(tasks?.periodTasks || []).map((task) => (
 								<TableRow key={task.taskId}>
 									<TableCell className="font-medium">{task.title}</TableCell>
 									<TableCell>{task.projectTitle || "N/A"}</TableCell>
@@ -187,8 +190,9 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 										<Badge className={getStatusColor(task.status)}>{task.status.replace("_", " ")}</Badge>
 									</TableCell>
 									<TableCell>
-										<Badge className={getPriorityColor(task.priority)}>{task.priority}</Badge>
+										<Badge className={getPriorityColor(task.priority || "medium")}>{task.priority || "n/a"}</Badge>
 									</TableCell>
+									<TableCell className="font-medium">{(task.loggedHours ?? task.totalTimeSpent).toFixed(1)}h</TableCell>
 									<TableCell>
 										<div className="flex items-center gap-1">
 											<Calendar className="h-3 w-3 text-muted-foreground" />
@@ -198,11 +202,12 @@ export function TasksSection({ tasks }: TasksSectionProps) {
 									<TableCell>
 										<Badge className={getDeliveryStatusColor(task)}>{getDeliveryStatusText(task)}</Badge>
 									</TableCell>
-									<TableCell>{task.updatedAt}</TableCell>
+									<TableCell>{task.endedAt || task.updatedAt || task.createdAt || "N/A"}</TableCell>
 								</TableRow>
 							))}
 						</TableBody>
 					</Table>
+					{(tasks?.periodTasks || []).length === 0 && <div className="py-8 text-center text-muted-foreground">No primary tasks found in this period</div>}
 				</CardContent>
 			</Card>
 		</div>
