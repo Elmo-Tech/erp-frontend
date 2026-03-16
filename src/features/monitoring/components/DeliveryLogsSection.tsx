@@ -46,7 +46,7 @@ export function DeliveryLogsSection({ tasks }: DeliveryLogsSectionProps) {
 		}
 		if (task.isOverdue) {
 			const today = new Date();
-			const dueDate = new Date(task.dueDate);
+			const dueDate = new Date(task.dueDate || "");
 			const overdueDays = Math.ceil((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 			return `Overdue by ${overdueDays} days`;
 		}
