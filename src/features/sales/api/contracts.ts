@@ -31,6 +31,7 @@ export const contractsApi = {
 		if (filters?.status) params.append("filter[status]", filters.status);
 		if (filters?.projectId) params.append("filter[projectId]", filters.projectId.toString());
 		if (filters?.quotationId) params.append("filter[quotationId]", filters.quotationId.toString());
+		if (filters?.leadId) params.append("filter[leadId]", filters.leadId.toString());
 		if (filters?.page) params.append("page", filters.page.toString());
 		if (filters?.perPage) params.append("perPage", filters.perPage.toString());
 
@@ -59,7 +60,17 @@ export const contractsApi = {
 	},
 
 	sign: async (id: number, payload: SignContractPayload): Promise<Contract> => {
-		const response = await api.post<{ data: Contract }>(`/contracts/${id}/sign`, payload);
+		const requestPayload =
+			payload.signedPdf !== undefined
+				? (() => {
+						const formData = new FormData();
+						formData.append("signedByClient", payload.signedByClient);
+						formData.append("signedPdf", payload.signedPdf);
+						return formData;
+					})()
+				: { signedByClient: payload.signedByClient };
+
+		const response = await api.patch<{ data: Contract }>(`/contracts/${id}/sign`, requestPayload);
 		return response.data.data;
 	},
 

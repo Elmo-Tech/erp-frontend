@@ -27,14 +27,18 @@ export function UpdateContractForm({ open, onOpenChange, contract, onSuccess }: 
 	const form = useForm({
 		resolver: zodResolver(createContractSchema),
 		defaultValues: {
-			quotationId: contract.quotationId?.toString() || "",
+			dataSource: contract.quotationId ? ("from_quotation" as const) : ("new_terms" as const),
+			quotationId: contract.quotationId || 0,
 			title: contract.title,
-			content: contract.content,
+			content: contract.content || "",
+			expiryDays: 30,
+			projectDuration: "",
+			deliverables: [""],
 			partyOne: contract.partyOne,
 			partyTwo: contract.partyTwo,
 			totalAmount: contract.totalAmount,
-			currency: contract.currency,
-			paymentTerms: contract.paymentTerms,
+			currency: contract.currency || "USD",
+			paymentTerms: contract.paymentTerms || "",
 			startDate: contract.startDate,
 			endDate: contract.endDate || "",
 			milestones: contract.milestones || [],
@@ -43,14 +47,18 @@ export function UpdateContractForm({ open, onOpenChange, contract, onSuccess }: 
 
 	const setFormData = (contractData: Contract) => {
 		form.reset({
-			quotationId: contractData.quotationId?.toString() || "",
+			dataSource: contractData.quotationId ? ("from_quotation" as const) : ("new_terms" as const),
+			quotationId: contractData.quotationId || 0,
 			title: contractData.title,
-			content: contractData.content,
+			content: contractData.content || "",
+			expiryDays: 30,
+			projectDuration: "",
+			deliverables: [""],
 			partyOne: contractData.partyOne,
 			partyTwo: contractData.partyTwo,
 			totalAmount: contractData.totalAmount,
-			currency: contractData.currency,
-			paymentTerms: contractData.paymentTerms,
+			currency: contractData.currency || "USD",
+			paymentTerms: contractData.paymentTerms || "",
 			startDate: contractData.startDate,
 			endDate: contractData.endDate || "",
 			milestones: contractData.milestones || [],
@@ -67,13 +75,9 @@ export function UpdateContractForm({ open, onOpenChange, contract, onSuccess }: 
 
 	const handleSubmit = async (data: CreateContractFormData) => {
 		try {
-			const payload = {
-				...data,
-				quotationId: data.quotationId ? parseInt(data.quotationId, 10) : undefined,
-			};
 			await updateMutation.mutateAsync({
 				id: contract.contractId,
-				payload: payload as Parameters<typeof updateMutation.mutateAsync>[0]["payload"],
+				payload: data as Parameters<typeof updateMutation.mutateAsync>[0]["payload"],
 			});
 			toast.success("Contract updated successfully");
 			onOpenChange(false);

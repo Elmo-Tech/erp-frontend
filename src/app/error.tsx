@@ -14,6 +14,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling
  */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+	function logErrorToService(currentError: Error & { digest?: string }) {
+		// TODO: Integrate with error tracking service (Sentry, Bugsnag, etc.)
+		console.error("Error logged:", {
+			message: currentError.message,
+			stack: currentError.stack,
+			digest: currentError.digest,
+			timestamp: new Date().toISOString(),
+		});
+	}
+
 	useEffect(() => {
 		// Log error to console in development
 		if (process.env.NODE_ENV === "development") {
@@ -24,18 +34,8 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 		logErrorToService(error);
 	}, [error]);
 
-	function logErrorToService(error: Error & { digest?: string }) {
-		// TODO: Integrate with error tracking service (Sentry, Bugsnag, etc.)
-		console.error("Error logged:", {
-			message: error.message,
-			stack: error.stack,
-			digest: error.digest,
-			timestamp: new Date().toISOString(),
-		});
-	}
-
 	function handleGoHome() {
-		window.location.href = "/dashboard";
+		window.location.assign("/dashboard");
 	}
 
 	return (

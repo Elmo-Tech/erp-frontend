@@ -1,37 +1,79 @@
-/**
- * AttendanceDashboard Component Tests
- * Basic functionality tests for the attendance dashboard widget
- */
-
-import React from "react";
 import { render, screen } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AttendanceDashboard } from "../AttendanceDashboard";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AttendanceDashboard } from "../attendance/AttendanceDashboard";
 
-const createTestQueryClient = () =>
-	new QueryClient({
-		defaultOptions: {
-			queries: {
-				retry: false,
-			},
-		},
-	});
+vi.mock("../../hooks/useAttendance", () => ({
+	useAttendanceStatus: vi.fn(),
+	useClockOut: vi.fn(),
+}));
 
-const renderWithQueryClient = (component: React.ReactElement) => {
-	const queryClient = createTestQueryClient();
-	return render(<QueryClientProvider client={queryClient}>{component}</QueryClientProvider>);
-};
+vi.mock("@/store/timerStore", () => ({
+	useTimerStore: vi.fn(),
+}));
+
+import { useAttendanceStatus, useClockOut } from "../../hooks/useAttendance";
+import { useTimerStore } from "@/store/timerStore";
+
+const mockUseAttendanceStatus = vi.mocked(useAttendanceStatus);
+const mockUseClockOut = vi.mocked(useClockOut);
+const mockUseTimerStore = vi.mocked(useTimerStore);
 
 describe("AttendanceDashboard", () => {
-	it("renders without crashing", () => {
-		renderWithQueryClient(<AttendanceDashboard />);
-		// Component should render either loading state or content
-		expect(screen.getByText(/Loading attendance|Today's Attendance|Not Clocked In/)).toBeInTheDocument();
+	beforeEach(() => {
+		vi.clearAllMocks();
+
+		mockUseAttendanceStatus.mockReturnValue({
+			summary: {
+				clockInTime: null,
+				clockOutTime: null,
+			},
+			isLoading: false,
+			error: null,
+			refetch: vi.fn(),
+			isClocked: false,
+			isClockedOut: false,
+			hasActiveTimer: false,
+		} as ReturnType<typeof useAttendanceStatus>);
+
+		mockUseClockOut.mockReturnValue({
+			mutateAsync: vi.fn(),
+			isPending: false,
+		} as ReturnType<typeof useClockOut>);
+
+		mockUseTimerStore.mockReturnValue({
+			activeTimer: null,
+		} as ReturnType<typeof useTimerStore>);
 	});
 
-	it("renders in compact mode without crashing", () => {
-		const { container } = renderWithQueryClient(<AttendanceDashboard compact />);
-		// Component should render in compact mode
-		expect(container.firstChild).toBeInTheDocument();
+	it("renders the default attendance state", () => {
+		render(<AttendanceDashboard />);
+
+		expect(screen.getByText("Today's Attendance")).toBeInTheDocument();
+		expect(screen.getByText("Not Clocked In")).toBeInTheDocument();
+	});
+
+	it("renders a loading state", () => {
+		mockUseAttendanceStatus.mockReturnValue({
+			summary: {
+				clockInTime: null,
+				clockOutTime: null,
+			},
+			isLoading: true,
+			error: null,
+			refetch: vi.fn(),
+			isClocked: false,
+			isClockedOut: false,
+			hasActiveTimer: false,
+		} as ReturnType<typeof useAttendanceStatus>);
+
+		render(<AttendanceDashboard />);
+
+		expect(screen.getByText("Loading attendance...")).toBeInTheDocument();
+	});
+
+	it("renders in compact mode", () => {
+		render(<AttendanceDashboard compact />);
+
+		expect(screen.getByText("Not Clocked In")).toBeInTheDocument();
 	});
 });

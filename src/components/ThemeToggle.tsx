@@ -4,18 +4,22 @@ import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const getInitialTheme = (): "light" | "dark" => {
+	if (typeof window === "undefined") {
+		return "light";
+	}
+
+	const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+	return savedTheme || (prefersDark ? "dark" : "light");
+};
+
 export function ThemeToggle() {
-	const [theme, setTheme] = useState<"light" | "dark">("light");
-	const [mounted, setMounted] = useState(false);
+	const [theme, setTheme] = useState<"light" | "dark">(getInitialTheme);
 
 	useEffect(() => {
-		setMounted(true);
-		const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-		const initialTheme = savedTheme || (prefersDark ? "dark" : "light");
-		setTheme(initialTheme);
-		document.documentElement.classList.toggle("dark", initialTheme === "dark");
-	}, []);
+		document.documentElement.classList.toggle("dark", theme === "dark");
+	}, [theme]);
 
 	const toggleTheme = () => {
 		const newTheme = theme === "light" ? "dark" : "light";
@@ -23,18 +27,6 @@ export function ThemeToggle() {
 		localStorage.setItem("theme", newTheme);
 		document.documentElement.classList.toggle("dark", newTheme === "dark");
 	};
-
-	if (!mounted) {
-		return (
-			<Button
-				variant="ghost"
-				size="icon"
-				className="h-9 w-9"
-			>
-				<Sun className="h-4 w-4" />
-			</Button>
-		);
-	}
 
 	return (
 		<Button

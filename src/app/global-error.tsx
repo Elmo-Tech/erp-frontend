@@ -12,6 +12,16 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
  * @see https://nextjs.org/docs/app/building-your-application/routing/error-handling#handling-errors-in-root-layouts
  */
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+	function logErrorToService(currentError: Error & { digest?: string }) {
+		// TODO: Integrate with error tracking service
+		console.error("Global error logged:", {
+			message: currentError.message,
+			stack: currentError.stack,
+			digest: currentError.digest,
+			timestamp: new Date().toISOString(),
+		});
+	}
+
 	useEffect(() => {
 		// Log error to console
 		console.error("Global Error:", error);
@@ -19,16 +29,6 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 		// Log error to external service
 		logErrorToService(error);
 	}, [error]);
-
-	function logErrorToService(error: Error & { digest?: string }) {
-		// TODO: Integrate with error tracking service
-		console.error("Global error logged:", {
-			message: error.message,
-			stack: error.stack,
-			digest: error.digest,
-			timestamp: new Date().toISOString(),
-		});
-	}
 
 	return (
 		<html>

@@ -4,17 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarPlus, Calendar, Clock } from "lucide-react";
+import { CalendarPlus, Calendar, Clock, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
-import { LeadMeeting } from "../../../types/lead";
+import { LeadMeeting, MeetingStatus } from "../../../types/lead";
 
 interface LeadMeetingsTabProps {
 	meetings: LeadMeeting[] | undefined;
 	isLoading: boolean;
 	onScheduleMeeting: () => void;
+	onCompleteWithFeedback: (meeting: LeadMeeting) => void;
 }
 
-export function LeadMeetingsTab({ meetings, isLoading, onScheduleMeeting }: LeadMeetingsTabProps) {
+export function LeadMeetingsTab({ meetings, isLoading, onScheduleMeeting, onCompleteWithFeedback }: LeadMeetingsTabProps) {
 	return (
 		<Card>
 			<CardHeader className="flex flex-row items-center justify-between">
@@ -52,12 +53,25 @@ export function LeadMeetingsTab({ meetings, isLoading, onScheduleMeeting }: Lead
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center justify-between">
 										<p className="font-medium">{meeting.title}</p>
-										<Badge
-											variant="outline"
-											className="capitalize"
-										>
-											{meeting.location.replace("_", " ")}
-										</Badge>
+										<div className="flex items-center gap-2">
+											{meeting.status === MeetingStatus.SCHEDULED && (
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => onCompleteWithFeedback(meeting)}
+													className="text-green-600 border-green-600 hover:bg-green-50 hover:text-green-700"
+												>
+													<CheckCircle className="h-3 w-3 mr-1" />
+													Complete with Feedback
+												</Button>
+											)}
+											<Badge
+												variant="outline"
+												className="capitalize"
+											>
+												{meeting.location.replace("_", " ")}
+											</Badge>
+										</div>
 									</div>
 									<div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
 										<span className="flex items-center gap-1">

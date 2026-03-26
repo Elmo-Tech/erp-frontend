@@ -1,5 +1,20 @@
 // Lead hooks
-export { useLeads, useLead, useLeadsKanban, useLeadsFollowUps, useCreateLead, useUpdateLead, useUpdateLeadStatus, useDeleteLead, useLeadActivities, useAddLeadActivity, useLeadMeetings, useScheduleMeeting, useUpdateMeeting } from "./useLeads";
+export {
+	useLeads,
+	useLead,
+	useLeadsKanban,
+	useLeadsFollowUps,
+	useCreateLead,
+	useUpdateLead,
+	useUpdateLeadStatus,
+	useDeleteLead,
+	useLeadActivities,
+	useAddLeadActivity,
+	useLeadMeetings,
+	useScheduleMeeting,
+	useUpdateMeeting,
+	useCompleteMeetingWithFeedback,
+} from "./useLeads";
 
 // Lead conversion hooks
 export { useCanConvertLead, useConvertLead } from "./useLeadConversion";

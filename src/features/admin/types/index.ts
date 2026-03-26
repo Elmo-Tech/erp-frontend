@@ -316,10 +316,15 @@ export interface AuditLogEntry {
 	userId: number;
 	userName: string;
 	action: string;
+	eventType: string;
+	severity: string;
+	description: string;
 	auditableType: string;
 	auditableId: number;
 	ipAddress: string;
+	userAgent: string;
 	createdAt: string;
+	isSensitive: boolean;
 	metadata?: Record<string, unknown>;
 }
 

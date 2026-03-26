@@ -87,16 +87,12 @@ export const ContractSigner: React.FC<ContractSignerProps> = ({ contract, onSign
 		}
 
 		try {
-			const formData = new FormData();
-			formData.append("signedByClient", signedByClient);
-
-			if (uploadedFile) {
-				formData.append("signedDocument", uploadedFile);
-			}
-
 			const updatedContract = await signContractMutation.mutateAsync({
 				id: contract.contractId,
-				payload: { signedByClient },
+				payload: {
+					signedByClient,
+					signedPdf: uploadedFile || undefined,
+				},
 			});
 
 			toast.success("Contract marked as signed successfully");

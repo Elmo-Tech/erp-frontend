@@ -40,7 +40,7 @@ export function useCreateProposal() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (payload: CreateProposalPayload) => proposalsApi.create(payload),
+		mutationFn: (payload: CreateProposalPayload | FormData) => proposalsApi.create(payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: proposalKeys.all });
 			toast.success("Proposal created successfully");

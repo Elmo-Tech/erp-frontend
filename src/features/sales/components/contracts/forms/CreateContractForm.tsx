@@ -26,29 +26,14 @@ export function CreateContractForm({ open, onOpenChange, quotationId, onSuccess 
 	const form = useForm({
 		resolver: zodResolver(createContractSchema),
 		defaultValues: {
-			quotationId: quotationId?.toString() || "",
+			dataSource: "from_quotation" as const,
+			quotationId: quotationId || 0,
 			title: "",
-			content: "",
-			partyOne: {
-				company: "",
-				representative: "",
-				title: "",
-				address: "",
-				idNumber: "",
-			},
-			partyTwo: {
-				company: "",
-				representative: "",
-				title: "",
-				address: "",
-				idNumber: "",
-			},
-			totalAmount: 0,
-			currency: "USD",
-			paymentTerms: "",
+			expiryDays: 30,
+			projectDuration: "",
+			deliverables: [""],
 			startDate: "",
 			endDate: "",
-			milestones: [],
 		},
 	});
 
@@ -65,29 +50,14 @@ export function CreateContractForm({ open, onOpenChange, quotationId, onSuccess 
 		}
 
 		form.reset({
-			quotationId: quotationId?.toString() || "",
+			dataSource: "from_quotation" as const,
+			quotationId: quotationId || 0,
 			title: "",
-			content: "",
-			partyOne: {
-				company: "",
-				representative: "",
-				title: "",
-				address: "",
-				idNumber: "",
-			},
-			partyTwo: {
-				company: "",
-				representative: "",
-				title: "",
-				address: "",
-				idNumber: "",
-			},
-			totalAmount: initialAmount,
-			currency: initialCurrency,
-			paymentTerms: "",
+			expiryDays: 30,
+			projectDuration: "",
+			deliverables: [""],
 			startDate: "",
 			endDate: "",
-			milestones: [],
 		});
 		setActiveTab("details");
 	};
@@ -101,11 +71,7 @@ export function CreateContractForm({ open, onOpenChange, quotationId, onSuccess 
 
 	const handleSubmit = async (data: CreateContractFormData) => {
 		try {
-			const payload = {
-				...data,
-				quotationId: data.quotationId ? parseInt(data.quotationId, 10) : undefined,
-			};
-			await createMutation.mutateAsync(payload as Parameters<typeof createMutation.mutateAsync>[0]);
+			await createMutation.mutateAsync(data as Parameters<typeof createMutation.mutateAsync>[0]);
 			toast.success("Contract created successfully");
 			onOpenChange(false);
 			onSuccess?.();

@@ -26,7 +26,7 @@ export const proposalsApi = {
 		return response.data.data;
 	},
 
-	create: async (payload: CreateProposalPayload): Promise<Proposal> => {
+	create: async (payload: CreateProposalPayload | FormData): Promise<Proposal> => {
 		const response = await api.post<{ data: Proposal }>("/proposals", payload);
 		return response.data.data;
 	},

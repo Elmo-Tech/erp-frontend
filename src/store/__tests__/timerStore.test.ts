@@ -1,99 +1,47 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { useTimerStore } from "../timerStore";
 
 describe("Timer Store", () => {
 	beforeEach(() => {
-		// Reset store state before each test
-		useTimerStore.getState().reset();
+		useTimerStore.setState({
+			activeTimer: null,
+			isLoading: true,
+			isConnected: false,
+		});
 	});
 
-	it("should initialize with default state", () => {
+	it("should initialize with the default timer state", () => {
 		const state = useTimerStore.getState();
 
-		expect(state.isRunning).toBe(false);
-		expect(state.entityType).toBe(null);
-		expect(state.entityId).toBe(null);
-		expect(state.entityName).toBe(null);
-		expect(state.startTime).toBe(null);
-		expect(state.elapsedSeconds).toBe(0);
+		expect(state.activeTimer).toBeNull();
+		expect(state.isLoading).toBe(true);
+		expect(state.isConnected).toBe(false);
 	});
 
-	it("should start timer correctly", () => {
-		const { startTimer } = useTimerStore.getState();
+	it("should update the active timer", () => {
+		const timer = {
+			timeEntryId: 7,
+			startTime: "2026-03-16T10:00:00.000Z",
+			trackableType: "task",
+			trackableId: 42,
+			trackableDisplayName: "Landing page redesign",
+			isActive: true,
+		};
 
-		startTimer("lead", 123, "Test Lead");
+		useTimerStore.getState().setActiveTimer(timer);
+
+		expect(useTimerStore.getState().activeTimer).toEqual(timer);
+	});
+
+	it("should update loading and connection state independently", () => {
+		const { setIsLoading, setIsConnected } = useTimerStore.getState();
+
+		setIsLoading(false);
+		setIsConnected(true);
 
 		const state = useTimerStore.getState();
-		expect(state.isRunning).toBe(true);
-		expect(state.entityType).toBe("lead");
-		expect(state.entityId).toBe(123);
-		expect(state.entityName).toBe("Test Lead");
-		expect(state.startTime).toBeTruthy();
-		expect(state.elapsedSeconds).toBe(0);
-	});
-
-	it("should stop timer correctly", () => {
-		const { startTimer, stopTimer } = useTimerStore.getState();
-
-		// Start timer first
-		startTimer("quotation", 456, "Test Quotation");
-		expect(useTimerStore.getState().isRunning).toBe(true);
-
-		// Stop timer
-		stopTimer();
-		expect(useTimerStore.getState().isRunning).toBe(false);
-	});
-
-	it("should reset timer state", () => {
-		const { startTimer, reset } = useTimerStore.getState();
-
-		// Start timer first
-		startTimer("task", 789, "Test Task");
-
-		// Reset
-		reset();
-
-		const state = useTimerStore.getState();
-		expect(state.isRunning).toBe(false);
-		expect(state.entityType).toBe(null);
-		expect(state.entityId).toBe(null);
-		expect(state.entityName).toBe(null);
-		expect(state.startTime).toBe(null);
-		expect(state.elapsedSeconds).toBe(0);
-	});
-
-	it("should calculate elapsed seconds correctly", () => {
-		const { startTimer, tick } = useTimerStore.getState();
-
-		// Mock Date.now to control time
-		const mockStartTime = new Date("2023-01-01T10:00:00Z");
-		const mockCurrentTime = new Date("2023-01-01T10:01:30Z"); // 90 seconds later
-
-		// Start timer with mocked start time
-		startTimer("lead", 123, "Test Lead");
-		useTimerStore.setState({ startTime: mockStartTime.toISOString() });
-
-		// Mock Date.now for tick calculation
-		const originalDateNow = Date.now;
-		Date.now = () => mockCurrentTime.getTime();
-
-		// Call tick
-		tick();
-
-		// Restore Date.now
-		Date.now = originalDateNow;
-
-		const state = useTimerStore.getState();
-		expect(state.elapsedSeconds).toBe(90);
-	});
-
-	it("should not calculate elapsed seconds when not running", () => {
-		const { tick } = useTimerStore.getState();
-
-		// Call tick without starting timer
-		tick();
-
-		const state = useTimerStore.getState();
-		expect(state.elapsedSeconds).toBe(0);
+		expect(state.isLoading).toBe(false);
+		expect(state.isConnected).toBe(true);
+		expect(state.activeTimer).toBeNull();
 	});
 });

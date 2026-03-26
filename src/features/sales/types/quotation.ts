@@ -98,23 +98,39 @@ export interface Quotation {
 
 export interface CreateQuotationPayload {
 	leadId: number;
+	title: string;
 	templateId?: number;
+	proposalId?: number;
+	taskId?: number;
+	basePrice?: number;
+	status?: QuotationStatus;
+	discountType?: "amount" | "percent";
+	discountValue?: number;
 	items?: Omit<QuotationItem, "itemId" | "subtotal">[];
 	estimations?: Estimations;
 	hourlyRate?: number;
-	discountPercentage: number;
+	discountPercentage?: number;
 	currency: string;
 	expiryDate?: string;
-	commissionType?: CommissionType;
+	expiryDays?: number;
+	commissionType?: CommissionType | "markup" | "margin";
+	commissionValue?: number;
 	commissionPercentage?: number;
+	commissionCalculation?: "add" | "deduct";
 	commissionUserId?: number;
 	overridePrice?: number;
 	overrideReason?: string;
 	notes?: string;
 	termsConditions?: string;
+	milestones?: {
+		name: string;
+		percentage: number;
+		dueDate?: string;
+		description?: string;
+	}[];
 }
 
-export interface UpdateQuotationPayload extends Partial<CreateQuotationPayload> {}
+export type UpdateQuotationPayload = Partial<CreateQuotationPayload>;
 
 export interface UpdateStatusPayload {
 	status: QuotationStatus;

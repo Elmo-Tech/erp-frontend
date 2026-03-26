@@ -28,16 +28,16 @@ export const auditLogsApi = {
 			params.append("filter[action]", filters.action);
 		}
 		if (filters?.userId) {
-			params.append("filter[userId]", filters.userId.toString());
+			params.append("filter[user_id]", filters.userId.toString());
 		}
 		if (filters?.dateFrom) {
-			params.append("filter[dateFrom]", filters.dateFrom);
+			params.append("filter[date_from]", filters.dateFrom);
 		}
 		if (filters?.dateTo) {
-			params.append("filter[dateTo]", filters.dateTo);
+			params.append("filter[date_to]", filters.dateTo);
 		}
 		if (filters?.resourceId) {
-			params.append("filter[resourceId]", filters.resourceId.toString());
+			params.append("filter[auditable_id]", filters.resourceId.toString());
 		}
 		if (filters?.page) {
 			params.append("page", filters.page.toString());

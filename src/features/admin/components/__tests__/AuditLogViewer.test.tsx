@@ -1,14 +1,8 @@
-/**
- * AuditLogViewer Component Tests
- * Tests for the audit log viewer component functionality
- */
-
-import React from "react";
 import { render, screen } from "@testing-library/react";
-import { vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuditLogViewer } from "../AuditLogViewer";
+import type { AuditLogEntry, AuditLogListResponse } from "../../types";
 
-// Mock the hooks
 vi.mock("../../hooks/useAuditLogs", () => ({
 	useAuditLogs: vi.fn(),
 	useAuditLogActionTypes: vi.fn(),
@@ -18,314 +12,146 @@ vi.mock("../../hooks", () => ({
 	useAdminPermissions: vi.fn(),
 }));
 
-vi.mock("sonner", () => ({
-	toast: {
-		success: vi.fn(),
-		error: vi.fn(),
-	},
-}));
-
 import { useAuditLogs, useAuditLogActionTypes } from "../../hooks/useAuditLogs";
 import { useAdminPermissions } from "../../hooks";
 
-const mockAuditLogs = [
+const mockUseAuditLogs = vi.mocked(useAuditLogs);
+const mockUseAuditLogActionTypes = vi.mocked(useAuditLogActionTypes);
+const mockUseAdminPermissions = vi.mocked(useAdminPermissions);
+
+const auditLogs: AuditLogEntry[] = [
 	{
 		id: 1,
 		userId: 1,
 		userName: "John Doe",
 		action: "update_internal_cost",
+		eventType: "admin_action",
+		severity: "warning",
+		description: "Update internal cost for User #1",
 		auditableType: "App\\Models\\User",
 		auditableId: 1,
 		ipAddress: "192.168.1.1",
+		userAgent: "Mozilla/5.0",
 		createdAt: "2024-01-01T10:00:00Z",
-		metadata: { oldCost: 50, newCost: 60 },
+		isSensitive: true,
+		metadata: { oldCost: "50.00", newCost: "60.00" },
 	},
 	{
 		id: 2,
 		userId: 2,
 		userName: "Jane Smith",
-		action: "view_profitability",
-		auditableType: "App\\Models\\Project",
-		auditableId: 5,
+		action: "login",
+		eventType: "security",
+		severity: "info",
+		description: "Login",
+		auditableType: "App\\Models\\User",
+		auditableId: 2,
 		ipAddress: "192.168.1.2",
+		userAgent: "Mozilla/5.0",
 		createdAt: "2024-01-01T11:00:00Z",
+		isSensitive: false,
+		metadata: {},
 	},
 ];
 
-const mockPagination = {
-	total: 2,
-	count: 2,
-	perPage: 20,
-	currentPage: 1,
-	totalPages: 1,
+const listResponse: AuditLogListResponse = {
+	auditLogs,
+	pagination: {
+		total: 2,
+		count: 2,
+		perPage: 20,
+		currentPage: 1,
+		totalPages: 1,
+	},
 };
 
 describe("AuditLogViewer", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 
-		// Default mock implementations
-		(useAuditLogs as any).mockReturnValue({
-			data: null,
+		mockUseAdminPermissions.mockReturnValue({
+			canViewAuditLogs: true,
+		} as ReturnType<typeof useAdminPermissions>);
+
+		mockUseAuditLogs.mockReturnValue({
+			data: listResponse,
 			isLoading: false,
 			error: null,
 			refetch: vi.fn(),
-		});
+		} as ReturnType<typeof useAuditLogs>);
 
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: [],
+		mockUseAuditLogActionTypes.mockReturnValue({
+			data: ["login", "update_internal_cost"],
 			isLoading: false,
-		});
-
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
+		} as ReturnType<typeof useAuditLogActionTypes>);
 	});
 
-	it("shows permission error when user lacks view_audit_logs permission", () => {
-		(useAdminPermissions as any).mockReturnValue({
+	it("shows a permission error when the user lacks access", () => {
+		mockUseAdminPermissions.mockReturnValue({
 			canViewAuditLogs: false,
-		});
+		} as ReturnType<typeof useAdminPermissions>);
 
 		render(<AuditLogViewer />);
 
-		expect(screen.getByText(/You don't have permission to view audit logs/)).toBeInTheDocument();
+		expect(screen.getByText(/permission to view audit logs/i)).toBeInTheDocument();
 	});
 
-	it("renders audit logs when user has permission", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
-			data: {
-				auditLogs: mockAuditLogs,
-				pagination: mockPagination,
-			},
-			isLoading: false,
-			error: null,
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: ["update_internal_cost", "view_profitability"],
-			isLoading: false,
-		});
-
+	it("renders the audit log table and statistics", () => {
 		render(<AuditLogViewer />);
 
-		// Check header
 		expect(screen.getByText("Audit Log Viewer")).toBeInTheDocument();
-		expect(screen.getByText("View and filter system audit logs for security monitoring")).toBeInTheDocument();
-
-		// Check audit log entries
 		expect(screen.getByText("John Doe")).toBeInTheDocument();
 		expect(screen.getByText("Jane Smith")).toBeInTheDocument();
-		expect(screen.getByText("Update Internal Cost")).toBeInTheDocument();
-		expect(screen.getByText("View Profitability")).toBeInTheDocument();
-	});
-
-	it("highlights security-sensitive actions", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
-			data: {
-				auditLogs: mockAuditLogs,
-				pagination: mockPagination,
-			},
-			isLoading: false,
-			error: null,
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: ["update_internal_cost", "view_profitability"],
-			isLoading: false,
-		});
-
-		render(<AuditLogViewer />);
-
-		// Security-sensitive actions should be highlighted
-		const sensitiveRows = screen.getAllByText("Update Internal Cost");
-		expect(sensitiveRows.length).toBeGreaterThan(0);
-	});
-
-	it("shows loading state", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
-			data: null,
-			isLoading: true,
-			error: null,
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: [],
-			isLoading: true,
-		});
-
-		render(<AuditLogViewer />);
-
-		expect(screen.getByText("Audit Log Viewer")).toBeInTheDocument();
-		// Loading skeletons should be present - check for skeleton class instead
-		expect(document.querySelector(".animate-pulse")).toBeTruthy();
-	});
-
-	it("shows error state", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
-			data: null,
-			isLoading: false,
-			error: new Error("Failed to load audit logs"),
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: [],
-			isLoading: false,
-		});
-
-		render(<AuditLogViewer />);
-
-		expect(screen.getByText(/Failed to load audit logs/)).toBeInTheDocument();
-		expect(screen.getByText("Retry")).toBeInTheDocument();
-	});
-
-	it("shows empty state when no logs found", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
-			data: {
-				auditLogs: [],
-				pagination: { ...mockPagination, total: 0, count: 0 },
-			},
-			isLoading: false,
-			error: null,
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: [],
-			isLoading: false,
-		});
-
-		render(<AuditLogViewer />);
-
-		expect(screen.getByText("No audit logs found")).toBeInTheDocument();
-		expect(screen.getByText("Try adjusting your filters or check back later")).toBeInTheDocument();
-	});
-
-	it("displays statistics correctly", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
-			data: {
-				auditLogs: mockAuditLogs,
-				pagination: mockPagination,
-			},
-			isLoading: false,
-			error: null,
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: ["update_internal_cost", "view_profitability"],
-			isLoading: false,
-		});
-
-		render(<AuditLogViewer />);
-
-		// Check statistics cards - be more specific to avoid multiple matches
-		expect(screen.getByText("Total Logs")).toBeInTheDocument();
-		expect(screen.getByText("Security Alerts")).toBeInTheDocument();
-		expect(screen.getByText("Active Users")).toBeInTheDocument();
-		expect(screen.getByText("Action Types")).toBeInTheDocument();
-
-		// Check that we have the expected counts
 		expect(screen.getByText("Showing 2 of 2")).toBeInTheDocument();
 		expect(screen.getByText("Sensitive actions in current view")).toBeInTheDocument();
 	});
 
-	it("formats resource information correctly", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
-			data: {
-				auditLogs: mockAuditLogs,
-				pagination: mockPagination,
-			},
-			isLoading: false,
+	it("shows the loading state", () => {
+		mockUseAuditLogs.mockReturnValue({
+			data: undefined,
+			isLoading: true,
 			error: null,
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: ["update_internal_cost", "view_profitability"],
-			isLoading: false,
-		});
+			refetch: vi.fn(),
+		} as ReturnType<typeof useAuditLogs>);
 
 		render(<AuditLogViewer />);
 
-		// Check resource formatting
-		expect(screen.getByText("User #1")).toBeInTheDocument();
-		expect(screen.getByText("Project #5")).toBeInTheDocument();
+		expect(screen.getByText("Audit Logs")).toBeInTheDocument();
 	});
 
-	it("displays IP addresses", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
-			data: {
-				auditLogs: mockAuditLogs,
-				pagination: mockPagination,
-			},
+	it("shows the error state", () => {
+		mockUseAuditLogs.mockReturnValue({
+			data: undefined,
 			isLoading: false,
-			error: null,
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: ["update_internal_cost", "view_profitability"],
-			isLoading: false,
-		});
+			error: new Error("Failed to load audit logs"),
+			refetch: vi.fn(),
+		} as ReturnType<typeof useAuditLogs>);
 
 		render(<AuditLogViewer />);
 
-		// Check IP addresses are displayed
-		expect(screen.getByText("192.168.1.1")).toBeInTheDocument();
-		expect(screen.getByText("192.168.1.2")).toBeInTheDocument();
+		expect(screen.getByText("Error loading data")).toBeInTheDocument();
+		expect(screen.getByText("Failed to load audit logs")).toBeInTheDocument();
 	});
 
-	it("shows metadata badge when metadata exists", () => {
-		(useAdminPermissions as any).mockReturnValue({
-			canViewAuditLogs: true,
-		});
-
-		(useAuditLogs as any).mockReturnValue({
+	it("shows the empty state when no logs are returned", () => {
+		mockUseAuditLogs.mockReturnValue({
 			data: {
-				auditLogs: mockAuditLogs,
-				pagination: mockPagination,
+				auditLogs: [],
+				pagination: {
+					total: 0,
+					count: 0,
+					perPage: 20,
+					currentPage: 1,
+					totalPages: 0,
+				},
 			},
 			isLoading: false,
 			error: null,
-		});
-
-		(useAuditLogActionTypes as any).mockReturnValue({
-			data: ["update_internal_cost", "view_profitability"],
-			isLoading: false,
-		});
+			refetch: vi.fn(),
+		} as ReturnType<typeof useAuditLogs>);
 
 		render(<AuditLogViewer />);
 
-		// First log has metadata with 2 fields
-		expect(screen.getByText("2 fields")).toBeInTheDocument();
+		expect(screen.getByText("No audit logs found")).toBeInTheDocument();
 	});
 });

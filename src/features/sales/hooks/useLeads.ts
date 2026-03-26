@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { leadsApi } from "../api";
 import { LeadFilters, CreateLeadPayload, UpdateLeadPayload, CreateActivityPayload, CreateMeetingPayload, LeadStatus } from "../types";
+import { MeetingFeedbackFormData } from "../schemas/meetingFeedbackSchema";
 
 const LEADS_KEY = "leads";
 const LEAD_KEY = "lead";
@@ -136,6 +137,18 @@ export function useUpdateMeeting() {
 		mutationFn: ({ leadId, meetingId, payload }: { leadId: number; meetingId: number; payload: Partial<CreateMeetingPayload> }) => leadsApi.updateMeeting(leadId, meetingId, payload),
 		onSuccess: (_, { leadId }) => {
 			queryClient.invalidateQueries({ queryKey: [MEETINGS_KEY, leadId] });
+		},
+	});
+}
+
+export function useCompleteMeetingWithFeedback() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ leadId, meetingId, payload, teamLeadId }: { leadId: number; meetingId: number; payload: MeetingFeedbackFormData; teamLeadId?: number }) => leadsApi.completeMeetingWithFeedback(leadId, meetingId, payload, teamLeadId),
+		onSuccess: (_, { leadId }) => {
+			queryClient.invalidateQueries({ queryKey: [MEETINGS_KEY, leadId] });
+			queryClient.invalidateQueries({ queryKey: [LEAD_KEY, leadId] });
 		},
 	});
 }

@@ -212,6 +212,85 @@ export const InternalCostManager: React.FC = () => {
 		}
 	}, [data]);
 
+	const handleRevealToggle = useCallback((userId: number) => {
+		setUsers((prev) => prev.map((user) => (user.userId === userId ? { ...user, isRevealed: !user.isRevealed } : user)));
+	}, []);
+
+	const handleEditToggle = useCallback((userId: number) => {
+		setUsers((prev) =>
+			prev.map((user) => {
+				if (user.userId === userId) {
+					return {
+						...user,
+						isEditing: !user.isEditing,
+						editValue: user.isEditing ? user.internalHourlyCost?.toString() || "0.00" : user.editValue,
+					};
+				}
+				return user;
+			})
+		);
+	}, []);
+
+	const handleCostChange = useCallback((userId: number, value: string) => {
+		setUsers((prev) => prev.map((user) => (user.userId === userId ? { ...user, editValue: value } : user)));
+	}, []);
+
+	const handleSave = useCallback(
+		async (userId: number) => {
+			const user = users.find((u) => u.userId === userId);
+			if (!user) return;
+
+			const newCost = parseFloat(user.editValue);
+			if (isNaN(newCost) || newCost <= 0 || newCost > 9999.99) {
+				toast.error("Invalid cost value. Must be between 0.01 and 9999.99");
+				return;
+			}
+
+			try {
+				await updateInternalCostMutation.mutateAsync({
+					userId,
+					payload: { internalHourlyCost: newCost },
+				});
+
+				setUsers((prev) =>
+					prev.map((u) =>
+						u.userId === userId
+							? {
+									...u,
+									internalHourlyCost: newCost,
+									isEditing: false,
+									editValue: newCost.toString(),
+							  }
+							: u
+					)
+				);
+
+				const logEntry = {
+					userId,
+					userName: user.name,
+					timestamp: new Date().toISOString(),
+					oldCost: user.internalHourlyCost,
+					newCost,
+				};
+				setChangeLog((prev) => [logEntry, ...prev.slice(0, 9)]);
+
+				toast.success(`Internal cost updated for ${user.name}`, {
+					description: `New cost: $${newCost.toFixed(2)}`,
+				});
+			} catch (caughtError) {
+				console.error("Failed to update internal cost:", caughtError);
+				toast.error("Failed to update internal cost", {
+					description: caughtError instanceof Error ? caughtError.message : "Unknown error occurred",
+				});
+			}
+		},
+		[users, updateInternalCostMutation]
+	);
+
+	const totalUsers = users.length;
+	const usersWithCosts = users.filter((u) => u.internalHourlyCost && u.internalHourlyCost > 0).length;
+	const averageCost = totalUsers > 0 ? users.reduce((sum, u) => sum + (u.internalHourlyCost || 0), 0) / totalUsers : 0;
+
 	// Permission check
 	if (!canManageInternalCosts) {
 		return (
@@ -275,88 +354,6 @@ export const InternalCostManager: React.FC = () => {
 			</div>
 		);
 	}
-
-	// Handler functions
-	const handleRevealToggle = useCallback((userId: number) => {
-		setUsers((prev) => prev.map((user) => (user.userId === userId ? { ...user, isRevealed: !user.isRevealed } : user)));
-	}, []);
-
-	const handleEditToggle = useCallback((userId: number) => {
-		setUsers((prev) =>
-			prev.map((user) => {
-				if (user.userId === userId) {
-					return {
-						...user,
-						isEditing: !user.isEditing,
-						editValue: user.isEditing ? user.internalHourlyCost?.toString() || "0.00" : user.editValue,
-					};
-				}
-				return user;
-			})
-		);
-	}, []);
-
-	const handleCostChange = useCallback((userId: number, value: string) => {
-		setUsers((prev) => prev.map((user) => (user.userId === userId ? { ...user, editValue: value } : user)));
-	}, []);
-
-	const handleSave = useCallback(
-		async (userId: number) => {
-			const user = users.find((u) => u.userId === userId);
-			if (!user) return;
-
-			const newCost = parseFloat(user.editValue);
-			if (isNaN(newCost) || newCost <= 0 || newCost > 9999.99) {
-				toast.error("Invalid cost value. Must be between 0.01 and 9999.99");
-				return;
-			}
-
-			try {
-				await updateInternalCostMutation.mutateAsync({
-					userId,
-					payload: { internalHourlyCost: newCost },
-				});
-
-				// Update local state
-				setUsers((prev) =>
-					prev.map((u) =>
-						u.userId === userId
-							? {
-									...u,
-									internalHourlyCost: newCost,
-									isEditing: false,
-									editValue: newCost.toString(),
-							  }
-							: u
-					)
-				);
-
-				// Add to change log
-				const logEntry = {
-					userId,
-					userName: user.name,
-					timestamp: new Date().toISOString(),
-					oldCost: user.internalHourlyCost,
-					newCost,
-				};
-				setChangeLog((prev) => [logEntry, ...prev.slice(0, 9)]); // Keep last 10 changes
-
-				toast.success(`Internal cost updated for ${user.name}`, {
-					description: `New cost: $${newCost.toFixed(2)}`,
-				});
-			} catch (error) {
-				console.error("Failed to update internal cost:", error);
-				toast.error("Failed to update internal cost", {
-					description: error instanceof Error ? error.message : "Unknown error occurred",
-				});
-			}
-		},
-		[users, updateInternalCostMutation]
-	);
-
-	const totalUsers = users.length;
-	const usersWithCosts = users.filter((u) => u.internalHourlyCost && u.internalHourlyCost > 0).length;
-	const averageCost = users.reduce((sum, u) => sum + (u.internalHourlyCost || 0), 0) / totalUsers;
 
 	return (
 		<div className="container mx-auto p-6 space-y-6">

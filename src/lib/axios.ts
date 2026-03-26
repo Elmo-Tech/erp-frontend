@@ -1,6 +1,26 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { useAuthStore } from "@/store/authStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const LOGIN_ROUTE = "/login";
+
+function clearClientAuthState() {
+	if (typeof window === "undefined") {
+		return;
+	}
+
+	localStorage.removeItem("auth_token");
+	localStorage.removeItem("auth-storage");
+	useAuthStore.getState().logout();
+}
+
+function redirectToLogin() {
+	if (typeof window === "undefined") {
+		return;
+	}
+
+	window.location.assign(LOGIN_ROUTE);
+}
 
 export const api = axios.create({
 	baseURL: API_BASE_URL,
@@ -27,16 +47,14 @@ api.interceptors.request.use(
 
 						// If token is expired, clear everything and redirect
 						if (expiresAt < now) {
-							localStorage.removeItem("auth_token");
-							localStorage.removeItem("auth-storage");
-							window.location.href = "/login";
+							clearClientAuthState();
+							redirectToLogin();
 							return Promise.reject(new Error("Token expired"));
 						}
 					}
 				} catch {
 					// If parsing fails, clear storage
-					localStorage.removeItem("auth_token");
-					localStorage.removeItem("auth-storage");
+					clearClientAuthState();
 				}
 			}
 		}
@@ -63,15 +81,8 @@ api.interceptors.response.use(
 	(response) => response,
 	(error: AxiosError) => {
 		if (error.response?.status === 401) {
-			// Clear all auth data and redirect to login
-			if (typeof window !== "undefined") {
-				// Clear localStorage
-				localStorage.removeItem("auth_token");
-				localStorage.removeItem("auth-storage");
-
-				// Clear Zustand store by reloading (this ensures clean state)
-				window.location.href = "/login";
-			}
+			clearClientAuthState();
+			redirectToLogin();
 		}
 		return Promise.reject(error);
 	},

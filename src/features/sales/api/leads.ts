@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import { Lead, LeadActivity, LeadMeeting, LeadListResponse, LeadKanbanResponse, CreateLeadPayload, UpdateLeadPayload, CreateActivityPayload, CreateMeetingPayload, LeadFilters, LeadStatus } from "../types";
+import { MeetingFeedbackFormData } from "../schemas/meetingFeedbackSchema";
 
 export const leadsApi = {
 	getAll: async (filters?: LeadFilters): Promise<LeadListResponse> => {
@@ -75,6 +76,19 @@ export const leadsApi = {
 
 	updateMeeting: async (leadId: number, meetingId: number, payload: Partial<CreateMeetingPayload>): Promise<LeadMeeting> => {
 		const response = await api.put<{ data: LeadMeeting }>(`/leads/${leadId}/meetings/${meetingId}`, payload);
+		return response.data.data;
+	},
+
+	completeMeetingWithFeedback: async (leadId: number, meetingId: number, payload: MeetingFeedbackFormData, teamLeadId?: number): Promise<LeadMeeting> => {
+		const response = await api.patch<{ data: LeadMeeting }>(`/leads/${leadId}/status`, {
+			status: "meeting_completed",
+			meetingId,
+			outcome: payload.outcome,
+			feedback: payload.feedback,
+			nextAction: payload.nextAction,
+			followUpDate: payload.followUpDate,
+			teamLeadId,
+		});
 		return response.data.data;
 	},
 };

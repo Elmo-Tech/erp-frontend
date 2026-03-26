@@ -12,9 +12,12 @@ export enum MilestoneTriggerType {
 export interface ContractParty {
 	company: string;
 	representative: string;
-	title: string;
+	title?: string;
 	address?: string;
 	idNumber?: string;
+	name?: string;
+	email?: string;
+	phone?: string;
 }
 
 export interface ContractMilestone {
@@ -66,25 +69,41 @@ export interface Contract {
 }
 
 export interface CreateContractPayload {
+	dataSource?: "from_quotation" | "new_terms";
 	quotationId?: number;
 	projectId?: number;
 	templateId?: number;
+	taskId?: number;
+	fileNumber?: string;
 	title: string;
 	content: string;
+	deliverables?: string[];
+	expiryDays?: number;
+	expiryDate?: string;
+	projectDuration?: string;
+	preparationDeadline?: string;
 	partyOne: ContractParty;
 	partyTwo: ContractParty;
-	totalAmount: number;
+	totalAmount?: number;
 	currency?: string;
 	paymentTerms?: string;
 	startDate: string;
 	endDate?: string;
-	milestones?: Omit<ContractMilestone, "milestoneId" | "contractId" | "status" | "invoiceId" | "paidAt">[];
+	milestones?: Array<{
+		title: string;
+		description?: string;
+		percentage: number;
+		dueDate?: string;
+		triggerType?: MilestoneTriggerType;
+		triggerValue?: string;
+	}>;
 }
 
-export interface UpdateContractPayload extends Partial<CreateContractPayload> {}
+export type UpdateContractPayload = Partial<CreateContractPayload>;
 
 export interface SignContractPayload {
 	signedByClient: string;
+	signedPdf?: File;
 }
 
 export interface ContractListResponse {
@@ -103,6 +122,7 @@ export interface ContractFilters {
 	status?: ContractStatus;
 	projectId?: number;
 	quotationId?: number;
+	leadId?: number;
 	page?: number;
 	perPage?: number;
 }

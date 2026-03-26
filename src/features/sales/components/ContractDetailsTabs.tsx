@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { ContractDetailsTab, ContractPartiesTab, ContractMilestonesTab, ContractContentTab } from "./contracts/tabs";
+import type { Contract } from "../types/contract";
 
 const CONTRACT_STATUS_OPTIONS = [
 	{ value: ContractStatus.DRAFT, label: "Draft" },
@@ -80,13 +81,13 @@ export function ContractDetailsTabs({ contractId }: ContractDetailsTabsProps) {
 	const canActivate = contract.status === ContractStatus.SIGNED;
 	const canEdit = (contract.status === ContractStatus.DRAFT || contract.status === ContractStatus.PENDING_SIGNATURE) && canEditContracts;
 
-	const handleSign = async (signedByClient: string) => {
+	const handleSign = async (signedByClient: string, signedPdf?: File) => {
 		if (!signedByClient.trim()) {
 			toast.error("Please enter the client representative name");
 			return;
 		}
 		try {
-			await signContract.mutateAsync({ id: contractId, payload: { signedByClient } });
+			await signContract.mutateAsync({ id: contractId, payload: { signedByClient, signedPdf } });
 			toast.success("Contract signed successfully");
 			setSignDialogOpen(false);
 		} catch {
@@ -382,14 +383,14 @@ function ContractSummaryCards({ contract, totalPaid, progressPercentage }: Contr
 }
 
 interface ContractSigningTabProps {
-	contract: any;
+	contract: Contract;
 }
 
 function ContractSigningTab({ contract }: ContractSigningTabProps) {
 	return (
 		<ContractSigner
 			contract={contract}
-			onSigned={(updatedContract) => {
+			onSigned={() => {
 				// The contract will be automatically updated via React Query
 				toast.success("Contract signed successfully!");
 			}}

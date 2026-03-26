@@ -78,7 +78,14 @@ export interface CreateProposalPayload {
 	title: string;
 	content?: string;
 	expiryDate?: string;
+	expiryDays?: number;
 	internalNotes?: string;
+	actionType?: "upload" | "schedule" | "skip" | "draft";
+	skipReason?: string;
+	taskAssignedTo?: number;
+	taskDueDate?: string;
+	taskTitle?: string;
+	file?: File;
 }
 
 export interface UpdateProposalPayload {
