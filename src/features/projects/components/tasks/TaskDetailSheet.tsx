@@ -261,7 +261,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 										)}
 
 										{/* Dates */}
-										<div className="grid grid-cols-2 gap-4">
+										<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 											{task.startDate && (
 												<div>
 													<h4 className="text-sm font-medium mb-1">Start Date</h4>
@@ -272,6 +272,12 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 												<div>
 													<h4 className="text-sm font-medium mb-1">Due Date</h4>
 													<p className="text-sm text-muted-foreground">{format(new Date(task.dueDate), "MMM d, yyyy")}</p>
+												</div>
+											)}
+											{task.expectedResolutionDate && (
+												<div>
+													<h4 className="text-sm font-medium mb-1">Expected Resolution</h4>
+													<p className="text-sm text-muted-foreground">{format(new Date(task.expectedResolutionDate), "MMM d, yyyy")}</p>
 												</div>
 											)}
 										</div>

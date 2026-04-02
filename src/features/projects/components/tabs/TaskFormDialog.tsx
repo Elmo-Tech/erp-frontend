@@ -27,6 +27,7 @@ const taskSchema = z.object({
 	taskCategory: z.string().optional(),
 	estimatedHours: z.number().min(0, "Must be 0 or greater"),
 	dueDate: z.string().optional().nullable(),
+	expectedResolutionDate: z.string().optional().nullable(),
 	startDate: z.string().optional().nullable(),
 	sprintNumber: z.number().optional().nullable(),
 	tagIds: z.array(z.number()).optional(),
@@ -48,6 +49,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 			taskCategory: task.taskCategory || "none",
 			estimatedHours: task.estimatedHours,
 			dueDate: task.dueDate,
+			expectedResolutionDate: task.expectedResolutionDate,
 			startDate: task.startDate,
 			sprintNumber: task.sprintNumber,
 			tagIds: task.tags?.map((t) => t.tagId) || [],
@@ -69,6 +71,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 		taskCategory: "none",
 		estimatedHours: 0,
 		dueDate: today,
+		expectedResolutionDate: null,
 		startDate: today, // Set today's date as default
 		sprintNumber: null,
 		tagIds: [],
@@ -226,6 +229,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 				}
 				if (Number(data.estimatedHours) !== task.estimatedHours) payload.estimatedHours = Number(data.estimatedHours);
 				if (datesAreDifferent(data.dueDate, task.dueDate)) payload.dueDate = data.dueDate ? normalizeDate(data.dueDate) : null;
+				if (datesAreDifferent(data.expectedResolutionDate, task.expectedResolutionDate)) payload.expectedResolutionDate = data.expectedResolutionDate ? normalizeDate(data.expectedResolutionDate) : null;
 				if (datesAreDifferent(data.startDate, task.startDate)) payload.startDate = data.startDate ? normalizeDate(data.startDate) : null;
 				if (data.sprintNumber !== task.sprintNumber) payload.sprintNumber = data.sprintNumber;
 				if (data.internalReviewerNotes !== (task.internalReviewerNotes || "")) payload.internalReviewerNotes = data.internalReviewerNotes;
@@ -257,6 +261,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					taskCategory: data.taskCategory === "none" ? undefined : data.taskCategory,
 					estimatedHours: Number(data.estimatedHours),
 					dueDate: data.dueDate,
+					expectedResolutionDate: data.expectedResolutionDate,
 					startDate: data.startDate,
 					sprintNumber: data.sprintNumber,
 					tagIds: data.tagIds,
@@ -358,7 +363,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 						rows={2}
 					/> */}
 
-					<div className="grid grid-cols-3 gap-4">
+					<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 						<FormInput
 							control={form.control}
 							name="estimatedHours"
@@ -376,6 +381,11 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							control={form.control}
 							name="dueDate"
 							label="Due Date"
+						/>
+						<FormDatePicker
+							control={form.control}
+							name="expectedResolutionDate"
+							label="Expected Resolution"
 						/>
 					</div>
 

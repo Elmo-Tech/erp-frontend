@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Calendar, Clock, Play, Square, Loader2, Timer } from "lucide-react";
+import { Calendar, CalendarClock, Clock, Play, Square, Loader2, Timer } from "lucide-react";
 import { Task, TaskStatus, TaskStatusLabels, TaskPriorityLabels } from "../../types/task";
 import { PriorityColors } from "./constants";
 import { StatusIcons } from "./StatusIcons";
@@ -173,6 +173,15 @@ function TaskMetaSection({ task, onStatusChange }: { task: Task; onStatusChange:
 					<div className="flex items-center gap-2 h-9 px-3 border rounded-md">
 						<Calendar className="h-4 w-4" />
 						{format(new Date(task.dueDate), "MMM d, yyyy")}
+					</div>
+				</div>
+			)}
+			{task.expectedResolutionDate && (
+				<div className="space-y-1">
+					<Label className="text-xs text-muted-foreground">Expected Resolution</Label>
+					<div className="flex items-center gap-2 h-9 px-3 border rounded-md">
+						<CalendarClock className="h-4 w-4" />
+						{format(new Date(task.expectedResolutionDate), "MMM d, yyyy")}
 					</div>
 				</div>
 			)}

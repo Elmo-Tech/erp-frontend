@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { TaskTypeBadge, TaskCategoryBadge } from "@/components/shared/StatusBadge";
 import { useTaskChildren } from "@/features/dashboard/hooks/useTaskTree";
 import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskPriorityLabels, TaskChildrenResponse } from "@/features/dashboard/types/task";
-import { MoreHorizontal, Pencil, Trash2, ChevronRight, ChevronDown, Calendar, AlertCircle, Clock, Plus } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, ChevronRight, ChevronDown, Calendar, CalendarClock, AlertCircle, Clock, Plus } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { format, isPast, isToday } from "date-fns";
@@ -85,7 +85,7 @@ export function TaskRow({
 
 	return (
 		<>
-			<div className={cn("grid grid-cols-[1fr_120px_140px_100px_100px] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors group", task.status === TaskStatus.COMPLETED && "opacity-60")}>
+			<div className={cn("grid grid-cols-[minmax(0,1fr)_120px_140px_160px_100px_100px] gap-4 px-4 py-3 items-center hover:bg-muted/30 transition-colors group", task.status === TaskStatus.COMPLETED && "opacity-60")}>
 				{/* Task Info */}
 				<div
 					className="flex items-center gap-3 min-w-0"
@@ -189,6 +189,18 @@ export function TaskRow({
 							<Calendar className="h-3.5 w-3.5" />
 							<span>{format(new Date(task.dueDate), "MMM d")}</span>
 							{isOverdue && <AlertCircle className="h-3.5 w-3.5" />}
+						</div>
+					) : (
+						<span className="text-muted-foreground">—</span>
+					)}
+				</div>
+
+				{/* Expected Resolution */}
+				<div className="text-sm">
+					{task.expectedResolutionDate ? (
+						<div className="flex items-center gap-1.5">
+							<CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+							<span>{format(new Date(task.expectedResolutionDate), "MMM d")}</span>
 						</div>
 					) : (
 						<span className="text-muted-foreground">—</span>

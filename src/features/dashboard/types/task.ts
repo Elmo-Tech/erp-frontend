@@ -193,6 +193,7 @@ export interface Task {
 	priority: TaskPriority;
 	taskCategory?: string;
 	dueDate: string | null;
+	expectedResolutionDate: string | null;
 	startDate: string | null;
 	sprintNumber: number | null;
 	estimatedHours: number;
@@ -261,6 +262,7 @@ export interface CreateTaskPayload {
 	priority?: TaskPriority;
 	taskCategory?: string;
 	dueDate?: string | null;
+	expectedResolutionDate?: string | null;
 	startDate?: string | null;
 	sprintNumber?: number | null;
 	estimatedHours?: number;
@@ -287,6 +289,7 @@ export interface UpdateTaskPayload {
 	priority?: TaskPriority;
 	taskCategory?: string;
 	dueDate?: string | null;
+	expectedResolutionDate?: string | null;
 	startDate?: string | null;
 	sprintNumber?: number | null;
 	estimatedHours?: number;

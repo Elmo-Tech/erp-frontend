@@ -30,6 +30,7 @@ const taskSchema = z.object({
 	taskCategory: z.string().optional(),
 	estimatedHours: z.number().min(0, "Must be 0 or greater"),
 	dueDate: z.string().optional().nullable(),
+	expectedResolutionDate: z.string().optional().nullable(),
 	startDate: z.string().optional().nullable(),
 	sprintNumber: z.number().optional().nullable(),
 	tagIds: z.array(z.number()).optional(),
@@ -67,6 +68,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 			taskCategory: "none",
 			estimatedHours: 0,
 			dueDate: null,
+			expectedResolutionDate: null,
 			startDate: today,
 			sprintNumber: null,
 			tagIds: [],
@@ -104,6 +106,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 				taskCategory: data.taskCategory === "none" ? undefined : data.taskCategory,
 				estimatedHours: Number(data.estimatedHours),
 				dueDate: data.dueDate || undefined,
+				expectedResolutionDate: data.expectedResolutionDate || undefined,
 				startDate: data.startDate || undefined,
 				sprintNumber: data.sprintNumber || undefined,
 				tagIds: data.tagIds,
@@ -240,7 +243,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 						rows={3}
 					/>
 
-					<div className="grid grid-cols-3 gap-4">
+					<div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 						<FormInput
 							control={form.control}
 							name="estimatedHours"
@@ -258,6 +261,11 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 							control={form.control}
 							name="dueDate"
 							label="Due Date"
+						/>
+						<FormDatePicker
+							control={form.control}
+							name="expectedResolutionDate"
+							label="Expected Resolution"
 						/>
 					</div>
 

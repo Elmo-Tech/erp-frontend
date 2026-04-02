@@ -220,10 +220,11 @@ export function TasksTab({ projectId }: TasksTabProps) {
 					/>
 				) : (
 					<div className="border rounded-xl overflow-hidden bg-card">
-						<div className="grid grid-cols-[1fr_120px_140px_100px_100px] gap-4 px-4 py-3 bg-muted/50 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+						<div className="grid grid-cols-[minmax(0,1fr)_120px_140px_160px_100px_100px] gap-4 px-4 py-3 bg-muted/50 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
 							<div>Task</div>
 							<div>Assignees</div>
 							<div>Due Date</div>
+							<div>Expected Close</div>
 							<div>Time</div>
 							<div></div>
 						</div>
