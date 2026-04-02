@@ -14,7 +14,7 @@ import { useCreateContract, useCreateContractFromQuotation } from "../../../hook
 import { useQuotations } from "../../../hooks/useQuotations";
 import { PaymentMilestonesBuilder } from "../../quotations/PaymentMilestonesBuilder";
 import { validateMilestonePercentages, getDefaultMilestones } from "../../../schemas/contractSchema";
-import { CreateContractPayload } from "../../../types/contract";
+import { CreateContractPayload, MilestoneTriggerType } from "../../../types/contract";
 import { QuotationStatus } from "../../../types/quotation";
 import { format, addDays } from "date-fns";
 import { PaymentMilestone } from "../../../schemas/quotationSchema";
@@ -209,7 +209,7 @@ export const CreateContractDialog: React.FC<CreateContractDialogProps> = ({ open
 						title: m.name,
 						percentage: m.percentage,
 						dueDate: undefined,
-						triggerType: "date" as const,
+						triggerType: "date" as MilestoneTriggerType,
 					})),
 				};
 

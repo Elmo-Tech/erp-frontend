@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,61 +22,68 @@ interface WikiViewerProps {
  */
 export const WikiViewer: React.FC<WikiViewerProps> = ({ wiki, onEdit, onDelete, className = "" }) => {
 	const [isRevealed, setIsRevealed] = useState(false);
-	const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
 	const [remainingTime, setRemainingTime] = useState(0);
+	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+	const clearRevealTimers = () => {
+		if (timeoutRef.current) {
+			clearTimeout(timeoutRef.current);
+			timeoutRef.current = null;
+		}
+
+		if (intervalRef.current) {
+			clearInterval(intervalRef.current);
+			intervalRef.current = null;
+		}
+	};
 
 	// Auto-hide decrypted content after 30 seconds
 	useEffect(() => {
-		if (isRevealed && wiki.isEncrypted) {
-			// Clear any existing timeout
-			if (timeoutId) {
-				clearTimeout(timeoutId);
-			}
-
-			// Set remaining time to 30 seconds
-			setRemainingTime(30);
-
-			// Start countdown
-			const countdownInterval = setInterval(() => {
-				setRemainingTime((prev) => {
-					if (prev <= 1) {
-						clearInterval(countdownInterval);
-						setIsRevealed(false);
-						return 0;
-					}
-					return prev - 1;
-				});
-			}, 1000);
-
-			// Set timeout to hide content
-			const newTimeoutId = setTimeout(() => {
-				setIsRevealed(false);
-				setRemainingTime(0);
-				clearInterval(countdownInterval);
-			}, 30000); // 30 seconds
-
-			setTimeoutId(newTimeoutId);
-
-			// Cleanup function
-			return () => {
-				clearTimeout(newTimeoutId);
-				clearInterval(countdownInterval);
-			};
+		if (!isRevealed || !wiki.isEncrypted) {
+			return undefined;
 		}
+
+		clearRevealTimers();
+
+		intervalRef.current = setInterval(() => {
+			setRemainingTime((prev) => {
+				if (prev <= 1) {
+					clearRevealTimers();
+					setIsRevealed(false);
+					return 0;
+				}
+				return prev - 1;
+			});
+		}, 1000);
+
+		timeoutRef.current = setTimeout(() => {
+			clearRevealTimers();
+			setIsRevealed(false);
+			setRemainingTime(0);
+		}, 30000);
+
+		return () => {
+			clearRevealTimers();
+		};
 	}, [isRevealed, wiki.isEncrypted]);
+
+	useEffect(() => {
+		return () => {
+			clearRevealTimers();
+		};
+	}, []);
 
 	// Handle reveal/hide toggle
 	const handleToggleReveal = () => {
 		if (isRevealed) {
 			// Hide content immediately
+			clearRevealTimers();
 			setIsRevealed(false);
 			setRemainingTime(0);
-			if (timeoutId) {
-				clearTimeout(timeoutId);
-				setTimeoutId(null);
-			}
 		} else {
 			// Reveal content
+			setRemainingTime(30);
 			setIsRevealed(true);
 		}
 	};

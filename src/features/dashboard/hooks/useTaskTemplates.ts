@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { taskTemplatesApi } from "../api";
 import { CreateTaskTemplateData, UpdateTaskTemplateData, TaskTemplateFilters, InstantiateTaskData } from "../types";
 
@@ -36,9 +37,8 @@ export function useCreateTaskTemplate() {
 			queryClient.invalidateQueries({ queryKey: ["task-templates"] });
 			toast.success("Template created successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to create template";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to create template"));
 		},
 	});
 }
@@ -56,9 +56,8 @@ export function useUpdateTaskTemplate(id: number) {
 			queryClient.invalidateQueries({ queryKey: ["task-templates", id] });
 			toast.success("Template updated successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to update template";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to update template"));
 		},
 	});
 }
@@ -75,9 +74,8 @@ export function useDeleteTaskTemplate() {
 			queryClient.invalidateQueries({ queryKey: ["task-templates"] });
 			toast.success("Template deleted successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to delete template";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to delete template"));
 		},
 	});
 }
@@ -95,9 +93,8 @@ export function useInstantiateTemplate() {
 			queryClient.invalidateQueries({ queryKey: ["task-templates"] });
 			toast.success("Task created from template");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to create task from template";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to create task from template"));
 		},
 	});
 }

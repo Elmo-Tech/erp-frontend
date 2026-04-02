@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { codeReviewApi } from "../api/codeReviewApi";
 import type { CreateCodeReviewData } from "../types/codeReview";
 
@@ -8,14 +9,13 @@ export function useCreateCodeReview() {
 
 	return useMutation({
 		mutationFn: (data: CreateCodeReviewData) => codeReviewApi.create(data),
-		onSuccess: (response) => {
+		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["codeReviews"] });
 			queryClient.invalidateQueries({ queryKey: ["myPendingReviews"] });
 			toast.success("Code review created successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to create code review";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to create code review"));
 		},
 	});
 }

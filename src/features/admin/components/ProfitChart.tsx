@@ -8,7 +8,7 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfitabilityData, ProfitabilityFilters } from "../types";
@@ -53,11 +53,21 @@ interface ChartDataPoint {
 	projectId: number;
 }
 
+interface TooltipPayloadEntry<T> {
+	payload: T;
+}
+
+interface CustomTooltipProps {
+	active?: boolean;
+	payload?: TooltipPayloadEntry<ChartDataPoint>[];
+	label?: string;
+}
+
 /**
  * Custom tooltip component showing detailed information
  * Requirement 12.5: Show profit margin on hover
  */
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 	if (active && payload && payload.length) {
 		const data = payload[0].payload as ChartDataPoint;
 		return (
@@ -86,11 +96,9 @@ export const ProfitChart: React.FC<ProfitChartProps> = ({ filters, height = 400,
 	const { data, isLoading, error } = useProfitability(filters);
 
 	// Transform data for chart
-	const chartData = useMemo(() => {
-		if (!data?.projects) return [];
-
-		return data.projects
-			.slice(0, maxProjects) // Limit number of projects for readability
+	const chartData =
+		data?.projects
+			?.slice(0, maxProjects)
 			.map(
 				(project: ProfitabilityData): ChartDataPoint => ({
 					name: (project.title || "Untitled").length > 20 ? `${(project.title || "Untitled").substring(0, 20)}...` : project.title || "Untitled",
@@ -101,8 +109,7 @@ export const ProfitChart: React.FC<ProfitChartProps> = ({ filters, height = 400,
 					isProfitable: (project.profit || 0) >= 0,
 					projectId: project.projectId || 0,
 				})
-			);
-	}, [data?.projects, maxProjects]);
+			) ?? [];
 
 	// Loading state
 	if (isLoading) {

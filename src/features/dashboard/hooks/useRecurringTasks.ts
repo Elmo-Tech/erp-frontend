@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { recurringTasksApi } from "../api";
 import { CreateRecurringTaskData, UpdateRecurringTaskData, RecurringTaskFilters } from "../types";
 
@@ -36,9 +37,8 @@ export function useCreateRecurringTask() {
 			queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
 			toast.success("Recurring task created successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to create recurring task";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to create recurring task"));
 		},
 	});
 }
@@ -56,9 +56,8 @@ export function useUpdateRecurringTask(id: number) {
 			queryClient.invalidateQueries({ queryKey: ["recurring-tasks", id] });
 			toast.success("Recurring task updated successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to update recurring task";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to update recurring task"));
 		},
 	});
 }
@@ -75,9 +74,8 @@ export function useDeleteRecurringTask() {
 			queryClient.invalidateQueries({ queryKey: ["recurring-tasks"] });
 			toast.success("Recurring task deleted successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to delete recurring task";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to delete recurring task"));
 		},
 	});
 }
@@ -95,9 +93,8 @@ export function useGenerateNextTask() {
 			queryClient.invalidateQueries({ queryKey: ["tasks"] });
 			toast.success("Task generated successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to generate task";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to generate task"));
 		},
 	});
 }

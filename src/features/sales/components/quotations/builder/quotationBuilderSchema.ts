@@ -2,6 +2,7 @@ import { z } from "zod";
 import { QuotationStatus } from "../../../types/quotation";
 
 export const quotationSchema = z.object({
+	title: z.string().min(1, "Title is required").max(255, "Title cannot exceed 255 characters"),
 	leadId: z.number().min(1, "Please select a lead"),
 	frontendHours: z.number().min(0, "Frontend hours cannot be negative"),
 	backendHours: z.number().min(0, "Backend hours cannot be negative"),
@@ -34,6 +35,7 @@ export const STATUS_OPTIONS = [
 ];
 
 export const getDefaultValues = (initialData?: Partial<QuotationFormData> & { quotationId?: number }): QuotationFormData => ({
+	title: initialData?.title || "",
 	leadId: initialData?.leadId || 0,
 	frontendHours: initialData?.frontendHours || 0,
 	backendHours: initialData?.backendHours || 0,

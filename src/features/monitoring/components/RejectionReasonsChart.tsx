@@ -8,7 +8,7 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +33,24 @@ interface RejectionData {
 	color: string;
 }
 
+interface TooltipPayloadEntry<T> {
+	payload: T;
+}
+
+interface CustomTooltipProps {
+	active?: boolean;
+	payload?: TooltipPayloadEntry<RejectionData>[];
+}
+
+interface CustomLabelProps {
+	cx: number;
+	cy: number;
+	midAngle: number;
+	innerRadius: number;
+	outerRadius: number;
+	percentage: number;
+}
+
 /**
  * Predefined colors for rejection reasons
  */
@@ -50,7 +68,7 @@ const REJECTION_COLORS = [
 /**
  * Custom tooltip component showing detailed information
  */
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 	if (active && payload && payload.length) {
 		const data = payload[0].payload as RejectionData;
 		return (
@@ -69,7 +87,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 /**
  * Custom label function for pie chart
  */
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: any) => {
+const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: CustomLabelProps) => {
 	if (percentage < 5) return null; // Don't show labels for small slices
 
 	const RADIAN = Math.PI / 180;
@@ -109,7 +127,7 @@ export function RejectionReasonsChart({ dateRange, refreshKey, height = 350 }: R
 	});
 
 	// Transform data for chart
-	const chartData = useMemo(() => {
+	const chartData = (() => {
 		if (!quotationData?.rejectionReasons) return [];
 
 		const reasons = Object.entries(quotationData.rejectionReasons);
@@ -124,8 +142,8 @@ export function RejectionReasonsChart({ dateRange, refreshKey, height = 350 }: R
 				percentage: (count / total) * 100,
 				color: REJECTION_COLORS[index % REJECTION_COLORS.length],
 			}))
-			.sort((a, b) => b.count - a.count); // Sort by count descending
-	}, [quotationData]);
+			.sort((a, b) => b.count - a.count);
+	})();
 
 	// Format reason names for display
 	function formatReasonName(reason: string): string {
@@ -229,11 +247,17 @@ export function RejectionReasonsChart({ dateRange, refreshKey, height = 350 }: R
 						<Legend
 							verticalAlign="bottom"
 							height={36}
-							formatter={(value, entry: any) => (
-								<span style={{ color: entry.color }}>
-									{value} ({entry.payload.percentage.toFixed(1)}%)
-								</span>
-							)}
+							formatter={(value) => {
+								const reason = String(value);
+								const matchingReason = chartData.find((entry) => entry.reason === reason);
+
+								return (
+									<span style={{ color: matchingReason?.color }}>
+										{reason}
+										{matchingReason ? ` (${matchingReason.percentage.toFixed(1)}%)` : ""}
+									</span>
+								);
+							}}
 						/>
 					</PieChart>
 				</ResponsiveContainer>

@@ -50,7 +50,7 @@ export interface CreateTemplatePayload {
 	isActive?: boolean;
 }
 
-export interface UpdateTemplatePayload extends Partial<CreateTemplatePayload> {}
+export type UpdateTemplatePayload = Partial<CreateTemplatePayload>;
 
 export interface GenerateFromTemplatePayload {
 	quotationId?: number;

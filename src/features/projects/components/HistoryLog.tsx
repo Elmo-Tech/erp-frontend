@@ -110,14 +110,6 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ projectId, className = "
 		return CRITICAL_FIELDS.includes(fieldName);
 	};
 
-	// Get unique field names for filter dropdown
-	const uniqueFields = React.useMemo(() => {
-		if (!historyResponse?.histories) return [];
-
-		const fields = new Set(historyResponse.histories.map((h) => h.fieldName));
-		return Array.from(fields).sort();
-	}, [historyResponse?.histories]);
-
 	// Loading state
 	if (isLoading) {
 		return (
@@ -152,6 +144,7 @@ export const HistoryLog: React.FC<HistoryLogProps> = ({ projectId, className = "
 	}
 
 	const histories = historyResponse?.histories || [];
+	const uniqueFields = Array.from(new Set(histories.map((history) => history.fieldName))).sort();
 
 	return (
 		<div className={`space-y-6 ${className}`}>

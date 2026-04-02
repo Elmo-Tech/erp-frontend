@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { deleteInnovationLog } from "../api";
 
 export function useDeleteInnovationLog() {
@@ -13,9 +14,8 @@ export function useDeleteInnovationLog() {
 			queryClient.invalidateQueries({ queryKey: ["myInnovationSummary"] });
 			toast.success("Innovation log deleted");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to delete innovation log";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to delete innovation log"));
 		},
 	});
 }

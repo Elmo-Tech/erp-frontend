@@ -16,7 +16,7 @@ import { useCreateQuotation } from "../../../hooks/useQuotations";
 import { useLeads } from "../../../hooks/useLeads";
 import { PaymentMilestonesBuilder } from "../PaymentMilestonesBuilder";
 import { DEFAULT_MILESTONE_TEMPLATES, PaymentMilestone, validateMilestonePercentages, calculateMilestoneAmounts } from "../../../schemas/quotationSchema";
-import { QuotationStatus } from "../../../types/quotation";
+import { CreateQuotationPayload, QuotationStatus } from "../../../types/quotation";
 import { format, addDays } from "date-fns";
 
 /**
@@ -185,7 +185,7 @@ export const CreateQuotationDialog: React.FC<CreateQuotationDialogProps> = ({ op
 			setIsSubmitting(true);
 
 			// Prepare milestones for API (without calculated amounts)
-				const payload = {
+				const payload: CreateQuotationPayload = {
 					leadId: formData.leadId,
 					title: formData.title,
 					basePrice: formData.basePrice,

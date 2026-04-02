@@ -79,7 +79,9 @@ export function WikiCard({ wiki, isSelected, onSelect, onEdit, onDelete }: WikiC
 							<AlertDialogContent>
 								<AlertDialogHeader>
 									<AlertDialogTitle>Delete Wiki Entry</AlertDialogTitle>
-									<AlertDialogDescription>Are you sure you want to delete "{wiki.title}"? This action cannot be undone.</AlertDialogDescription>
+									<AlertDialogDescription>
+										Are you sure you want to delete &quot;{wiki.title}&quot;? This action cannot be undone.
+									</AlertDialogDescription>
 								</AlertDialogHeader>
 								<AlertDialogFooter>
 									<AlertDialogCancel>Cancel</AlertDialogCancel>

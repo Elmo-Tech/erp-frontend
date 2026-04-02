@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 interface Subtask {
 	title: string;
@@ -37,7 +36,7 @@ export function SubtasksEditor({ subtasks, onChange }: SubtasksEditorProps) {
 		onChange(subtasks.filter((_, i) => i !== index));
 	};
 
-	const updateSubtask = (index: number, field: keyof Subtask, value: any) => {
+	const updateSubtask = (index: number, field: keyof Subtask, value: Subtask[keyof Subtask]) => {
 		const updated = [...subtasks];
 		updated[index] = { ...updated[index], [field]: value };
 		onChange(updated);

@@ -34,13 +34,24 @@ interface CashflowDataPoint {
 	difference: number;
 }
 
+interface TooltipPayloadEntry {
+	dataKey?: string;
+	value?: number;
+}
+
+interface CustomTooltipProps {
+	active?: boolean;
+	payload?: TooltipPayloadEntry[];
+	label?: string;
+}
+
 /**
  * Custom tooltip component showing detailed information
  */
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 	if (active && payload && payload.length) {
-		const invoiced = payload.find((p: any) => p.dataKey === "invoiced")?.value || 0;
-		const projected = payload.find((p: any) => p.dataKey === "projected")?.value || 0;
+		const invoiced = payload.find((entry) => entry.dataKey === "invoiced")?.value || 0;
+		const projected = payload.find((entry) => entry.dataKey === "projected")?.value || 0;
 		const difference = projected - invoiced;
 
 		return (

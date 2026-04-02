@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { verifyInnovationLog } from "../api";
 
 export function useVerifyInnovationLog() {
@@ -13,9 +14,8 @@ export function useVerifyInnovationLog() {
 			queryClient.invalidateQueries({ queryKey: ["myInnovationSummary"] });
 			toast.success("Innovation log verified successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to verify innovation log";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to verify innovation log"));
 		},
 	});
 }

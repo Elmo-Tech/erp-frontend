@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { rejectInnovationLog } from "../api";
 
 export function useRejectInnovationLog() {
@@ -13,9 +14,8 @@ export function useRejectInnovationLog() {
 			queryClient.invalidateQueries({ queryKey: ["myInnovationSummary"] });
 			toast.success("Innovation log rejected");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to reject innovation log";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to reject innovation log"));
 		},
 	});
 }

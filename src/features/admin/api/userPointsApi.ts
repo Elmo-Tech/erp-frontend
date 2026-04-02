@@ -100,7 +100,7 @@ export const userPointsApi = {
 	},
 
 	// Delete a point transaction
-	deleteTransaction: async (transactionId: string): Promise<{ deletedTransaction: any; newUserTotal: number }> => {
+	deleteTransaction: async (transactionId: string): Promise<{ deletedTransaction: unknown; newUserTotal: number }> => {
 		const response = await api.delete(`/user-points/transaction/${transactionId}`);
 		return response.data.data;
 	},

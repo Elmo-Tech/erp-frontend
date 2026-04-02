@@ -64,7 +64,7 @@ export interface CreateClientPayload {
 	status?: ClientStatus;
 }
 
-export interface UpdateClientPayload extends Partial<CreateClientPayload> {}
+export type UpdateClientPayload = Partial<CreateClientPayload>;
 
 export interface ConvertLeadToClientPayload {
 	leadId: number;

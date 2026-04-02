@@ -92,6 +92,7 @@ export const QuotationBuilder: React.FC<QuotationBuilderProps> = ({ onSuccess, o
 			if (isEditing && initialData?.quotationId) {
 				const payload: UpdateQuotationPayload = {
 					leadId: data.leadId,
+					title: data.title,
 					estimations,
 					hourlyRate: data.hourlyRate,
 					discountPercentage: data.discountPercentage,
@@ -109,6 +110,7 @@ export const QuotationBuilder: React.FC<QuotationBuilderProps> = ({ onSuccess, o
 			} else {
 				const payload: CreateQuotationPayload = {
 					leadId: data.leadId,
+					title: data.title,
 					estimations,
 					hourlyRate: data.hourlyRate,
 					discountPercentage: data.discountPercentage,

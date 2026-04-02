@@ -34,10 +34,20 @@ interface FunnelStageData {
 	conversionRate?: number;
 }
 
+interface TooltipPayloadEntry<T> {
+	payload: T;
+}
+
+interface CustomTooltipProps {
+	active?: boolean;
+	payload?: TooltipPayloadEntry<FunnelStageData>[];
+	label?: string;
+}
+
 /**
  * Custom tooltip component showing detailed information
  */
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 	if (active && payload && payload.length) {
 		const data = payload[0].payload as FunnelStageData;
 		return (

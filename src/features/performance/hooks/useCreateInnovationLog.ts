@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { createInnovationLog } from "../api";
 import type { CreateInnovationLogRequest } from "../types";
 
@@ -14,9 +15,8 @@ export function useCreateInnovationLog() {
 			queryClient.invalidateQueries({ queryKey: ["myInnovationSummary"] });
 			toast.success("Innovation log created successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to create innovation log";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to create innovation log"));
 		},
 	});
 }

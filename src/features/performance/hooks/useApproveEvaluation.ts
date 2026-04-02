@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { approveEvaluation } from "../api";
 
 interface ApproveEvaluationParams {
@@ -17,9 +18,8 @@ export function useApproveEvaluation() {
 			queryClient.invalidateQueries({ queryKey: ["myEvaluations"] });
 			toast.success("Evaluation approved successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to approve evaluation";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to approve evaluation"));
 		},
 	});
 }

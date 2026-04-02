@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Form } from "@/components/ui/form";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
 import { createContractSchema, CreateContractFormData } from "../../../schemas/contractSchema";
@@ -19,50 +20,76 @@ interface UpdateContractFormProps {
 	onSuccess?: () => void;
 }
 
+type ContractFormValues = z.input<typeof createContractSchema>;
+
+function getContractFormValues(contractData: Contract): ContractFormValues {
+	const milestones =
+		contractData.milestones?.map((milestone) => ({
+			id: milestone.milestoneId.toString(),
+			title: milestone.title,
+			description: milestone.description ?? "",
+			percentage: milestone.percentage,
+			amount: milestone.amount,
+			sortOrder: milestone.sortOrder,
+			dueDate: milestone.dueDate,
+			triggerType: milestone.triggerType,
+			triggerValue: milestone.triggerValue,
+		})) ?? [];
+
+	const baseValues = {
+		title: contractData.title,
+		content: contractData.content || "",
+		expiryDays: 30,
+		projectDuration: contractData.endDate ? `${contractData.startDate} to ${contractData.endDate}` : "To be defined",
+		deliverables: milestones.length > 0 ? milestones.map((milestone) => milestone.title) : [contractData.title],
+		partyOne: {
+			company: contractData.partyOne.company || "",
+			representative: contractData.partyOne.representative || "",
+			title: contractData.partyOne.title || "",
+			address: contractData.partyOne.address,
+			idNumber: contractData.partyOne.idNumber,
+		},
+		partyTwo: {
+			company: contractData.partyTwo.company || "",
+			representative: contractData.partyTwo.representative || "",
+			title: contractData.partyTwo.title || "",
+			address: contractData.partyTwo.address,
+			idNumber: contractData.partyTwo.idNumber,
+		},
+		totalAmount: contractData.totalAmount,
+		currency: contractData.currency || "USD",
+		paymentTerms: contractData.paymentTerms || "",
+		startDate: contractData.startDate,
+		endDate: contractData.endDate || "",
+		milestones,
+	};
+
+	if (contractData.quotationId) {
+		return {
+			...baseValues,
+			dataSource: "from_quotation",
+			quotationId: contractData.quotationId,
+		};
+	}
+
+	return {
+		...baseValues,
+		dataSource: "new_terms",
+	};
+}
+
 export function UpdateContractForm({ open, onOpenChange, contract, onSuccess }: UpdateContractFormProps) {
 	const [activeTab, setActiveTab] = useState("details");
 	const updateMutation = useUpdateContract();
 	const { data: quotationsData } = useQuotations();
 
-	const form = useForm({
+	const form = useForm<ContractFormValues, undefined, CreateContractFormData>({
 		resolver: zodResolver(createContractSchema),
-		defaultValues: {
-			dataSource: contract.quotationId ? ("from_quotation" as const) : ("new_terms" as const),
-			quotationId: contract.quotationId || 0,
-			title: contract.title,
-			content: contract.content || "",
-			expiryDays: 30,
-			projectDuration: "",
-			deliverables: [""],
-			partyOne: contract.partyOne,
-			partyTwo: contract.partyTwo,
-			totalAmount: contract.totalAmount,
-			currency: contract.currency || "USD",
-			paymentTerms: contract.paymentTerms || "",
-			startDate: contract.startDate,
-			endDate: contract.endDate || "",
-			milestones: contract.milestones || [],
-		},
+		defaultValues: getContractFormValues(contract),
 	});
 
 	const setFormData = (contractData: Contract) => {
-		form.reset({
-			dataSource: contractData.quotationId ? ("from_quotation" as const) : ("new_terms" as const),
-			quotationId: contractData.quotationId || 0,
-			title: contractData.title,
-			content: contractData.content || "",
-			expiryDays: 30,
-			projectDuration: "",
-			deliverables: [""],
-			partyOne: contractData.partyOne,
-			partyTwo: contractData.partyTwo,
-			totalAmount: contractData.totalAmount,
-			currency: contractData.currency || "USD",
-			paymentTerms: contractData.paymentTerms || "",
-			startDate: contractData.startDate,
-			endDate: contractData.endDate || "",
-			milestones: contractData.milestones || [],
-		});
+		form.reset(getContractFormValues(contractData));
 		setActiveTab("details");
 	};
 

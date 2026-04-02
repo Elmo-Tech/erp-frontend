@@ -21,6 +21,16 @@ export function QuotationFormFields({ form, leadOptions }: QuotationFormFieldsPr
 		<div className="space-y-6">
 			{/* Lead Selection & Status */}
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<FormInput
+					control={form.control}
+					name="title"
+					label="Quotation Title *"
+					placeholder="Enter quotation title"
+				/>
+				<div />
+			</div>
+
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<FormSelect
 					control={form.control}
 					name="leadId"

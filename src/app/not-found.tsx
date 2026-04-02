@@ -19,7 +19,7 @@ export default function NotFound() {
 						<FileQuestion className="h-6 w-6 text-muted-foreground" />
 						<CardTitle>Page Not Found</CardTitle>
 					</div>
-					<CardDescription>The page you're looking for doesn't exist or has been moved.</CardDescription>
+					<CardDescription>The page you&apos;re looking for doesn&apos;t exist or has been moved.</CardDescription>
 				</CardHeader>
 
 				<CardContent>
@@ -28,7 +28,7 @@ export default function NotFound() {
 						<ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted-foreground">
 							<li>The URL was typed incorrectly</li>
 							<li>The page has been removed or renamed</li>
-							<li>You don't have permission to access this page</li>
+							<li>You don&apos;t have permission to access this page</li>
 						</ul>
 					</div>
 				</CardContent>

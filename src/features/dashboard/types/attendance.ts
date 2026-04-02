@@ -33,9 +33,7 @@ export interface TodayAttendance {
 /**
  * Clock out payload
  */
-export interface ClockOutPayload {
-	// No payload needed - uses current time
-}
+export type ClockOutPayload = Record<string, never>;
 
 /**
  * Response structure for today's attendance endpoint

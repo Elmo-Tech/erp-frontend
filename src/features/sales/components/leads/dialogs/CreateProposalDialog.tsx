@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { FormDialog } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
@@ -24,6 +25,8 @@ interface CreateProposalDialogProps {
 	leadId: number;
 	onSuccess?: () => void;
 }
+
+type CreateProposalFormValues = z.input<typeof createProposalSchema>;
 
 const ACTION_TYPE_OPTIONS = [
 	{
@@ -75,9 +78,9 @@ export function CreateProposalDialog({ open, onOpenChange, leadId, onSuccess }: 
 		file: undefined,
 	};
 
-	const form = useForm<CreateProposalFormData>({
+	const form = useForm<CreateProposalFormValues, undefined, CreateProposalFormData>({
 		resolver: zodResolver(createProposalSchema),
-		defaultValues: defaultValues as Partial<CreateProposalFormData>,
+		defaultValues: defaultValues as Partial<CreateProposalFormValues>,
 		mode: "onChange",
 	});
 
@@ -160,7 +163,7 @@ export function CreateProposalDialog({ open, onOpenChange, leadId, onSuccess }: 
 			formData.append("title", data.title);
 			formData.append("actionType", data.actionType);
 
-			if ("expiryDays" in data && data.actionType !== ProposalActionType.SKIP) {
+			if ("expiryDays" in data) {
 				formData.append("expiryDays", data.expiryDays.toString());
 			}
 
@@ -195,7 +198,7 @@ export function CreateProposalDialog({ open, onOpenChange, leadId, onSuccess }: 
 
 	// Handle dialog close
 	const handleClose = () => {
-		reset(defaultValues as Partial<CreateProposalFormData>);
+		reset(defaultValues as Partial<CreateProposalFormValues>);
 		setSelectedFile(null);
 		setFileError("");
 		onOpenChange(false);

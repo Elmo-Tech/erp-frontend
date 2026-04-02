@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { taskDependenciesApi } from "../api";
 import { CreateTaskDependencyData } from "../types";
 
@@ -29,9 +30,8 @@ export function useCreateTaskDependency(taskId: number) {
 			queryClient.invalidateQueries({ queryKey: ["tasks"] });
 			toast.success("Dependency created successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to create dependency";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to create dependency"));
 		},
 	});
 }
@@ -51,9 +51,8 @@ export function useDeleteTaskDependency(taskId: number) {
 			queryClient.invalidateQueries({ queryKey: ["tasks"] });
 			toast.success("Dependency removed successfully");
 		},
-		onError: (error: any) => {
-			const message = error.response?.data?.message || "Failed to remove dependency";
-			toast.error(message);
+		onError: (error: unknown) => {
+			toast.error(getApiErrorMessage(error, "Failed to remove dependency"));
 		},
 	});
 }
