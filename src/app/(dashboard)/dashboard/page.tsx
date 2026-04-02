@@ -7,9 +7,9 @@ import { TaskStatusBadge, TaskPriorityBadge } from "@/components/shared/StatusBa
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardStats } from "@/features/dashboard/hooks/useDashboardStats";
 import { useMyAssignedTasks } from "@/features/dashboard/hooks/useTasks";
-import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink } from "lucide-react";
+import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink, Award, CalendarRange } from "lucide-react";
 import Link from "next/link";
-import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview } from "@/features/dashboard/types";
+import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview, PointsCycleSummary } from "@/features/dashboard/types";
 import { PendingReviewsWidget } from "@/features/performance";
 
 export default function DashboardPage() {
@@ -146,7 +146,9 @@ function ManagerDashboard({ data }: { data: ManagerDashboardOverview }) {
 	return (
 		<>
 			<StatsGrid stats={stats} />
-			<div className="grid gap-4 md:grid-cols-2">
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				<PointsCycleCard pointsCycle={data.pointsCycle} />
+
 				<Card>
 					<CardHeader>
 						<CardTitle>Team Tasks</CardTitle>
@@ -231,6 +233,8 @@ function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
 		<>
 			<StatsGrid stats={stats} />
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				<PointsCycleCard pointsCycle={data.pointsCycle} />
+
 				<Card>
 					<CardHeader>
 						<CardTitle>My Tasks</CardTitle>
@@ -323,6 +327,60 @@ function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
 				</div>
 			</div>
 		</>
+	);
+}
+
+function PointsCycleCard({ pointsCycle }: { pointsCycle: PointsCycleSummary }) {
+	const netTone = pointsCycle.netPoints > 0 ? "text-green-600" : pointsCycle.netPoints < 0 ? "text-red-600" : "text-foreground";
+
+	return (
+		<Card>
+			<CardHeader>
+				<div className="flex items-start justify-between gap-4">
+					<div>
+						<CardTitle>My Points</CardTitle>
+						<CardDescription>Net points for the current 2-month reward cycle</CardDescription>
+					</div>
+					<div className="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/30">
+						<Award className="h-4 w-4 text-amber-600" />
+					</div>
+				</div>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div>
+					<p className={`text-3xl font-bold ${netTone}`}>
+						{pointsCycle.netPoints > 0 ? "+" : ""}
+						{pointsCycle.netPoints}
+					</p>
+					<div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+						<CalendarRange className="h-3.5 w-3.5" />
+						<span>{pointsCycle.label}</span>
+					</div>
+				</div>
+
+				<div className="grid grid-cols-3 gap-3 text-sm">
+					<div className="rounded-lg border bg-muted/30 p-3">
+						<p className="text-xs text-muted-foreground">Earned</p>
+						<p className="mt-1 font-semibold text-green-600">+{pointsCycle.earnedPoints}</p>
+					</div>
+					<div className="rounded-lg border bg-muted/30 p-3">
+						<p className="text-xs text-muted-foreground">Deducted</p>
+						<p className="mt-1 font-semibold text-red-600">-{pointsCycle.deductedPoints}</p>
+					</div>
+					<div className="rounded-lg border bg-muted/30 p-3">
+						<p className="text-xs text-muted-foreground">Transactions</p>
+						<p className="mt-1 font-semibold">{pointsCycle.transactionCount}</p>
+					</div>
+				</div>
+
+				<div className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-xs text-muted-foreground">
+					<CalendarRange className="h-3.5 w-3.5" />
+					<span>
+						The cycle stays fixed for two months. For example: Mar-Apr, then May-Jun.
+					</span>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 

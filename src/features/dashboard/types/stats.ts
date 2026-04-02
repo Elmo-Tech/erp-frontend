@@ -38,6 +38,16 @@ export interface DeveloperDashboardStats {
 	todayHours: number;
 }
 
+export interface PointsCycleSummary {
+	label: string;
+	startDate: string;
+	endDate: string;
+	netPoints: number;
+	earnedPoints: number;
+	deductedPoints: number;
+	transactionCount: number;
+}
+
 // Legacy type for backward compatibility
 export interface DashboardStats {
 	totalProjects: number;
@@ -85,6 +95,7 @@ export interface AdminDashboardOverview {
 export interface ManagerDashboardOverview {
 	role: "manager";
 	stats: ManagerDashboardStats;
+	pointsCycle: PointsCycleSummary;
 	recentTasks: RecentTask[];
 	recentActivities: RecentActivity[];
 }
@@ -92,6 +103,7 @@ export interface ManagerDashboardOverview {
 export interface DeveloperDashboardOverview {
 	role: "developer";
 	stats: DeveloperDashboardStats;
+	pointsCycle: PointsCycleSummary;
 	recentTasks: RecentTask[];
 	recentActivities: RecentActivity[];
 }
