@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/authStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -30,62 +30,62 @@ export const api = axios.create({
 	},
 });
 
-// Request interceptor - Add auth token
-api.interceptors.request.use(
-	(config: InternalAxiosRequestConfig) => {
-		const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
+	const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
-		// Check if auth-storage exists and validate token expiry
-		if (typeof window !== "undefined") {
-			const authStorage = localStorage.getItem("auth-storage");
-			if (authStorage) {
-				try {
-					const { state } = JSON.parse(authStorage);
-					if (state?.tokenExpiresAt) {
-						const expiresAt = new Date(state.tokenExpiresAt);
-						const now = new Date();
+	// Check if auth-storage exists and validate token expiry
+	if (typeof window !== "undefined") {
+		const authStorage = localStorage.getItem("auth-storage");
+		if (authStorage) {
+			try {
+				const { state } = JSON.parse(authStorage);
+				if (state?.tokenExpiresAt) {
+					const expiresAt = new Date(state.tokenExpiresAt);
+					const now = new Date();
 
-						// If token is expired, clear everything and redirect
-						if (expiresAt < now) {
-							clearClientAuthState();
-							redirectToLogin();
-							return Promise.reject(new Error("Token expired"));
-						}
+					// If token is expired, clear everything and redirect
+					if (expiresAt < now) {
+						clearClientAuthState();
+						redirectToLogin();
+						return Promise.reject(new Error("Token expired"));
 					}
-				} catch {
-					// If parsing fails, clear storage
-					clearClientAuthState();
 				}
+			} catch {
+				// If parsing fails, clear storage
+				clearClientAuthState();
 			}
 		}
+	}
 
-		// Only add token if it exists and is not just whitespace
-		if (token && token.trim() && config.headers) {
-			config.headers.Authorization = `Bearer ${token}`;
-		}
+	// Only add token if it exists and is not just whitespace
+	if (token && token.trim() && config.headers) {
+		config.headers.Authorization = `Bearer ${token}`;
+	}
 
-		// Add Accept-Language header
-		if (config.headers) {
-			config.headers["Accept-Language"] = "en";
-		}
+	// Add Accept-Language header
+	if (config.headers) {
+		config.headers["Accept-Language"] = "en";
+	}
 
-		return config;
-	},
-	(error: AxiosError) => {
-		return Promise.reject(error);
-	},
-);
+	return config;
+};
+
+export const handleApiRequestError = (error: AxiosError) => Promise.reject(error);
+
+export const handleApiResponse = (response: AxiosResponse) => response;
+
+export const handleApiResponseError = (error: AxiosError) => {
+	if (error.response?.status === 401) {
+		clearClientAuthState();
+		redirectToLogin();
+	}
+	return Promise.reject(error);
+};
+
+// Request interceptor - Add auth token
+api.interceptors.request.use(handleApiRequest, handleApiRequestError);
 
 // Response interceptor - Handle 401
-api.interceptors.response.use(
-	(response) => response,
-	(error: AxiosError) => {
-		if (error.response?.status === 401) {
-			clearClientAuthState();
-			redirectToLogin();
-		}
-		return Promise.reject(error);
-	},
-);
+api.interceptors.response.use(handleApiResponse, handleApiResponseError);
 
 export default api;

@@ -12,7 +12,7 @@ export const invoicesApi = {
 			params.append("filter[status]", filters.status);
 		}
 		if (filters?.projectId) {
-			params.append("filter[projectId]", filters.projectId.toString());
+			params.append("filter[project_id]", filters.projectId.toString());
 		}
 		if (filters?.dateFrom) {
 			params.append("filter[dateFrom]", filters.dateFrom);

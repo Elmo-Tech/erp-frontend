@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
@@ -18,8 +18,11 @@ interface SearchInputProps {
 }
 
 export function SearchInput({ value: controlledValue, onChange, placeholder = "Search...", className, debounceMs = 300, showClear = true, autoSearch = true }: SearchInputProps) {
-	const [internalValue, setInternalValue] = useState(controlledValue || "");
-	const value = controlledValue !== undefined ? controlledValue : internalValue;
+	const [internalValue, setInternalValue] = useState(controlledValue ?? "");
+
+	useEffect(() => {
+		setInternalValue(controlledValue ?? "");
+	}, [controlledValue]);
 
 	const debouncedOnChange = useDebouncedCallback(onChange, debounceMs);
 
@@ -54,13 +57,13 @@ export function SearchInput({ value: controlledValue, onChange, placeholder = "S
 			<div className="relative flex-1">
 				<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 				<Input
-					value={value}
+					value={internalValue}
 					onChange={handleChange}
 					onKeyDown={handleKeyDown}
 					placeholder={placeholder}
 					className="pl-9 pr-8"
 				/>
-				{showClear && value && (
+				{showClear && internalValue && (
 					<button
 						type="button"
 						onClick={handleClear}

@@ -7,8 +7,8 @@ export const proposalsApi = {
 
 		if (filters?.search) params.append("filter[search]", filters.search);
 		if (filters?.status) params.append("filter[status]", filters.status);
-		if (filters?.leadId) params.append("filter[leadId]", filters.leadId.toString());
-		if (filters?.isFastTrack !== undefined) params.append("filter[isFastTrack]", filters.isFastTrack ? "1" : "0");
+		if (filters?.leadId) params.append("filter[lead_id]", filters.leadId.toString());
+		if (filters?.isFastTrack !== undefined) params.append("filter[is_fast_track]", filters.isFastTrack ? "1" : "0");
 		if (filters?.page) params.append("page", filters.page.toString());
 		if (filters?.perPage) params.append("perPage", filters.perPage.toString());
 

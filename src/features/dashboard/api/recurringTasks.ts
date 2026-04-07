@@ -7,7 +7,19 @@ export const recurringTasksApi = {
 	/**
 	 * Get all recurring task configurations with optional filters
 	 */
-	getAll: (filters?: RecurringTaskFilters) => api.get<ApiResponse<PaginatedResponse<RecurringTaskConfig>>>("/recurring-tasks", { params: filters }),
+	getAll: async (filters?: RecurringTaskFilters) => {
+		const params = new URLSearchParams();
+
+		if (filters?.frequency) params.append("filter[frequency]", filters.frequency);
+		if (filters?.isActive !== undefined) params.append("filter[is_active]", filters.isActive ? "1" : "0");
+		if (filters?.page) params.append("page", filters.page.toString());
+		if (filters?.perPage) params.append("per_page", filters.perPage.toString());
+
+		const queryString = params.toString();
+		const url = queryString ? `/recurring-tasks?${queryString}` : "/recurring-tasks";
+
+		return api.get<ApiResponse<PaginatedResponse<RecurringTaskConfig>>>(url);
+	},
 
 	/**
 	 * Get a specific recurring task configuration

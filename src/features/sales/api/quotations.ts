@@ -7,8 +7,8 @@ export const quotationsApi = {
 
 		if (filters?.search) params.append("filter[search]", filters.search);
 		if (filters?.status) params.append("filter[status]", filters.status);
-		if (filters?.leadId) params.append("filter[leadId]", filters.leadId.toString());
-		if (filters?.expiringIn) params.append("filter[expiringIn]", filters.expiringIn.toString());
+		if (filters?.leadId) params.append("filter[lead_id]", filters.leadId.toString());
+		if (filters?.expiringIn) params.append("filter[expiring_in]", filters.expiringIn.toString());
 		if (filters?.page) params.append("page", filters.page.toString());
 		if (filters?.perPage) params.append("perPage", filters.perPage.toString());
 

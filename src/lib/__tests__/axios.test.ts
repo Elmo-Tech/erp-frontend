@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { api } from "../axios";
+import { handleApiRequest, handleApiResponseError } from "../axios";
 
 const localStorageMock = {
 	getItem: vi.fn(),
@@ -38,13 +38,12 @@ describe("Axios Interceptors", () => {
 				return null;
 			});
 
-			const requestInterceptor = api.interceptors.request.handlers[0];
-			const config = await requestInterceptor.fulfilled({
+			const config = await handleApiRequest({
 				headers: {
 					"Content-Type": "application/json",
 					Accept: "application/json",
 				},
-			});
+			} as never);
 
 			expect(config.headers.Authorization).toBe("Bearer test-token-123");
 			expect(config.headers["Accept-Language"]).toBe("en");
@@ -63,15 +62,13 @@ describe("Axios Interceptors", () => {
 				return null;
 			});
 
-			const requestInterceptor = api.interceptors.request.handlers[0];
-
 			await expect(
-				requestInterceptor.fulfilled({
+				handleApiRequest({
 					headers: {
 						"Content-Type": "application/json",
 						Accept: "application/json",
 					},
-				})
+				} as never)
 			).rejects.toThrow("Token expired");
 
 			expect(localStorageMock.removeItem).toHaveBeenCalledWith("auth_token");
@@ -82,14 +79,13 @@ describe("Axios Interceptors", () => {
 
 	describe("Response Interceptor", () => {
 		it("clears auth state and redirects on 401 responses", async () => {
-			const responseInterceptor = api.interceptors.response.handlers[0];
 			const error = {
 				response: {
 					status: 401,
 				},
 			};
 
-			await expect(responseInterceptor.rejected(error)).rejects.toEqual(error);
+			await expect(handleApiResponseError(error as never)).rejects.toEqual(error);
 
 			expect(localStorageMock.removeItem).toHaveBeenCalledWith("auth_token");
 			expect(localStorageMock.removeItem).toHaveBeenCalledWith("auth-storage");
@@ -97,14 +93,13 @@ describe("Axios Interceptors", () => {
 		});
 
 		it("does not clear auth state for non-401 responses", async () => {
-			const responseInterceptor = api.interceptors.response.handlers[0];
 			const error = {
 				response: {
 					status: 400,
 				},
 			};
 
-			await expect(responseInterceptor.rejected(error)).rejects.toEqual(error);
+			await expect(handleApiResponseError(error as never)).rejects.toEqual(error);
 
 			expect(localStorageMock.removeItem).not.toHaveBeenCalled();
 			expect(assignMock).not.toHaveBeenCalled();

@@ -8,7 +8,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { NestedTaskTree } from "../NestedTaskTree";
-import { Task, TaskStatus } from "../../types/task";
+import { Task, TaskPriority, TaskStatus, TaskType } from "../../types/task";
 
 // Mock the hooks
 vi.mock("../../hooks/useTaskTree", () => ({
@@ -28,66 +28,94 @@ const mockUseTaskTree = vi.mocked(useTaskTree);
 const mockUseTaskChildren = vi.mocked(useTaskChildren);
 const mockUseTimerStore = vi.mocked(useTimerStore);
 
+const createTask = (overrides: Partial<Task> = {}): Task => ({
+	taskId: 1,
+	projectId: 1,
+	parentId: null,
+	assignedTo: null,
+	title: "Task",
+	description: "Task description",
+	acceptanceCriteria: "",
+	status: TaskStatus.TODO,
+	type: TaskType.MAIN,
+	priority: TaskPriority.MEDIUM,
+	dueDate: null,
+	expectedResolutionDate: null,
+	startDate: null,
+	sprintNumber: null,
+	estimatedHours: 0,
+	totalTimeSpent: 0,
+	reopenCount: 0,
+	testCompletionPercentage: 0,
+	canStartTimer: true,
+	hasChildren: false,
+	completedAt: null,
+	delayDays: null,
+	deliveryStatus: {
+		isCompleted: false,
+		completedAt: null,
+		dueDate: null,
+		delayDays: null,
+		isOverdue: false,
+		isEarly: false,
+		isOnTime: true,
+		statusText: "On time",
+		statusColor: "default",
+	},
+	isOverdue: false,
+	daysUntilDue: null,
+	createdAt: "2024-01-01T00:00:00Z",
+	updatedAt: "2024-01-01T00:00:00Z",
+	createdBy: 1,
+	updatedBy: 1,
+	...overrides,
+});
+
 // Mock task data
 const mockTasks: Task[] = [
-	{
+	createTask({
 		taskId: 1,
-		projectId: 1,
-		parentId: null,
 		assignedTo: 1,
 		title: "Parent Task 1",
 		description: "Description for parent task 1",
 		status: TaskStatus.IN_PROGRESS,
+		type: TaskType.MAIN,
 		estimatedHours: 8,
 		totalTimeSpent: 120,
-		reopenCount: 0,
+		hasChildren: true,
 		assignee: {
 			userId: 1,
 			name: "John Doe",
 		},
 		children: [
-			{
+			createTask({
 				taskId: 2,
-				projectId: 1,
 				parentId: 1,
 				assignedTo: 2,
 				title: "Child Task 1",
 				description: "Description for child task 1",
 				status: TaskStatus.TODO,
+				type: TaskType.SUBTASK,
 				estimatedHours: 4,
 				totalTimeSpent: 60,
-				reopenCount: 0,
 				assignee: {
 					userId: 2,
 					name: "Jane Smith",
 				},
-				createdAt: "2024-01-01T00:00:00Z",
-				updatedAt: "2024-01-01T00:00:00Z",
-				createdBy: 1,
-				updatedBy: 1,
-			},
+			}),
 		],
-		createdAt: "2024-01-01T00:00:00Z",
-		updatedAt: "2024-01-01T00:00:00Z",
-		createdBy: 1,
-		updatedBy: 1,
-	},
-	{
+	}),
+	createTask({
 		taskId: 3,
-		projectId: 1,
-		parentId: null,
 		assignedTo: null,
 		title: "Parent Task 2",
 		description: "Description for parent task 2",
 		status: TaskStatus.COMPLETED,
+		type: TaskType.MAIN,
 		estimatedHours: 6,
 		totalTimeSpent: 360,
 		reopenCount: 1,
-		createdAt: "2024-01-01T00:00:00Z",
-		updatedAt: "2024-01-01T00:00:00Z",
-		createdBy: 1,
-		updatedBy: 1,
-	},
+	}),
 ];
 
 const createTestQueryClient = () =>
@@ -125,22 +153,18 @@ describe("NestedTaskTree", () => {
 		});
 
 		mockUseTaskChildren.mockReturnValue({
-			data: null,
+			data: undefined,
 			isLoading: false,
 			error: null,
-		});
+		} as unknown as ReturnType<typeof useTaskChildren>);
 
 		mockUseTimerStore.mockReturnValue({
-			entityId: null,
-			entityType: null,
-			isRunning: false,
-			startTimer: vi.fn(),
-			stopTimer: vi.fn(),
-			tick: vi.fn(),
-			reset: vi.fn(),
-			startTime: null,
-			elapsedSeconds: 0,
-			entityName: null,
+			activeTimer: null,
+			isLoading: false,
+			isConnected: false,
+			setActiveTimer: vi.fn(),
+			setIsLoading: vi.fn(),
+			setIsConnected: vi.fn(),
 		});
 	});
 
@@ -296,16 +320,19 @@ describe("NestedTaskTree", () => {
 
 	it("shows active timer indicator", () => {
 		mockUseTimerStore.mockReturnValue({
-			entityId: 1,
-			entityType: "task",
-			isRunning: true,
-			startTimer: vi.fn(),
-			stopTimer: vi.fn(),
-			tick: vi.fn(),
-			reset: vi.fn(),
-			startTime: null,
-			elapsedSeconds: 0,
-			entityName: null,
+			activeTimer: {
+				timeEntryId: 1,
+				startTime: "2024-01-01T00:00:00Z",
+				trackableType: "task",
+				trackableId: 1,
+				trackableDisplayName: "Parent Task 1",
+				isActive: true,
+			},
+			isLoading: false,
+			isConnected: true,
+			setActiveTimer: vi.fn(),
+			setIsLoading: vi.fn(),
+			setIsConnected: vi.fn(),
 		});
 
 		renderWithQueryClient(

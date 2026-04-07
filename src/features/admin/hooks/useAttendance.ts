@@ -14,7 +14,6 @@ export const attendanceKeys = {
 
 export function useAttendanceList(filters?: AttendanceFilters, page = 1, perPage = 15) {
 	const queryKey = attendanceKeys.list(filters, page);
-	console.log('[useAttendanceList] Query key:', queryKey, 'filters:', filters);
 
 	return useQuery({
 		queryKey,

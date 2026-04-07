@@ -19,6 +19,26 @@ const mockUseAuditLogs = vi.mocked(useAuditLogs);
 const mockUseAuditLogActionTypes = vi.mocked(useAuditLogActionTypes);
 const mockUseAdminPermissions = vi.mocked(useAdminPermissions);
 
+const createAuditLogsResult = (
+	overrides: Partial<ReturnType<typeof useAuditLogs>> = {}
+): ReturnType<typeof useAuditLogs> =>
+	({
+		data: listResponse,
+		isLoading: false,
+		error: null,
+		refetch: vi.fn(),
+		...overrides,
+	}) as unknown as ReturnType<typeof useAuditLogs>;
+
+const createAuditLogActionTypesResult = (
+	overrides: Partial<ReturnType<typeof useAuditLogActionTypes>> = {}
+): ReturnType<typeof useAuditLogActionTypes> =>
+	({
+		data: ["login", "update_internal_cost"],
+		isLoading: false,
+		...overrides,
+	}) as unknown as ReturnType<typeof useAuditLogActionTypes>;
+
 const auditLogs: AuditLogEntry[] = [
 	{
 		id: 1,
@@ -73,17 +93,9 @@ describe("AuditLogViewer", () => {
 			canViewAuditLogs: true,
 		} as ReturnType<typeof useAdminPermissions>);
 
-		mockUseAuditLogs.mockReturnValue({
-			data: listResponse,
-			isLoading: false,
-			error: null,
-			refetch: vi.fn(),
-		} as ReturnType<typeof useAuditLogs>);
+		mockUseAuditLogs.mockReturnValue(createAuditLogsResult());
 
-		mockUseAuditLogActionTypes.mockReturnValue({
-			data: ["login", "update_internal_cost"],
-			isLoading: false,
-		} as ReturnType<typeof useAuditLogActionTypes>);
+		mockUseAuditLogActionTypes.mockReturnValue(createAuditLogActionTypesResult());
 	});
 
 	it("shows a permission error when the user lacks access", () => {
@@ -107,12 +119,10 @@ describe("AuditLogViewer", () => {
 	});
 
 	it("shows the loading state", () => {
-		mockUseAuditLogs.mockReturnValue({
+		mockUseAuditLogs.mockReturnValue(createAuditLogsResult({
 			data: undefined,
 			isLoading: true,
-			error: null,
-			refetch: vi.fn(),
-		} as ReturnType<typeof useAuditLogs>);
+		}));
 
 		render(<AuditLogViewer />);
 
@@ -120,12 +130,11 @@ describe("AuditLogViewer", () => {
 	});
 
 	it("shows the error state", () => {
-		mockUseAuditLogs.mockReturnValue({
+		mockUseAuditLogs.mockReturnValue(createAuditLogsResult({
 			data: undefined,
 			isLoading: false,
 			error: new Error("Failed to load audit logs"),
-			refetch: vi.fn(),
-		} as ReturnType<typeof useAuditLogs>);
+		}));
 
 		render(<AuditLogViewer />);
 
@@ -134,7 +143,7 @@ describe("AuditLogViewer", () => {
 	});
 
 	it("shows the empty state when no logs are returned", () => {
-		mockUseAuditLogs.mockReturnValue({
+		mockUseAuditLogs.mockReturnValue(createAuditLogsResult({
 			data: {
 				auditLogs: [],
 				pagination: {
@@ -145,10 +154,7 @@ describe("AuditLogViewer", () => {
 					totalPages: 0,
 				},
 			},
-			isLoading: false,
-			error: null,
-			refetch: vi.fn(),
-		} as ReturnType<typeof useAuditLogs>);
+		}));
 
 		render(<AuditLogViewer />);
 

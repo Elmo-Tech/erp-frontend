@@ -3,17 +3,17 @@ import { Attendance, AttendanceFilters, AttendanceFormData, PaginatedResponse, E
 
 export const attendanceApi = {
 	getAll: async (filters?: AttendanceFilters, page = 1, perPage = 15): Promise<PaginatedResponse<Attendance>> => {
-		const params = new URLSearchParams();
-		params.append("page", String(page));
-		params.append("perPage", String(perPage));
+		const params: Record<string, string | number> = {
+			page,
+			perPage,
+		};
 
-		if (filters?.userId) params.append("filter.userId", String(filters.userId));
-		if (filters?.startDate) params.append("filter.startDate", filters.startDate);
-		if (filters?.endDate) params.append("filter.endDate", filters.endDate);
-		if (filters?.date) params.append("filter.date", filters.date);
+		if (filters?.userId) params["filter[userId]"] = filters.userId;
+		if (filters?.startDate) params["filter[startDate]"] = filters.startDate;
+		if (filters?.endDate) params["filter[endDate]"] = filters.endDate;
+		if (filters?.date) params["filter[date]"] = filters.date;
 
-		console.log('[Attendance API] Fetching with filters:', Object.fromEntries(params));
-		const response = await api.get(`/attendance/all?${params.toString()}`);
+		const response = await api.get("/attendance/all", { params });
 		return response.data.data;
 	},
 

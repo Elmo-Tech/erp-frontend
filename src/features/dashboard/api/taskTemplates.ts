@@ -7,7 +7,20 @@ export const taskTemplatesApi = {
 	/**
 	 * Get all task templates with optional filters
 	 */
-	getAll: (filters?: TaskTemplateFilters) => api.get<ApiResponse<PaginatedResponse<TaskTemplate>>>("/task-templates", { params: filters }),
+	getAll: async (filters?: TaskTemplateFilters) => {
+		const params = new URLSearchParams();
+
+		if (filters?.search) params.append("filter[search]", filters.search);
+		if (filters?.category) params.append("filter[category]", filters.category);
+		if (filters?.isActive !== undefined) params.append("filter[is_active]", filters.isActive ? "1" : "0");
+		if (filters?.page) params.append("page", filters.page.toString());
+		if (filters?.perPage) params.append("per_page", filters.perPage.toString());
+
+		const queryString = params.toString();
+		const url = queryString ? `/task-templates?${queryString}` : "/task-templates";
+
+		return api.get<ApiResponse<PaginatedResponse<TaskTemplate>>>(url);
+	},
 
 	/**
 	 * Get a specific task template
