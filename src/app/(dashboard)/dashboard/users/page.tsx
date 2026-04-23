@@ -1,6 +1,6 @@
 "use client";
 
-import { UsersDashboard } from "@/features/admin/components/UsersDashboard";
+import { UsersDashboard } from "@/_old/features/admin/components/UsersDashboard";
 
 export default function UsersPage() {
 	return <UsersDashboard />;

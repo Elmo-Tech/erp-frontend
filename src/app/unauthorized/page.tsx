@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { ShieldX, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/authStore";
+import { Button } from "@/shared/ui/button";
+import { useAuthStore } from "@/_old/store/authStore";
 
 export default function UnauthorizedPage() {
 	const { role } = useAuthStore();

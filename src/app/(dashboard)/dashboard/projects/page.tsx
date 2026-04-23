@@ -1,7 +1,5 @@
-"use client";
-
-import { ProjectsWrapper } from "@/features/projects/components";
+import { ProjectListWidget } from "@/widgets/project-management/ui/ProjectListWidget";
 
 export default function ProjectsPage() {
-	return <ProjectsWrapper />;
+	return <ProjectListWidget />;
 }

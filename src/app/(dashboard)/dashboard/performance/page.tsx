@@ -1,14 +1,14 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { EvaluationsTable } from "@/features/performance/components/EvaluationsTable";
-import { EvaluationPeriodsTable } from "@/features/performance/components/EvaluationPeriodsTable";
-import { InnovationLogsTable } from "@/features/performance/components/InnovationLogsTable";
-import { MyEvaluationsCard } from "@/features/performance/components/MyEvaluationsCard";
-import { CodeReviewList, PendingReviewsWidget, CodeReviewStatsCard, CreateCodeReviewForm } from "@/features/performance";
-import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { EvaluationsTable } from "@/_old/features/performance/components/EvaluationsTable";
+import { EvaluationPeriodsTable } from "@/_old/features/performance/components/EvaluationPeriodsTable";
+import { InnovationLogsTable } from "@/_old/features/performance/components/InnovationLogsTable";
+import { MyEvaluationsCard } from "@/_old/features/performance/components/MyEvaluationsCard";
+import { CodeReviewList, PendingReviewsWidget, CodeReviewStatsCard, CreateCodeReviewForm } from "@/_old/features/performance";
+import { usePermissions } from "@/_old/features/admin/hooks/usePermissions";
+import { Card, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Button } from "@/shared/ui/button";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 

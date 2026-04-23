@@ -8,9 +8,9 @@
 "use client";
 
 import React from "react";
-import { AuditLogViewer } from "@/features/admin/components/AuditLogViewer";
-import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AuditLogViewer } from "@/_old/features/admin/components/AuditLogViewer";
+import { usePermissions } from "@/_old/features/admin/hooks/usePermissions";
+import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 /**

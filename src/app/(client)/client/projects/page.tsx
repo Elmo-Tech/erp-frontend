@@ -2,11 +2,11 @@
 
 import React from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { FolderKanban, AlertCircle } from "lucide-react";
-import { useClientProjects } from "@/features/client-portal/hooks/useClientProjects";
-import { ClientProjectCard } from "@/features/client-portal/components/ClientProjectCard";
+import { useClientProjects } from "@/_old/features/client-portal/hooks/useClientProjects";
+import { ClientProjectCard } from "@/_old/features/client-portal/components/ClientProjectCard";
 
 /**
  * Loading skeleton for project cards

@@ -1,6 +1,6 @@
 "use client";
 
-import { ClientInvoiceList } from "@/features/client-portal/components/ClientInvoiceList";
+import { ClientInvoiceList } from "@/_old/features/client-portal/components/ClientInvoiceList";
 
 /**
  * Client Invoices Page

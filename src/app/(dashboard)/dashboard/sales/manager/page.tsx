@@ -1,7 +1,7 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PipelineOverview, AlertsPanel, TeamPerformanceTable, BottleneckAnalysis } from "@/features/sales/components/dashboard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { PipelineOverview, AlertsPanel, TeamPerformanceTable, BottleneckAnalysis } from "@/_old/features/sales/components/dashboard";
 import { LayoutDashboard, AlertTriangle, Users, BarChart3 } from "lucide-react";
 
 export default function SalesManagerDashboardPage() {

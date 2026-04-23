@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { ClientProjectView } from "@/features/client-portal/components/ClientProjectView";
+import { ClientProjectView } from "@/_old/features/client-portal/components/ClientProjectView";
 
 interface ClientProjectDetailPageProps {
 	params: Promise<{

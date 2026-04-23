@@ -1,6 +1,6 @@
 "use client";
 
-import { AttendanceManagement } from "@/features/admin/components";
+import { AttendanceManagement } from "@/_old/features/admin/components";
 
 export default function AdminAttendancePage() {
 	return (

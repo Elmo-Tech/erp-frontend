@@ -8,9 +8,9 @@
 "use client";
 
 import React from "react";
-import { QualityDashboard } from "@/features/admin/components/QualityDashboard";
-import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { QualityDashboard } from "@/_old/features/admin/components/QualityDashboard";
+import { usePermissions } from "@/_old/features/admin/hooks/usePermissions";
+import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { AlertCircle } from "lucide-react";
 
 /**

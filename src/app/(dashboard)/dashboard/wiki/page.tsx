@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/shared/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { BookOpen } from "lucide-react";
-import { WikiList } from "@/features/projects/components/WikiList";
-import { useProjects } from "@/features/projects/hooks/useProjects";
+import { WikiList } from "@/_old/features/projects/components/WikiList";
+import { useProjects } from "@/_old/features/projects/hooks/useProjects";
 
 export default function WikiPage() {
 	const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);

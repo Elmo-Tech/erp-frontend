@@ -4,15 +4,15 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { useAuthStore } from "@/store/authStore";
-import { useLogout } from "@/features/auth/hooks/useLogout";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ProtectedRoute } from "@/_old/components/ProtectedRoute";
+import { ThemeToggle } from "@/_old/components/ThemeToggle";
+import { useAuthStore } from "@/_old/store/authStore";
+import { useLogout } from "@/_old/features/auth/hooks/useLogout";
+import { Button } from "@/shared/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
 import { LayoutDashboard, FileText, CreditCard, LogOut, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 
 interface ClientLayoutProps {
 	children: ReactNode;

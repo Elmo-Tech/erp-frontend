@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuthStore } from "@/store/authStore";
-import { AvatarUpload, ProfileForm, SecuritySettings } from "@/features/profile";
+import { useAuthStore } from "@/_old/store/authStore";
+import { AvatarUpload, ProfileForm, SecuritySettings } from "@/_old/features/profile";
 
 export default function ProfilePage() {
 	const { user, role } = useAuthStore();

@@ -1,7 +1,7 @@
 "use client";
 
-import { EmployeesWrapper } from "@/features/hr/components";
+import { EmployeeDirectoryWidget } from "@/widgets/team-management/ui/EmployeeDirectoryWidget";
 
 export default function EmployeesPage() {
-	return <EmployeesWrapper />;
+	return <EmployeeDirectoryWidget />;
 }

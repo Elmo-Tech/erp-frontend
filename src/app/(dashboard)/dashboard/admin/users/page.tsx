@@ -1,8 +1,8 @@
 "use client";
 
-import { UsersWrapper } from "@/features/admin/components";
-import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { UsersWrapper } from "@/_old/features/admin/components";
+import { usePermissions } from "@/_old/features/admin/hooks/usePermissions";
+import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { AlertCircle, Users } from "lucide-react";
 
 export default function UsersManagementPage() {

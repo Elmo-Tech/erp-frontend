@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { LeadDetailsTabs } from "@/features/sales/components/LeadDetailsTabs";
+import { LeadDetailsTabs } from "@/_old/features/sales/components/LeadDetailsTabs";
 
 interface LeadDetailsPageProps {
 	params: Promise<{ id: string }>;

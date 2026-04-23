@@ -1,7 +1,7 @@
 "use client";
 
-import { useAuthStore } from "@/store/authStore";
-import { ClientDashboard } from "@/features/client-portal/components/ClientDashboard";
+import { useAuthStore } from "@/_old/store/authStore";
+import { ClientDashboard } from "@/_old/features/client-portal/components/ClientDashboard";
 
 /**
  * Client Dashboard Page

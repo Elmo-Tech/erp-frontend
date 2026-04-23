@@ -2,8 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { EmployeeReviewPage } from "@/features/monitoring";
-import api from "@/lib/axios";
+import { EmployeeReviewPage } from "@/_old/features/monitoring";
+import api from "@/shared/api/base";
 import { Loader2 } from "lucide-react";
 
 interface User {

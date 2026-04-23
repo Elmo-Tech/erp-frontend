@@ -2,13 +2,13 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/shared/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Badge } from "@/shared/ui/badge";
+import { Skeleton } from "@/shared/ui/skeleton";
 import { ArrowLeft, Calendar, Users, DollarSign, TrendingUp } from "lucide-react";
-import { usePeriodBonuses } from "@/features/performance/hooks";
-import { BonusSummaryTable } from "@/features/performance/components/BonusSummaryTable";
+import { usePeriodBonuses } from "@/_old/features/performance/hooks";
+import { BonusSummaryTable } from "@/_old/features/performance/components/BonusSummaryTable";
 
 interface PageProps {
 	params: Promise<{ id: string }>;

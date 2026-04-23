@@ -1,7 +1,7 @@
 "use client";
 
-import { InvoiceManager } from "@/features/invoices/components";
+import { InvoiceManagementWidget } from "@/widgets/finance-management/ui/InvoiceManagementWidget";
 
 export default function InvoicesPage() {
-	return <InvoiceManager />;
+	return <InvoiceManagementWidget />;
 }

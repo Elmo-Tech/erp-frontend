@@ -8,10 +8,10 @@
 "use client";
 
 import React from "react";
-import { RolesMatrix } from "@/features/admin/components/RolesMatrix";
-import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RolesMatrix } from "@/_old/features/admin/components/RolesMatrix";
+import { usePermissions } from "@/_old/features/admin/hooks/usePermissions";
+import { Alert, AlertDescription } from "@/shared/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { AlertCircle, Shield, Info } from "lucide-react";
 
 /**

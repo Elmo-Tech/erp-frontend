@@ -1,16 +1,14 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { TaskStatusBadge, TaskPriorityBadge } from "@/components/shared/StatusBadge";
-import { useAuthStore } from "@/store/authStore";
-import { useDashboardStats } from "@/features/dashboard/hooks/useDashboardStats";
-import { useMyAssignedTasks } from "@/features/dashboard/hooks/useTasks";
-import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink, Award, CalendarRange } from "lucide-react";
-import Link from "next/link";
-import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview, PointsCycleSummary } from "@/features/dashboard/types";
-import { PendingReviewsWidget } from "@/features/performance";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Skeleton } from "@/shared/ui/skeleton";
+import { TaskStatusBadge, TaskPriorityBadge } from "@/shared/ui/StatusBadge";
+import { useAuthStore } from "@/entities/user/model/auth.store";
+import { UserAssignedTasksWidget } from "@/widgets/task-management/ui/UserAssignedTasksWidget";
+import { useDashboardStats } from "@/_old/features/dashboard/hooks/useDashboardStats";
+import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, Award, CalendarRange } from "lucide-react";
+import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview, PointsCycleSummary } from "@/_old/features/dashboard/types";
+import { PendingReviewsWidget } from "@/_old/features/performance";
 
 export default function DashboardPage() {
 	const { user } = useAuthStore();
@@ -187,10 +185,6 @@ function ManagerDashboard({ data }: { data: ManagerDashboardOverview }) {
 }
 
 function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
-	// Fetch assigned tasks for preview
-	const { data: assignedTasksData } = useMyAssignedTasks({ perPage: 5 });
-	const { user } = useAuthStore();
-
 	const stats = [
 		{
 			title: "My Tasks",
@@ -273,53 +267,7 @@ function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
 					</CardContent>
 				</Card>
 
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between">
-						<div>
-							<CardTitle>My Assigned Tasks</CardTitle>
-							<CardDescription>Tasks where you are a team member</CardDescription>
-						</div>
-						<Link href="/dashboard/my-tasks">
-							<Button
-								variant="outline"
-								size="sm"
-							>
-								<ExternalLink className="h-4 w-4 mr-1" />
-								View All
-							</Button>
-						</Link>
-					</CardHeader>
-					<CardContent>
-						<div className="space-y-4">
-							{assignedTasksData?.tasks && assignedTasksData.tasks.length > 0 ? (
-								assignedTasksData.tasks.slice(0, 4).map((task) => {
-									const myAssignment = task.assignees?.find((a) => a.userId === user?.userId);
-									return (
-										<div
-											key={task.taskId}
-											className="flex items-center justify-between"
-										>
-											<div className="space-y-1">
-												<p className="text-sm font-medium">{task.title}</p>
-												<p className="text-xs text-muted-foreground">
-													{task.project?.title} • {myAssignment?.role || "Team Member"}
-												</p>
-											</div>
-											<div className="flex items-center gap-2">
-												<TaskStatusBadge
-													status={task.status}
-													size="sm"
-												/>
-											</div>
-										</div>
-									);
-								})
-							) : (
-								<p className="text-sm text-muted-foreground text-center py-4">No assigned tasks</p>
-							)}
-						</div>
-					</CardContent>
-				</Card>
+				<UserAssignedTasksWidget compact />
 
 				{/* Pending Code Reviews Widget */}
 				<div className="lg:col-span-1">

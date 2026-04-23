@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { ContractDetailsTabs } from "@/features/sales/components/ContractDetailsTabs";
+import { ContractDetailsTabs } from "@/_old/features/sales/components/ContractDetailsTabs";
 
 interface ContractDetailsPageProps {
 	params: Promise<{ id: string }>;

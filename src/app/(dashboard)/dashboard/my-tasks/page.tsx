@@ -1,5 +1,5 @@
-import { MyTasksPage } from "@/features/dashboard/components/my-tasks/MyTasksPage";
+import { UserAssignedTasksWidget } from "@/widgets/task-management/ui/UserAssignedTasksWidget";
 
 export default function MyTasksPageRoute() {
-	return <MyTasksPage />;
+	return <UserAssignedTasksWidget />;
 }
