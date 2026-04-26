@@ -59,8 +59,8 @@ export function useAddAttendanceDeduction() {
 		mutationFn: (params: {
 			id: number;
 			data: {
-				deduction_type_id: number;
-				amount: number;
+				deduction_type_id?: number;
+				amount?: number;
 				reason?: string;
 				late_minutes?: number;
 			};

@@ -118,8 +118,6 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 			await deductionMutation.mutateAsync({
 				id: attendance.attendanceId,
 				data: {
-					deduction_type_id: 1, // Default - will be created if not exists
-					amount: deductionMinutes * 10, // Placeholder - backend will calculate based on salary
 					reason: "Manual deduction from attendance management",
 					late_minutes: deductionMinutes,
 				},
