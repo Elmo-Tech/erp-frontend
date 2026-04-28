@@ -7,10 +7,11 @@ import { ArrowLeft, Building2, Mail, MapPin, Pencil, Phone, ShieldCheck } from "
 import { clientApi } from "@/entities/client/api/client.api";
 import { clientKeys } from "@/entities/client/model/query-keys";
 import type { Client } from "@/entities/client/model/types";
-import { useClientPermissions, useInvoicePermissions } from "@/entities/user/model/permissions";
+import { useClientPermissions, useInvoicePermissions, useSalesPermissions } from "@/entities/user/model/permissions";
 import { UpdateClientForm } from "@/features/clients/ui/UpdateClientForm";
 import { ClientInvoicesWidget } from "@/widgets/finance-management/ui/ClientInvoicesWidget";
 import { ClientProjectsWidget } from "@/widgets/project-management/ui/ClientProjectsWidget";
+import { ClientContractsWidget } from "@/widgets/sales-management/ui/ClientContractsWidget";
 import { Button } from "@/shared/ui/button";
 import { ClientStatusBadge } from "@/shared/ui/StatusBadge";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -28,6 +29,7 @@ export function ClientDetailsComposite({ clientId, className }: ClientDetailsCom
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const { canEditClients } = useClientPermissions();
 	const { canManageInvoices, canViewInvoices } = useInvoicePermissions();
+	const { canViewContracts } = useSalesPermissions();
 	const canAccessInvoices = canManageInvoices || canViewInvoices;
 
 	const clientQuery = useQuery({
@@ -102,6 +104,7 @@ export function ClientDetailsComposite({ clientId, className }: ClientDetailsCom
 					<TabsTrigger value="info">Information</TabsTrigger>
 					<TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
 					{canAccessInvoices && <TabsTrigger value="invoices">Invoices</TabsTrigger>}
+					{canViewContracts && <TabsTrigger value="contracts">Contracts</TabsTrigger>}
 				</TabsList>
 
 				<TabsContent value="info">
@@ -120,6 +123,15 @@ export function ClientDetailsComposite({ clientId, className }: ClientDetailsCom
 						<ClientInvoicesWidget
 							clientId={clientId}
 							projects={projects.map((project) => ({ projectId: project.projectId, title: project.title }))}
+						/>
+					</TabsContent>
+				)}
+
+				{canViewContracts && (
+					<TabsContent value="contracts">
+						<ClientContractsWidget
+							clientId={clientId}
+							clientName={client.name}
 						/>
 					</TabsContent>
 				)}

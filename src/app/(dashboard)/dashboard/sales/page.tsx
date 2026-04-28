@@ -1,7 +1,7 @@
 "use client";
 
-import { SalesDashboard } from "@/_old/features/sales/components/SalesDashboard";
+import { SalesPipelineWidget } from "@/widgets/sales-management/ui/SalesPipelineWidget";
 
 export default function SalesPage() {
-	return <SalesDashboard />;
+	return <SalesPipelineWidget />;
 }

@@ -47,6 +47,21 @@ export const INVOICE_PERMISSIONS = {
 	CANCEL_INVOICES: "cancel_invoices",
 } as const;
 
+export const SALES_PERMISSIONS = {
+	MANAGE_LEADS: "manage_leads",
+	VIEW_LEADS: "view_leads",
+	CREATE_LEADS: "create_leads",
+	EDIT_LEADS: "edit_leads",
+	DELETE_LEADS: "delete_leads",
+	CONVERT_LEADS: "convert_leads",
+	MANAGE_CONTRACTS: "manage_contracts",
+	VIEW_CONTRACTS: "view_contracts",
+	CREATE_CONTRACTS: "create_contracts",
+	EDIT_CONTRACTS: "edit_contracts",
+	DELETE_CONTRACTS: "delete_contracts",
+	SIGN_CONTRACTS: "sign_contracts",
+} as const;
+
 export const EMPLOYEE_PERMISSIONS = {
 	MANAGE_USERS: "manage_users",
 	VIEW_USERS: "view_users",
@@ -130,6 +145,28 @@ export function useInvoicePermissions() {
 			canDeleteInvoices: hasPermission(INVOICE_PERMISSIONS.DELETE_INVOICES),
 			canSendInvoices: hasPermission(INVOICE_PERMISSIONS.SEND_INVOICES),
 			canCancelInvoices: hasPermission(INVOICE_PERMISSIONS.CANCEL_INVOICES),
+		}),
+		[hasPermission]
+	);
+}
+
+export function useSalesPermissions() {
+	const hasPermission = useAuthStore((state) => state.hasPermission);
+
+	return useMemo(
+		() => ({
+			canManageLeads: hasPermission(SALES_PERMISSIONS.MANAGE_LEADS),
+			canViewLeads: hasPermission(SALES_PERMISSIONS.VIEW_LEADS),
+			canCreateLeads: hasPermission(SALES_PERMISSIONS.CREATE_LEADS),
+			canEditLeads: hasPermission(SALES_PERMISSIONS.EDIT_LEADS),
+			canDeleteLeads: hasPermission(SALES_PERMISSIONS.DELETE_LEADS),
+			canConvertLeads: hasPermission(SALES_PERMISSIONS.CONVERT_LEADS),
+			canManageContracts: hasPermission(SALES_PERMISSIONS.MANAGE_CONTRACTS),
+			canViewContracts: hasPermission(SALES_PERMISSIONS.VIEW_CONTRACTS),
+			canCreateContracts: hasPermission(SALES_PERMISSIONS.CREATE_CONTRACTS),
+			canEditContracts: hasPermission(SALES_PERMISSIONS.EDIT_CONTRACTS),
+			canDeleteContracts: hasPermission(SALES_PERMISSIONS.DELETE_CONTRACTS),
+			canSignContracts: hasPermission(SALES_PERMISSIONS.SIGN_CONTRACTS),
 		}),
 		[hasPermission]
 	);

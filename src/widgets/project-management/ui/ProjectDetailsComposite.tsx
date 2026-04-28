@@ -8,11 +8,12 @@ import { projectApi } from "@/entities/project/api/project.api";
 import { projectKeys } from "@/entities/project/model/query-keys";
 import type { Project } from "@/entities/project/model/types";
 import { ProjectStatusBadge } from "@/entities/project/ui/ProjectStatusBadge";
-import { useEmployeePermissions, useInvoicePermissions, useProjectPermissions, useTaskPermissions } from "@/entities/user/model/permissions";
+import { useEmployeePermissions, useInvoicePermissions, useProjectPermissions, useSalesPermissions, useTaskPermissions } from "@/entities/user/model/permissions";
 import { UpdateProjectForm } from "@/features/projects/ui/UpdateProjectForm";
 import { ProjectInvoicesWidget } from "@/widgets/finance-management/ui/ProjectInvoicesWidget";
 import { ProjectTasksKanbanWidget } from "@/widgets/task-management/ui/ProjectTasksKanbanWidget";
 import { ProjectTeamWidget } from "@/widgets/team-management/ui/ProjectTeamWidget";
+import { ProjectContractsWidget } from "@/widgets/sales-management/ui/ProjectContractsWidget";
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -33,6 +34,7 @@ export function ProjectDetailsComposite({ projectId, className }: ProjectDetails
 	const { canManageTasks, canViewTasks } = useTaskPermissions();
 	const { canManageInvoices, canViewInvoices } = useInvoicePermissions();
 	const { canManageProjectMembers, canViewProjectMembers } = useEmployeePermissions();
+	const { canViewContracts } = useSalesPermissions();
 	const canAccessTasks = canManageTasks || canViewTasks;
 	const canAccessInvoices = canManageInvoices || canViewInvoices;
 	const canAccessTeam = canManageProjectMembers || canViewProjectMembers;
@@ -126,6 +128,11 @@ export function ProjectDetailsComposite({ projectId, className }: ProjectDetails
 							Invoices
 						</TabsTrigger>
 					)}
+					{canViewContracts && (
+						<TabsTrigger value="contracts">
+							Contracts
+						</TabsTrigger>
+					)}
 				</TabsList>
 
 				<TabsContent value="overview">
@@ -150,6 +157,15 @@ export function ProjectDetailsComposite({ projectId, className }: ProjectDetails
 				{canAccessInvoices && (
 					<TabsContent value="invoices">
 						<ProjectInvoicesWidget
+							projectId={projectId}
+							projectTitle={project.title}
+						/>
+					</TabsContent>
+				)}
+
+				{canViewContracts && (
+					<TabsContent value="contracts">
+						<ProjectContractsWidget
 							projectId={projectId}
 							projectTitle={project.title}
 						/>
