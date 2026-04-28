@@ -7,7 +7,7 @@ import { LogOut, Menu, Moon, Search, Settings, Sun, Timer, User } from "lucide-r
 import { useMutation } from "@tanstack/react-query";
 import api from "@/shared/api/base";
 import { useAuthStore } from "@/entities/user/model/auth.store";
-import { useSidebarStore } from "@/_old/store/sidebarStore";
+import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
 import { useActiveTimers } from "@/features/time-entries/model/use-time-entry-actions";
 import { useRealtimeTimer } from "@/features/time-entries/model/use-timer-realtime";
 import { ActiveTimersSheet } from "@/widgets/time-tracking/ui/ActiveTimersSheet";

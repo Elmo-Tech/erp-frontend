@@ -1,8 +1,8 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Sidebar } from "@/_old/components/dashboard/Sidebar";
-import { useSidebarStore } from "@/_old/store/sidebarStore";
+import { Sidebar as AppSidebar } from "./AppSidebar";
+import { useSidebarStore } from "../model/sidebar.store";
 import { useNotificationRealtimeInit } from "@/features/notifications/model/use-notification-realtime";
 import { useTimerRealtimeInit } from "@/features/time-entries/model/use-timer-realtime";
 import { cn } from "@/shared/lib/utils";
@@ -27,7 +27,7 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 			requiredPermission={requiredPermission}
 		>
 			<div className="min-h-screen bg-background">
-				<Sidebar />
+				<AppSidebar />
 				<div className={cn("ml-0 transition-all duration-300", isCollapsed ? "lg:ml-16" : "lg:ml-64")}>
 					<DashboardNavbar />
 					<main className="p-4 lg:p-6">{children}</main>
@@ -36,4 +36,3 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 		</ProtectedDashboardRoute>
 	);
 }
-

@@ -1,5 +1,7 @@
-import { UserPointsWrapper } from "@/_old/features/admin/components/wrappers/UserPointsWrapper";
+"use client";
+
+import { UserPointsLeaderboardWidget } from "@/widgets/hr-management/ui/UserPointsLeaderboardWidget";
 
 export default function UserPointsPage() {
-	return <UserPointsWrapper />;
+	return <UserPointsLeaderboardWidget />;
 }

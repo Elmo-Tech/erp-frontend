@@ -1,7 +1,5 @@
-"use client";
-
-import { UsersDashboard } from "@/_old/features/admin/components/UsersDashboard";
+import { UserManagementWidget } from "@/widgets/admin-management/ui/UserManagementWidget";
 
 export default function UsersPage() {
-	return <UsersDashboard />;
+	return <UserManagementWidget />;
 }

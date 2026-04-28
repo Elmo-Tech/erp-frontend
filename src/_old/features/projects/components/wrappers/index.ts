@@ -1,1 +1,0 @@
-export { ProjectsWrapper } from "./ProjectsWrapper";

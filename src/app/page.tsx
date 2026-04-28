@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/_old/store/authStore";
+import { useAuthStore } from "@/entities/user/model/auth.store";
 import { Loader2 } from "lucide-react";
 
 // TODO: Add splash screen

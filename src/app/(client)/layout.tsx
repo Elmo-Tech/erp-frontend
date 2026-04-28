@@ -4,14 +4,14 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ProtectedRoute } from "@/_old/components/ProtectedRoute";
-import { ThemeToggle } from "@/_old/components/ThemeToggle";
-import { useAuthStore } from "@/_old/store/authStore";
-import { useLogout } from "@/_old/features/auth/hooks/useLogout";
+import { useTheme } from "next-themes";
+import { ProtectedDashboardRoute } from "@/widgets/layout/ui/ProtectedDashboardRoute";
+import { useAuthStore } from "@/entities/user/model/auth.store";
+import { useLogout } from "@/features/auth/model/use-logout";
 import { Button } from "@/shared/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
-import { LayoutDashboard, FileText, CreditCard, LogOut, User } from "lucide-react";
+import { LayoutDashboard, FileText, CreditCard, LogOut, Moon, Sun, User } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
 interface ClientLayoutProps {
@@ -26,6 +26,7 @@ const clientNavItems = [
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
 	const pathname = usePathname();
+	const { resolvedTheme, setTheme } = useTheme();
 	const { user } = useAuthStore();
 	const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
@@ -39,7 +40,7 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 	};
 
 	return (
-		<ProtectedRoute allowedRoles={["client"]}>
+		<ProtectedDashboardRoute allowedRoles={["client"]}>
 			<div className="min-h-screen bg-background">
 				{/* Header */}
 				<header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -79,7 +80,15 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 
 						{/* Right side */}
 						<div className="flex items-center gap-3">
-							<ThemeToggle />
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+								aria-label="Toggle theme"
+							>
+								{resolvedTheme === "dark" ? <Sun /> : <Moon />}
+							</Button>
 
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
@@ -150,6 +159,6 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 				{/* Main Content */}
 				<main className="container mx-auto p-4 md:p-6">{children}</main>
 			</div>
-		</ProtectedRoute>
+		</ProtectedDashboardRoute>
 	);
 }

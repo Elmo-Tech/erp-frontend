@@ -2,9 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { LoginForm } from "@/_old/features/auth";
-import { useAuthStore } from "@/_old/store/authStore";
+import { useAuthStore } from "@/entities/user/model/auth.store";
+import { LoginWidget } from "@/widgets/auth/ui/LoginWidget";
 
 export default function LoginPage() {
 	const router = useRouter();
@@ -28,21 +27,7 @@ export default function LoginPage() {
 
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">
-			<div className="w-full max-w-md">
-				<div className="mb-8 flex flex-col items-center text-center">
-					<Image
-						src="/logo.webp"
-						alt="Elmo ERP"
-						width={80}
-						height={80}
-						className="mb-4 rounded-xl"
-						priority
-					/>
-					<h1 className="text-3xl font-bold text-primary">Elmo ERP</h1>
-					<p className="mt-2 text-muted-foreground">Enterprise Resource Planning System</p>
-				</div>
-				<LoginForm />
-			</div>
+			<LoginWidget />
 		</div>
 	);
 }

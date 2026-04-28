@@ -1,0 +1,19 @@
+import { z } from "zod";
+
+export const updateProfileSchema = z.object({
+	name: z.string().min(1, "Name is required").max(255),
+});
+
+export const changePasswordSchema = z
+	.object({
+		current_password: z.string().min(1, "Current password is required"),
+		new_password: z.string().min(8, "Password must be at least 8 characters"),
+		new_password_confirmation: z.string().min(1, "Please confirm password"),
+	})
+	.refine((data) => data.new_password === data.new_password_confirmation, {
+		message: "Passwords do not match",
+		path: ["new_password_confirmation"],
+	});
+
+export type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
