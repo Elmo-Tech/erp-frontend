@@ -1,0 +1,58 @@
+import Echo from "laravel-echo";
+import Pusher from "pusher-js";
+
+if (typeof window !== "undefined") {
+	(window as unknown as { Pusher: typeof Pusher }).Pusher = Pusher;
+}
+
+let echoInstance: Echo<"reverb"> | null = null;
+
+export function getEcho(): Echo<"reverb"> | null {
+	if (typeof window === "undefined") {
+		return null;
+	}
+
+	if (echoInstance) {
+		return echoInstance;
+	}
+
+	const token = localStorage.getItem("auth_token");
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") || "http://localhost:8000";
+
+	echoInstance = new Echo({
+		broadcaster: "reverb",
+		key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
+		wsHost: process.env.NEXT_PUBLIC_REVERB_HOST,
+		wsPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 8080,
+		wssPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 443,
+		forceTLS: process.env.NEXT_PUBLIC_REVERB_SCHEME === "https",
+		enabledTransports: ["ws", "wss"],
+		authEndpoint: `${baseUrl}/api/broadcasting/auth`,
+		auth: {
+			headers: {
+				Authorization: token ? `Bearer ${token}` : "",
+			},
+		},
+	});
+
+	return echoInstance;
+}
+
+export function disconnectEcho() {
+	echoInstance?.disconnect();
+	echoInstance = null;
+}
+
+export function updateEchoAuth() {
+	if (!echoInstance || typeof window === "undefined") {
+		return;
+	}
+
+	const token = localStorage.getItem("auth_token");
+	echoInstance.connector.options.auth = {
+		headers: {
+			Authorization: token ? `Bearer ${token}` : "",
+		},
+	};
+}
+

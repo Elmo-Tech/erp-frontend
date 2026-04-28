@@ -5,6 +5,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { TaskStatusBadge, TaskPriorityBadge } from "@/shared/ui/StatusBadge";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { UserAssignedTasksWidget } from "@/widgets/task-management/ui/UserAssignedTasksWidget";
+import { EmployeeAttendanceWidget } from "@/widgets/attendance/ui/EmployeeAttendanceWidget";
 import { useDashboardStats } from "@/_old/features/dashboard/hooks/useDashboardStats";
 import { TrendingUp, FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, Award, CalendarRange } from "lucide-react";
 import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview, PointsCycleSummary } from "@/_old/features/dashboard/types";
@@ -145,6 +146,7 @@ function ManagerDashboard({ data }: { data: ManagerDashboardOverview }) {
 		<>
 			<StatsGrid stats={stats} />
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				<EmployeeAttendanceWidget />
 				<PointsCycleCard pointsCycle={data.pointsCycle} />
 
 				<Card>
@@ -227,6 +229,7 @@ function DeveloperDashboard({ data }: { data: DeveloperDashboardOverview }) {
 		<>
 			<StatsGrid stats={stats} />
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				<EmployeeAttendanceWidget />
 				<PointsCycleCard pointsCycle={data.pointsCycle} />
 
 				<Card>

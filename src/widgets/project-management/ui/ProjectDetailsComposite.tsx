@@ -14,6 +14,7 @@ import { ProjectInvoicesWidget } from "@/widgets/finance-management/ui/ProjectIn
 import { ProjectTasksKanbanWidget } from "@/widgets/task-management/ui/ProjectTasksKanbanWidget";
 import { ProjectTeamWidget } from "@/widgets/team-management/ui/ProjectTeamWidget";
 import { ProjectContractsWidget } from "@/widgets/sales-management/ui/ProjectContractsWidget";
+import { ProjectTimeTrackerWidget } from "@/widgets/time-tracking/ui/ProjectTimeTrackerWidget";
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -136,7 +137,13 @@ export function ProjectDetailsComposite({ projectId, className }: ProjectDetails
 				</TabsList>
 
 				<TabsContent value="overview">
-					<ProjectOverviewPanel project={project} canViewBudget={canViewProjectBudget} />
+					<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+						<ProjectOverviewPanel project={project} canViewBudget={canViewProjectBudget} />
+						<ProjectTimeTrackerWidget
+							projectId={projectId}
+							projectTitle={project.title}
+						/>
+					</div>
 				</TabsContent>
 
 				{canAccessTasks && (
