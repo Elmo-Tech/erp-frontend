@@ -30,6 +30,67 @@ export interface DashboardOverview {
 	revenue?: number;
 }
 
+export interface PermissionDashboardOverview {
+	financial?: {
+		total_invoices: number;
+		invoiced_total: number;
+		paid_total: number;
+		overdue_total: number;
+		paid_this_month: number;
+		project_budget_total: number;
+	};
+	timeline?: Array<{
+		project_id: number;
+		title: string;
+		status: string;
+		deadline?: string | null;
+		total_tasks: number;
+		completed_tasks: number;
+		progress: number;
+	}>;
+	team?: {
+		members: number;
+		hours_this_month: number;
+		tasks: {
+			total: number;
+			todo: number;
+			in_progress: number;
+			review: number;
+			testing: number;
+			completed: number;
+		};
+	};
+	personal_tasks?: {
+		summary: {
+			total: number;
+			todo: number;
+			in_progress: number;
+			review: number;
+			testing: number;
+			completed: number;
+		};
+		items: Array<{
+			task_id: number;
+			title: string;
+			status: string;
+			priority?: string | null;
+			due_date?: string | null;
+			project?: string | null;
+		}>;
+	};
+	blockers?: Array<{
+		task_id: number;
+		title: string;
+		status: string;
+		project?: string | null;
+		blocked_by: Array<{
+			task_id: number;
+			title: string;
+			status: string;
+		}>;
+	}>;
+}
+
 export interface SalesManagerSummary {
 	metrics?: DashboardMetric[];
 	alerts?: DashboardActivity[];
@@ -43,9 +104,9 @@ export interface SalesManagerSummary {
 }
 
 export const dashboardApi = {
-	async getOverview(): Promise<DashboardOverview> {
-		const response = await api.get<ApiEnvelope<DashboardOverview>>("/dashboard/overview");
-		return response.data.data;
+	async getOverview(): Promise<PermissionDashboardOverview> {
+		const response = await api.get<PermissionDashboardOverview>("/dashboard/overview");
+		return response.data;
 	},
 
 	async getAdminOverview(): Promise<DashboardOverview> {
@@ -73,7 +134,7 @@ export const dashboardApi = {
 export function useDashboardOverview(scope: "main" | "admin" = "main") {
 	return useQuery({
 		queryKey: ["dashboard-management", scope],
-		queryFn: () => (scope === "admin" ? dashboardApi.getAdminOverview() : dashboardApi.getOverview()),
+		queryFn: dashboardApi.getOverview,
 	});
 }
 

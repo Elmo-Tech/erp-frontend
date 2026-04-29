@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo, UserCheck, Sunrise } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
@@ -33,6 +33,12 @@ const navGroups: NavGroup[] = [
 				href: "/dashboard",
 				icon: LayoutDashboard,
 				permission: "view_dashboard",
+			},
+			{
+				title: "Morning SOP",
+				href: "/dashboard/sop",
+				icon: Sunrise,
+				permission: "view_morning_sop",
 			},
 		],
 	},
