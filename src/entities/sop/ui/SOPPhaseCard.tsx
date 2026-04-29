@@ -1,20 +1,21 @@
 import { CheckCircle2, Clock3 } from "lucide-react";
 import type { SOPPhase } from "@/entities/sop/model/types";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { cn } from "@/shared/lib/utils";
 
 interface SOPPhaseCardProps {
 	phase: SOPPhase;
 	index: number;
-	active?: boolean;
-	complete?: boolean;
+	checked: boolean;
+	onCheckedChange: (checked: boolean) => void;
 	className?: string;
 }
 
-export function SOPPhaseCard({ phase, index, active = false, complete = false, className }: SOPPhaseCardProps) {
+export function SOPPhaseCard({ phase, index, checked, onCheckedChange, className }: SOPPhaseCardProps) {
 	return (
-		<div className={cn("group grid grid-cols-[28px_1fr] gap-3 rounded-md border bg-background p-3 transition-colors", active ? "border-primary/40 bg-primary/[0.025]" : "border-border", className)}>
-			<div className={cn("flex size-7 items-center justify-center rounded-full border text-[11px] font-medium tabular-nums", complete ? "border-primary bg-primary text-primary-foreground" : active ? "border-primary/50 text-primary" : "border-border text-muted-foreground")}>
-				{complete ? <CheckCircle2 className="size-3.5" /> : index + 1}
+		<div className={cn("group grid grid-cols-[28px_1fr_auto] gap-3 rounded-md border bg-background p-3 transition-[background-color,border-color] duration-200", checked ? "border-primary/45 bg-primary/[0.035]" : "border-border hover:border-foreground/20", className)}>
+			<div className={cn("flex size-7 items-center justify-center rounded-full border text-[11px] font-medium tabular-nums transition-colors", checked ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground")}>
+				{checked ? <CheckCircle2 className="size-3.5" /> : index + 1}
 			</div>
 
 			<div className="min-w-0 space-y-2">
@@ -45,6 +46,16 @@ export function SOPPhaseCard({ phase, index, active = false, complete = false, c
 						))}
 					</ul>
 				) : null}
+			</div>
+
+			<div className="mt-0.5 flex items-center gap-2 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+				<span className="sr-only">Acknowledge {phase.name}</span>
+				<Checkbox
+					checked={checked}
+					onCheckedChange={(value) => onCheckedChange(value === true)}
+					aria-label={`Acknowledge ${phase.name}`}
+					className="data-[state=checked]:shadow-none"
+				/>
 			</div>
 		</div>
 	);
