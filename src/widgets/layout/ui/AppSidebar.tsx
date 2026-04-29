@@ -150,7 +150,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				title: "Settings",
-				href: "/dashboard/settings",
+				href: "/settings",
 				icon: Settings,
 			},
 		],
