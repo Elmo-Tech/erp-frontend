@@ -30,4 +30,10 @@ export const sopApi = {
 
 		return response.data.data;
 	},
+
+	async updateDirective(id: number, payload: Omit<Directive, "id" | "created_at" | "updated_at">): Promise<Directive> {
+		const response = await api.put<ApiEnvelope<Directive>>(`/admin/sop/directives/${id}`, payload);
+
+		return response.data.data;
+	},
 };

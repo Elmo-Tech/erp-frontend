@@ -4,9 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
-import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormInput, FormFileInput } from "@/shared/ui/forms";
+import { Form } from "@/shared/ui/form";
 import { useSignContract } from "../model/use-contract-actions";
 
 const signContractSchema = z.object({
@@ -69,19 +69,18 @@ export function SignContractDialog({ open, onOpenChange, contractId, contractTit
 		>
 			<Form {...form}>
 				<div className="grid gap-4">
-					<FormInput control={form.control} name="signedByClient" label="Signed by" />
-					<div className="space-y-1.5">
-						<label className="text-sm font-medium">Signed PDF (optional)</label>
-						<input
-							type="file"
-							accept=".pdf"
-							onChange={(event) => {
-								const file = event.target.files?.[0];
-								form.setValue("signedPdf", file);
-							}}
-							className="text-sm"
-						/>
-					</div>
+					<FormInput
+						control={form.control}
+						name="signedByClient"
+						label="Signed by"
+					/>
+					<FormFileInput
+						control={form.control}
+						name="signedPdf"
+						label="Signed PDF (optional)"
+						accept=".pdf"
+						inputClassName="text-sm"
+					/>
 				</div>
 			</Form>
 		</FormDialog>

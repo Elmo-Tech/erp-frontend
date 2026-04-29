@@ -1,31 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
+import { Form } from "@/shared/ui/form";
+import { FormInput } from "@/shared/ui/forms";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
 import { loginSchema, type LoginFormData } from "../model/auth.schema";
 import { useLogin } from "../model/use-login";
 
-export function LoginForm() {
+interface LoginFormProps {
+	initialEmail?: string;
+}
+
+export function LoginForm({ initialEmail }: LoginFormProps) {
 	const [showPassword, setShowPassword] = useState(false);
 	const { mutate: login, isPending, error } = useLogin();
 
-	const {
-		register,
-		handleSubmit,
-		formState: { errors },
-	} = useForm<LoginFormData>({
+	const form = useForm<LoginFormData>({
 		resolver: zodResolver(loginSchema),
 		defaultValues: {
-			email: "",
+			email: initialEmail ?? "",
 			password: "",
 		},
 	});
+
+	useEffect(() => {
+		if (initialEmail) {
+			form.setFocus("password");
+		}
+	}, [form, initialEmail]);
 
 	const onSubmit = (data: LoginFormData) => {
 		login(data);
@@ -38,62 +44,59 @@ export function LoginForm() {
 				<CardDescription>Sign in to access your dashboard</CardDescription>
 			</CardHeader>
 			<CardContent>
-				<form
-					onSubmit={handleSubmit(onSubmit)}
-					className="space-y-4"
-				>
-					{error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{(error as { response?: { data?: { message?: string } } })?.response?.data?.message || "An error occurred during login"}</div>}
+				<Form {...form}>
+					<form
+						onSubmit={form.handleSubmit(onSubmit)}
+						className="space-y-4"
+					>
+						{error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{(error as { response?: { data?: { message?: string } } })?.response?.data?.message || "An error occurred during login"}</div>}
 
-					<div className="space-y-2">
-						<Label htmlFor="email">Email</Label>
-						<Input
-							id="email"
+						<FormInput
+							control={form.control}
+							name="email"
+							label="Email"
 							type="email"
 							placeholder="example@company.com"
 							autoComplete="email"
-							{...register("email")}
-							className={errors.email ? "border-destructive" : ""}
 						/>
-						{errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-					</div>
 
-					<div className="space-y-2">
-						<Label htmlFor="password">Password</Label>
-						<div className="relative">
-							<Input
-								id="password"
-								type={showPassword ? "text" : "password"}
-								placeholder="••••••••"
-								autoComplete="current-password"
-								{...register("password")}
-								className={errors.password ? "border-destructive pr-10" : "pr-10"}
-							/>
-							<button
-								type="button"
-								onClick={() => setShowPassword(!showPassword)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-							>
-								{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-							</button>
-						</div>
-						{errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
-					</div>
+						<FormInput
+							control={form.control}
+							name="password"
+							label="Password"
+							type={showPassword ? "text" : "password"}
+							placeholder="••••••••"
+							autoComplete="current-password"
+							endAdornment={
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									onClick={() => setShowPassword((current) => !current)}
+									className="text-muted-foreground hover:text-foreground"
+									aria-label={showPassword ? "Hide password" : "Show password"}
+								>
+									{showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+								</Button>
+							}
+						/>
 
-					<Button
-						type="submit"
-						className="w-full"
-						disabled={isPending}
-					>
-						{isPending ? (
-							<>
-								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-								Signing in...
-							</>
-						) : (
-							"Sign In"
-						)}
-					</Button>
-				</form>
+						<Button
+							type="submit"
+							className="w-full"
+							disabled={isPending}
+						>
+							{isPending ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Signing in...
+								</>
+							) : (
+								"Sign In"
+							)}
+						</Button>
+					</form>
+				</Form>
 			</CardContent>
 		</Card>
 	);

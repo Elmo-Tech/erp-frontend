@@ -5,9 +5,9 @@ import { Textarea } from "@/shared/ui/textarea";
 import { Control, FieldPath, FieldValues } from "react-hook-form";
 import { cn } from "@/shared/lib/utils";
 
-interface FormTextareaProps<T extends FieldValues> {
-	control: Control<T>;
-	name: FieldPath<T>;
+interface FormTextareaProps<TFieldValues extends FieldValues, TTransformedValues = TFieldValues> {
+	control: Control<TFieldValues, unknown, TTransformedValues>;
+	name: FieldPath<TFieldValues>;
 	label?: string;
 	placeholder?: string;
 	description?: string;
@@ -17,7 +17,7 @@ interface FormTextareaProps<T extends FieldValues> {
 	rows?: number;
 }
 
-export function FormTextarea<T extends FieldValues>({ control, name, label, placeholder, description, disabled = false, className, textareaClassName, rows = 3 }: FormTextareaProps<T>) {
+export function FormTextarea<TFieldValues extends FieldValues, TTransformedValues = TFieldValues>({ control, name, label, placeholder, description, disabled = false, className, textareaClassName, rows = 3 }: FormTextareaProps<TFieldValues, TTransformedValues>) {
 	return (
 		<FormField
 			control={control}

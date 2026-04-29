@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, ClipboardList, Loader2, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import type { Directive } from "@/entities/sop/model/types";
 import { SOPPhaseCard } from "@/entities/sop/ui/SOPPhaseCard";
 import { useSubmitDailyCheckin } from "@/features/sop/model/use-sop-actions";
 import { Button } from "@/shared/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/shared/ui/form";
-import { Input } from "@/shared/ui/input";
+import { Form } from "@/shared/ui/form";
+import { FormCheckbox, FormInput } from "@/shared/ui/forms";
 import { cn } from "@/shared/lib/utils";
 
 interface SOPCheckinFlowProps {
@@ -26,6 +26,7 @@ const PRIORITY_INDEXES = Array.from({ length: PRIORITY_COUNT }, (_, index) => in
 
 const checkinSchema = z.object({
 	priorities: z.array(z.string().trim().min(2, "Priority is required")).length(PRIORITY_COUNT),
+	acknowledgedPhases: z.array(z.boolean()),
 });
 
 type CheckinFormValues = z.infer<typeof checkinSchema>;
@@ -33,23 +34,20 @@ type CheckinFormValues = z.infer<typeof checkinSchema>;
 export function SOPCheckinFlow({ directive, onSubmitted, className }: SOPCheckinFlowProps) {
 	const router = useRouter();
 	const submitCheckin = useSubmitDailyCheckin();
-	const phases = directive.phases ?? [];
-	const [acknowledgedPhases, setAcknowledgedPhases] = useState<boolean[]>(() => phases.map(() => false));
-	const allAcknowledged = phases.length === 0 || acknowledgedPhases.every(Boolean);
+	const phases = useMemo(() => directive.phases ?? [], [directive.phases]);
 
 	const form = useForm<CheckinFormValues>({
 		resolver: zodResolver(checkinSchema),
 		defaultValues: {
 			priorities: Array.from({ length: PRIORITY_COUNT }, () => ""),
+			acknowledgedPhases: phases.map(() => false),
 		},
 		mode: "onChange",
 	});
 
+	const acknowledgedPhases = useWatch({ control: form.control, name: "acknowledgedPhases" }) ?? [];
+	const allAcknowledged = phases.length === 0 || acknowledgedPhases.every(Boolean);
 	const acknowledgedCount = acknowledgedPhases.filter(Boolean).length;
-
-	const setPhaseAcknowledged = (index: number, checked: boolean) => {
-		setAcknowledgedPhases((current) => current.map((value, phaseIndex) => (phaseIndex === index ? checked : value)));
-	};
 
 	const onSubmit = async (values: CheckinFormValues) => {
 		try {
@@ -66,38 +64,45 @@ export function SOPCheckinFlow({ directive, onSubmitted, className }: SOPCheckin
 	};
 
 	return (
-		<div className={cn("mx-auto w-full max-w-2xl space-y-4", className)}>
-			<section className="rounded-md border border-border bg-background">
-				<div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
-					<div className="min-w-0">
-						<h1 className="text-xl font-semibold tracking-tight text-foreground">{directive.title}</h1>
-						{directive.description ? <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">{directive.description}</p> : null}
+		<Form {...form}>
+			<div className={cn("mx-auto w-full max-w-2xl space-y-4", className)}>
+				<section className="rounded-md border border-border bg-background">
+					<div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+						<div className="min-w-0">
+							<h1 className="text-xl font-semibold tracking-tight text-foreground">{directive.title}</h1>
+							{directive.description ? <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">{directive.description}</p> : null}
+						</div>
+						<div className="shrink-0 rounded-md border border-border bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
+							{acknowledgedCount}/{phases.length} acknowledged
+						</div>
 					</div>
-					<div className="shrink-0 rounded-md border border-border bg-muted/30 px-2.5 py-1 text-xs text-muted-foreground">
-						{acknowledgedCount}/{phases.length} acknowledged
+
+					<div className="space-y-2 p-3">
+						{phases.length ? (
+							phases.map((phase, index) => (
+								<SOPPhaseCard
+									key={`${phase.name}-${index}`}
+									phase={phase}
+									index={index}
+									checked={acknowledgedPhases[index] ?? false}
+									acknowledgementControl={
+										<FormCheckbox
+											control={form.control}
+											name={`acknowledgedPhases.${index}`}
+											label="Reviewed"
+											className="flex flex-row-reverse items-center gap-2 space-y-0"
+										/>
+									}
+								/>
+							))
+						) : (
+							<div className="rounded-md border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">No phases configured for this directive.</div>
+						)}
 					</div>
-				</div>
+				</section>
 
-				<div className="space-y-2 p-3">
-					{phases.length ? (
-						phases.map((phase, index) => (
-							<SOPPhaseCard
-								key={`${phase.name}-${index}`}
-								phase={phase}
-								index={index}
-								checked={acknowledgedPhases[index] ?? false}
-								onCheckedChange={(checked) => setPhaseAcknowledged(index, checked)}
-							/>
-						))
-					) : (
-						<div className="rounded-md border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">No phases configured for this directive.</div>
-					)}
-				</div>
-			</section>
-
-			<section className={cn("rounded-md border border-border bg-background transition-all duration-200", allAcknowledged ? "opacity-100" : "opacity-70")}>
-				{allAcknowledged ? (
-					<Form {...form}>
+				<section className={cn("rounded-md border border-border bg-background transition-all duration-200", allAcknowledged ? "opacity-100" : "opacity-70")}>
+					{allAcknowledged ? (
 						<form
 							onSubmit={form.handleSubmit(onSubmit)}
 							className="space-y-0"
@@ -114,24 +119,14 @@ export function SOPCheckinFlow({ directive, onSubmitted, className }: SOPCheckin
 
 							<div className="space-y-3 p-4">
 								{PRIORITY_INDEXES.map((index) => (
-									<FormField
+									<FormInput
 										key={index}
 										control={form.control}
 										name={`priorities.${index}`}
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel className="text-xs font-medium text-muted-foreground">Priority {index + 1}</FormLabel>
-												<FormControl>
-													<Input
-														{...field}
-														placeholder="Write one clear outcome"
-														autoComplete="off"
-														className="h-10 bg-background text-sm shadow-none"
-													/>
-												</FormControl>
-												<FormMessage className="text-xs" />
-											</FormItem>
-										)}
+										label={`Priority ${index + 1}`}
+										placeholder="Write one clear outcome"
+										autoComplete="off"
+										inputClassName="h-10 bg-background text-sm shadow-none"
 									/>
 								))}
 							</div>
@@ -148,19 +143,19 @@ export function SOPCheckinFlow({ directive, onSubmitted, className }: SOPCheckin
 								</Button>
 							</div>
 						</form>
-					</Form>
-				) : (
-					<div className="flex items-center gap-3 px-4 py-4 text-sm text-muted-foreground">
-						<div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/30">
-							<LockKeyhole className="size-4" />
+					) : (
+						<div className="flex items-center gap-3 px-4 py-4 text-sm text-muted-foreground">
+							<div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/30">
+								<LockKeyhole className="size-4" />
+							</div>
+							<div>
+								<p className="font-medium text-foreground">Acknowledge every phase to continue</p>
+								<p className="mt-0.5 text-xs">The priority check-in unlocks once the operating rhythm is reviewed.</p>
+							</div>
 						</div>
-						<div>
-							<p className="font-medium text-foreground">Acknowledge every phase to continue</p>
-							<p className="mt-0.5 text-xs">The priority check-in unlocks once the operating rhythm is reviewed.</p>
-						</div>
-					</div>
-				)}
-			</section>
-		</div>
+					)}
+				</section>
+			</div>
+		</Form>
 	);
 }

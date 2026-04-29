@@ -83,7 +83,7 @@ export function ExecutiveStatsWidget({ financial }: ExecutiveStatsWidgetProps) {
 				return (
 					<Card
 						key={stat.key}
-						className="rounded-md border-border bg-card py-0 shadow-none"
+						className="rounded-md border-border bg-card/60 backdrop-blur-md py-0"
 					>
 						<CardContent className="p-4">
 							<div className="flex items-start justify-between gap-3">

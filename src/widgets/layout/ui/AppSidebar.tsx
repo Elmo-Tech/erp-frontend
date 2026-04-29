@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo, UserCheck, Sunrise } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo, UserCheck, Sunrise, ClipboardList } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
@@ -32,7 +32,6 @@ const navGroups: NavGroup[] = [
 				title: "Dashboard",
 				href: "/dashboard",
 				icon: LayoutDashboard,
-				permission: "view_dashboard",
 			},
 			{
 				title: "Morning SOP",
@@ -78,6 +77,7 @@ const navGroups: NavGroup[] = [
 				title: "My Tasks",
 				href: "/dashboard/my-tasks",
 				icon: ListTodo,
+				permission: "view_personal_tasks",
 			},
 			{
 				title: "Wiki",
@@ -117,6 +117,12 @@ const navGroups: NavGroup[] = [
 				href: "/dashboard/admin",
 				icon: BarChart3,
 				permission: "view_admin_stats",
+			},
+			{
+				title: "Manage SOPs",
+				href: "/dashboard/admin/sops",
+				icon: ClipboardList,
+				permission: "manage_sops",
 			},
 			{
 				title: "Employee Review",
@@ -169,8 +175,7 @@ export function Sidebar() {
 
 		// Special handling for admin routes to avoid conflicts
 		if (href === "/dashboard/admin") {
-			// Only active if exactly on admin page or admin sub-pages (but not employees)
-			return pathname === "/dashboard/admin" || (pathname.startsWith("/dashboard/admin/") && !pathname.startsWith("/dashboard/employees"));
+			return pathname === "/dashboard/admin";
 		}
 
 		// For other routes, check if pathname starts with href
@@ -199,7 +204,7 @@ export function Sidebar() {
 			)}
 
 			<aside
-				className={cn("fixed left-0 top-0 z-50 flex h-screen flex-col border-r bg-sidebar transition-all duration-300", "lg:translate-x-0", isCollapsed ? "lg:w-17.5" : "lg:w-64", isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full")}
+				className={cn("fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300", "lg:translate-x-0", isCollapsed ? "lg:w-17.5" : "lg:w-64", isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full")}
 			>
 				{/* Logo */}
 				<div className="flex h-16 items-center justify-between border-b px-4">

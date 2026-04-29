@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/base";
 
 interface ApiEnvelope<T> {
@@ -80,15 +80,60 @@ export interface PermissionDashboardOverview {
 	};
 	blockers?: Array<{
 		task_id: number;
+		dependency_id?: number;
 		title: string;
 		status: string;
 		project?: string | null;
+		is_escalated?: boolean;
+		escalated_at?: string | null;
+		escalated_by?: DashboardPerson | null;
+		assignee?: DashboardPerson | null;
 		blocked_by: Array<{
 			task_id: number;
+			dependency_id?: number;
 			title: string;
 			status: string;
+			is_escalated?: boolean;
 		}>;
 	}>;
+	escalated_blockers?: EscalatedBlocker[];
+	team_pulse?: TeamPulseItem[];
+}
+
+export interface DashboardPerson {
+	id: number;
+	name?: string | null;
+	email?: string | null;
+	avatar_url?: string | null;
+	points?: number;
+}
+
+export interface EscalatedBlocker {
+	id: number;
+	dependency_id: number;
+	task_id: number;
+	title?: string | null;
+	status?: string | null;
+	project?: string | null;
+	assignee?: DashboardPerson | null;
+	blocked_by?: {
+		task_id?: number | null;
+		title?: string | null;
+		status?: string | null;
+	} | null;
+	escalated_by?: DashboardPerson | null;
+	escalated_at?: string | null;
+}
+
+export interface TeamPulseItem {
+	id: number;
+	submitted_at?: string | null;
+	focus_items: string[];
+	user?: DashboardPerson | null;
+	directive?: {
+		id: number;
+		title: string;
+	} | null;
 }
 
 export interface SalesManagerSummary {
@@ -129,7 +174,25 @@ export const dashboardApi = {
 			alerts: alerts.data.data ?? [],
 		};
 	},
+
+	async escalateBlocker(taskId: number): Promise<EscalatedBlocker> {
+		const response = await api.post<ApiEnvelope<EscalatedBlocker> | EscalatedBlocker>(`/dashboard/blockers/${taskId}/escalate`);
+		return unwrapData(response.data);
+	},
+
+	async resolveEscalatedBlocker(dependencyId: number): Promise<EscalatedBlocker> {
+		const response = await api.post<ApiEnvelope<EscalatedBlocker> | EscalatedBlocker>(`/dashboard/escalated-blockers/${dependencyId}/resolve`);
+		return unwrapData(response.data);
+	},
 };
+
+function unwrapData<T>(payload: ApiEnvelope<T> | T): T {
+	if (payload && typeof payload === "object" && "data" in payload) {
+		return payload.data;
+	}
+
+	return payload;
+}
 
 export function useDashboardOverview(scope: "main" | "admin" = "main") {
 	return useQuery({
@@ -142,5 +205,27 @@ export function useSalesManagerSummary() {
 	return useQuery({
 		queryKey: ["dashboard-management", "sales-manager"],
 		queryFn: dashboardApi.getSalesManagerSummary,
+	});
+}
+
+export function useEscalateBlocker() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: dashboardApi.escalateBlocker,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["dashboard-management"] });
+		},
+	});
+}
+
+export function useResolveEscalatedBlocker() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: dashboardApi.resolveEscalatedBlocker,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["dashboard-management"] });
+		},
 	});
 }

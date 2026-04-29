@@ -8,12 +8,13 @@ import { cn } from "@/shared/lib/utils";
 export interface CheckboxOption {
 	value: string;
 	label: string;
+	description?: string;
 	disabled?: boolean;
 }
 
-interface FormCheckboxGroupProps<T extends FieldValues> {
-	control: Control<T>;
-	name: FieldPath<T>;
+interface FormCheckboxGroupProps<TFieldValues extends FieldValues, TTransformedValues = TFieldValues> {
+	control: Control<TFieldValues, unknown, TTransformedValues>;
+	name: FieldPath<TFieldValues>;
 	label?: string;
 	description?: string;
 	options: CheckboxOption[];
@@ -22,7 +23,7 @@ interface FormCheckboxGroupProps<T extends FieldValues> {
 	columns?: 1 | 2 | 3 | 4;
 }
 
-export function FormCheckboxGroup<T extends FieldValues>({ control, name, label, description, options, disabled = false, className, columns = 1 }: FormCheckboxGroupProps<T>) {
+export function FormCheckboxGroup<TFieldValues extends FieldValues, TTransformedValues = TFieldValues>({ control, name, label, description, options, disabled = false, className, columns = 1 }: FormCheckboxGroupProps<TFieldValues, TTransformedValues>) {
 	const gridCols = {
 		1: "grid-cols-1",
 		2: "grid-cols-2",
@@ -53,7 +54,7 @@ export function FormCheckboxGroup<T extends FieldValues>({ control, name, label,
 								{options.map((option) => (
 									<div
 										key={option.value}
-										className="flex items-center gap-2"
+										className="flex items-start gap-2"
 									>
 										<Checkbox
 											id={`${name}-${option.value}`}
@@ -63,9 +64,10 @@ export function FormCheckboxGroup<T extends FieldValues>({ control, name, label,
 										/>
 										<label
 											htmlFor={`${name}-${option.value}`}
-											className="text-sm cursor-pointer"
+											className="cursor-pointer text-sm"
 										>
-											{option.label}
+											<span className="block font-medium">{option.label}</span>
+											{option.description ? <span className="block text-xs text-muted-foreground">{option.description}</span> : null}
 										</label>
 									</div>
 								))}

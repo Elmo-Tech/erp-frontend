@@ -31,8 +31,8 @@ export function StartDayGateWidget({ className }: StartDayGateWidgetProps) {
 			<div className="absolute inset-y-0 left-0 w-1 bg-primary" />
 			<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 				<div className="flex min-w-0 gap-3">
-					<div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-background text-primary shadow-xs">
-						<Sunrise className="size-4" />
+					<div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary shadow-xs">
+						<Sunrise className="size-4 animate-pulse" />
 					</div>
 
 					<div className="min-w-0">

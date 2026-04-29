@@ -67,3 +67,34 @@ export function useSubmitDailyCheckin() {
 		},
 	});
 }
+
+export function useSopDirectives() {
+	return useQuery<Directive[]>({
+		queryKey: sopKeys.directives(),
+		queryFn: sopApi.getDirectives,
+	});
+}
+
+export function useCreateDirective() {
+	const queryClient = useQueryClient();
+
+	return useMutation<Directive, Error, Omit<Directive, "id" | "created_at" | "updated_at">>({
+		mutationFn: sopApi.createDirective,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: sopKeys.directives() });
+			queryClient.invalidateQueries({ queryKey: sopKeys.today() });
+		},
+	});
+}
+
+export function useUpdateDirective() {
+	const queryClient = useQueryClient();
+
+	return useMutation<Directive, Error, { id: number; payload: Omit<Directive, "id" | "created_at" | "updated_at"> }>({
+		mutationFn: ({ id, payload }) => sopApi.updateDirective(id, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: sopKeys.directives() });
+			queryClient.invalidateQueries({ queryKey: sopKeys.today() });
+		},
+	});
+}

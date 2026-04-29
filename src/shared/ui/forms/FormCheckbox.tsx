@@ -4,21 +4,22 @@ import { Control, FieldPath, FieldValues } from "react-hook-form";
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/shared/ui/form";
 import { Checkbox } from "@/shared/ui/checkbox";
 
-interface FormCheckboxProps<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>> {
-	control: Control<TFieldValues>;
+interface FormCheckboxProps<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>, TTransformedValues = TFieldValues> {
+	control: Control<TFieldValues, unknown, TTransformedValues>;
 	name: TName;
 	label: string;
 	description?: string;
 	disabled?: boolean;
+	className?: string;
 }
 
-export function FormCheckbox<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({ control, name, label, description, disabled }: FormCheckboxProps<TFieldValues, TName>) {
+export function FormCheckbox<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>, TTransformedValues = TFieldValues>({ control, name, label, description, disabled, className }: FormCheckboxProps<TFieldValues, TName, TTransformedValues>) {
 	return (
 		<FormField
 			control={control}
 			name={name}
 			render={({ field }) => (
-				<FormItem className="flex flex-row items-start space-x-3 space-y-0">
+				<FormItem className={className ?? "flex flex-row items-start space-x-3 space-y-0"}>
 					<FormControl>
 						<Checkbox
 							checked={field.value}

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/shared/ui/form";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/ui/button";
@@ -10,16 +11,19 @@ import { cn } from "@/shared/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
-interface FormInputProps<T extends FieldValues> {
-	control: Control<T>;
-	name: FieldPath<T>;
+interface FormInputProps<TFieldValues extends FieldValues, TTransformedValues = TFieldValues> {
+	control: Control<TFieldValues, unknown, TTransformedValues>;
+	name: FieldPath<TFieldValues>;
 	label?: string;
 	placeholder?: string;
 	description?: string;
 	type?: "text" | "email" | "password" | "number" | "tel" | "url" | "date" | "time";
 	disabled?: boolean;
+	readOnly?: boolean;
+	autoComplete?: string;
 	className?: string;
 	inputClassName?: string;
+	endAdornment?: ReactNode;
 	min?: number;
 	max?: number;
 	step?: number | string;
@@ -27,7 +31,7 @@ interface FormInputProps<T extends FieldValues> {
 	maxDate?: Date;
 }
 
-export function FormInput<T extends FieldValues>({ control, name, label, placeholder, description, type = "text", disabled = false, className, inputClassName, min, max, step, minDate, maxDate }: FormInputProps<T>) {
+export function FormInput<TFieldValues extends FieldValues, TTransformedValues = TFieldValues>({ control, name, label, placeholder, description, type = "text", disabled = false, readOnly = false, autoComplete, className, inputClassName, endAdornment, min, max, step, minDate, maxDate }: FormInputProps<TFieldValues, TTransformedValues>) {
 	// Use Calendar for date type
 	if (type === "date") {
 		return (
@@ -85,27 +89,32 @@ export function FormInput<T extends FieldValues>({ control, name, label, placeho
 			render={({ field }) => (
 				<FormItem className={className}>
 					{label && <FormLabel>{label}</FormLabel>}
-					<FormControl>
-						<Input
-							type={type}
-							placeholder={placeholder}
-							disabled={disabled}
-							min={min}
-							max={max}
-							step={step}
-							className={cn(inputClassName)}
-							{...field}
-							value={field.value ?? ""}
-							onChange={(e) => {
-								if (type === "number") {
-									const val = e.target.value;
-									field.onChange(val === "" ? "" : Number(val));
-								} else {
-									field.onChange(e.target.value);
-								}
-							}}
-						/>
-					</FormControl>
+					<div className={cn("relative", endAdornment && "flex items-center")}>
+						<FormControl>
+							<Input
+								type={type}
+								placeholder={placeholder}
+								disabled={disabled}
+								readOnly={readOnly}
+								autoComplete={autoComplete}
+								min={min}
+								max={max}
+								step={step}
+								className={cn(endAdornment && "pr-10", inputClassName)}
+								{...field}
+								value={typeof field.value === "string" || typeof field.value === "number" ? field.value : ""}
+								onChange={(e) => {
+									if (type === "number") {
+										const val = e.target.value;
+										field.onChange(val === "" ? "" : Number(val));
+									} else {
+										field.onChange(e.target.value);
+									}
+								}}
+							/>
+						</FormControl>
+						{endAdornment ? <div className="absolute right-1 top-1/2 -translate-y-1/2">{endAdornment}</div> : null}
+					</div>
 					{description && <FormDescription>{description}</FormDescription>}
 					<FormMessage />
 				</FormItem>

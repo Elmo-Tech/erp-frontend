@@ -10,9 +10,9 @@ export interface SelectOption {
 	disabled?: boolean;
 }
 
-interface FormSelectProps<T extends FieldValues> {
-	control: Control<T>;
-	name: FieldPath<T>;
+interface FormSelectProps<TFieldValues extends FieldValues, TTransformedValues = TFieldValues> {
+	control: Control<TFieldValues, unknown, TTransformedValues>;
+	name: FieldPath<TFieldValues>;
 	label?: string;
 	placeholder?: string;
 	description?: string;
@@ -22,7 +22,7 @@ interface FormSelectProps<T extends FieldValues> {
 	onValueChange?: (value: string) => void;
 }
 
-export function FormSelect<T extends FieldValues>({ control, name, label, placeholder = "Select an option", description, options, disabled = false, className, onValueChange }: FormSelectProps<T>) {
+export function FormSelect<TFieldValues extends FieldValues, TTransformedValues = TFieldValues>({ control, name, label, placeholder = "Select an option", description, options, disabled = false, className, onValueChange }: FormSelectProps<TFieldValues, TTransformedValues>) {
 	return (
 		<FormField
 			control={control}

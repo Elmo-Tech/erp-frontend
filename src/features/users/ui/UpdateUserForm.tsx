@@ -1,14 +1,13 @@
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Role, UpdateUserPayload, User } from "@/entities/user/model/types";
 import { Button } from "@/shared/ui/button";
-import { Checkbox } from "@/shared/ui/checkbox";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
+import { Form } from "@/shared/ui/form";
+import { FormCheckbox, FormCheckboxGroup, FormInput } from "@/shared/ui/forms";
 import { parseSkills, updateUserSchema, type UpdateUserFormData, type UpdateUserFormValues } from "../model/user.schema";
 import { useUpdateUser } from "../model/use-user-actions";
 
@@ -34,14 +33,6 @@ export function UpdateUserForm({ user, roles = [], onSuccess }: UpdateUserFormPr
 			internalHourlyCost: user.internalHourlyCost ?? "",
 		},
 	});
-
-	const selectedRoles = useWatch({ control: form.control, name: "roles" });
-	const isActive = useWatch({ control: form.control, name: "isActive" });
-
-	const toggleRole = (role: string) => {
-		const next = selectedRoles.includes(role) ? selectedRoles.filter((item) => item !== role) : [...selectedRoles, role];
-		form.setValue("roles", next, { shouldDirty: true });
-	};
 
 	const onSubmit = async (data: UpdateUserFormData) => {
 		const payload: UpdateUserPayload = {
@@ -69,59 +60,76 @@ export function UpdateUserForm({ user, roles = [], onSuccess }: UpdateUserFormPr
 	};
 
 	return (
-		<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-			<div className="grid gap-3 md:grid-cols-2">
-				<Field label="Name" error={form.formState.errors.name?.message}>
-					<Input {...form.register("name")} />
-				</Field>
-				<Field label="Email" error={form.formState.errors.email?.message}>
-					<Input type="email" {...form.register("email")} />
-				</Field>
-				<Field label="New Password" error={form.formState.errors.password?.message}>
-					<Input type="password" {...form.register("password")} autoComplete="new-password" />
-				</Field>
-				<Field label="Confirm Password" error={form.formState.errors.password_confirmation?.message}>
-					<Input type="password" {...form.register("password_confirmation")} autoComplete="new-password" />
-				</Field>
-				<Field label="Specialization" error={form.formState.errors.specialization?.message}>
-					<Input {...form.register("specialization")} />
-				</Field>
-				<Field label="Hourly Cost" error={form.formState.errors.internalHourlyCost?.message}>
-					<Input type="number" min={0} step="0.01" {...form.register("internalHourlyCost")} />
-				</Field>
-			</div>
-			<Field label="Skills" error={form.formState.errors.skillsText?.message}>
-				<Input {...form.register("skillsText")} />
-			</Field>
-			<div className="space-y-2">
-				<Label>Roles</Label>
-				<div className="grid gap-2 rounded-md border p-3 sm:grid-cols-2">
-					{roles.map((role) => (
-						<label key={role.id} className="flex items-center gap-2 text-sm">
-							<Checkbox checked={selectedRoles.includes(role.name)} onCheckedChange={() => toggleRole(role.name)} />
-							<span className="capitalize">{role.name}</span>
-						</label>
-					))}
+		<Form {...form}>
+			<form
+				onSubmit={form.handleSubmit(onSubmit)}
+				className="space-y-4"
+			>
+				<div className="grid gap-3 md:grid-cols-2">
+					<FormInput
+						control={form.control}
+						name="name"
+						label="Name"
+					/>
+					<FormInput
+						control={form.control}
+						name="email"
+						label="Email"
+						type="email"
+					/>
+					<FormInput
+						control={form.control}
+						name="password"
+						label="New Password"
+						type="password"
+						autoComplete="new-password"
+					/>
+					<FormInput
+						control={form.control}
+						name="password_confirmation"
+						label="Confirm Password"
+						type="password"
+						autoComplete="new-password"
+					/>
+					<FormInput
+						control={form.control}
+						name="specialization"
+						label="Specialization"
+					/>
+					<FormInput
+						control={form.control}
+						name="internalHourlyCost"
+						label="Hourly Cost"
+						type="number"
+						min={0}
+						step="0.01"
+					/>
 				</div>
-			</div>
-			<label className="flex items-center gap-2 text-sm">
-				<Checkbox checked={isActive} onCheckedChange={(value) => form.setValue("isActive", Boolean(value), { shouldDirty: true })} />
-				Active account
-			</label>
-			<Button type="submit" disabled={updateUser.isPending}>
-				{updateUser.isPending && <Loader2 data-icon="inline-start" className="animate-spin" />}
-				Update user
-			</Button>
-		</form>
-	);
-}
-
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-	return (
-		<div className="space-y-1.5">
-			<Label>{label}</Label>
-			{children}
-			{error && <p className="text-xs text-destructive">{error}</p>}
-		</div>
+				<FormInput
+					control={form.control}
+					name="skillsText"
+					label="Skills"
+				/>
+				<FormCheckboxGroup
+					control={form.control}
+					name="roles"
+					label="Roles"
+					options={roles.map((role) => ({ value: role.name, label: role.name }))}
+					columns={2}
+				/>
+				<FormCheckbox
+					control={form.control}
+					name="isActive"
+					label="Active account"
+				/>
+				<Button
+					type="submit"
+					disabled={updateUser.isPending}
+				>
+					{updateUser.isPending && <Loader2 data-icon="inline-start" className="animate-spin" />}
+					Update user
+				</Button>
+			</form>
+		</Form>
 	);
 }

@@ -5,8 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
-import { Label } from "@/shared/ui/label";
+import { Form } from "@/shared/ui/form";
+import { FormInput } from "@/shared/ui/forms";
 import { changePasswordSchema, type ChangePasswordFormData } from "../model/profile.schema";
 import { useChangePassword } from "../model/use-profile-actions";
 
@@ -31,30 +31,40 @@ export function ChangePasswordForm() {
 	};
 
 	return (
-		<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-			<PasswordField label="Current password" error={form.formState.errors.current_password?.message}>
-				<Input type="password" {...form.register("current_password")} autoComplete="current-password" />
-			</PasswordField>
-			<PasswordField label="New password" error={form.formState.errors.new_password?.message}>
-				<Input type="password" {...form.register("new_password")} autoComplete="new-password" />
-			</PasswordField>
-			<PasswordField label="Confirm new password" error={form.formState.errors.new_password_confirmation?.message}>
-				<Input type="password" {...form.register("new_password_confirmation")} autoComplete="new-password" />
-			</PasswordField>
-			<Button type="submit" disabled={changePassword.isPending}>
-				{changePassword.isPending && <Loader2 data-icon="inline-start" className="animate-spin" />}
-				Change password
-			</Button>
-		</form>
-	);
-}
-
-function PasswordField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-	return (
-		<div className="space-y-1.5">
-			<Label>{label}</Label>
-			{children}
-			{error && <p className="text-xs text-destructive">{error}</p>}
-		</div>
+		<Form {...form}>
+			<form
+				onSubmit={form.handleSubmit(onSubmit)}
+				className="space-y-4"
+			>
+				<FormInput
+					control={form.control}
+					name="current_password"
+					label="Current password"
+					type="password"
+					autoComplete="current-password"
+				/>
+				<FormInput
+					control={form.control}
+					name="new_password"
+					label="New password"
+					type="password"
+					autoComplete="new-password"
+				/>
+				<FormInput
+					control={form.control}
+					name="new_password_confirmation"
+					label="Confirm new password"
+					type="password"
+					autoComplete="new-password"
+				/>
+				<Button
+					type="submit"
+					disabled={changePassword.isPending}
+				>
+					{changePassword.isPending && <Loader2 data-icon="inline-start" className="animate-spin" />}
+					Change password
+				</Button>
+			</form>
+		</Form>
 	);
 }

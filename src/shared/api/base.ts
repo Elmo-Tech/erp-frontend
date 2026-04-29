@@ -57,7 +57,24 @@ export function clearClientAuthState() {
 	}
 
 	localStorage.removeItem(AUTH_TOKEN_KEY);
-	localStorage.removeItem(AUTH_STORAGE_KEY);
+
+	const authStorage = localStorage.getItem(AUTH_STORAGE_KEY);
+	if (authStorage) {
+		try {
+			const parsed = JSON.parse(authStorage);
+			const savedAccounts = parsed?.state?.savedAccounts;
+			if (savedAccounts) {
+				localStorage.setItem(
+					AUTH_STORAGE_KEY,
+					JSON.stringify({ state: { savedAccounts }, version: parsed.version })
+				);
+			} else {
+				localStorage.removeItem(AUTH_STORAGE_KEY);
+			}
+		} catch {
+			localStorage.removeItem(AUTH_STORAGE_KEY);
+		}
+	}
 }
 
 export function redirectToLogin() {

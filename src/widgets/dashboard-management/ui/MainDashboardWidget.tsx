@@ -1,9 +1,10 @@
 "use client";
 
+import { toast } from "sonner";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { Skeleton } from "@/shared/ui/skeleton";
-import { useDashboardOverview } from "@/widgets/dashboard-management/model/dashboard.api";
-import { ExecutiveStatsWidget, PersonalTasksDashboardWidget, ProjectTimelineWidget, TeamPerformanceWidget } from "@/widgets/dashboard-management/ui/DashboardSectionWidgets";
+import { useDashboardOverview, useEscalateBlocker } from "@/widgets/dashboard-management/model/dashboard.api";
+import { EscalatedBlockersWidget, ExecutiveStatsWidget, PersonalTasksDashboardWidget, ProjectTimelineWidget, TeamDailyPulseWidget, TeamPerformanceWidget } from "@/widgets/dashboard-management/ui/DashboardSectionWidgets";
 import { StartDayGateWidget } from "@/widgets/sop-management/ui/StartDayGateWidget";
 
 interface MainDashboardWidgetProps {
@@ -13,13 +14,18 @@ interface MainDashboardWidgetProps {
 export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps) {
 	const { hasPermission } = useAuthStore();
 	const dashboardQuery = useDashboardOverview(scope);
+	const escalateBlocker = useEscalateBlocker();
 	const dashboard = dashboardQuery.data;
 
 	const canViewFinancialStats = hasPermission("view_financial_stats");
 	const canViewProjectTimeline = hasPermission("view_project_timeline");
 	const canViewTeamPerformance = hasPermission("view_team_performance");
 	const canViewPersonalTasks = hasPermission("view_personal_tasks");
-	const hasAnyDashboardSection = canViewFinancialStats || canViewProjectTimeline || canViewTeamPerformance || canViewPersonalTasks;
+	const canViewAllBlockers = hasPermission("view_all_blockers");
+	const canViewEscalatedBlockers = hasPermission("view_escalated_blockers");
+	const canViewTeamPulse = hasPermission("view_team_pulse");
+	const hasEscalatedBlockers = Boolean(dashboard?.escalated_blockers?.length);
+	const hasAnyDashboardSection = canViewFinancialStats || canViewProjectTimeline || canViewTeamPerformance || canViewPersonalTasks || canViewAllBlockers || canViewEscalatedBlockers || canViewTeamPulse;
 
 	return (
 		<div className="space-y-4">
@@ -36,13 +42,30 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 				<div className="flex min-h-48 items-center justify-center rounded-md border px-4 text-center text-sm text-muted-foreground">Unable to load dashboard data.</div>
 			) : hasAnyDashboardSection ? (
 				<div className="space-y-4">
+					{canViewEscalatedBlockers && hasEscalatedBlockers && <EscalatedBlockersWidget blockers={dashboard?.escalated_blockers} />}
 					{canViewFinancialStats && <ExecutiveStatsWidget financial={dashboard?.financial} />}
+					{canViewTeamPulse && <TeamDailyPulseWidget pulse={dashboard?.team_pulse} />}
 					{canViewProjectTimeline && <ProjectTimelineWidget timeline={dashboard?.timeline} />}
 					{canViewTeamPerformance && <TeamPerformanceWidget team={dashboard?.team} />}
-					{canViewPersonalTasks && (
+					{(canViewPersonalTasks || canViewAllBlockers) && (
 						<PersonalTasksDashboardWidget
 							personalTasks={dashboard?.personal_tasks}
 							blockers={dashboard?.blockers}
+							showTasksPanel={canViewPersonalTasks}
+							blockersTitle={canViewAllBlockers ? "Active blockers" : "My blockers"}
+							onEscalate={canViewAllBlockers ? (blocker) => {
+								const taskId = blocker.task_id ?? Number(blocker.id);
+								if (!taskId) {
+									toast.error("Unable to escalate blocker");
+									return;
+								}
+
+								escalateBlocker.mutate(Number(taskId), {
+									onSuccess: () => toast.success("Blocker escalated to founder"),
+									onError: () => toast.error("Failed to escalate blocker"),
+								});
+							} : undefined}
+							escalatingTaskId={escalateBlocker.variables}
 						/>
 					)}
 				</div>
