@@ -28,7 +28,9 @@ export function useCreateDirectProject() {
 			queryClient.setQueryData(projectKeys.detail(newProject.projectId), newProject);
 
 			if (newProject.clientId) {
+				queryClient.invalidateQueries({ queryKey: projectKeys.client(newProject.clientId) });
 				queryClient.invalidateQueries({ queryKey: clientKeys.detail(newProject.clientId) });
+				queryClient.invalidateQueries({ queryKey: clientKeys.activities(newProject.clientId) });
 			}
 		},
 	});

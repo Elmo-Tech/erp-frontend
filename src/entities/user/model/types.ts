@@ -29,6 +29,17 @@ export interface UserListResponse {
 	pagination: UserPagination;
 }
 
+export interface InternalUser {
+	id: number;
+	name: string;
+	email: string;
+	role: string | null;
+}
+
+export interface InternalUserListResponse {
+	users: InternalUser[];
+}
+
 export interface UserFilters {
 	search?: string;
 	role?: string;

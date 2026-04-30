@@ -1,45 +1,29 @@
-"use client";
-
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
 
 interface LoadingStateProps {
-	variant?: "table" | "card" | "list" | "form";
+	variant?: "table" | "cards" | "list" | "default";
 	rows?: number;
 	className?: string;
 }
 
-export function LoadingState({ variant = "table", rows = 5, className }: LoadingStateProps) {
+export function LoadingState({ variant = "default", rows = 5, className }: LoadingStateProps) {
 	if (variant === "table") {
 		return (
-			<div className={cn("space-y-3", className)}>
+			<div className={cn("flex flex-col gap-3", className)}>
+				<Skeleton className="h-10 w-full" />
 				{Array.from({ length: rows }).map((_, i) => (
-					<div
-						key={i}
-						className="flex items-center gap-4"
-					>
-						<Skeleton className="h-4 w-32" />
-						<Skeleton className="h-4 w-48" />
-						<Skeleton className="h-4 w-24" />
-						<Skeleton className="h-4 w-16" />
-					</div>
+					<Skeleton key={i} className="h-12 w-full" />
 				))}
 			</div>
 		);
 	}
 
-	if (variant === "card") {
+	if (variant === "cards") {
 		return (
-			<div className={cn("grid gap-4 md:grid-cols-2 lg:grid-cols-3", className)}>
+			<div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", className)}>
 				{Array.from({ length: rows }).map((_, i) => (
-					<div
-						key={i}
-						className="border rounded-lg p-4 space-y-3"
-					>
-						<Skeleton className="h-6 w-3/4" />
-						<Skeleton className="h-4 w-full" />
-						<Skeleton className="h-4 w-1/2" />
-					</div>
+					<Skeleton key={i} className="h-32 w-full" />
 				))}
 			</div>
 		);
@@ -47,16 +31,13 @@ export function LoadingState({ variant = "table", rows = 5, className }: Loading
 
 	if (variant === "list") {
 		return (
-			<div className={cn("space-y-4", className)}>
+			<div className={cn("flex flex-col gap-4", className)}>
 				{Array.from({ length: rows }).map((_, i) => (
-					<div
-						key={i}
-						className="flex items-center gap-4"
-					>
-						<Skeleton className="h-10 w-10 rounded-full" />
-						<div className="space-y-2 flex-1">
-							<Skeleton className="h-4 w-1/3" />
-							<Skeleton className="h-3 w-1/2" />
+					<div key={i} className="flex items-center gap-4">
+						<Skeleton className="h-12 w-12 rounded-full shrink-0" />
+						<div className="space-y-2 w-full">
+							<Skeleton className="h-4 w-3/4" />
+							<Skeleton className="h-4 w-1/2" />
 						</div>
 					</div>
 				))}
@@ -64,18 +45,10 @@ export function LoadingState({ variant = "table", rows = 5, className }: Loading
 		);
 	}
 
-	// Form variant
 	return (
-		<div className={cn("space-y-4", className)}>
-			{Array.from({ length: rows }).map((_, i) => (
-				<div
-					key={i}
-					className="space-y-2"
-				>
-					<Skeleton className="h-4 w-24" />
-					<Skeleton className="h-10 w-full" />
-				</div>
-			))}
+		<div className={cn("flex flex-col items-center justify-center p-8", className)}>
+			<Skeleton className="h-8 w-8 rounded-full mb-4" />
+			<Skeleton className="h-4 w-32" />
 		</div>
 	);
 }

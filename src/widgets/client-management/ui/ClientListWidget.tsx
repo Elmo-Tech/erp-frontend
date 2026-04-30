@@ -14,9 +14,9 @@ import { ClientCard } from "@/entities/client/ui/ClientCard";
 import { clientKeys } from "@/entities/client/model/query-keys";
 import type { Client, ClientFilters } from "@/entities/client/model/types";
 import { useClientPermissions } from "@/entities/user/model/permissions";
-import { CreateClientForm } from "@/features/clients/ui/CreateClientForm";
+import { AddClientModal } from "@/features/clients/ui/AddClientModal";
 import { DeleteClientDialog } from "@/features/clients/ui/DeleteClientDialog";
-import { UpdateClientForm } from "@/features/clients/ui/UpdateClientForm";
+import { EditClientModal } from "@/features/clients/ui/EditClientModal";
 
 const DEFAULT_FILTERS: ClientFilters = {
 	page: 1,
@@ -29,7 +29,7 @@ export function ClientListWidget() {
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
 	const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
-	const { canCreateClients, canEditClients, canDeleteClients } = useClientPermissions();
+	const { canManageClients, canCreateClients, canEditClients, canDeleteClients } = useClientPermissions();
 
 	const clientsQuery = useQuery({
 		queryKey: clientKeys.list(filters),
@@ -60,7 +60,7 @@ export function ClientListWidget() {
 	};
 
 	const handleCreateClick = () => {
-		if (!canCreateClients) {
+		if (!canManageClients && !canCreateClients) {
 			toast.error("You do not have permission to create clients");
 			return;
 		}
@@ -76,13 +76,13 @@ export function ClientListWidget() {
 					<p className="text-sm text-muted-foreground">Manage client records, contact details, and account activity.</p>
 				</div>
 
-				{canCreateClients && (
+				{(canManageClients || canCreateClients) && (
 					<Button
 						size="sm"
 						onClick={handleCreateClick}
 					>
 						<Plus data-icon="inline-start" />
-						New client
+						Add Client
 					</Button>
 				)}
 			</div>
@@ -125,14 +125,14 @@ export function ClientListWidget() {
 							<div className="text-sm font-medium">No clients found</div>
 							<div className="text-sm text-muted-foreground">Create a client or adjust your search.</div>
 						</div>
-						{canCreateClients && (
+						{(canManageClients || canCreateClients) && (
 							<Button
 								size="sm"
 								variant="outline"
 								onClick={handleCreateClick}
 							>
 								<Plus data-icon="inline-start" />
-								New client
+								Add Client
 							</Button>
 						)}
 					</div>
@@ -142,8 +142,8 @@ export function ClientListWidget() {
 							key={client.clientId}
 							client={client}
 							onView={handleView}
-							onEdit={canEditClients ? setClientToEdit : undefined}
-							onDelete={canDeleteClients ? setClientToDelete : undefined}
+							onEdit={canManageClients || canEditClients ? setClientToEdit : undefined}
+							onDelete={canManageClients || canDeleteClients ? setClientToDelete : undefined}
 						/>
 					))
 				)}
@@ -156,13 +156,13 @@ export function ClientListWidget() {
 				/>
 			)}
 
-			<CreateClientForm
+			<AddClientModal
 				open={createDialogOpen}
 				onOpenChange={setCreateDialogOpen}
 			/>
 
 			{clientToEdit && (
-				<UpdateClientForm
+				<EditClientModal
 					open={Boolean(clientToEdit)}
 					onOpenChange={(open) => {
 						if (!open) {

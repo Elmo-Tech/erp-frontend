@@ -1,5 +1,9 @@
+"use client";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/base";
-import type { Client, ClientFilters, ClientListResponse, CreateClientPayload, UpdateClientPayload } from "../model/types";
+import type { Client, ClientActivityListResponse, ClientFilters, ClientListResponse, CreateClientPayload, UpdateClientPayload } from "../model/types";
+import { clientKeys } from "../model/query-keys";
 
 interface ApiEnvelope<T> {
 	data: T;
@@ -65,4 +69,42 @@ export const clientApi = {
 	async deleteClient(id: number): Promise<void> {
 		await api.delete(`/clients/${id}`);
 	},
+
+	async getClientActivities(id: number): Promise<ClientActivityListResponse> {
+		const response = await api.get<ApiEnvelope<ClientActivityListResponse>>(`/clients/${id}/activities`);
+
+		return response.data.data;
+	},
 };
+
+export function useClientsQuery(filters?: ClientFilters) {
+	return useQuery({
+		queryKey: clientKeys.list(filters),
+		queryFn: () => clientApi.getClients(filters),
+		staleTime: 5 * 60 * 1000,
+	});
+}
+
+export function useCreateClientMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation<Client, Error, CreateClientPayload>({
+		mutationFn: clientApi.createClient,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: clientKeys.lists() });
+		},
+	});
+}
+
+export function useGetClientActivities(clientId: number, enabled = true) {
+	return useQuery({
+		queryKey: clientKeys.activities(clientId),
+		queryFn: async () => {
+			const response = await clientApi.getClientActivities(clientId);
+
+			return response.activities;
+		},
+		enabled: enabled && clientId > 0,
+		staleTime: 60 * 1000,
+	});
+}

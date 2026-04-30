@@ -1,50 +1,51 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { notificationApi } from "@/entities/notification/api/notification.api";
-import { notificationKeys } from "@/entities/notification/model/query-keys";
-import type { NotificationListResponse } from "@/entities/notification/model/types";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/shared/api/base";
 import { useNotificationStore } from "./notification.store";
+import type { Notification } from "@/entities/notification/model/types";
 
-export function useNotifications(perPage = 20) {
-	const setNotifications = useNotificationStore((state) => state.setNotifications);
-	const setIsLoading = useNotificationStore((state) => state.setIsLoading);
+export function useNotifications(limit = 20) {
+	const setNotifications = useNotificationStore((s) => s.setNotifications);
 
-	return useQuery<NotificationListResponse, Error>({
-		queryKey: notificationKeys.list(perPage),
+	return useQuery({
+		queryKey: ["notifications", limit],
 		queryFn: async () => {
-			const response = await notificationApi.getNotifications(perPage);
-			setNotifications(response.notifications, response.unreadCount);
-			setIsLoading(false);
-			return response;
+			const { data } = await api.get<{ data: Notification[] }>(`/notifications?limit=${limit}`);
+			setNotifications(data.data ?? []);
+			return data.data ?? [];
 		},
-		staleTime: 60 * 1000,
+		refetchInterval: 30_000,
+		retry: false,
 	});
 }
 
 export function useMarkNotificationAsRead() {
 	const queryClient = useQueryClient();
-	const markAsRead = useNotificationStore((state) => state.markAsRead);
+	const markAsRead = useNotificationStore((s) => s.markAsRead);
 
-	return useMutation<void, Error, string>({
-		mutationFn: notificationApi.markAsRead,
-		onSuccess: (_, notificationId) => {
+	return useMutation({
+		mutationFn: (notificationId: string) => api.patch(`/notifications/${notificationId}/read`),
+		onMutate: (notificationId) => {
 			markAsRead(notificationId);
-			queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+		},
+		onSettled: () => {
+			queryClient.invalidateQueries({ queryKey: ["notifications"] });
 		},
 	});
 }
 
 export function useMarkAllNotificationsAsRead() {
 	const queryClient = useQueryClient();
-	const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
+	const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
 
-	return useMutation<void, Error, void>({
-		mutationFn: notificationApi.markAllAsRead,
-		onSuccess: () => {
+	return useMutation({
+		mutationFn: () => api.patch("/notifications/read-all"),
+		onMutate: () => {
 			markAllAsRead();
-			queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+		},
+		onSettled: () => {
+			queryClient.invalidateQueries({ queryKey: ["notifications"] });
 		},
 	});
 }
-

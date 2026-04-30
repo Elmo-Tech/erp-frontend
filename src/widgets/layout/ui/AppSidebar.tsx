@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo, UserCheck, Sunrise, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, X, Shield } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
@@ -33,16 +33,10 @@ const navGroups: NavGroup[] = [
 				href: "/dashboard",
 				icon: LayoutDashboard,
 			},
-			{
-				title: "Morning SOP",
-				href: "/dashboard/sop",
-				icon: Sunrise,
-				permission: "view_morning_sop",
-			},
 		],
 	},
 	{
-		title: "Sales & CRM",
+		title: "CRM",
 		items: [
 			{
 				title: "Clients",
@@ -50,18 +44,6 @@ const navGroups: NavGroup[] = [
 				icon: Building2,
 				permission: "view_clients",
 			},
-			{
-				title: "Sales",
-				href: "/dashboard/sales",
-				icon: TrendingUp,
-				permission: "view_leads",
-			},
-			// {
-			// 	title: "Sales Dashboard",
-			// 	href: "/dashboard/sales/manager",
-			// 	icon: BarChart3,
-			// 	permission: "view_sales_dashboard",
-			// },
 		],
 	},
 	{
@@ -73,75 +55,11 @@ const navGroups: NavGroup[] = [
 				icon: FolderKanban,
 				permission: "view_projects",
 			},
-			{
-				title: "My Tasks",
-				href: "/dashboard/my-tasks",
-				icon: ListTodo,
-				permission: "view_personal_tasks",
-			},
-			{
-				title: "Wiki",
-				href: "/dashboard/wiki",
-				icon: BookOpen,
-				permission: "view_wiki",
-			},
-		],
-	},
-	{
-		title: "HR & Time",
-		items: [
-			{
-				title: "Employees",
-				href: "/dashboard/employees",
-				icon: Users,
-				permission: "manage_employees",
-			},
-			{
-				title: "Attendance",
-				href: "/dashboard/my-attendance",
-				icon: Clock,
-				permission: "view_attendance",
-			},
-			{
-				title: "Performance",
-				href: "/dashboard/performance",
-				icon: Award,
-			},
 		],
 	},
 	{
 		title: "Administration",
 		items: [
-			{
-				title: "Reports",
-				href: "/dashboard/admin",
-				icon: BarChart3,
-				permission: "view_admin_stats",
-			},
-			{
-				title: "Manage SOPs",
-				href: "/dashboard/admin/sops",
-				icon: ClipboardList,
-				permission: "manage_sops",
-			},
-			{
-				title: "Employee Review",
-				href: "/dashboard/employee-review",
-				icon: UserCheck,
-				permission: "view_admin_stats",
-			},
-			{
-				title: "Attendance Management",
-				href: "/dashboard/attendance",
-				icon: Clock,
-				permission: "view_all_attendance",
-			},
-			{
-				title: "Points Management",
-				href: "/dashboard/user-points",
-				icon: Award,
-				permission: "manage_user_points",
-			},
 			{
 				title: "Roles & Permissions",
 				href: "/dashboard/roles",
@@ -166,23 +84,14 @@ export function Sidebar() {
 		closeMobile();
 	}, [pathname, closeMobile]);
 
-	// Check if a nav item is active
 	const isItemActive = (href: string) => {
-		// Exact match for dashboard home
 		if (href === "/dashboard") {
 			return pathname === "/dashboard";
 		}
 
-		// Special handling for admin routes to avoid conflicts
-		if (href === "/dashboard/admin") {
-			return pathname === "/dashboard/admin";
-		}
-
-		// For other routes, check if pathname starts with href
 		return pathname === href || pathname.startsWith(`${href}/`);
 	};
 
-	// Filter items based on permissions
 	const filterItems = (items: NavItem[]) => {
 		return items.filter((item) => {
 			if (item.permission && !hasPermission(item.permission)) return false;
@@ -195,7 +104,6 @@ export function Sidebar() {
 
 	return (
 		<TooltipProvider delayDuration={0}>
-			{/* Mobile Overlay */}
 			{isMobileOpen && (
 				<div
 					className="fixed inset-0 z-40 bg-black/50 lg:hidden"
@@ -204,9 +112,8 @@ export function Sidebar() {
 			)}
 
 			<aside
-				className={cn("fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300", "lg:translate-x-0", isCollapsed ? "lg:w-17.5" : "lg:w-64", isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full")}
+				className={cn("fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300", "lg:translate-x-0", isCollapsed ? "lg:w-17.5" : "lg:w-64", isMobileOpen ? "translate-x-0 w-264" : "-translate-x-full")}
 			>
-				{/* Logo */}
 				<div className="flex h-16 items-center justify-between border-b px-4">
 					{(!isCollapsed || isMobileOpen) && (
 						<Link
@@ -257,7 +164,6 @@ export function Sidebar() {
 					)}
 				</div>
 
-				{/* Expand button when collapsed */}
 				{isCollapsed && (
 					<div className="hidden lg:flex justify-center py-2 border-b">
 						<Button
@@ -271,7 +177,6 @@ export function Sidebar() {
 					</div>
 				)}
 
-				{/* Navigation */}
 				<nav className="flex-1 overflow-y-auto py-4">
 					{navGroups.map((group) => {
 						const filteredItems = filterItems(group.items);
@@ -282,11 +187,9 @@ export function Sidebar() {
 								key={group.title}
 								className="mb-6"
 							>
-								{/* Group Header */}
 								{!showCollapsed && <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.title}</h3>}
 								{showCollapsed && <div className="h-px bg-border mx-3 mb-2" />}
 
-								{/* Group Items */}
 								<div className="space-y-1 px-3">
 									{filteredItems.map((item) => {
 										const isActive = isItemActive(item.href);
@@ -328,8 +231,7 @@ export function Sidebar() {
 					})}
 				</nav>
 
-				{/* Footer */}
-				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2023 Elmo ERP</p>}</div>
+				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2026 Elmo ERP</p>}</div>
 			</aside>
 		</TooltipProvider>
 	);

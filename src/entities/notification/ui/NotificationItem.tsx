@@ -1,52 +1,34 @@
-import { Bell, CheckCircle2, FileText, MessageSquare, Timer } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import type { Notification } from "../model/types";
+"use client";
+
+import type { ReactNode } from "react";
+import type { Notification } from "@/entities/notification/model/types";
 import { cn } from "@/shared/lib/utils";
 
 interface NotificationItemProps {
 	notification: Notification;
-	action?: React.ReactNode;
-	className?: string;
 	onClick?: () => void;
+	action?: ReactNode;
 }
 
-function renderNotificationIcon(type: string) {
-	if (type.includes("task")) {
-		return <CheckCircle2 className="size-3.5" />;
-	}
-
-	if (type.includes("comment")) {
-		return <MessageSquare className="size-3.5" />;
-	}
-
-	if (type.includes("proposal") || type.includes("contract")) {
-		return <FileText className="size-3.5" />;
-	}
-
-	if (type.includes("reminder") || type.includes("expiry")) {
-		return <Timer className="size-3.5" />;
-	}
-
-	return <Bell className="size-3.5" />;
-}
-
-export function NotificationItem({ notification, action, className, onClick }: NotificationItemProps) {
-	const unread = !notification.readAt;
-
+export function NotificationItem({ notification, onClick, action }: NotificationItemProps) {
 	return (
 		<button
 			type="button"
-			className={cn("flex w-full min-w-0 items-start gap-3 rounded-sm px-3 py-2.5 text-left transition-colors hover:bg-muted/60", unread && "bg-muted/40", className)}
 			onClick={onClick}
+			className={cn(
+				"flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50",
+				!notification.readAt && "bg-primary/5",
+			)}
 		>
-			<div className={cn("mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border bg-background", unread && "border-primary/30 text-primary")}>
-				{renderNotificationIcon(notification.type)}
+			<div className="min-w-0 flex-1 space-y-0.5">
+				<div className="flex items-start justify-between gap-2">
+					<span className={cn("line-clamp-1 font-medium", !notification.readAt && "text-foreground")}>
+						{notification.title}
+					</span>
+					{action}
+				</div>
+				<p className="line-clamp-2 text-xs text-muted-foreground">{notification.body}</p>
 			</div>
-			<div className="min-w-0 flex-1 space-y-1">
-				<p className={cn("line-clamp-2 text-sm leading-snug", unread && "font-medium")}>{notification.message || "New notification"}</p>
-				<p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}</p>
-			</div>
-			{action}
 		</button>
 	);
 }

@@ -6,36 +6,45 @@ import type { Notification } from "@/entities/notification/model/types";
 interface NotificationState {
 	notifications: Notification[];
 	unreadCount: number;
-	isLoading: boolean;
-	setNotifications: (notifications: Notification[], unreadCount?: number) => void;
+	setNotifications: (notifications: Notification[]) => void;
 	addNotification: (notification: Notification) => void;
-	setUnreadCount: (unreadCount: number) => void;
 	markAsRead: (notificationId: string) => void;
 	markAllAsRead: () => void;
-	setIsLoading: (isLoading: boolean) => void;
 }
 
 export const useNotificationStore = create<NotificationState>((set) => ({
 	notifications: [],
 	unreadCount: 0,
-	isLoading: true,
-	setNotifications: (notifications, unreadCount) => set({ notifications, unreadCount: unreadCount ?? notifications.filter((notification) => !notification.readAt).length }),
+
+	setNotifications: (notifications) =>
+		set({
+			notifications,
+			unreadCount: notifications.filter((n) => !n.readAt).length,
+		}),
+
 	addNotification: (notification) =>
-		set((state) => ({
-			notifications: [notification, ...state.notifications],
-			unreadCount: state.unreadCount + (notification.readAt ? 0 : 1),
-		})),
-	setUnreadCount: (unreadCount) => set({ unreadCount }),
+		set((state) => {
+			const notifications = [notification, ...state.notifications];
+			return {
+				notifications,
+				unreadCount: notifications.filter((n) => !n.readAt).length,
+			};
+		}),
+
 	markAsRead: (notificationId) =>
-		set((state) => ({
-			notifications: state.notifications.map((notification) => (notification.notificationId === notificationId ? { ...notification, readAt: notification.readAt ?? new Date().toISOString() } : notification)),
-			unreadCount: Math.max(0, state.unreadCount - 1),
-		})),
+		set((state) => {
+			const notifications = state.notifications.map((n) =>
+				n.notificationId === notificationId ? { ...n, readAt: new Date().toISOString() } : n,
+			);
+			return {
+				notifications,
+				unreadCount: notifications.filter((n) => !n.readAt).length,
+			};
+		}),
+
 	markAllAsRead: () =>
 		set((state) => ({
-			notifications: state.notifications.map((notification) => ({ ...notification, readAt: notification.readAt ?? new Date().toISOString() })),
+			notifications: state.notifications.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })),
 			unreadCount: 0,
 		})),
-	setIsLoading: (isLoading) => set({ isLoading }),
 }));
-

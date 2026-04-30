@@ -19,6 +19,10 @@ export const PROJECT_PERMISSIONS = {
 	VIEW_PROJECT_BUDGET: "view_project_budget",
 } as const;
 
+export const MEETING_PERMISSIONS = {
+	SCHEDULE_MEETINGS: "schedule_meetings",
+} as const;
+
 export const TASK_PERMISSIONS = {
 	MANAGE_TASKS: "manage_tasks",
 	VIEW_TASKS: "view_tasks",
@@ -80,13 +84,18 @@ export function useClientPermissions() {
 	const hasPermission = useAuthStore((state) => state.hasPermission);
 
 	return useMemo(
-		() => ({
-			canManageClients: hasPermission(CLIENT_PERMISSIONS.MANAGE_CLIENTS),
-			canViewClients: hasPermission(CLIENT_PERMISSIONS.VIEW_CLIENTS),
-			canCreateClients: hasPermission(CLIENT_PERMISSIONS.CREATE_CLIENTS),
-			canEditClients: hasPermission(CLIENT_PERMISSIONS.EDIT_CLIENTS),
-			canDeleteClients: hasPermission(CLIENT_PERMISSIONS.DELETE_CLIENTS),
-		}),
+		() => {
+			const canManageClients = hasPermission(CLIENT_PERMISSIONS.MANAGE_CLIENTS);
+
+			// After backend permission seed changes, users must re-login so auth local storage receives the refreshed permissions array.
+			return {
+				canManageClients,
+				canViewClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.VIEW_CLIENTS),
+				canCreateClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.CREATE_CLIENTS),
+				canEditClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.EDIT_CLIENTS),
+				canDeleteClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.DELETE_CLIENTS),
+			};
+		},
 		[hasPermission]
 	);
 }
@@ -103,6 +112,17 @@ export function useProjectPermissions() {
 			canDeleteProjects: hasPermission(PROJECT_PERMISSIONS.DELETE_PROJECTS),
 			canApproveProjectUI: hasPermission(PROJECT_PERMISSIONS.APPROVE_PROJECT_UI),
 			canViewProjectBudget: hasPermission(PROJECT_PERMISSIONS.VIEW_PROJECT_BUDGET),
+		}),
+		[hasPermission]
+	);
+}
+
+export function useMeetingPermissions() {
+	const hasPermission = useAuthStore((state) => state.hasPermission);
+
+	return useMemo(
+		() => ({
+			canScheduleMeetings: hasPermission(MEETING_PERMISSIONS.SCHEDULE_MEETINGS),
 		}),
 		[hasPermission]
 	);

@@ -1,5 +1,9 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 import api from "@/shared/api/base";
-import type { ConvertQuotationPayload, CreateDirectProjectPayload, CreateProjectPayload, Project, ProjectFilters, ProjectListResponse, ProjectMemberListResponse, UpdateProjectPayload } from "../model/types";
+import type { ClientProjectListResponse, ConvertQuotationPayload, CreateDirectProjectPayload, CreateProjectPayload, Project, ProjectFilters, ProjectListResponse, ProjectMemberListResponse, UpdateProjectPayload } from "../model/types";
+import { projectKeys } from "../model/query-keys";
 
 interface ApiEnvelope<T> {
 	data: T;
@@ -36,6 +40,12 @@ export const projectApi = {
 		const params = buildProjectParams(filters);
 		const query = params.toString();
 		const response = await api.get<ApiEnvelope<ProjectListResponse>>(query ? `/projects?${query}` : "/projects");
+
+		return response.data.data;
+	},
+
+	async getClientProjects(clientId: number): Promise<ClientProjectListResponse> {
+		const response = await api.get<ApiEnvelope<ClientProjectListResponse>>(`/clients/${clientId}/projects`);
 
 		return response.data.data;
 	},
@@ -100,3 +110,16 @@ export const projectApi = {
 		await api.delete(`/projects/${id}/pin`);
 	},
 };
+
+export function useGetClientProjects(clientId: number, enabled = true) {
+	return useQuery({
+		queryKey: projectKeys.client(clientId),
+		queryFn: async () => {
+			const response = await projectApi.getClientProjects(clientId);
+
+			return response.projects;
+		},
+		enabled: enabled && clientId > 0,
+		staleTime: 5 * 60 * 1000,
+	});
+}

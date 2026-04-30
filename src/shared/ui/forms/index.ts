@@ -10,5 +10,6 @@ export * from "./FormCheckbox";
 export * from "./FormDatePicker";
 export * from "./FormCheckboxGroup";
 export * from "./FormFileInput";
+export * from "./FormTagSelector";
 export * from "./TagInput";
 export * from "./DatePicker";

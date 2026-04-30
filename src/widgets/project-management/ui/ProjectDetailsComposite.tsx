@@ -10,11 +10,7 @@ import type { Project } from "@/entities/project/model/types";
 import { ProjectStatusBadge } from "@/entities/project/ui/ProjectStatusBadge";
 import { useEmployeePermissions, useInvoicePermissions, useProjectPermissions, useSalesPermissions, useTaskPermissions } from "@/entities/user/model/permissions";
 import { UpdateProjectForm } from "@/features/projects/ui/UpdateProjectForm";
-import { ProjectInvoicesWidget } from "@/widgets/finance-management/ui/ProjectInvoicesWidget";
-import { ProjectTasksKanbanWidget } from "@/widgets/task-management/ui/ProjectTasksKanbanWidget";
-import { ProjectTeamWidget } from "@/widgets/team-management/ui/ProjectTeamWidget";
-import { ProjectContractsWidget } from "@/widgets/sales-management/ui/ProjectContractsWidget";
-import { ProjectTimeTrackerWidget } from "@/widgets/time-tracking/ui/ProjectTimeTrackerWidget";
+
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -136,48 +132,13 @@ export function ProjectDetailsComposite({ projectId, className }: ProjectDetails
 					)}
 				</TabsList>
 
-				<TabsContent value="overview">
-					<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-						<ProjectOverviewPanel project={project} canViewBudget={canViewProjectBudget} />
-						<ProjectTimeTrackerWidget
-							projectId={projectId}
-							projectTitle={project.title}
-						/>
-					</div>
-				</TabsContent>
+			<TabsContent value="overview">
+				<div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+					<ProjectOverviewPanel project={project} canViewBudget={canViewProjectBudget} />
+				</div>
+			</TabsContent>
 
-				{canAccessTasks && (
-					<TabsContent value="tasks">
-						<ProjectTasksKanbanWidget
-							projectId={projectId}
-							projectTitle={project.title}
-						/>
-					</TabsContent>
-				)}
 
-				{canAccessTeam && (
-					<TabsContent value="team">
-						<ProjectTeamWidget projectId={projectId} />
-					</TabsContent>
-				)}
-
-				{canAccessInvoices && (
-					<TabsContent value="invoices">
-						<ProjectInvoicesWidget
-							projectId={projectId}
-							projectTitle={project.title}
-						/>
-					</TabsContent>
-				)}
-
-				{canViewContracts && (
-					<TabsContent value="contracts">
-						<ProjectContractsWidget
-							projectId={projectId}
-							projectTitle={project.title}
-						/>
-					</TabsContent>
-				)}
 			</Tabs>
 
 			<UpdateProjectForm

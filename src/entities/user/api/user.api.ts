@@ -1,4 +1,6 @@
 import api from "@/shared/api/base";
+import { useQuery } from "@tanstack/react-query";
+import { userKeys } from "../model/query-keys";
 import type { EmployeeFilters, EmployeeListResponse } from "../model/employee";
 import type {
 	ApiMessageResponse,
@@ -8,6 +10,7 @@ import type {
 	ChangePasswordPayload,
 	CreateRolePayload,
 	CreateUserPayload,
+	InternalUserListResponse,
 	Permission,
 	ProfileResponse,
 	Role,
@@ -89,6 +92,12 @@ export const userApi = {
 
 	async getUsers(filters?: UserFilters): Promise<UserListResponse> {
 		const response = await api.get<ApiEnvelope<UserListResponse>>(withQuery("/admin/users/manage", buildUserParams(filters)));
+
+		return response.data.data;
+	},
+
+	async getInternalUsers(): Promise<InternalUserListResponse> {
+		const response = await api.get<ApiEnvelope<InternalUserListResponse>>("/internal-users");
 
 		return response.data.data;
 	},
@@ -202,3 +211,12 @@ export const userApi = {
 		return response.data;
 	},
 };
+
+export function useGetInternalUsers(enabled = true) {
+	return useQuery({
+		queryKey: userKeys.internalUsers(),
+		queryFn: userApi.getInternalUsers,
+		enabled,
+		staleTime: 5 * 60 * 1000,
+	});
+}

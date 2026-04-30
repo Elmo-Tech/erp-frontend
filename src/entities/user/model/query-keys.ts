@@ -4,6 +4,7 @@ export const userKeys = {
 	all: ["users"] as const,
 	lists: () => [...userKeys.all, "list"] as const,
 	list: (filters?: UserFilters) => [...userKeys.lists(), filters] as const,
+	internalUsers: () => [...userKeys.all, "internal-users"] as const,
 	details: () => [...userKeys.all, "detail"] as const,
 	detail: (id: number) => [...userKeys.details(), id] as const,
 	roles: () => [...userKeys.all, "roles"] as const,

@@ -2,6 +2,30 @@ import { ClientStatus, ClientStatusColors, ClientStatusLabels } from "@/shared/l
 
 export { ClientStatus, ClientStatusColors, ClientStatusLabels };
 
+export enum ClientType {
+	COMPANY = "company",
+	INDIVIDUAL = "individual",
+}
+
+export const ClientTypeLabels: Record<ClientType, string> = {
+	[ClientType.COMPANY]: "Company",
+	[ClientType.INDIVIDUAL]: "Individual",
+};
+
+export interface Contact {
+	contactId?: number;
+	firstName?: string | null;
+	lastName?: string | null;
+	displayName: string;
+	email?: string | null;
+	phone?: string | null;
+	mobile?: string | null;
+	position?: string | null;
+	department?: string | null;
+	isPrimary?: boolean;
+	notes?: string | null;
+}
+
 export interface ClientProject {
 	projectId: number;
 	title: string;
@@ -18,19 +42,42 @@ export interface OriginalLead {
 
 export interface Client {
 	clientId: number;
+	type?: ClientType;
+	displayName?: string;
+	legalName?: string | null;
+	companyName?: string | null;
+	primaryEmail?: string | null;
+	primaryPhone?: string | null;
+	secondaryPhone?: string | null;
 	name: string;
 	email: string;
 	phone: string | null;
 	company: string | null;
 	position: string | null;
+	industry?: string | null;
 	address: string | null;
 	city: string | null;
+	state?: string | null;
 	country: string | null;
+	postalCode?: string | null;
 	website: string | null;
+	taxNumber?: string | null;
+	source?: string | null;
+	lifecycleStage?: string | null;
+	leadTemperature?: string | null;
+	accountManagerId?: number | null;
 	notes: string | null;
+	metadata?: Record<string, unknown> | null;
+	interests?: string[];
 	status: ClientStatus;
 	userId?: number | null;
 	leadId?: number | null;
+	accountManager?: {
+		userId: number;
+		name: string;
+		email?: string | null;
+	} | null;
+	contacts?: Contact[];
 	projectsCount?: number;
 	totalRevenue?: number | null;
 	activeProjectsCount?: number;
@@ -54,6 +101,24 @@ export interface ClientListResponse {
 	pagination: ClientPagination;
 }
 
+export interface ClientActivity {
+	activityId: number;
+	clientId: number;
+	userId: number | null;
+	action: string;
+	description: string;
+	user?: {
+		userId: number;
+		name: string;
+		email?: string | null;
+	} | null;
+	createdAt: string;
+}
+
+export interface ClientActivityListResponse {
+	activities: ClientActivity[];
+}
+
 export interface ClientFilters {
 	search?: string;
 	status?: ClientStatus;
@@ -69,6 +134,17 @@ export interface CreateClientPayload {
 	phone?: string;
 	company?: string;
 	position?: string;
+	type?: ClientType;
+	displayName?: string;
+	legalName?: string;
+	companyName?: string;
+	primaryEmail?: string;
+	primaryPhone?: string;
+	source?: string;
+	accountManagerId?: number;
+	interests?: string[];
+	contactPerson?: Omit<Contact, "contactId">;
+	metadata?: Record<string, unknown>;
 	address?: string;
 	city?: string;
 	country?: string;

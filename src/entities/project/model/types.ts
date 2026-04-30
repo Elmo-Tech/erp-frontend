@@ -113,6 +113,10 @@ export interface ProjectListResponse {
 	pagination: ProjectPagination;
 }
 
+export interface ClientProjectListResponse {
+	projects: Project[];
+}
+
 export interface ProjectFilters {
 	search?: string;
 	status?: ProjectStatus;

@@ -103,3 +103,38 @@ export function getCategoryVariant(category: string): StatusVariant {
 	};
 	return categoryMap[category.toLowerCase()] || "default";
 }
+
+/* ─── Client-specific Status Badge ─── */
+interface ClientStatusBadgeProps {
+	status: string;
+	size?: "sm" | "default" | "lg";
+	className?: string;
+}
+
+const clientStatusConfig: Record<string, { label: string; variant: StatusVariant }> = {
+	active: { label: "Active", variant: "success" },
+	inactive: { label: "Inactive", variant: "default" },
+	lead: { label: "Lead", variant: "info" },
+	prospect: { label: "Prospect", variant: "warning" },
+	churned: { label: "Churned", variant: "error" },
+	onboarding: { label: "Onboarding", variant: "secondary" },
+};
+
+export function ClientStatusBadge({ status, size, className }: ClientStatusBadgeProps) {
+	const config = clientStatusConfig[status?.toLowerCase()] ?? {
+		label: status ?? "Unknown",
+		variant: "default" as StatusVariant,
+	};
+
+	return (
+		<StatusBadge
+			label={config.label}
+			variant={config.variant}
+			className={cn(
+				size === "sm" && "text-[11px] px-1.5 py-0",
+				size === "lg" && "text-sm px-3 py-1 font-medium",
+				className
+			)}
+		/>
+	);
+}

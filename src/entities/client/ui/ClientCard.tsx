@@ -5,7 +5,7 @@ import type { KeyboardEvent } from "react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
-import { ClientStatusBadge } from "@/shared/ui/StatusBadge";
+import { ClientStatusBadge } from "@/shared/ui/data-display/StatusBadge";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
 import type { Client } from "../model/types";

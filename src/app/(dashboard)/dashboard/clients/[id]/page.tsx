@@ -1,15 +1,10 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { use } from "react";
-import { ClientDetailsComposite } from "@/widgets/client-management/ui/ClientDetailsComposite";
-
-interface ClientDetailsPageProps {
+interface ClientProfileIndexPageProps {
 	params: Promise<{ id: string }>;
 }
 
-export default function ClientDetailsPage({ params }: ClientDetailsPageProps) {
-	const { id } = use(params);
-	const clientId = parseInt(id, 10);
-
-	return <ClientDetailsComposite clientId={clientId} />;
+export default async function ClientProfileIndexPage({ params }: ClientProfileIndexPageProps) {
+	const { id } = await params;
+	redirect(`/dashboard/clients/${id}/overview`);
 }
