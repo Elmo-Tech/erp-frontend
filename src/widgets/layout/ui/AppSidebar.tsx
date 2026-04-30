@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, X, Shield } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, X, Shield, Sunrise, ClipboardList } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
@@ -32,6 +32,12 @@ const navGroups: NavGroup[] = [
 				title: "Dashboard",
 				href: "/dashboard",
 				icon: LayoutDashboard,
+			},
+			{
+				title: "Morning SOP",
+				href: "/dashboard/sop",
+				icon: Sunrise,
+				permission: "view_morning_sop",
 			},
 		],
 	},
@@ -65,6 +71,12 @@ const navGroups: NavGroup[] = [
 				href: "/dashboard/roles",
 				icon: Shield,
 				permission: "manage_roles",
+			},
+			{
+				title: "Manage SOPs",
+				href: "/dashboard/admin/sops",
+				icon: ClipboardList,
+				permission: "manage_sops",
 			},
 			{
 				title: "Settings",
@@ -112,7 +124,7 @@ export function Sidebar() {
 			)}
 
 			<aside
-				className={cn("fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300", "lg:translate-x-0", isCollapsed ? "lg:w-17.5" : "lg:w-64", isMobileOpen ? "translate-x-0 w-264" : "-translate-x-full")}
+				className={cn("fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300", "lg:translate-x-0", isCollapsed ? "lg:w-17.5" : "lg:w-64", isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full")}
 			>
 				<div className="flex h-16 items-center justify-between border-b px-4">
 					{(!isCollapsed || isMobileOpen) && (
