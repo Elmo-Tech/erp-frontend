@@ -88,6 +88,22 @@ export interface Client {
 	updatedAt: string;
 }
 
+export interface ClientIndexRow {
+	id: number;
+	type?: ClientType;
+	display_name: string;
+	email?: string | null;
+	company_name?: string | null;
+	position?: string | null;
+	primary_phone?: string | null;
+	status: ClientStatus;
+	country?: string | null;
+	projects_count: number;
+	active_projects_count?: number;
+	total_revenue?: number | null;
+	created_at: string;
+}
+
 export interface ClientPagination {
 	total: number;
 	count: number;
@@ -97,7 +113,7 @@ export interface ClientPagination {
 }
 
 export interface ClientListResponse {
-	clients: Client[];
+	clients: ClientIndexRow[];
 	pagination: ClientPagination;
 }
 

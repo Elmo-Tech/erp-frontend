@@ -31,13 +31,13 @@ export function ClientStatsWidget({ className }: ClientStatsWidgetProps) {
 		},
 		{
 			label: "Active Projects",
-			value: clients.reduce((total, client) => total + (client.activeProjectsCount ?? 0), 0),
+			value: clients.reduce((total, client) => total + (client.active_projects_count ?? 0), 0),
 			icon: BriefcaseBusiness,
 			helper: "Currently in motion",
 		},
 		{
 			label: "Total Revenue",
-			value: formatCurrency(clients.reduce((total, client) => total + Number(client.totalRevenue ?? 0), 0)),
+			value: formatCurrency(clients.reduce((total, client) => total + Number(client.total_revenue ?? 0), 0)),
 			icon: CircleDollarSign,
 			helper: "Recorded client value",
 		},

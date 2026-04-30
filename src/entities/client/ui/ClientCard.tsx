@@ -8,13 +8,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ClientStatusBadge } from "@/shared/ui/data-display/StatusBadge";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { cn } from "@/shared/lib/utils";
-import type { Client } from "../model/types";
+import type { ClientIndexRow } from "../model/types";
 
 interface ClientCardProps {
-	client: Client;
-	onView?: (client: Client) => void;
-	onEdit?: (client: Client) => void;
-	onDelete?: (client: Client) => void;
+	client: ClientIndexRow;
+	onView?: (client: ClientIndexRow) => void;
+	onEdit?: (client: ClientIndexRow) => void;
+	onDelete?: (client: ClientIndexRow) => void;
 	className?: string;
 }
 
@@ -23,8 +23,8 @@ function fallback(value: string | null | undefined) {
 }
 
 export function ClientCard({ client, onView, onEdit, onDelete, className }: ClientCardProps) {
-	const projectCount = client.projectsCount ?? 0;
-	const totalRevenue = client.totalRevenue ?? 0;
+	const projectCount = client.projects_count ?? 0;
+	const totalRevenue = client.total_revenue ?? 0;
 
 	const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
 		if (!onView) {
@@ -50,12 +50,12 @@ export function ClientCard({ client, onView, onEdit, onDelete, className }: Clie
 			)}
 		>
 			<div className="min-w-0">
-				<div className="truncate font-medium leading-5">{client.name}</div>
+				<div className="truncate font-medium leading-5">{client.display_name}</div>
 				<div className="truncate text-xs text-muted-foreground">{client.email}</div>
 			</div>
 
 			<div className="min-w-0">
-				<div className="truncate leading-5">{fallback(client.company)}</div>
+				<div className="truncate leading-5">{fallback(client.company_name)}</div>
 				<div className="truncate text-xs text-muted-foreground">{fallback(client.position)}</div>
 			</div>
 
@@ -65,7 +65,7 @@ export function ClientCard({ client, onView, onEdit, onDelete, className }: Clie
 					size="sm"
 					className="shrink-0"
 				/>
-				<span className="truncate text-xs text-muted-foreground md:hidden">{fallback(client.phone)}</span>
+				<span className="truncate text-xs text-muted-foreground md:hidden">{fallback(client.primary_phone)}</span>
 			</div>
 
 			<div className="hidden md:block">
@@ -86,7 +86,7 @@ export function ClientCard({ client, onView, onEdit, onDelete, className }: Clie
 							type="button"
 							variant="ghost"
 							size="icon-sm"
-							aria-label={`Open actions for ${client.name}`}
+							aria-label={`Open actions for ${client.display_name}`}
 							onClick={(event) => event.stopPropagation()}
 						>
 							<MoreHorizontal />

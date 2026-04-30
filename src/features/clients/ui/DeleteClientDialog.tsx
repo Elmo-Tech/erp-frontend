@@ -2,13 +2,13 @@
 
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
-import type { Client } from "@/entities/client/model/types";
+import type { ClientIndexRow } from "@/entities/client/model/types";
 import { useDeleteClient } from "../model/use-client-actions";
 
 interface DeleteClientDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	client: Client | null;
+	client: Pick<ClientIndexRow, "id" | "display_name"> | null;
 	onSuccess?: () => void;
 }
 
@@ -21,7 +21,7 @@ export function DeleteClientDialog({ open, onOpenChange, client, onSuccess }: De
 		}
 
 		try {
-			await deleteClient.mutateAsync(client.clientId);
+			await deleteClient.mutateAsync(client.id);
 			toast.success("Client deleted successfully");
 			onOpenChange(false);
 			onSuccess?.();
@@ -37,7 +37,7 @@ export function DeleteClientDialog({ open, onOpenChange, client, onSuccess }: De
 			title="Delete client"
 			description={
 				<span>
-					Delete <span className="font-medium text-foreground">{client?.name}</span>? This action cannot be undone.
+					Delete <span className="font-medium text-foreground">{client?.display_name}</span>? This action cannot be undone.
 				</span>
 			}
 			confirmLabel="Delete"

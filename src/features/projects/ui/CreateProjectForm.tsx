@@ -52,8 +52,8 @@ export function CreateProjectForm({ open, onOpenChange, clientId, clientName, on
 		}
 
 		return (clientsQuery.data?.clients ?? []).map((client) => ({
-			value: String(client.clientId),
-			label: client.company ? `${client.name} / ${client.company}` : client.name,
+			value: String(client.id),
+			label: client.company_name ? `${client.display_name} / ${client.company_name}` : client.display_name,
 		}));
 	}, [clientId, clientName, clientsQuery.data?.clients]);
 

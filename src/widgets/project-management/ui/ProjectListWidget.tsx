@@ -56,8 +56,8 @@ export function ProjectListWidget() {
 	const clientFilterOptions = useMemo(
 		() =>
 			(clientsQuery.data?.clients ?? []).map((client) => ({
-				value: String(client.clientId),
-				label: client.company ? `${client.name} / ${client.company}` : client.name,
+				value: String(client.id),
+				label: client.company_name ? `${client.display_name} / ${client.company_name}` : client.display_name,
 			})),
 		[clientsQuery.data?.clients]
 	);

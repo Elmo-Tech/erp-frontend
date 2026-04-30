@@ -12,7 +12,7 @@ import { Pagination } from "@/shared/ui/data-display/Pagination";
 import { clientApi } from "@/entities/client/api/client.api";
 import { ClientCard } from "@/entities/client/ui/ClientCard";
 import { clientKeys } from "@/entities/client/model/query-keys";
-import type { Client, ClientFilters } from "@/entities/client/model/types";
+import type { ClientIndexRow, ClientFilters } from "@/entities/client/model/types";
 import { useClientPermissions } from "@/entities/user/model/permissions";
 import { AddClientModal } from "@/features/clients/ui/AddClientModal";
 import { DeleteClientDialog } from "@/features/clients/ui/DeleteClientDialog";
@@ -27,8 +27,8 @@ export function ClientListWidget() {
 	const router = useRouter();
 	const [filters, setFilters] = useState<ClientFilters>(DEFAULT_FILTERS);
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
-	const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
-	const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+	const [clientToEditId, setClientToEditId] = useState<number | null>(null);
+	const [clientToDelete, setClientToDelete] = useState<ClientIndexRow | null>(null);
 	const { canManageClients, canCreateClients, canEditClients, canDeleteClients } = useClientPermissions();
 
 	const clientsQuery = useQuery({
@@ -39,6 +39,11 @@ export function ClientListWidget() {
 
 	const clients = clientsQuery.data?.clients ?? [];
 	const pagination = clientsQuery.data?.pagination;
+	const clientToEditQuery = useQuery({
+		queryKey: clientToEditId ? clientKeys.detail(clientToEditId) : clientKeys.details(),
+		queryFn: () => clientApi.getClientById(clientToEditId as number),
+		enabled: Boolean(clientToEditId),
+	});
 
 	const handleSearch = (search: string) => {
 		setFilters((currentFilters) => ({
@@ -55,8 +60,8 @@ export function ClientListWidget() {
 		}));
 	};
 
-	const handleView = (client: Client) => {
-		router.push(`/dashboard/clients/${client.clientId}`);
+	const handleView = (client: ClientIndexRow) => {
+		router.push(`/dashboard/clients/${client.id}`);
 	};
 
 	const handleCreateClick = () => {
@@ -139,10 +144,10 @@ export function ClientListWidget() {
 				) : (
 					clients.map((client) => (
 						<ClientCard
-							key={client.clientId}
+							key={client.id}
 							client={client}
 							onView={handleView}
-							onEdit={canManageClients || canEditClients ? setClientToEdit : undefined}
+							onEdit={canManageClients || canEditClients ? (selectedClient) => setClientToEditId(selectedClient.id) : undefined}
 							onDelete={canManageClients || canDeleteClients ? setClientToDelete : undefined}
 						/>
 					))
@@ -161,15 +166,15 @@ export function ClientListWidget() {
 				onOpenChange={setCreateDialogOpen}
 			/>
 
-			{clientToEdit && (
+			{clientToEditQuery.data && (
 				<EditClientModal
-					open={Boolean(clientToEdit)}
+					open={Boolean(clientToEditId)}
 					onOpenChange={(open) => {
 						if (!open) {
-							setClientToEdit(null);
+							setClientToEditId(null);
 						}
 					}}
-					client={clientToEdit}
+					client={clientToEditQuery.data}
 				/>
 			)}
 
