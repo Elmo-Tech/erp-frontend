@@ -1,5 +1,1 @@
-import { InteractiveSOPWidget } from "@/widgets/sop-management/ui/InteractiveSOPWidget";
-
-export default function SOPPage() {
-	return <InteractiveSOPWidget />;
-}
+export { default } from "@/views/sop/InteractiveSOPPage";

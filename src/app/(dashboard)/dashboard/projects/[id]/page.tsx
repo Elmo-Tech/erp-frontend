@@ -1,15 +1,11 @@
-"use client";
-
-import { use } from "react";
-import { ProjectDetailsComposite } from "@/widgets/project-management/ui/ProjectDetailsComposite";
+import ProjectDetailsPageView from "@/views/projects/ProjectDetailsPage";
 
 interface ProjectDetailsPageProps {
 	params: Promise<{ id: string }>;
 }
 
-export default function ProjectDetailsPage({ params }: ProjectDetailsPageProps) {
-	const { id } = use(params);
-	const projectId = parseInt(id, 10);
+export default async function ProjectDetailsPage({ params }: ProjectDetailsPageProps) {
+	const { id } = await params;
 
-	return <ProjectDetailsComposite projectId={projectId} />;
+	return <ProjectDetailsPageView projectId={Number(id)} />;
 }

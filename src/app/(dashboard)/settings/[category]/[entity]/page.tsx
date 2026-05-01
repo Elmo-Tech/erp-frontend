@@ -1,6 +1,4 @@
-import { notFound } from "next/navigation";
-import { DictionaryManager } from "@/widgets/settings-management/ui/DictionaryManager";
-import { getSettingsDictionary, getSettingsDictionaryEndpoint } from "@/shared/config/settings-dictionaries";
+import SettingsDictionaryPageView from "@/views/settings/SettingsDictionaryPage";
 
 interface SettingsDictionaryPageProps {
 	params: Promise<{
@@ -11,16 +9,11 @@ interface SettingsDictionaryPageProps {
 
 export default async function SettingsDictionaryPage({ params }: SettingsDictionaryPageProps) {
 	const { category, entity } = await params;
-	const dictionary = getSettingsDictionary(category, entity);
-
-	if (!dictionary) {
-		notFound();
-	}
 
 	return (
-		<DictionaryManager
-			entityName={dictionary.entityName}
-			apiEndpoint={getSettingsDictionaryEndpoint(dictionary)}
+		<SettingsDictionaryPageView
+			category={category}
+			entity={entity}
 		/>
 	);
 }
