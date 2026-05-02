@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, X, Shield, Sunrise, ClipboardList } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, X, Shield, Sunrise, ClipboardList, Target } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
@@ -49,6 +49,12 @@ const navGroups: NavGroup[] = [
 				href: "/dashboard/clients",
 				icon: Building2,
 				permission: "view_clients",
+			},
+			{
+				title: "Sales Pipeline",
+				href: "/leads",
+				icon: Target,
+				permission: "view_leads",
 			},
 		],
 	},
@@ -124,7 +130,12 @@ export function Sidebar() {
 			)}
 
 			<aside
-				className={cn("fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300", "lg:translate-x-0", isCollapsed ? "lg:w-17.5" : "lg:w-64", isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full")}
+				className={cn(
+					"fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300",
+					"lg:translate-x-0",
+					isCollapsed ? "lg:w-17.5" : "lg:w-64",
+					isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full",
+				)}
 			>
 				<div className="flex h-16 items-center justify-between border-b px-4">
 					{(!isCollapsed || isMobileOpen) && (
