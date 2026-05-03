@@ -68,7 +68,7 @@ export function getSettingsDictionary(category: string, entity: string) {
 }
 
 export function getSettingsDictionaryHref(item: SettingsDictionaryItem) {
-	return `/settings/${item.category}/${item.entity}`;
+	return `/dashboard/settings/${item.category}/${item.entity}`;
 }
 
 export function getSettingsDictionaryEndpoint(item: SettingsDictionaryItem) {

@@ -19,6 +19,7 @@ import { LeadCard } from "./LeadCard";
 interface KanbanColumnProps {
 	stage: PipelineStage;
 	leads: Lead[];
+	onCardClick?: (leadId: number) => void;
 }
 
 // Subtle accent colour per stage for the header dot
@@ -31,7 +32,7 @@ const STAGE_ACCENT: Record<PipelineStage, string> = {
 	closed_won: "bg-emerald-500",
 };
 
-export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
+export function KanbanColumn({ stage, leads, onCardClick }: KanbanColumnProps) {
 	return (
 		<div className="flex flex-col w-[272px] shrink-0">
 			{/* ── Column header ──────────────────────────────────────────────── */}
@@ -56,6 +57,7 @@ export function KanbanColumn({ stage, leads }: KanbanColumnProps) {
 								key={lead.id}
 								lead={lead}
 								index={index}
+								onCardClick={onCardClick}
 							/>
 						))}
 						{provided.placeholder}

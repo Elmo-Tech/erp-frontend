@@ -51,12 +51,25 @@ export const taskTabSchema = z.object({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Skip tab
+// Skip tab — skip_reason is STRICTLY REQUIRED (no optional)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const skipTabSchema = z.object({
-	skipReason: z.enum(SKIP_REASONS),
+	/** REQUIRED — a skip reason must always be provided. */
+	skipReason: z.enum(SKIP_REASONS, {
+		message: "A skip reason is required to skip this stage.",
+	}),
 	skipNotes: z.string().optional(),
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rejection schema — rejection_reason is STRICTLY REQUIRED
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const rejectionSchema = z.object({
+	/** REQUIRED — must always be provided when rejecting a task or stage. */
+	rejectionReason: z.string().trim().min(1, "A rejection reason is required."),
+	rejectionNotes: z.string().optional(),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

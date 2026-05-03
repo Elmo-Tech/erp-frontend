@@ -3,14 +3,9 @@
 /**
  * LeadCard — Draggable card rendered inside a Kanban column.
  *
- * Visual design:
- *  - Pure white background (bg-background) with a delicate border
- *  - Subtle shadow that lifts on hover
- *  - Bold title, muted secondary text, clean footer row
- *  - Hover: border shifts to primary tint, shadow deepens
- *  - Dragging: ring highlight + elevated shadow
- *
- * Clicking opens LeadDetailsSheet (outside Draggable to avoid z-index issues).
+ * Clicking the card (when not dragging) calls `onCardClick(lead.id)` so the
+ * parent can navigate to `/leads/[id]`. Falls back to opening the legacy
+ * LeadDetailsSheet if no `onCardClick` is provided.
  */
 
 import { useState } from "react";
@@ -23,10 +18,20 @@ import { LeadDetailsSheet } from "./LeadDetailsSheet";
 interface LeadCardProps {
 	lead: Lead;
 	index: number;
+	/** If provided, clicking the card calls this instead of opening the sheet. */
+	onCardClick?: (leadId: number) => void;
 }
 
-export function LeadCard({ lead, index }: LeadCardProps) {
+export function LeadCard({ lead, index, onCardClick }: LeadCardProps) {
 	const [sheetOpen, setSheetOpen] = useState(false);
+
+	const handleClick = () => {
+		if (onCardClick) {
+			onCardClick(lead.id);
+		} else {
+			setSheetOpen(true);
+		}
+	};
 
 	return (
 		<>
@@ -43,7 +48,7 @@ export function LeadCard({ lead, index }: LeadCardProps) {
 					>
 						<div
 							onClick={() => {
-								if (!snapshot.isDragging) setSheetOpen(true);
+								if (!snapshot.isDragging) handleClick();
 							}}
 							className={cn(
 								// Base
@@ -86,12 +91,14 @@ export function LeadCard({ lead, index }: LeadCardProps) {
 				)}
 			</Draggable>
 
-			{/* Details sheet — outside Draggable to avoid z-index conflicts */}
-			<LeadDetailsSheet
-				lead={lead}
-				open={sheetOpen}
-				onOpenChange={setSheetOpen}
-			/>
+			{/* Legacy sheet — only rendered when no onCardClick is provided */}
+			{!onCardClick && (
+				<LeadDetailsSheet
+					lead={lead}
+					open={sheetOpen}
+					onOpenChange={setSheetOpen}
+				/>
+			)}
 		</>
 	);
 }

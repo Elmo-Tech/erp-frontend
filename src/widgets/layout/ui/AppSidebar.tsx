@@ -52,7 +52,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				title: "Sales Pipeline",
-				href: "/leads",
+				href: "/dashboard/leads",
 				icon: Target,
 				permission: "view_leads",
 			},
@@ -86,7 +86,7 @@ const navGroups: NavGroup[] = [
 			},
 			{
 				title: "Settings",
-				href: "/settings",
+				href: "/dashboard/settings",
 				icon: Settings,
 			},
 		],

@@ -26,7 +26,7 @@ export default function LoginPage() {
 	}, [isAuthenticated, role, tokenExpiresAt, logout, router]);
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted p-4">
+		<div className="flex min-h-screen items-center justify-center w-full bg-linear-to-br from-background to-muted p-4">
 			<LoginWidget />
 		</div>
 	);

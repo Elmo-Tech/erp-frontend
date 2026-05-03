@@ -1,8 +1,8 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+// نستخدم الـ proxy route بدل الـ direct URL عشان نتجنب CORS في production
+const API_BASE_URL = "/api/proxy";
 const LOGIN_ROUTE = "/login";
-const AUTH_TOKEN_KEY = "auth_token";
 const AUTH_STORAGE_KEY = "auth-storage";
 
 interface PersistedAuthStorage {
@@ -39,7 +39,7 @@ function getAuthToken() {
 		return null;
 	}
 
-	return localStorage.getItem(AUTH_TOKEN_KEY) ?? readPersistedAuth()?.state?.token ?? null;
+	return readPersistedAuth()?.state?.token ?? null;
 }
 
 function isTokenExpired(tokenExpiresAt: string | null | undefined) {
@@ -56,25 +56,7 @@ export function clearClientAuthState() {
 		return;
 	}
 
-	localStorage.removeItem(AUTH_TOKEN_KEY);
-
-	const authStorage = localStorage.getItem(AUTH_STORAGE_KEY);
-	if (authStorage) {
-		try {
-			const parsed = JSON.parse(authStorage);
-			const savedAccounts = parsed?.state?.savedAccounts;
-			if (savedAccounts) {
-				localStorage.setItem(
-					AUTH_STORAGE_KEY,
-					JSON.stringify({ state: { savedAccounts }, version: parsed.version })
-				);
-			} else {
-				localStorage.removeItem(AUTH_STORAGE_KEY);
-			}
-		} catch {
-			localStorage.removeItem(AUTH_STORAGE_KEY);
-		}
-	}
+	localStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
 export function redirectToLogin() {

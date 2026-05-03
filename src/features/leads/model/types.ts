@@ -13,6 +13,7 @@ export interface Lead {
 	phone?: string;
 	stage: PipelineStage;
 	assignedTo?: number;
+	expectedBudget?: number;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -50,6 +51,24 @@ export interface TaskPayload {
 	assignedTo: number;
 	deadline: string;
 	notes?: string;
+	/**
+	 * Backend state scaffold for task fulfillment.
+	 *
+	 * When a document (Proposal / Quotation / Contract) is created as a Task,
+	 * the backend sets this to "pending_fulfillment". The task is only
+	 * considered complete when the assignee fulfills the DirectUpload schema
+	 * (uploads the PDF and sets the required financials).
+	 *
+	 * Lifecycle: pending_fulfillment → fulfilled | rejected
+	 *
+	 * Frontend reads this to show a "Fulfill Task" CTA on the task card.
+	 */
+	fulfillmentStatus?: "pending_fulfillment" | "fulfilled" | "rejected";
+	/**
+	 * REQUIRED when fulfillmentStatus === "rejected".
+	 * The backend must enforce this constraint.
+	 */
+	rejectionReason?: string;
 }
 
 /** Meeting schedule payload */
@@ -72,9 +91,9 @@ export interface GenericDirectUploadPayload {
 }
 
 /** Proposal-specific direct-upload */
-export interface ProposalDirectUploadPayload extends ProposalDirectUploadValues {
+export type ProposalDirectUploadPayload = ProposalDirectUploadValues & {
 	mode: "direct_upload";
-}
+};
 
 /** Quotation-specific direct-upload */
 export interface QuotationDirectUploadPayload extends Omit<QuotationDirectUploadValues, "upload_file"> {
@@ -94,7 +113,18 @@ export interface SkipPayload {
 	notes?: string;
 }
 
-export type StageModalPayload = TaskPayload | MeetingSchedulePayload | GenericDirectUploadPayload | ProposalDirectUploadPayload | QuotationDirectUploadPayload | ContractDirectUploadPayload | SkipPayload;
+/**
+ * Rejection payload — used when a task is rejected by the assignee or manager.
+ * `rejection_reason` is STRICTLY REQUIRED.
+ */
+export interface RejectionPayload {
+	mode: "rejection";
+	/** REQUIRED — must always be provided when rejecting. */
+	rejectionReason: string;
+	notes?: string;
+}
+
+export type StageModalPayload = TaskPayload | MeetingSchedulePayload | GenericDirectUploadPayload | ProposalDirectUploadPayload | QuotationDirectUploadPayload | ContractDirectUploadPayload | SkipPayload | RejectionPayload;
 
 /** Collected result for a single stage in the queue */
 export interface StageModalResult {

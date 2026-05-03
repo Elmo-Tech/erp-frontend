@@ -60,7 +60,7 @@ export default function ClientProfileLayout({ children, params }: ClientProfileL
 
 	if (clientQuery.error || !clientQuery.data) {
 		return (
-			<section className="mx-auto flex min-h-80 w-full max-w-7xl flex-col items-center justify-center gap-3 rounded-md border bg-background px-4 text-center">
+			<section className="mx-auto flex min-h-80 w-full flex-col items-center justify-center gap-3 rounded-md border bg-background px-4 text-center">
 				<div className="text-sm font-medium">Client not found</div>
 				<p className="max-w-sm text-sm text-muted-foreground">{clientQuery.error?.message || "This client profile is unavailable."}</p>
 				<Button
@@ -77,7 +77,7 @@ export default function ClientProfileLayout({ children, params }: ClientProfileL
 
 	return (
 		<ClientProfileProvider client={clientQuery.data}>
-			<div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+			<div className="mx-auto flex w-full flex-col gap-6">
 				<ClientProfileHeader
 					client={clientQuery.data}
 					canEditProfile={canEditProfile}
@@ -182,10 +182,7 @@ function ClientProfileTabsNavbar({ clientId }: { clientId: number }) {
 						<Link
 							key={tab.href}
 							href={href}
-							className={cn(
-								"whitespace-nowrap border-b-2 px-0.5 pb-3 text-sm font-medium transition-colors",
-								isActive ? "border-blue-600 text-blue-600" : "border-transparent text-muted-foreground hover:text-foreground"
-							)}
+							className={cn("whitespace-nowrap border-b-2 px-0.5 pb-3 text-sm font-medium transition-colors", isActive ? "border-blue-600 text-blue-600" : "border-transparent text-muted-foreground hover:text-foreground")}
 						>
 							{tab.label}
 						</Link>

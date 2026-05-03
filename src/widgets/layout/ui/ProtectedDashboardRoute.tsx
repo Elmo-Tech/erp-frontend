@@ -14,10 +14,17 @@ interface ProtectedDashboardRouteProps {
 export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermission }: ProtectedDashboardRouteProps) {
 	const router = useRouter();
 	const { isAuthenticated, role, hasPermission, tokenExpiresAt, logout } = useAuthStore();
+	// نبدأ بـ true عشان ننتظر الـ hydration من localStorage
 	const [isChecking, setIsChecking] = useState(true);
 
 	useEffect(() => {
-		const timer = window.setTimeout(() => {
+		// ننتظر الـ Zustand persist hydration من localStorage
+		// useAuthStore.persist.hasHydrated() بيرجع true لما يخلص
+		const unsubscribe = useAuthStore.persist.onHydrate(() => {
+			// لو الـ hydration بدأت، مش محتاجين نعمل حاجة هنا
+		});
+
+		const checkAuth = () => {
 			if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date()) {
 				logout();
 				router.push("/login");
@@ -40,9 +47,25 @@ export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermis
 			}
 
 			setIsChecking(false);
-		}, 100);
+		};
 
-		return () => window.clearTimeout(timer);
+		// لو الـ hydration خلصت بالفعل، نعمل الـ check فوراً
+		if (useAuthStore.persist.hasHydrated()) {
+			checkAuth();
+		} else {
+			// ننتظر الـ hydration تخلص
+			const finishUnsubscribe = useAuthStore.persist.onFinishHydration(() => {
+				checkAuth();
+			});
+			return () => {
+				unsubscribe();
+				finishUnsubscribe();
+			};
+		}
+
+		return () => {
+			unsubscribe();
+		};
 	}, [allowedRoles, hasPermission, isAuthenticated, logout, requiredPermission, role, router, tokenExpiresAt]);
 
 	if (isChecking) {
@@ -55,4 +78,3 @@ export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermis
 
 	return <>{children}</>;
 }
-

@@ -135,6 +135,9 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 
 	// ── Skip mode ─────────────────────────────────────────────────────────────
 	if (payload.mode === "skip") {
+		if (!payload.skipReason) {
+			throw new Error(`[leads.api] skip_reason is required for stage "${stage}" but was not provided.`);
+		}
 		return {
 			type,
 			creation_type: "skipped",
@@ -305,5 +308,36 @@ export interface GetLeadsResponse {
  */
 export async function getLeads(): Promise<GetLeadsResponse> {
 	const response = await api.get<GetLeadsResponse>("/leads");
+	return response.data;
+}
+
+// ─── Get Single Lead ─────────────────────────────────────────────────────────
+
+export interface GetLeadResponse {
+	success: boolean;
+	message: string;
+	data: {
+		id: number;
+		title: string;
+		stage: string;
+		status: string;
+		company: string | null;
+		email: string | null;
+		phone: string | null;
+		expected_budget: number | null;
+		source: string | null;
+		assignedTo: number | null;
+		createdAt: string;
+		updatedAt: string;
+	};
+}
+
+/**
+ * Fetch a single lead by ID.
+ *
+ * GET /api/v1/leads/{leadId}
+ */
+export async function getLead(leadId: number): Promise<GetLeadResponse> {
+	const response = await api.get<GetLeadResponse>(`/leads/${leadId}`);
 	return response.data;
 }

@@ -38,7 +38,12 @@ import { KanbanColumn } from "./KanbanColumn";
 // Component
 // ---------------------------------------------------------------------------
 
-export function LeadsKanbanBoard() {
+interface LeadsKanbanBoardProps {
+	/** Called when a card is clicked (not dragged). Receives the lead ID. */
+	onCardClick?: (leadId: number) => void;
+}
+
+export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
 	const router = useRouter();
 
 	// ── Store selectors ───────────────────────────────────────────────────────
@@ -172,12 +177,13 @@ export function LeadsKanbanBoard() {
 	return (
 		<>
 			<DragDropContext onDragEnd={handleDragEnd}>
-				<div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-12rem)]">
+				<div className="flex gap-4 min-h-[600px]">
 					{PIPELINE_STAGES.map((stage) => (
 						<KanbanColumn
 							key={stage}
 							stage={stage}
 							leads={leadsByStage[stage]}
+							onCardClick={onCardClick}
 						/>
 					))}
 				</div>

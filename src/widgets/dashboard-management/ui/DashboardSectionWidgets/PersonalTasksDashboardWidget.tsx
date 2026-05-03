@@ -61,14 +61,7 @@ interface PersonalTasksDashboardWidgetProps {
 const MAX_TASKS = 8;
 const MAX_BLOCKERS = 5;
 
-export function PersonalTasksDashboardWidget({
-	personalTasks,
-	blockers = [],
-	showTasksPanel = true,
-	blockersTitle = "My blockers",
-	onEscalate,
-	escalatingTaskId,
-}: PersonalTasksDashboardWidgetProps) {
+export function PersonalTasksDashboardWidget({ personalTasks, blockers = [], showTasksPanel = true, blockersTitle = "My blockers", onEscalate, escalatingTaskId }: PersonalTasksDashboardWidgetProps) {
 	const tasks = (personalTasks?.items ?? personalTasks?.tasks ?? []).slice(0, MAX_TASKS);
 	const visibleBlockers = blockers.slice(0, MAX_BLOCKERS);
 
@@ -98,7 +91,7 @@ export function PersonalTasksDashboardWidget({
 				</div>
 			)}
 
-			<div className="overflow-hidden rounded-md border border-destructive/20 bg-destructive/[0.03]">
+			<div className="overflow-hidden rounded-md border border-destructive/20 bg-destructive/3">
 				<PanelHeader
 					title={blockersTitle}
 					description={`${blockers.length} waiting on action`}
@@ -147,7 +140,7 @@ function TaskRow({ task }: { task: PersonalTaskItem }) {
 
 function BlockerRow({ blocker, onEscalate, isEscalating }: { blocker: BlockerItem; onEscalate?: (blocker: BlockerItem) => void; isEscalating?: boolean }) {
 	return (
-		<div className="rounded-md border border-destructive/20 bg-destructive/[0.05] px-3 py-2">
+		<div className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2">
 			<div className="flex min-w-0 items-start justify-between gap-3">
 				<div className="flex min-w-0 items-start gap-2">
 					<AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive/80" />
@@ -158,8 +151,8 @@ function BlockerRow({ blocker, onEscalate, isEscalating }: { blocker: BlockerIte
 					</div>
 				</div>
 
-				{onEscalate && (
-					blocker.is_escalated ? (
+				{onEscalate &&
+					(blocker.is_escalated ? (
 						<span className="shrink-0 rounded-full border border-destructive/20 px-2 py-1 text-[11px] font-medium text-destructive/80">Escalated</span>
 					) : (
 						<Button
@@ -173,8 +166,7 @@ function BlockerRow({ blocker, onEscalate, isEscalating }: { blocker: BlockerIte
 							{isEscalating ? <Loader2 className="size-3 animate-spin" /> : <ArrowUpRight className="size-3" />}
 							Escalate
 						</Button>
-					)
-				)}
+					))}
 			</div>
 		</div>
 	);
