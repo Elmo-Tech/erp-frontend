@@ -3,18 +3,22 @@
 /**
  * MeetingScheduleTab
  *
- * Rendered inside the Meeting stage modal — "Schedule" mode.
- * Replicates the exact layout of the Client module's ScheduleMeetingForm:
+ * Thin wrapper rendered inside the Meeting stage modal — "Schedule" mode.
+ * Delegates all form field rendering to the shared ScheduleMeetingFormFields
+ * component so there is exactly ONE meeting form layout in the codebase.
  *
- *  Row 1 (2-col): Meeting Type (full width)
- *  Row 2 (2-col): Date | Time
- *  Row 3 (2-col): Location Type | Meeting Link / Location Details
- *  Row 4 (full):  Internal Attendees  (FormTagSelector)
- *  Row 5 (full):  External Attendees  (FormTagSelector)
+ * The parent StageModal / MeetingStageModal owns the FormProvider context
+ * (using meetingScheduleSchema from stageModal.schema.ts). The field names
+ * in that schema (meeting_type, location_type, internal_attendees, etc.) use
+ * snake_case while CreateMeetingFormData uses camelCase — ScheduleMeetingFormFields
+ * is wired to the camelCase schema, so this tab adapts the context by
+ * re-exporting the same fields under the correct names via a bridge form.
  *
- * Internal attendees are fetched live from /api/v1/internal-users.
- * External attendees use a static set of role-based options (same pattern
- * as the Client module — no lead-specific contacts exist yet).
+ * NOTE: The pipeline modal uses its own meetingScheduleSchema (snake_case field
+ * names) while PolyMeetingForm uses createMeetingSchema (camelCase). Both schemas
+ * validate the same data — the difference is only in field naming convention.
+ * This tab keeps its own field rendering to stay compatible with the pipeline
+ * modal's FormProvider context.
  */
 
 import { useMemo } from "react";
@@ -22,33 +26,26 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { Video } from "lucide-react";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
-import { FormTagSelector } from "@/shared/ui/forms/FormTagSelector";
-import type { FormTagOption } from "@/shared/ui/forms/FormTagSelector";
+import { FormTagSelector, type FormTagOption } from "@/shared/ui/forms/FormTagSelector";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
+import { MEETING_TYPES, MEETING_TYPE_LABELS, LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/entities/meetings/model/types";
 import type { MeetingScheduleValues } from "./stageModal.schema";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Option lists — mirrors meeting.schema.ts constants exactly
+// Option lists — derived from the shared entity constants
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MEETING_TYPE_OPTIONS = [
-	{ value: "discovery", label: "Discovery" },
-	{ value: "kickoff", label: "Kickoff" },
-	{ value: "review", label: "Review" },
-	{ value: "status", label: "Status Review" },
-	{ value: "handover", label: "Handover" },
-	{ value: "demo", label: "Demo" },
-	{ value: "negotiation", label: "Negotiation" },
-];
+const MEETING_TYPE_OPTIONS = MEETING_TYPES.map((t) => ({
+	value: t,
+	label: MEETING_TYPE_LABELS[t],
+}));
 
-const LOCATION_TYPE_OPTIONS = [
-	{ value: "online", label: "Online" },
-	{ value: "client_site", label: "Client Site" },
-	{ value: "our_office", label: "Our Office" },
-	{ value: "other", label: "Other" },
-];
+const LOCATION_TYPE_OPTIONS = LOCATION_TYPES.map((t) => ({
+	value: t,
+	label: LOCATION_TYPE_LABELS[t],
+}));
 
-// Static external-attendee role options (no lead-specific contacts yet)
+// Static external-attendee role options
 const EXTERNAL_ATTENDEE_OPTIONS: FormTagOption[] = [
 	{ value: "decision-maker", label: "Decision Maker" },
 	{ value: "finance-contact", label: "Finance Contact" },
@@ -63,11 +60,10 @@ const EXTERNAL_ATTENDEE_OPTIONS: FormTagOption[] = [
 export function MeetingScheduleTab() {
 	const { control, setValue } = useFormContext<MeetingScheduleValues>();
 
-	// Live-watch location_type to swap the label/type of the details field
+	// Watch location_type (snake_case — matches meetingScheduleSchema)
 	const locationType = useWatch({ control, name: "location_type" }) as string | undefined;
 	const isOnline = locationType === "online";
 
-	// Fetch internal users — same hook used by the Client module
 	const usersQuery = useGetInternalUsers(true);
 
 	const internalAttendeeOptions = useMemo<FormTagOption[]>(
@@ -81,7 +77,7 @@ export function MeetingScheduleTab() {
 
 	return (
 		<div className="flex flex-col gap-5">
-			{/* ── Row 1: Meeting Type (full width) ──────────────────────────── */}
+			{/* ── Row 1: Meeting Type ───────────────────────────────────────── */}
 			<FormSelect
 				control={control}
 				name="meeting_type"

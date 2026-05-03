@@ -17,6 +17,76 @@ interface ApiEnvelope<T> {
 	message: string;
 }
 
+/** Shape returned by MeetingCollection (wraps the array in a `meetings` key) */
+interface MeetingCollectionData {
+	meetings: RawMeetingResource[];
+	pagination: {
+		total: number;
+		count: number;
+		perPage: number;
+		currentPage: number;
+		totalPages: number;
+	};
+}
+
+/** Shape returned by MeetingResource */
+interface RawMeetingResource {
+	meetingId: number;
+	subjectId: number;
+	subjectType: string;
+	subjectName?: string;
+	status: string;
+	statusLabel?: string;
+	statusColor?: string;
+	title: string;
+	description?: string | null;
+	location?: string | null;
+	locationDetails?: string | null;
+	outcomeSummary?: string | null;
+	isCompleted?: boolean;
+	assignedTo?: {
+		userId: number;
+		name: string;
+		email: string;
+		avatar?: string;
+	} | null;
+	scheduledAt: string;
+	completedAt?: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+/** Maps a raw MeetingResource to the PolyMeeting interface used by the UI */
+function toPolyMeeting(raw: RawMeetingResource, modelType: MeetingModelType, modelId: number): PolyMeeting {
+	// Derive locationType from the backend `location` field
+	const locationMap: Record<string, PolyMeeting["locationType"]> = {
+		online: "online",
+		office: "our_office",
+		client_site: "client_site",
+	};
+
+	return {
+		id: raw.meetingId,
+		modelType,
+		modelId,
+		// Backend has no meeting_type column — default to "discovery" as a safe fallback
+		meetingType: "discovery",
+		status: raw.status as PolyMeeting["status"],
+		title: raw.title,
+		description: raw.description ?? null,
+		scheduledAt: raw.scheduledAt,
+		completionNote: raw.outcomeSummary ?? null,
+		assignedTo: raw.assignedTo ?? null,
+		// Backend stores attendees on the subject, not the meeting — default to empty
+		internalAttendees: [],
+		externalAttendees: [],
+		locationType: locationMap[raw.location ?? ""] ?? "online",
+		locationDetails: raw.locationDetails ?? null,
+		createdAt: raw.createdAt,
+		updatedAt: raw.updatedAt,
+	};
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Raw API functions
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,8 +101,9 @@ export const meetingsApi = {
 			model_type: MODEL_TYPE_TO_MORPH[modelType],
 			model_id: String(modelId),
 		});
-		const res = await api.get<ApiEnvelope<PolyMeeting[]>>(`/meetings?${params.toString()}`);
-		return res.data.data;
+		const res = await api.get<ApiEnvelope<MeetingCollectionData>>(`/meetings?${params.toString()}`);
+		const meetings = res.data.data?.meetings ?? [];
+		return meetings.map((raw) => toPolyMeeting(raw, modelType, modelId));
 	},
 
 	/**
@@ -40,8 +111,11 @@ export const meetingsApi = {
 	 * Creates a new meeting for a polymorphic parent.
 	 */
 	async createMeeting(payload: CreateMeetingPayload): Promise<PolyMeeting> {
-		const res = await api.post<ApiEnvelope<PolyMeeting>>("/meetings", payload);
-		return res.data.data;
+		const res = await api.post<ApiEnvelope<RawMeetingResource>>("/meetings", payload);
+		// Derive modelType from the morph string in the payload
+		const reverseMap = Object.entries(MODEL_TYPE_TO_MORPH).find(([, v]) => v === payload.model_type);
+		const modelType = (reverseMap?.[0] ?? "lead") as MeetingModelType;
+		return toPolyMeeting(res.data.data, modelType, payload.model_id);
 	},
 
 	/**

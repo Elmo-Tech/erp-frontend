@@ -36,7 +36,11 @@ import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
 import type { Lead, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
 import { MeetingsList } from "@/entities/meetings/ui/MeetingsList";
-import { MeetingsForm } from "@/entities/meetings/ui/MeetingsForm";
+import { PolyMeetingForm } from "@/features/meetings/ui/PolyMeetingForm";
+import { LeadProposalsTab } from "@/views/leads/tabs/LeadProposalsTab";
+import { LeadQuotationsTab } from "@/views/leads/tabs/LeadQuotationsTab";
+import { LeadContractsTab } from "@/views/leads/tabs/LeadContractsTab";
+import { LeadActivityTab } from "@/views/leads/tabs/LeadActivityTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Backend → frontend stage mapping
@@ -222,14 +226,6 @@ function OverviewTab({ lead }: { lead: Lead }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Placeholder tab
-// ─────────────────────────────────────────────────────────────────────────────
-
-function PlaceholderTab({ label }: { label: string }) {
-	return <div className="flex items-center justify-center h-48 rounded-xl border bg-muted/20 text-muted-foreground text-sm mt-4">{label} — coming soon</div>;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Main view
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -398,7 +394,7 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 						variant="ghost"
 						size="icon"
 						className="shrink-0 mt-0.5"
-						onClick={() => router.push("/leads")}
+						onClick={() => router.push("/dashboard/leads")}
 					>
 						<ArrowLeft className="size-4" />
 					</Button>
@@ -450,7 +446,7 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 
 				<TabsContent value="meetings">
 					<div className="pt-4 space-y-4">
-						<MeetingsForm
+						<PolyMeetingForm
 							modelType="lead"
 							modelId={lead.id}
 						/>
@@ -462,19 +458,24 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 				</TabsContent>
 
 				<TabsContent value="proposals">
-					<PlaceholderTab label="Proposals" />
+					<LeadProposalsTab leadId={lead.id} />
 				</TabsContent>
 
 				<TabsContent value="quotations">
-					<PlaceholderTab label="Quotations" />
+					<LeadQuotationsTab leadId={lead.id} />
 				</TabsContent>
 
 				<TabsContent value="contracts">
-					<PlaceholderTab label="Contracts" />
+					<LeadContractsTab leadId={lead.id} />
 				</TabsContent>
 
 				<TabsContent value="activity">
-					<PlaceholderTab label="Activity Log" />
+					<LeadActivityTab
+						currentStage={lead.stage}
+						leadId={lead.id}
+						createdAt={lead.createdAt}
+						updatedAt={lead.updatedAt}
+					/>
 				</TabsContent>
 			</Tabs>
 

@@ -324,9 +324,18 @@ export interface GetLeadResponse {
 		company: string | null;
 		email: string | null;
 		phone: string | null;
+		contact_name: string | null;
 		expected_budget: number | null;
 		source: string | null;
+		notes: string | null;
+		expected_close_date: string | null;
 		assignedTo: number | null;
+		assignee: {
+			id: number;
+			name: string;
+			email: string;
+			avatar: string | null;
+		} | null;
 		createdAt: string;
 		updatedAt: string;
 	};
@@ -340,4 +349,106 @@ export interface GetLeadResponse {
 export async function getLead(leadId: number): Promise<GetLeadResponse> {
 	const response = await api.get<GetLeadResponse>(`/leads/${leadId}`);
 	return response.data;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Lead sub-resource types (Proposals, Quotations, Contracts)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface LeadProposal {
+	id: number;
+	status: string;
+	creation_type: string;
+	skip_reason: string | null;
+	file_path: string | null;
+	assigned_to: number | null;
+	assignee: { id: number; name: string; email: string; avatar: string | null } | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface LeadQuotation {
+	id: number;
+	status: string;
+	creation_type: string;
+	skip_reason: string | null;
+	file_path: string | null;
+	currency: string | null;
+	base_price: number | null;
+	commission_type: string | null;
+	final_total: number | null;
+	payment_stages: Array<{ stage_name: string; percentage: number; amount: number }>;
+	assigned_to: number | null;
+	assignee: { id: number; name: string; email: string; avatar: string | null } | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface LeadContract {
+	id: number;
+	status: string;
+	creation_type: string;
+	skip_reason: string | null;
+	file_path: string | null;
+	contract_model: string | null;
+	development_days: number | null;
+	review_days: number | null;
+	testing_days: number | null;
+	delay_penalty: number | null;
+	source_code_handover: boolean;
+	execution_start_date: string | null;
+	working_days_per_week: number | null;
+	currency: string | null;
+	total_amount: number | null;
+	payment_stages: Array<{ stage_name: string; percentage: number; amount: number }>;
+	setup_fee: number | null;
+	recurring_fee: number | null;
+	billing_cycle: string | null;
+	subscription_start_date: string | null;
+	apply_promo: boolean;
+	promo_discount: number | null;
+	addons: Array<{ name: string; price: number }>;
+	notes: string | null;
+	assigned_to: number | null;
+	assignee: { id: number; name: string; email: string; avatar: string | null } | null;
+	created_at: string;
+	updated_at: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET sub-resources
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getLeadProposals(leadId: number): Promise<{ data: LeadProposal[] }> {
+	const res = await api.get<{ success: boolean; data: LeadProposal[] }>(`/leads/${leadId}/proposals`);
+	return res.data;
+}
+
+export async function getLeadQuotations(leadId: number): Promise<{ data: LeadQuotation[] }> {
+	const res = await api.get<{ success: boolean; data: LeadQuotation[] }>(`/leads/${leadId}/quotations`);
+	return res.data;
+}
+
+export async function getLeadContracts(leadId: number): Promise<{ data: LeadContract[] }> {
+	const res = await api.get<{ success: boolean; data: LeadContract[] }>(`/leads/${leadId}/contracts`);
+	return res.data;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST sub-resources (direct creation — same payload shape as pipeline)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function createLeadProposal(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadProposal }> {
+	const res = await api.post<{ success: boolean; data: LeadProposal }>(`/leads/${leadId}/proposals`, payload);
+	return res.data;
+}
+
+export async function createLeadQuotation(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadQuotation }> {
+	const res = await api.post<{ success: boolean; data: LeadQuotation }>(`/leads/${leadId}/quotations`, payload);
+	return res.data;
+}
+
+export async function createLeadContract(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadContract }> {
+	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts`, payload);
+	return res.data;
 }
