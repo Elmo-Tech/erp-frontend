@@ -88,6 +88,7 @@ const navGroups: NavGroup[] = [
 				title: "Settings",
 				href: "/dashboard/settings",
 				icon: Settings,
+				permission: "view_settings",
 			},
 		],
 	},

@@ -1,11 +1,11 @@
 "use client";
 
-import { ProjectDetailsComposite } from "@/widgets/project-management/ui/ProjectDetailsComposite";
+import { ProjectDetailsView } from "@/views/projects/ProjectDetailsView";
 
 interface ProjectDetailsPageProps {
 	projectId: number;
 }
 
 export default function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
-	return <ProjectDetailsComposite projectId={projectId} />;
+	return <ProjectDetailsView projectId={projectId} />;
 }

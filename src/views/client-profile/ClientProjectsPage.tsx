@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useGetClientProjects } from "@/entities/project/api/project.api";
 import { ProjectStatusColors, ProjectStatusLabels } from "@/entities/project/model/types";
 import { useProjectPermissions } from "@/entities/user/model/permissions";
-import { AddProjectModal } from "@/features/projects/ui/AddProjectModal";
+import { CreateProjectForm } from "@/features/projects/ui/CreateProjectForm";
 import { useClientProfile } from "@/widgets/client-management/model/client-profile.context";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -98,7 +98,7 @@ export default function ClientProjectsPage() {
 				</div>
 			)}
 
-			<AddProjectModal
+			<CreateProjectForm
 				clientId={client.clientId}
 				clientName={clientName}
 				open={projectModalOpen}

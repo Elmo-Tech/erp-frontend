@@ -43,7 +43,7 @@ export function ProjectCard({ project, canViewBudget = true, onView, onEdit, onD
 			className={cn(
 				"grid min-h-14 grid-cols-1 gap-2 border-b px-3 py-2.5 text-sm transition-colors last:border-b-0 md:grid-cols-[32px_minmax(180px,1.5fr)_minmax(150px,1fr)_120px_120px_100px_40px] md:items-center md:gap-3",
 				onView && "cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-				className
+				className,
 			)}
 		>
 			<div className="hidden md:block">
@@ -66,7 +66,7 @@ export function ProjectCard({ project, canViewBudget = true, onView, onEdit, onD
 
 			<div className="min-w-0">
 				<div className="truncate font-medium leading-5">{project.title}</div>
-				<div className="truncate text-xs text-muted-foreground">{project.description || "No description"}</div>
+				<div className="truncate text-xs text-muted-foreground">{project.client?.name ?? "No client"}</div>
 			</div>
 
 			<div className="min-w-0">

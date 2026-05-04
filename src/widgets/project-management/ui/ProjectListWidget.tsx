@@ -59,7 +59,7 @@ export function ProjectListWidget() {
 				value: String(client.id),
 				label: client.company_name ? `${client.display_name} / ${client.company_name}` : client.display_name,
 			})),
-		[clientsQuery.data?.clients]
+		[clientsQuery.data?.clients],
 	);
 
 	const projects = projectsQuery.data?.projects ?? [];
@@ -163,9 +163,7 @@ export function ProjectListWidget() {
 						disabled={clientsQuery.isLoading}
 					/>
 
-					<p className="text-xs tabular-nums text-muted-foreground md:min-w-24 md:text-right">
-						{pagination ? `${pagination.total} projects` : "Loading projects"}
-					</p>
+					<p className="text-xs tabular-nums text-muted-foreground md:min-w-24 md:text-right">{pagination ? `${pagination.total} projects` : "Loading projects"}</p>
 				</div>
 			</div>
 
@@ -175,7 +173,7 @@ export function ProjectListWidget() {
 					<span>Project</span>
 					<span>Client</span>
 					<span>Status</span>
-					<span>Budget</span>
+					<span>{canViewProjectBudget ? "Budget" : <span className="sr-only">Budget</span>}</span>
 					<span>Deadline</span>
 					<span className="sr-only">Actions</span>
 				</div>
