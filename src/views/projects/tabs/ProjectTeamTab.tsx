@@ -25,6 +25,7 @@ import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
+import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { cn } from "@/shared/lib/utils";
 import { useProjectMembers, useAddProjectMember } from "@/features/projects/api/execution.api";
@@ -276,18 +277,20 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 			>
 				<Form {...form}>
 					<div className="flex flex-col gap-4">
-						<FormSelect
+						<FormCombobox
 							control={form.control}
 							name="userId"
 							label="User"
-							placeholder={usersQuery.isLoading ? "Loading users…" : "Select a user"}
+							placeholder={usersQuery.isLoading ? "Loading users…" : "Select a user…"}
+							searchPlaceholder="Search by name…"
+							emptyText="No users found."
 							options={userOptions}
 							disabled={usersQuery.isLoading}
 						/>
 						<FormSelect
 							control={form.control}
 							name="role"
-							label="Role"
+							label="Project role"
 							placeholder="Select a role"
 							options={MEMBER_ROLE_OPTIONS}
 						/>

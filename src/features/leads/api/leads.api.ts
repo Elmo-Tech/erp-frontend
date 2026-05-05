@@ -6,9 +6,12 @@
  * token-expiry redirects, and Accept-Language headers automatically.
  */
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/base";
 import type { StageModalResult } from "../model/types";
+import type { Lead } from "../model/types";
 import type { PipelineStage } from "../model/pipelineConstants";
+import { PIPELINE_STAGES } from "../model/pipelineConstants";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -72,6 +75,46 @@ export interface ConvertLeadResponse {
 		client_name: string;
 		project_id: number;
 		project_title: string;
+	};
+}
+
+export const leadKeys = {
+	all: ["leads"] as const,
+	lists: () => [...leadKeys.all, "list"] as const,
+	list: () => [...leadKeys.lists()] as const,
+	details: () => [...leadKeys.all, "detail"] as const,
+	detail: (leadId: number) => [...leadKeys.details(), leadId] as const,
+	proposals: (leadId: number) => [...leadKeys.detail(leadId), "proposals"] as const,
+	quotations: (leadId: number) => [...leadKeys.detail(leadId), "quotations"] as const,
+	contracts: (leadId: number) => [...leadKeys.detail(leadId), "contracts"] as const,
+};
+
+const BACKEND_TO_FRONTEND_STAGE: Record<string, PipelineStage> = {
+	new_lead: "new",
+	meeting: "meeting",
+	proposal: "proposal",
+	quotation: "quotation",
+	contract: "contract",
+	won: "closed_won",
+	new: "new",
+	closed_won: "closed_won",
+};
+
+export function mapLeadResourceToLead(item: GetLeadsResponse["data"][number] | GetLeadResponse["data"]): Lead | null {
+	const stage = BACKEND_TO_FRONTEND_STAGE[item.stage];
+	if (!stage || !PIPELINE_STAGES.includes(stage)) return null;
+
+	return {
+		id: item.id,
+		name: item.title,
+		company: item.company ?? undefined,
+		email: item.email ?? undefined,
+		phone: item.phone ?? undefined,
+		stage,
+		assignedTo: item.assignedTo ?? undefined,
+		expectedBudget: item.expected_budget ?? undefined,
+		createdAt: item.createdAt,
+		updatedAt: item.updatedAt,
 	};
 }
 
@@ -251,6 +294,18 @@ export async function updateLeadStage(leadId: number, newStage: PipelineStage, s
 	return response.data;
 }
 
+export function useUpdateLeadStage() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ leadId, newStage, stageResults }: { leadId: number; newStage: PipelineStage; stageResults: StageModalResult[] }) => updateLeadStage(leadId, newStage, stageResults),
+		onSuccess: (_data, variables) => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.all });
+			queryClient.invalidateQueries({ queryKey: leadKeys.detail(variables.leadId) });
+		},
+	});
+}
+
 /**
  * Convert a won lead into a Client + Project.
  *
@@ -265,6 +320,18 @@ export async function convertLeadToProject(leadId: number): Promise<ConvertLeadR
 	return response.data;
 }
 
+export function useConvertLeadToProject() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: convertLeadToProject,
+		onSuccess: (_data, leadId) => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.all });
+			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
+		},
+	});
+}
+
 /**
  * Create a new lead in the "new" pipeline column.
  *
@@ -276,6 +343,17 @@ export async function convertLeadToProject(leadId: number): Promise<ConvertLeadR
 export async function createLead(payload: CreateLeadPayload): Promise<CreateLeadResponse> {
 	const response = await api.post<CreateLeadResponse>("/leads", payload);
 	return response.data;
+}
+
+export function useCreateLead() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: createLead,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.all });
+		},
+	});
 }
 
 // ─── Get Leads ───────────────────────────────────────────────────────────────
@@ -309,6 +387,17 @@ export interface GetLeadsResponse {
 export async function getLeads(): Promise<GetLeadsResponse> {
 	const response = await api.get<GetLeadsResponse>("/leads");
 	return response.data;
+}
+
+export function useGetLeads() {
+	return useQuery({
+		queryKey: leadKeys.list(),
+		queryFn: async () => {
+			const response = await getLeads();
+			return response.data.map(mapLeadResourceToLead).filter((lead): lead is Lead => lead !== null);
+		},
+		staleTime: 2 * 60 * 1000,
+	});
 }
 
 // ─── Get Single Lead ─────────────────────────────────────────────────────────
@@ -349,6 +438,18 @@ export interface GetLeadResponse {
 export async function getLead(leadId: number): Promise<GetLeadResponse> {
 	const response = await api.get<GetLeadResponse>(`/leads/${leadId}`);
 	return response.data;
+}
+
+export function useGetLead(leadId: number, enabled = true) {
+	return useQuery({
+		queryKey: leadKeys.detail(leadId),
+		queryFn: async () => {
+			const response = await getLead(leadId);
+			return mapLeadResourceToLead(response.data);
+		},
+		enabled: enabled && leadId > 0,
+		staleTime: 2 * 60 * 1000,
+	});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -424,14 +525,41 @@ export async function getLeadProposals(leadId: number): Promise<{ data: LeadProp
 	return res.data;
 }
 
+export function useGetLeadProposals(leadId: number) {
+	return useQuery({
+		queryKey: leadKeys.proposals(leadId),
+		queryFn: () => getLeadProposals(leadId),
+		enabled: leadId > 0,
+		select: (response) => response.data,
+	});
+}
+
 export async function getLeadQuotations(leadId: number): Promise<{ data: LeadQuotation[] }> {
 	const res = await api.get<{ success: boolean; data: LeadQuotation[] }>(`/leads/${leadId}/quotations`);
 	return res.data;
 }
 
+export function useGetLeadQuotations(leadId: number) {
+	return useQuery({
+		queryKey: leadKeys.quotations(leadId),
+		queryFn: () => getLeadQuotations(leadId),
+		enabled: leadId > 0,
+		select: (response) => response.data,
+	});
+}
+
 export async function getLeadContracts(leadId: number): Promise<{ data: LeadContract[] }> {
 	const res = await api.get<{ success: boolean; data: LeadContract[] }>(`/leads/${leadId}/contracts`);
 	return res.data;
+}
+
+export function useGetLeadContracts(leadId: number) {
+	return useQuery({
+		queryKey: leadKeys.contracts(leadId),
+		queryFn: () => getLeadContracts(leadId),
+		enabled: leadId > 0,
+		select: (response) => response.data,
+	});
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

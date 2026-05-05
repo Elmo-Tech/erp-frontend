@@ -4,6 +4,8 @@
 
 export * from "./FormInput";
 export * from "./FormSelect";
+export * from "./FormCombobox";
+export * from "./FormMultiCombobox";
 export * from "./FormTextarea";
 export * from "./FormSwitch";
 export * from "./FormCheckbox";

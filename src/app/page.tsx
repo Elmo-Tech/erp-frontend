@@ -9,11 +9,11 @@ import { Loader2 } from "lucide-react";
 
 export default function Home() {
 	const router = useRouter();
-	const { isAuthenticated, role } = useAuthStore();
+	const { isAuthenticated, hasPermission } = useAuthStore();
 
 	useEffect(() => {
 		if (isAuthenticated) {
-			if (role === "client") {
+			if (hasPermission("access_client_portal")) {
 				router.push("/client");
 			} else {
 				router.push("/dashboard");
@@ -21,7 +21,7 @@ export default function Home() {
 		} else {
 			router.push("/login");
 		}
-	}, [isAuthenticated, role, router]);
+	}, [isAuthenticated, hasPermission, router]);
 
 	return (
 		<div className="flex min-h-screen items-center justify-center">

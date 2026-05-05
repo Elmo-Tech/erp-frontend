@@ -27,6 +27,7 @@ import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
+import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { MilestoneSwimlane } from "@/features/projects/ui/MilestoneSwimlane";
 import { ProjectTaskCard } from "@/features/projects/ui/ProjectTaskCard";
 import { TaskExecutionSheet } from "@/features/projects/ui/TaskExecutionSheet";
@@ -370,18 +371,22 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 
 						{/* Milestone + Assignee — 2-col grid */}
 						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<FormSelect
+							<FormCombobox
 								control={taskForm.control}
 								name="milestoneId"
 								label="Milestone (optional)"
 								placeholder="Backlog — no milestone"
+								searchPlaceholder="Search milestones…"
+								emptyText="No milestone found."
 								options={milestoneOptions}
 							/>
-							<FormSelect
+							<FormCombobox
 								control={taskForm.control}
 								name="assigneeId"
 								label="Assignee (optional)"
 								placeholder={membersQuery.isLoading ? "Loading members…" : "Unassigned"}
+								searchPlaceholder="Search team members…"
+								emptyText="No member found."
 								options={assigneeOptions}
 								disabled={membersQuery.isLoading}
 							/>

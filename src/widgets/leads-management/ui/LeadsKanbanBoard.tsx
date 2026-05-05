@@ -25,13 +25,14 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { usePipelineStore, selectLeads, selectActiveModal, selectPendingDrag } from "@/features/leads/model/usePipelineStore";
+import { usePipelineStore, selectActiveModal, selectPendingDrag } from "@/features/leads/model/usePipelineStore";
 import { PIPELINE_STAGES } from "@/features/leads/model/pipelineConstants";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
-import type { StageModalPayload, StageModalResult } from "@/features/leads/model/types";
+import type { Lead, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
-import { updateLeadStage, convertLeadToProject } from "@/features/leads/api/leads.api";
+import { leadKeys, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
 import { KanbanColumn } from "./KanbanColumn";
 
 // ---------------------------------------------------------------------------
@@ -39,25 +40,39 @@ import { KanbanColumn } from "./KanbanColumn";
 // ---------------------------------------------------------------------------
 
 interface LeadsKanbanBoardProps {
+	leads: Lead[];
 	/** Called when a card is clicked (not dragged). Receives the lead ID. */
 	onCardClick?: (leadId: number) => void;
 }
 
-export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
+export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) {
 	const router = useRouter();
+	const queryClient = useQueryClient();
+	const updateLeadStageMutation = useUpdateLeadStage();
+	const convertLeadToProjectMutation = useConvertLeadToProject();
 
 	// ── Store selectors ───────────────────────────────────────────────────────
-	const leads = usePipelineStore(selectLeads);
 	const activeModal = usePipelineStore(selectActiveModal);
 	const pendingDrag = usePipelineStore(selectPendingDrag);
 
 	// ── Store actions ─────────────────────────────────────────────────────────
-	const interceptDrag = usePipelineStore((s) => s.interceptDrag);
+	const startDrag = usePipelineStore((s) => s.startDrag);
 	const advanceQueue = usePipelineStore((s) => s.advanceQueue);
 	const cancelDrag = usePipelineStore((s) => s.cancelDrag);
 
 	// ── Local loading state (shown on the modal submit button) ────────────────
 	const [isCommitting, setIsCommitting] = useState(false);
+
+	const invalidateLeadQueries = useCallback(() => {
+		queryClient.invalidateQueries({ queryKey: leadKeys.all });
+	}, [queryClient]);
+
+	const setCachedLeadStage = useCallback(
+		(leadId: number, stage: PipelineStage) => {
+			queryClient.setQueryData<Lead[]>(leadKeys.list(), (currentLeads) => currentLeads?.map((lead) => (lead.id === leadId ? { ...lead, stage } : lead)) ?? currentLeads);
+		},
+		[queryClient],
+	);
 
 	// ── Derived: leads grouped by stage ──────────────────────────────────────
 	const leadsByStage = PIPELINE_STAGES.reduce<Record<PipelineStage, typeof leads>>(
@@ -72,7 +87,7 @@ export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
 	const triggerConversion = useCallback(
 		async (leadId: number) => {
 			try {
-				const result = await convertLeadToProject(leadId);
+				const result = await convertLeadToProjectMutation.mutateAsync(leadId);
 				const { project_id, project_title, client_name } = result.data;
 
 				// Celebratory toast with action link
@@ -95,7 +110,7 @@ export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
 				});
 			}
 		},
-		[router],
+		[convertLeadToProjectMutation, router],
 	);
 
 	// ── Commit helper — fires the stage update API, then conversion if won ────
@@ -103,7 +118,7 @@ export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
 		async (leadId: number, toStage: PipelineStage, results: StageModalResult[]) => {
 			setIsCommitting(true);
 			try {
-				await updateLeadStage(leadId, toStage, results);
+				await updateLeadStageMutation.mutateAsync({ leadId, newStage: toStage, stageResults: results });
 
 				if (toStage === "closed_won") {
 					// Don't show the generic success toast — triggerConversion
@@ -115,12 +130,14 @@ export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
 			} catch (err) {
 				console.error("[LeadsKanbanBoard] Stage update failed:", err);
 				toast.error("Failed to update lead stage. Changes have been reverted.");
+				invalidateLeadQueries();
 				cancelDrag();
 			} finally {
 				setIsCommitting(false);
+				invalidateLeadQueries();
 			}
 		},
-		[cancelDrag, triggerConversion],
+		[cancelDrag, invalidateLeadQueries, triggerConversion, updateLeadStageMutation],
 	);
 
 	// ── onDragEnd — the Drag Interceptor Engine entry point ──────────────────
@@ -137,8 +154,9 @@ export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
 			const fromStage = source.droppableId as PipelineStage;
 			const toStage = destination.droppableId as PipelineStage;
 
-			const intercepted = interceptDrag(leadId, fromStage, toStage);
+			const intercepted = startDrag(leadId, fromStage, toStage);
 			if (!intercepted) return;
+			setCachedLeadStage(leadId, toStage);
 
 			// If the queue is empty (no modal stages between from and to),
 			// commit immediately without opening any modal.
@@ -153,7 +171,7 @@ export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
 			}
 			// Otherwise the modal queue is non-empty — StageModal will render.
 		},
-		[interceptDrag, commitStageUpdate],
+		[startDrag, setCachedLeadStage, commitStageUpdate],
 	);
 
 	// ── Modal submit handler ──────────────────────────────────────────────────
@@ -194,7 +212,10 @@ export function LeadsKanbanBoard({ onCardClick }: LeadsKanbanBoardProps = {}) {
 				<StageModal
 					item={activeModal}
 					onSubmit={handleModalSubmit}
-					onCancel={cancelDrag}
+					onCancel={() => {
+						invalidateLeadQueries();
+						cancelDrag();
+					}}
 					isLoading={isCommitting}
 				/>
 			)}

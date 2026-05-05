@@ -3,6 +3,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { Form } from "@/shared/ui/form";
 import { FormDatePicker, FormInput, FormSelect, FormTextarea, type SelectOption } from "@/shared/ui/forms";
+import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { ProjectStatus, ProjectStatusLabels } from "@/entities/project/model/types";
 import { PaymentStatus, PaymentStatusLabels, type AddProjectFormData } from "../model/add-project.schema";
 
@@ -62,11 +63,13 @@ export function AddProjectForm({ form, salesRepOptions = [], isLoadingSalesReps 
 						options={PROJECT_TYPE_OPTIONS}
 						disabled={disabled}
 					/>
-					<FormSelect
+					<FormCombobox
 						control={form.control}
 						name="assignedSalesRepId"
 						label="Assigned Sales Rep"
 						placeholder={salesRepPlaceholder}
+						searchPlaceholder="Search sales reps…"
+						emptyText="No sales rep found."
 						options={salesRepOptions}
 						disabled={disabled || isLoadingSalesReps || salesRepOptions.length === 0}
 						description={isLoadingSalesReps ? "Loading internal users..." : undefined}

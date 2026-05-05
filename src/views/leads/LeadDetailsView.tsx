@@ -21,7 +21,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Building2, Mail, Phone, DollarSign, ChevronRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Building2, Mail, Phone, DollarSign, Calendar, ChevronRight, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -29,18 +29,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Separator } from "@/shared/ui/separator";
 import { cn } from "@/shared/lib/utils";
-import { getLead, updateLeadStage, convertLeadToProject } from "@/features/leads/api/leads.api";
+import { getLead, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
 import { usePipelineStore } from "@/features/leads/model/usePipelineStore";
 import { PIPELINE_STAGES, STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
 import type { Lead, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
+import { STAGE_COLORS, InfoRow, PipelineProgress, ActivityTimeline } from "@/features/leads/ui/LeadInfoRow";
 import { MeetingsList } from "@/entities/meetings/ui/MeetingsList";
 import { PolyMeetingForm } from "@/features/meetings/ui/PolyMeetingForm";
 import { LeadProposalsTab } from "@/views/leads/tabs/LeadProposalsTab";
 import { LeadQuotationsTab } from "@/views/leads/tabs/LeadQuotationsTab";
 import { LeadContractsTab } from "@/views/leads/tabs/LeadContractsTab";
-import { LeadActivityTab } from "@/views/leads/tabs/LeadActivityTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Backend → frontend stage mapping
@@ -58,20 +58,7 @@ const BACKEND_TO_FRONTEND_STAGE: Record<string, PipelineStage> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Stage colours
-// ─────────────────────────────────────────────────────────────────────────────
-
-const STAGE_BADGE_CLASS: Record<PipelineStage, string> = {
-	new: "bg-slate-100 text-slate-700 border-slate-200",
-	meeting: "bg-blue-50 text-blue-700 border-blue-200",
-	proposal: "bg-violet-50 text-violet-700 border-violet-200",
-	quotation: "bg-amber-50 text-amber-700 border-amber-200",
-	contract: "bg-orange-50 text-orange-700 border-orange-200",
-	closed_won: "bg-emerald-50 text-emerald-700 border-emerald-200",
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stage Stepper
+// Stage Stepper — advances the lead through the pipeline
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface StageStepperProps {
@@ -122,104 +109,71 @@ function StageStepper({ currentStage, onAdvance, isAdvancing }: StageStepperProp
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Overview tab
+// Overview tab — matches the Kanban sheet layout exactly
 // ─────────────────────────────────────────────────────────────────────────────
 
 function OverviewTab({ lead }: { lead: Lead }) {
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-			{/* Contact card */}
+		<div className="pt-4 space-y-6">
+			{/* Contact info — same InfoRow pattern as the sheet */}
 			<div className="rounded-xl border bg-card p-5 space-y-4">
-				<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Contact Information</h3>
-				<div className="space-y-3">
-					{lead.company && (
-						<div className="flex items-center gap-3">
-							<div className="flex items-center justify-center size-8 rounded-md bg-muted shrink-0">
-								<Building2 className="size-4 text-muted-foreground" />
-							</div>
-							<div>
-								<p className="text-xs text-muted-foreground">Company</p>
-								<p className="text-sm font-medium">{lead.company}</p>
-							</div>
-						</div>
-					)}
-					{lead.email && (
-						<div className="flex items-center gap-3">
-							<div className="flex items-center justify-center size-8 rounded-md bg-muted shrink-0">
-								<Mail className="size-4 text-muted-foreground" />
-							</div>
-							<div>
-								<p className="text-xs text-muted-foreground">Email</p>
-								<p className="text-sm font-medium">{lead.email}</p>
-							</div>
-						</div>
-					)}
-					{lead.phone && (
-						<div className="flex items-center gap-3">
-							<div className="flex items-center justify-center size-8 rounded-md bg-muted shrink-0">
-								<Phone className="size-4 text-muted-foreground" />
-							</div>
-							<div>
-								<p className="text-xs text-muted-foreground">Phone</p>
-								<p className="text-sm font-medium">{lead.phone}</p>
-							</div>
-						</div>
-					)}
-					{lead.expectedBudget != null && (
-						<div className="flex items-center gap-3">
-							<div className="flex items-center justify-center size-8 rounded-md bg-muted shrink-0">
-								<DollarSign className="size-4 text-muted-foreground" />
-							</div>
-							<div>
-								<p className="text-xs text-muted-foreground">Expected Budget</p>
-								<p className="text-sm font-medium">
-									{lead.expectedBudget.toLocaleString(undefined, {
+				<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contact Information</p>
+				<div className="space-y-2.5">
+					<InfoRow
+						icon={Building2}
+						label="Company"
+						value={lead.company}
+					/>
+					<InfoRow
+						icon={Mail}
+						label="Email"
+						value={lead.email}
+					/>
+					<InfoRow
+						icon={Phone}
+						label="Phone"
+						value={lead.phone}
+					/>
+					<InfoRow
+						icon={DollarSign}
+						label="Expected Budget"
+						value={
+							lead.expectedBudget != null
+								? lead.expectedBudget.toLocaleString(undefined, {
 										style: "currency",
 										currency: "USD",
 										maximumFractionDigits: 0,
-									})}
-								</p>
-							</div>
-						</div>
-					)}
+									})
+								: null
+						}
+					/>
+					<InfoRow
+						icon={Calendar}
+						label="Created"
+						value={new Date(lead.createdAt).toLocaleDateString(undefined, {
+							year: "numeric",
+							month: "short",
+							day: "numeric",
+						})}
+					/>
 				</div>
 			</div>
 
-			{/* Pipeline card */}
-			<div className="rounded-xl border bg-card p-5 space-y-4">
-				<h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Pipeline Details</h3>
-				<div className="space-y-3 text-sm">
-					<div className="flex justify-between">
-						<span className="text-muted-foreground">Lead ID</span>
-						<span className="font-medium">#{lead.id}</span>
-					</div>
-					<Separator />
-					<div className="flex justify-between">
-						<span className="text-muted-foreground">Current Stage</span>
-						<Badge
-							variant="outline"
-							className={STAGE_BADGE_CLASS[lead.stage]}
-						>
-							{STAGE_LABELS[lead.stage]}
-						</Badge>
-					</div>
-					<Separator />
-					<div className="flex justify-between">
-						<span className="text-muted-foreground">Assigned To</span>
-						<span className="font-medium">{lead.assignedTo ? `User #${lead.assignedTo}` : "Unassigned"}</span>
-					</div>
-					<Separator />
-					<div className="flex justify-between">
-						<span className="text-muted-foreground">Created</span>
-						<span className="font-medium">
-							{new Date(lead.createdAt).toLocaleDateString(undefined, {
-								year: "numeric",
-								month: "short",
-								day: "numeric",
-							})}
-						</span>
-					</div>
-				</div>
+			<Separator />
+
+			{/* Pipeline progress — same dots + lines as the sheet */}
+			<PipelineProgress currentStage={lead.stage} />
+
+			<Separator />
+
+			{/* Activity timeline — same circles + connectors as the sheet */}
+			<div className="space-y-3">
+				<p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Stage History</p>
+				<ActivityTimeline currentStage={lead.stage} />
+			</div>
+
+			<div className="pt-2">
+				<p className="text-xs text-muted-foreground/60">Lead #{lead.id}</p>
 			</div>
 		</div>
 	);
@@ -235,12 +189,14 @@ interface LeadDetailsViewProps {
 
 export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 	const router = useRouter();
+	const updateLeadStageMutation = useUpdateLeadStage();
+	const convertLeadToProjectMutation = useConvertLeadToProject();
 	const [lead, setLead] = useState<Lead | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isAdvancing, setIsAdvancing] = useState(false);
 
 	// Pipeline store — reuse the same interceptor engine
-	const interceptDrag = usePipelineStore((s) => s.interceptDrag);
+	const startDrag = usePipelineStore((s) => s.startDrag);
 	const advanceQueue = usePipelineStore((s) => s.advanceQueue);
 	const cancelDrag = usePipelineStore((s) => s.cancelDrag);
 	const activeModal = usePipelineStore((s) => s.modalQueue[0] ?? null);
@@ -286,11 +242,11 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 		async (toStage: PipelineStage, results: StageModalResult[]) => {
 			setIsAdvancing(true);
 			try {
-				await updateLeadStage(leadId, toStage, results);
+				await updateLeadStageMutation.mutateAsync({ leadId, newStage: toStage, stageResults: results });
 
 				if (toStage === "closed_won") {
 					try {
-						const result = await convertLeadToProject(leadId);
+						const result = await convertLeadToProjectMutation.mutateAsync(leadId);
 						const { project_id, project_title, client_name } = result.data;
 						toast.success(`🎉 Deal Won! "${project_title}" is now live.`, {
 							description: `Client "${client_name}" created. Redirecting to the project…`,
@@ -318,7 +274,7 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 				setIsAdvancing(false);
 			}
 		},
-		[leadId, router, cancelDrag],
+		[leadId, router, cancelDrag, convertLeadToProjectMutation, updateLeadStageMutation],
 	);
 
 	// ── Stepper advance handler ───────────────────────────────────────────────
@@ -326,10 +282,7 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 		(toStage: PipelineStage) => {
 			if (!lead) return;
 
-			// Seed the pipeline store with this lead so interceptDrag can find it
-			usePipelineStore.getState().setLeads([lead]);
-
-			const intercepted = interceptDrag(lead.id, lead.stage, toStage);
+			const intercepted = startDrag(lead.id, lead.stage, toStage);
 			if (!intercepted) return;
 
 			const queueAfterIntercept = usePipelineStore.getState().modalQueue;
@@ -342,7 +295,7 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 				}
 			}
 		},
-		[lead, interceptDrag, commitStageUpdate],
+		[lead, startDrag, commitStageUpdate],
 	);
 
 	// ── Modal submit ──────────────────────────────────────────────────────────
@@ -403,7 +356,7 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 							<h1 className="text-2xl font-semibold tracking-tight truncate">{lead.name}</h1>
 							<Badge
 								variant="outline"
-								className={STAGE_BADGE_CLASS[lead.stage]}
+								className={cn("shrink-0 border", STAGE_COLORS[lead.stage])}
 							>
 								{STAGE_LABELS[lead.stage]}
 							</Badge>
@@ -437,7 +390,6 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 					<TabsTrigger value="proposals">Proposals</TabsTrigger>
 					<TabsTrigger value="quotations">Quotations</TabsTrigger>
 					<TabsTrigger value="contracts">Contracts</TabsTrigger>
-					<TabsTrigger value="activity">Activity Log</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="overview">
@@ -467,15 +419,6 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 
 				<TabsContent value="contracts">
 					<LeadContractsTab leadId={lead.id} />
-				</TabsContent>
-
-				<TabsContent value="activity">
-					<LeadActivityTab
-						currentStage={lead.stage}
-						leadId={lead.id}
-						createdAt={lead.createdAt}
-						updatedAt={lead.updatedAt}
-					/>
 				</TabsContent>
 			</Tabs>
 

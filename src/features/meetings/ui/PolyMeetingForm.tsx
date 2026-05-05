@@ -20,6 +20,7 @@
 import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { CalendarPlus, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
@@ -45,7 +46,9 @@ export interface PolyMeetingFormProps {
 // Default values
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildDefaultValues(): CreateMeetingFormData {
+type CreateMeetingFormInput = z.input<typeof createMeetingSchema>;
+
+function buildDefaultValues(): CreateMeetingFormInput {
 	const tomorrow = new Date();
 	tomorrow.setDate(tomorrow.getDate() + 1);
 	const date = tomorrow.toISOString().slice(0, 10);
@@ -71,7 +74,7 @@ export function PolyMeetingForm({ modelType, modelId, onMeetingScheduled }: Poly
 	const [isOpen, setIsOpen] = useState(false);
 	const { mutateAsync, isPending } = useCreateMeeting(modelType, modelId);
 
-	const form = useForm<CreateMeetingFormData>({
+	const form = useForm<CreateMeetingFormInput, unknown, CreateMeetingFormData>({
 		resolver: zodResolver(createMeetingSchema),
 		defaultValues: buildDefaultValues(),
 	});

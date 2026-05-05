@@ -65,7 +65,7 @@ export function SOPCheckinFlow({ directive, onSubmitted, className }: SOPCheckin
 
 	return (
 		<Form {...form}>
-			<div className={cn("mx-auto w-full max-w-2xl space-y-4", className)}>
+			<div className={cn("mx-auto w-full space-y-4", className)}>
 				<section className="rounded-md border border-border bg-background">
 					<div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
 						<div className="min-w-0">
@@ -108,7 +108,7 @@ export function SOPCheckinFlow({ directive, onSubmitted, className }: SOPCheckin
 							className="space-y-0"
 						>
 							<div className="flex items-start gap-3 border-b border-border px-4 py-4">
-								<div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-primary/35 bg-primary/[0.04] text-primary">
+								<div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border border-primary/35 bg-primary/4 text-primary">
 									<ClipboardList className="size-4" />
 								</div>
 								<div className="min-w-0">

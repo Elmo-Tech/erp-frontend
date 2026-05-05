@@ -4,6 +4,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { Form } from "@/shared/ui/form";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect, type SelectOption } from "@/shared/ui/forms/FormSelect";
+import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { ProjectStatus, ProjectStatusLabels } from "@/entities/project/model/types";
 import type { CreateDirectProjectFormData } from "../model/project.schema";
@@ -23,14 +24,15 @@ export function ProjectFormFields({ form, clientOptions, lockClient = false }: P
 	return (
 		<Form {...form}>
 			<div className="flex flex-col gap-4">
-				<FormSelect
+				<FormCombobox
 					control={form.control}
 					name="clientId"
 					label="Client"
-					placeholder="Select client"
+					placeholder="Select client…"
+					searchPlaceholder="Search clients…"
+					emptyText="No client found."
 					options={clientOptions}
 					disabled={lockClient}
-					onValueChange={(value) => form.setValue("clientId", Number(value), { shouldDirty: true, shouldValidate: true })}
 				/>
 
 				<FormInput

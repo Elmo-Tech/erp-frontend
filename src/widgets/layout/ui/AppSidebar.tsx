@@ -16,7 +16,6 @@ interface NavItem {
 	href: string;
 	icon: React.ElementType;
 	permission?: string;
-	roles?: string[];
 }
 
 interface NavGroup {
@@ -97,7 +96,7 @@ const navGroups: NavGroup[] = [
 export function Sidebar() {
 	const { isCollapsed, isMobileOpen, toggleCollapsed, closeMobile } = useSidebarStore();
 	const pathname = usePathname();
-	const { role, hasPermission } = useAuthStore();
+	const hasPermission = useAuthStore((state) => state.hasPermission);
 
 	useEffect(() => {
 		closeMobile();
@@ -114,7 +113,6 @@ export function Sidebar() {
 	const filterItems = (items: NavItem[]) => {
 		return items.filter((item) => {
 			if (item.permission && !hasPermission(item.permission)) return false;
-			if (item.roles && role && !item.roles.includes(role)) return false;
 			return true;
 		});
 	};

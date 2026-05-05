@@ -62,8 +62,8 @@ export type MeetingModelType = "lead" | "client" | "project";
 
 /** Maps frontend model type to the backend morph class string */
 export const MODEL_TYPE_TO_MORPH: Record<MeetingModelType, string> = {
-	lead: "App\\Modules\\CRM\\Models\\Lead",
-	client: "App\\Modules\\CRM\\Models\\Client",
+	lead: "App\\Modules\\Lead\\Models\\Lead",
+	client: "App\\Modules\\Client\\Models\\Client",
 	project: "App\\Modules\\Project\\Models\\Project",
 };
 

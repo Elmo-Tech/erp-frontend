@@ -7,7 +7,7 @@ import { LoginWidget } from "@/widgets/auth/ui/LoginWidget";
 
 export default function LoginPage() {
 	const router = useRouter();
-	const { isAuthenticated, role, tokenExpiresAt, logout } = useAuthStore();
+	const { isAuthenticated, tokenExpiresAt, logout, hasPermission } = useAuthStore();
 
 	useEffect(() => {
 		// Check if token is expired
@@ -17,13 +17,13 @@ export default function LoginPage() {
 		}
 
 		if (isAuthenticated) {
-			if (role === "client") {
+			if (hasPermission("access_client_portal")) {
 				router.push("/client");
 			} else {
 				router.push("/dashboard");
 			}
 		}
-	}, [isAuthenticated, role, tokenExpiresAt, logout, router]);
+	}, [isAuthenticated, hasPermission, tokenExpiresAt, logout, router]);
 
 	return (
 		<div className="flex min-h-screen items-center justify-center w-full bg-linear-to-br from-background to-muted p-4">

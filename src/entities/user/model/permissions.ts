@@ -31,14 +31,7 @@ export const TASK_PERMISSIONS = {
 	DELETE_TASKS: "delete_tasks",
 	VIEW_INTERNAL_NOTES: "view_internal_notes",
 	ASSIGN_TASKS: "assign_tasks",
-	CREATE_MAIN_TASKS: "create_main_tasks",
-	CREATE_WEEKLY_TASKS: "create_weekly_tasks",
-	CREATE_SUBTASKS: "create_subtasks",
-	EDIT_MAIN_TASKS: "edit_main_tasks",
-	EDIT_WEEKLY_TASKS: "edit_weekly_tasks",
-	EDIT_SUBTASKS: "edit_subtasks",
-	MANAGE_TASK_TEAM: "manage_task_team",
-	MANAGE_TASK_TEST_SCENARIOS: "manage_task_test_scenarios",
+	WORK_ON_TASKS: "work_on_tasks",
 } as const;
 
 export const INVOICE_PERMISSIONS = {
@@ -140,14 +133,7 @@ export function useTaskPermissions() {
 			canDeleteTasks: hasPermission(TASK_PERMISSIONS.DELETE_TASKS),
 			canViewInternalNotes: hasPermission(TASK_PERMISSIONS.VIEW_INTERNAL_NOTES),
 			canAssignTasks: hasPermission(TASK_PERMISSIONS.ASSIGN_TASKS),
-			canCreateMainTasks: hasPermission(TASK_PERMISSIONS.CREATE_MAIN_TASKS),
-			canCreateWeeklyTasks: hasPermission(TASK_PERMISSIONS.CREATE_WEEKLY_TASKS),
-			canCreateSubtasks: hasPermission(TASK_PERMISSIONS.CREATE_SUBTASKS),
-			canEditMainTasks: hasPermission(TASK_PERMISSIONS.EDIT_MAIN_TASKS),
-			canEditWeeklyTasks: hasPermission(TASK_PERMISSIONS.EDIT_WEEKLY_TASKS),
-			canEditSubtasks: hasPermission(TASK_PERMISSIONS.EDIT_SUBTASKS),
-			canManageTaskTeam: hasPermission(TASK_PERMISSIONS.MANAGE_TASK_TEAM),
-			canManageTaskTestScenarios: hasPermission(TASK_PERMISSIONS.MANAGE_TASK_TEST_SCENARIOS),
+			canWorkOnTasks: hasPermission(TASK_PERMISSIONS.WORK_ON_TASKS),
 		}),
 		[hasPermission]
 	);

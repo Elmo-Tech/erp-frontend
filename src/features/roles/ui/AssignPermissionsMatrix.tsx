@@ -15,7 +15,7 @@ interface AssignPermissionsMatrixProps {
 	permissions: Permission[];
 }
 
-const protectedRoleNames = new Set(["admin", "client", "super-admin"]);
+const protectedRoleNames = new Set(["founder", "pmo", "techdev", "dev", "client"]);
 
 export function AssignPermissionsMatrix({ roles, permissions }: AssignPermissionsMatrixProps) {
 	const [updatingCell, setUpdatingCell] = useState<string | null>(null);

@@ -11,14 +11,12 @@
  *  - CreateQuotationModal renders the EXACT QuotationDirectUploadTab from the pipeline
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { PlusIcon, Receipt, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { Skeleton } from "@/shared/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
-import { getLeadQuotations, type LeadQuotation } from "@/features/leads/api/leads.api";
+import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
+import { useGetLeadQuotations, type LeadQuotation } from "@/features/leads/api/leads.api";
 import { CreateQuotationModal } from "@/features/leads/ui/CreateQuotationModal";
 import { format } from "date-fns";
 
@@ -46,35 +44,47 @@ interface LeadQuotationsTabProps {
 }
 
 export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
-	const [quotations, setQuotations] = useState<LeadQuotation[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
 	const [modalOpen, setModalOpen] = useState(false);
+	const quotationsQuery = useGetLeadQuotations(leadId);
+	const quotations = quotationsQuery.data ?? [];
 
-	const fetchQuotations = useCallback(async () => {
-		setIsLoading(true);
-		try {
-			const res = await getLeadQuotations(leadId);
-			setQuotations(res.data);
-		} catch (err) {
-			console.error("[LeadQuotationsTab] Failed to fetch quotations:", err);
-			toast.error("Failed to load quotations.");
-		} finally {
-			setIsLoading(false);
-		}
-	}, [leadId]);
-
-	useEffect(() => {
-		fetchQuotations();
-	}, [fetchQuotations]);
-
-	if (isLoading) {
-		return (
-			<div className="pt-4 space-y-3">
-				<Skeleton className="h-9 w-36 ml-auto" />
-				<Skeleton className="h-48 w-full rounded-xl" />
-			</div>
-		);
-	}
+	const columns: Column<LeadQuotation>[] = [
+		{ key: "id", header: "ID", render: (q) => <span className="font-mono text-xs text-muted-foreground">#{q.id}</span> },
+		{
+			key: "status",
+			header: "Status",
+			render: (q) => (
+				<Badge
+					variant="outline"
+					className={STATUS_CLASS[q.status] ?? "bg-muted text-muted-foreground"}
+				>
+					{q.status}
+				</Badge>
+			),
+		},
+		{ key: "basePrice", header: "Base Price", render: (q) => <span className="text-sm font-medium">{formatMoney(q.base_price, q.currency)}</span> },
+		{ key: "finalTotal", header: "Final Total", render: (q) => <span className="text-sm font-semibold text-foreground">{formatMoney(q.final_total, q.currency)}</span> },
+		{ key: "commission", header: "Commission", render: (q) => <span className="text-sm text-muted-foreground capitalize">{q.commission_type ?? "—"}</span> },
+		{
+			key: "document",
+			header: "Document",
+			render: (q) =>
+				q.file_path ? (
+					<a
+						href={q.file_path}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+					>
+						<ExternalLink className="size-3" />
+						View PDF
+					</a>
+				) : (
+					<span className="text-xs text-muted-foreground">—</span>
+				),
+		},
+		{ key: "created", header: "Created", render: (q) => <span className="text-sm text-muted-foreground">{format(new Date(q.created_at), "MMM d, yyyy")}</span> },
+	];
 
 	return (
 		<div className="pt-4 space-y-4">
@@ -93,73 +103,25 @@ export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
 				</Button>
 			</div>
 
-			{/* ── Table ────────────────────────────────────────────────────── */}
-			{quotations.length === 0 ? (
-				<div className="flex flex-col items-center justify-center h-48 rounded-xl border bg-muted/20 gap-3">
-					<Receipt className="size-8 text-muted-foreground/40" />
-					<p className="text-sm text-muted-foreground">No quotations yet. Add the first one.</p>
-				</div>
-			) : (
-				<div className="rounded-xl border overflow-hidden">
-					<Table>
-						<TableHeader>
-							<TableRow className="bg-muted/40 hover:bg-muted/40">
-								<TableHead className="font-semibold">ID</TableHead>
-								<TableHead className="font-semibold">Status</TableHead>
-								<TableHead className="font-semibold">Base Price</TableHead>
-								<TableHead className="font-semibold">Final Total</TableHead>
-								<TableHead className="font-semibold">Commission</TableHead>
-								<TableHead className="font-semibold">Document</TableHead>
-								<TableHead className="font-semibold">Created</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{quotations.map((q) => (
-								<TableRow
-									key={q.id}
-									className="hover:bg-muted/30"
-								>
-									<TableCell className="font-mono text-xs text-muted-foreground">#{q.id}</TableCell>
-									<TableCell>
-										<Badge
-											variant="outline"
-											className={STATUS_CLASS[q.status] ?? "bg-muted text-muted-foreground"}
-										>
-											{q.status}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-sm font-medium">{formatMoney(q.base_price, q.currency)}</TableCell>
-									<TableCell className="text-sm font-semibold text-foreground">{formatMoney(q.final_total, q.currency)}</TableCell>
-									<TableCell className="text-sm text-muted-foreground capitalize">{q.commission_type ?? "—"}</TableCell>
-									<TableCell>
-										{q.file_path ? (
-											<a
-												href={q.file_path}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-											>
-												<ExternalLink className="size-3" />
-												View PDF
-											</a>
-										) : (
-											<span className="text-xs text-muted-foreground">—</span>
-										)}
-									</TableCell>
-									<TableCell className="text-sm text-muted-foreground">{format(new Date(q.created_at), "MMM d, yyyy")}</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-				</div>
-			)}
+			<DataTable
+				columns={columns}
+				data={quotations}
+				keyExtractor={(quotation) => quotation.id}
+				isLoading={quotationsQuery.isLoading}
+				error={quotationsQuery.error}
+				emptyState={{
+					icon: Receipt,
+					title: "No quotations yet",
+					description: "Add the first one.",
+				}}
+			/>
 
 			{/* ── Creation modal — renders QuotationDirectUploadTab exactly ── */}
 			<CreateQuotationModal
 				leadId={leadId}
 				open={modalOpen}
 				onOpenChange={setModalOpen}
-				onCreated={fetchQuotations}
+				onCreated={() => quotationsQuery.refetch()}
 			/>
 		</div>
 	);

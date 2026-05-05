@@ -283,7 +283,7 @@ function GenericStageModal({ item, onSubmit, onCancel, isLoading = false }: Stag
 		if (data.mode === "task") {
 			onSubmit({
 				mode: "task",
-				assignedTo: data.assignedTo as number,
+				assignedTo: Number(data.assignedTo),
 				deadline: data.deadline as string,
 				notes: data.taskNotes as string | undefined,
 			});

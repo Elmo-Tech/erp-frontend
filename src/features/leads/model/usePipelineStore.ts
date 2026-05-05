@@ -56,6 +56,12 @@ interface PipelineState {
 	interceptDrag: (leadId: number, fromStage: PipelineStage, toStage: PipelineStage) => boolean;
 
 	/**
+	 * Starts the drag/modal queue without owning the lead list.
+	 * React Query remains the source of truth for board/table data.
+	 */
+	startDrag: (leadId: number, fromStage: PipelineStage, toStage: PipelineStage) => boolean;
+
+	/**
 	 * Called when the user successfully submits a modal form.
 	 * Pops the first item from the queue and stores the result.
 	 * When the queue empties, calls the provided commit callback.
@@ -144,6 +150,22 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
 			leads: updatedLeads,
 			pendingDrag: { leadId, fromStage, toStage, snapshot },
 			modalQueue: queue,
+			completedStageResults: [],
+		});
+
+		return true;
+	},
+
+	// ── startDrag ─────────────────────────────────────────────────────────────
+	startDrag: (leadId, fromStage, toStage) => {
+		const fromIdx = PIPELINE_STAGES.indexOf(fromStage);
+		const toIdx = PIPELINE_STAGES.indexOf(toStage);
+
+		if (toIdx <= fromIdx) return false;
+
+		set({
+			pendingDrag: { leadId, fromStage, toStage, snapshot: [] },
+			modalQueue: buildModalQueue(fromStage, toStage),
 			completedStageResults: [],
 		});
 

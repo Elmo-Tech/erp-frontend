@@ -4,6 +4,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { Video } from "lucide-react";
 import { Form } from "@/shared/ui/form";
 import { FormInput, FormSelect, FormTagSelector, type FormTagOption, type SelectOption } from "@/shared/ui/forms";
+import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { LocationType, LocationTypeLabels, MeetingType, MeetingTypeLabels, type ScheduleMeetingFormData } from "../model/meeting.schema";
 
 interface ScheduleMeetingFormProps {
@@ -41,11 +42,13 @@ export function ScheduleMeetingForm({ form, projectOptions = [], internalAttende
 				/>
 
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-					<FormSelect
+					<FormCombobox
 						control={form.control}
 						name="relatedProjectId"
 						label="Related Project"
 						placeholder="Optional"
+						searchPlaceholder="Search projects…"
+						emptyText="No project found."
 						options={projectOptions}
 						disabled={disabled || projectOptions.length === 0}
 					/>

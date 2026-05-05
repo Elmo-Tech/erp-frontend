@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, Plus } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
+import { Can } from "@/shared/ui/Can";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { SearchInput } from "@/shared/ui/filters/SearchInput";
 import { Pagination } from "@/shared/ui/data-display/Pagination";
@@ -13,7 +13,6 @@ import { clientApi } from "@/entities/client/api/client.api";
 import { ClientCard } from "@/entities/client/ui/ClientCard";
 import { clientKeys } from "@/entities/client/model/query-keys";
 import type { ClientIndexRow, ClientFilters } from "@/entities/client/model/types";
-import { useClientPermissions } from "@/entities/user/model/permissions";
 import { AddClientModal } from "@/features/clients/ui/AddClientModal";
 import { DeleteClientDialog } from "@/features/clients/ui/DeleteClientDialog";
 import { EditClientModal } from "@/features/clients/ui/EditClientModal";
@@ -29,7 +28,6 @@ export function ClientListWidget() {
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [clientToEditId, setClientToEditId] = useState<number | null>(null);
 	const [clientToDelete, setClientToDelete] = useState<ClientIndexRow | null>(null);
-	const { canManageClients, canCreateClients, canEditClients, canDeleteClients } = useClientPermissions();
 
 	const clientsQuery = useQuery({
 		queryKey: clientKeys.list(filters),
@@ -65,11 +63,6 @@ export function ClientListWidget() {
 	};
 
 	const handleCreateClick = () => {
-		if (!canManageClients && !canCreateClients) {
-			toast.error("You do not have permission to create clients");
-			return;
-		}
-
 		setCreateDialogOpen(true);
 	};
 
@@ -81,7 +74,7 @@ export function ClientListWidget() {
 					<p className="text-sm text-muted-foreground">Manage client records, contact details, and account activity.</p>
 				</div>
 
-				{(canManageClients || canCreateClients) && (
+				<Can permission={["manage_clients", "create_clients"]}>
 					<Button
 						size="sm"
 						onClick={handleCreateClick}
@@ -89,7 +82,7 @@ export function ClientListWidget() {
 						<Plus data-icon="inline-start" />
 						Add Client
 					</Button>
-				)}
+				</Can>
 			</div>
 
 			<div className="flex flex-col gap-3 border-y py-3 md:flex-row md:items-center md:justify-between">
@@ -130,7 +123,7 @@ export function ClientListWidget() {
 							<div className="text-sm font-medium">No clients found</div>
 							<div className="text-sm text-muted-foreground">Create a client or adjust your search.</div>
 						</div>
-						{(canManageClients || canCreateClients) && (
+						<Can permission={["manage_clients", "create_clients"]}>
 							<Button
 								size="sm"
 								variant="outline"
@@ -139,16 +132,16 @@ export function ClientListWidget() {
 								<Plus data-icon="inline-start" />
 								Add Client
 							</Button>
-						)}
+						</Can>
 					</div>
 				) : (
 					clients.map((client) => (
-						<ClientCard
+						<PermissionedClientCard
 							key={client.id}
 							client={client}
 							onView={handleView}
-							onEdit={canManageClients || canEditClients ? (selectedClient) => setClientToEditId(selectedClient.id) : undefined}
-							onDelete={canManageClients || canDeleteClients ? setClientToDelete : undefined}
+							onEdit={(selectedClient) => setClientToEditId(selectedClient.id)}
+							onDelete={setClientToDelete}
 						/>
 					))
 				)}
@@ -189,6 +182,56 @@ export function ClientListWidget() {
 				onSuccess={() => setClientToDelete(null)}
 			/>
 		</section>
+	);
+}
+
+interface PermissionedClientCardProps {
+	client: ClientIndexRow;
+	onView: (client: ClientIndexRow) => void;
+	onEdit: (client: ClientIndexRow) => void;
+	onDelete: (client: ClientIndexRow) => void;
+}
+
+function PermissionedClientCard({ client, onView, onEdit, onDelete }: PermissionedClientCardProps) {
+	return (
+		<Can
+			permission={["manage_clients", "edit_clients"]}
+			fallback={
+				<Can
+					permission={["manage_clients", "delete_clients"]}
+					fallback={
+						<ClientCard
+							client={client}
+							onView={onView}
+						/>
+					}
+				>
+					<ClientCard
+						client={client}
+						onView={onView}
+						onDelete={onDelete}
+					/>
+				</Can>
+			}
+		>
+			<Can
+				permission={["manage_clients", "delete_clients"]}
+				fallback={
+					<ClientCard
+						client={client}
+						onView={onView}
+						onEdit={onEdit}
+					/>
+				}
+			>
+				<ClientCard
+					client={client}
+					onView={onView}
+					onEdit={onEdit}
+					onDelete={onDelete}
+				/>
+			</Can>
+		</Can>
 	);
 }
 

@@ -3,6 +3,9 @@
  * Re-exports all shared/reusable components
  */
 
+// Permission Guard
+export { Can, usePermissionGate } from "./Can";
+
 // Form Components
 export * from "./forms/FormInput";
 export * from "./forms/FormSelect";

@@ -15,7 +15,7 @@ export function InteractiveSOPWidget() {
 	const completed = useSopCheckinCompleted(directive?.id);
 
 	return (
-		<div className="mx-auto w-full max-w-2xl space-y-4">
+		<div className="mx-auto w-full space-y-4">
 			<div className="flex flex-col gap-3 border-b border-border pb-4 md:flex-row md:items-end md:justify-between">
 				<div className="min-w-0">
 					<h1 className="text-2xl font-semibold tracking-tight text-foreground">Morning SOP</h1>
@@ -59,7 +59,7 @@ export function InteractiveSOPWidget() {
 			) : directiveQuery.error ? (
 				<div className="rounded-md border border-destructive/25 bg-background p-4">
 					<div className="flex gap-3">
-						<div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-destructive/25 bg-destructive/[0.04] text-destructive">
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-destructive/25 bg-destructive/4 text-destructive">
 							<TriangleAlert className="size-4" />
 						</div>
 						<div className="min-w-0">
@@ -84,7 +84,7 @@ export function InteractiveSOPWidget() {
 					directive={directive}
 				/>
 			) : directive && completed ? (
-				<div className="rounded-md border border-primary/30 bg-primary/[0.025] p-5">
+				<div className="rounded-md border border-primary/30 bg-primary/2.5 p-5">
 					<div className="flex gap-3">
 						<div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/30 bg-background text-primary">
 							<CheckCircle2 className="size-4" />

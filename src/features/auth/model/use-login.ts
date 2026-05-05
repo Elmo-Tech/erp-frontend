@@ -30,8 +30,9 @@ export function useLogin() {
 				permissions,
 			});
 
-			// Redirect based on role
-			if (role === "client") {
+			const canAccessClientPortal = permissions.some((permission) => permission.permissionName === "access_client_portal" && permission.access);
+
+			if (canAccessClientPortal) {
 				router.push("/client");
 			} else {
 				router.push("/dashboard");

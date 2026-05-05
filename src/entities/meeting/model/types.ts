@@ -6,8 +6,12 @@ export interface Meeting {
 	typeLabel?: string;
 	status: string;
 	statusLabel?: string;
+	statusColor?: string;
 	title: string;
 	description?: string | null;
+	/** Raw location type value from the backend (e.g. "online", "client_site") */
+	location?: string | null;
+	locationDetails?: string | null;
 	assignedTo?: {
 		userId: number;
 		name: string;

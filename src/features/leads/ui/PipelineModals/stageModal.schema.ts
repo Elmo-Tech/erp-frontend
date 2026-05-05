@@ -45,7 +45,7 @@ export type SaasAddon = z.infer<typeof saasAddonSchema>;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const taskTabSchema = z.object({
-	assignedTo: z.number().int().positive("Please select a user"),
+	assignedTo: z.coerce.number().int().positive("Please select a user"),
 	deadline: z.string().min(1, "Deadline is required"),
 	taskNotes: z.string().optional(),
 });

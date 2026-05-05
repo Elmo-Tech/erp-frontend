@@ -15,7 +15,7 @@
  */
 
 import { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -26,13 +26,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
+import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import type { SelectOption } from "@/shared/ui/forms/FormSelect";
 
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
-import { createLead } from "../api/leads.api";
-import { usePipelineStore } from "../model/usePipelineStore";
-import type { Lead } from "../model/types";
+import { useSettingsDictionary } from "@/shared/api/settings.api";
+import { useCreateLead } from "../api/leads.api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -43,16 +43,6 @@ const LEAD_TYPE = {
 	INDIVIDUAL: "individual",
 } as const;
 type LeadType = (typeof LEAD_TYPE)[keyof typeof LEAD_TYPE];
-
-const SOURCE_OPTIONS: SelectOption[] = [
-	{ value: "referral", label: "Referral" },
-	{ value: "website", label: "Website" },
-	{ value: "social_media", label: "Social Media" },
-	{ value: "cold_outreach", label: "Cold Outreach" },
-	{ value: "event", label: "Event / Conference" },
-	{ value: "partner", label: "Partner" },
-	{ value: "other", label: "Other" },
-];
 
 const CURRENCY_OPTIONS: SelectOption[] = [
 	{ value: "USD", label: "USD — US Dollar" },
@@ -151,7 +141,7 @@ interface CreateLeadModalProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
-	const addLead = usePipelineStore((s) => s.addLead);
+	const createLeadMutation = useCreateLead();
 
 	const form = useForm<CreateLeadFormInput, unknown, CreateLeadFormOutput>({
 		resolver: zodResolver(createLeadSchema),
@@ -170,8 +160,11 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 		[usersQuery.data?.users],
 	);
 
-	const leadType = form.watch("type") as "company" | "individual";
-	const isSubmitting = form.formState.isSubmitting;
+	// Lead sources — dynamic from settings/lead-sources
+	const leadSourcesDict = useSettingsDictionary("lead-sources", open);
+
+	const leadType = useWatch({ control: form.control, name: "type" }) as "company" | "individual";
+	const isSubmitting = form.formState.isSubmitting || createLeadMutation.isPending;
 
 	const handleOpenChange = (isOpen: boolean) => {
 		if (isOpen) form.reset(DEFAULT_VALUES);
@@ -208,7 +201,7 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 		}
 
 		try {
-			const response = await createLead({
+			const response = await createLeadMutation.mutateAsync({
 				title,
 				company_name,
 				contact_name,
@@ -219,19 +212,6 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 				notes: data.notes?.trim() || null,
 			});
 
-			const newLead: Lead = {
-				id: response.data.id,
-				name: response.data.title,
-				company: response.data.company ?? undefined,
-				email: response.data.email ?? undefined,
-				phone: response.data.phone ?? undefined,
-				stage: "new",
-				assignedTo: response.data.assignedTo ?? undefined,
-				createdAt: response.data.createdAt,
-				updatedAt: response.data.updatedAt,
-			};
-
-			addLead(newLead);
 			toast.success(`Lead "${response.data.title}" added to the pipeline!`);
 			handleOpenChange(false);
 		} catch (err) {
@@ -415,19 +395,23 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 								step={0.01}
 								disabled={isSubmitting}
 							/>
-							<FormSelect
+							<FormCombobox
 								control={form.control}
 								name="source"
 								label="Lead Source"
-								placeholder="Select source…"
-								options={SOURCE_OPTIONS}
-								disabled={isSubmitting}
+								placeholder={leadSourcesDict.isLoading ? "Loading sources…" : "Select source…"}
+								searchPlaceholder="Search sources…"
+								emptyText="No source found."
+								options={leadSourcesDict.options}
+								disabled={isSubmitting || leadSourcesDict.isLoading}
 							/>
-							<FormSelect
+							<FormCombobox
 								control={form.control}
 								name="account_manager_id"
 								label="Account Manager"
 								placeholder={usersQuery.isLoading ? "Loading users…" : "Unassigned"}
+								searchPlaceholder="Search users…"
+								emptyText="No user found."
 								options={accountManagerOptions}
 								disabled={isSubmitting || usersQuery.isLoading || accountManagerOptions.length === 0}
 								description={usersQuery.isLoading ? "Loading internal users…" : "Optional. Leave unassigned if ownership is not decided yet."}

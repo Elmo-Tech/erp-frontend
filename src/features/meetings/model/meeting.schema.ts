@@ -68,7 +68,8 @@ export type ScheduleMeetingFormData = z.infer<typeof scheduleMeetingSchema>;
 export function toScheduleMeetingPayload(data: ScheduleMeetingFormData): ScheduleMeetingPayload {
 	const scheduledAt = new Date(`${data.date}T${data.time}`).toISOString();
 	const subjectId = data.relatedProjectId ? Number(data.relatedProjectId) : data.clientId;
-	const subjectType = data.relatedProjectId ? "App\\Modules\\Project\\Models\\Project" : "App\\Modules\\CRM\\Models\\Client";
+	// Use the correct backend namespace — must match CreateMeetingRequest validation
+	const subjectType = data.relatedProjectId ? "App\\Modules\\Project\\Models\\Project" : "App\\Modules\\Client\\Models\\Client";
 
 	const description = [
 		`Client: ${data.clientName}`,

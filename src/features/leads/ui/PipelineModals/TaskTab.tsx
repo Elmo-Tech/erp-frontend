@@ -10,7 +10,7 @@
 import { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 import { FormInput } from "@/shared/ui/forms/FormInput";
-import { FormSelect } from "@/shared/ui/forms/FormSelect";
+import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
 import type { TaskTabFormValues } from "./stageModal.schema";
@@ -32,15 +32,17 @@ export function TaskTab() {
 
 	return (
 		<div className="space-y-4">
-			{/* Assigned To — user selector */}
-			<FormSelect
+			{/* Assigned To — user combobox with search */}
+			<FormCombobox
 				control={control}
-				// assignedTo is a number in the schema; FormSelect stores strings.
+				// assignedTo is a number in the schema; FormCombobox stores strings.
 				// The value is coerced to a number in the StageModal submit handler.
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				name={"assignedTo" as any}
 				label="Assigned To *"
 				placeholder={usersQuery.isLoading ? "Loading users…" : "Select a team member…"}
+				searchPlaceholder="Search team members…"
+				emptyText="No team member found."
 				options={userOptions}
 				disabled={usersQuery.isLoading || userOptions.length === 0}
 				description={usersQuery.isLoading ? "Loading internal users…" : userOptions.length === 0 && !usersQuery.isLoading ? "No internal users found" : undefined}

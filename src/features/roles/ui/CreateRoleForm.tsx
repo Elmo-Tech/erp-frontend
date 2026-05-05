@@ -7,10 +7,42 @@ import { toast } from "sonner";
 import type { Permission } from "@/entities/user/model/types";
 import { Button } from "@/shared/ui/button";
 import { Form } from "@/shared/ui/form";
-import { FormCheckboxGroup, FormInput } from "@/shared/ui/forms";
-import { ScrollArea } from "@/shared/ui/scroll-area";
+import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormMultiCombobox } from "@/shared/ui/forms/FormMultiCombobox";
 import { createRoleSchema, type CreateRoleFormData } from "../model/role.schema";
 import { useCreateRole } from "../model/use-role-actions";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Group order mirrors the seeder's PERMISSION CATALOGUE comments exactly
+// ─────────────────────────────────────────────────────────────────────────────
+
+const GROUP_ORDER: string[] = [
+	"Dashboard",
+	"User Management",
+	"Role Management",
+	"Client Management",
+	"Project Management",
+	"Project Members",
+	"Project Files",
+	"Task Management",
+	"Sales — Leads",
+	"Sales — Quotations",
+	"Sales — Contracts",
+	"Invoice Management",
+	"Wiki Management",
+	"Time Tracking",
+	"Attendance",
+	"Employee Management",
+	"SOP Management",
+	"Meetings",
+	"Client Portal",
+	"Reports & Analytics",
+	"Financial Data",
+	"Settings",
+	"Security & Audit",
+	"Tags",
+	"Other",
+];
 
 interface CreateRoleFormProps {
 	permissions: Permission[];
@@ -19,20 +51,34 @@ interface CreateRoleFormProps {
 
 export function CreateRoleForm({ permissions, onSuccess }: CreateRoleFormProps) {
 	const createRole = useCreateRole();
+
 	const form = useForm<CreateRoleFormData>({
 		resolver: zodResolver(createRoleSchema),
-		defaultValues: {
-			name: "",
-			permissions: [],
-		},
+		defaultValues: { name: "", permissions: [] },
 	});
 
-	const groupedPermissions = groupPermissions(permissions);
+	// Map Permission[] → MultiComboboxOption[] with group ordering
+	const permissionOptions = (() => {
+		// Build a map of group → options
+		const map = permissions.reduce<Record<string, { value: string; label: string; group: string; description?: string }[]>>((acc, p) => {
+			const g = p.group || "Other";
+			(acc[g] ??= []).push({
+				value: p.name,
+				label: formatLabel(p.name),
+				group: g,
+				description: p.description || undefined,
+			});
+			return acc;
+		}, {});
+
+		// Return in seeder order
+		return GROUP_ORDER.flatMap((g) => map[g] ?? []);
+	})();
 
 	const onSubmit = async (data: CreateRoleFormData) => {
 		try {
 			await createRole.mutateAsync({ name: data.name, permissions: data.permissions });
-			toast.success("Role created");
+			toast.success(`Role "${data.name}" created`);
 			form.reset();
 			onSuccess?.();
 		} catch (error) {
@@ -50,34 +96,28 @@ export function CreateRoleForm({ permissions, onSuccess }: CreateRoleFormProps) 
 					control={form.control}
 					name="name"
 					label="Role name"
-					placeholder="project-manager"
+					placeholder="e.g. project-manager"
+					description="Use lowercase letters, numbers, hyphens, or underscores."
 				/>
-				<div className="space-y-2">
-					<div className="text-sm font-medium">Initial permissions</div>
-					<ScrollArea className="h-72 rounded-md border">
-						<div className="space-y-4 p-3">
-							{Object.entries(groupedPermissions).map(([group, groupPermissions]) => (
-								<FormCheckboxGroup
-									key={group}
-									control={form.control}
-									name="permissions"
-									label={group}
-									options={groupPermissions.map((permission) => ({
-										value: permission.name,
-										label: formatPermissionName(permission.name),
-										description: permission.description,
-									}))}
-									columns={2}
-								/>
-							))}
-						</div>
-					</ScrollArea>
-				</div>
+
+				<FormMultiCombobox
+					control={form.control}
+					name="permissions"
+					label="Permissions"
+					placeholder="Select permissions…"
+					searchPlaceholder="Search permissions…"
+					emptyText="No permissions found."
+					description="Search and select the permissions this role should have."
+					options={permissionOptions}
+					maxBadges={4}
+				/>
+
 				<Button
 					type="submit"
 					disabled={createRole.isPending}
+					className="w-full"
 				>
-					{createRole.isPending && <Loader2 data-icon="inline-start" className="animate-spin" />}
+					{createRole.isPending && <Loader2 className="animate-spin" />}
 					Create role
 				</Button>
 			</form>
@@ -85,18 +125,9 @@ export function CreateRoleForm({ permissions, onSuccess }: CreateRoleFormProps) 
 	);
 }
 
-function groupPermissions(permissions: Permission[]) {
-	return permissions.reduce<Record<string, Permission[]>>((acc, permission) => {
-		const group = permission.group || "Other";
-		acc[group] ||= [];
-		acc[group].push(permission);
-		return acc;
-	}, {});
-}
-
-function formatPermissionName(name: string) {
+function formatLabel(name: string) {
 	return name
 		.split("_")
-		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
 		.join(" ");
 }

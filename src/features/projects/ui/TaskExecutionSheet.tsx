@@ -53,6 +53,8 @@ import {
 } from "../api/execution.api";
 import type { ProjectTask, TaskDeliverable, ProjectTimeEntry } from "../api/execution.api";
 import { useAuthStore } from "@/entities/user/model/auth.store";
+import { useTaskPermissions } from "@/entities/user/model/permissions";
+import { Can } from "@/shared/ui/Can";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -190,7 +192,7 @@ function TimeEntryRow({ entry }: { entry: ProjectTimeEntry }) {
 					{entry.startTime ? formatDateTimeDisplay(entry.startTime) : "—"}
 					{entry.endTime ? ` → ${formatDateTimeDisplay(entry.endTime)}` : ""}
 				</p>
-				{entry.note && <p className="text-xs text-muted-foreground/70 mt-0.5 italic">"{entry.note}"</p>}
+				{entry.note && <p className="text-xs text-muted-foreground/70 mt-0.5 italic">&quot;{entry.note}&quot;</p>}
 			</div>
 			<div className="flex items-center gap-2 shrink-0">
 				{entry.isManual && (
@@ -265,20 +267,36 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const updateStatus = useUpdateTaskStatus();
 	const logManualTime = useLogManualTime();
 
-	// ── RBAC: Derive current user's project role ──────────────────────────────
+	// ── PBAC: Permission flags from the auth store ────────────────────────────
+	// globalRole, isGlobalAdmin, and role-string comparisons are gone.
+	// Every access decision is driven by granular permissions.
 	const currentUserId = useAuthStore((s) => s.user?.userId);
-	const globalRole = useAuthStore((s) => s.role);
 	const membersQuery = useProjectMembers(projectId);
 
-	const isGlobalAdmin = globalRole === "super-admin" || globalRole === "admin" || globalRole === "founder";
+	const { canManageTasks, canEditTasks, canWorkOnTasks } = useTaskPermissions();
 
-	const projectRole = isGlobalAdmin
-		? "manager" // founders/admins get full access
+	// manage_all_projects replaces the old isGlobalAdmin bypass.
+	// Users with this permission skip project-membership workflow ceilings.
+	const canManageAllProjects = useAuthStore((s) => s.hasPermission("manage_all_projects"));
+
+	// projectRole is the user's MEMBERSHIP role within this specific project
+	// (manager, tech_lead, developer, qa, designer).
+	// This is NOT a global system role — it only drives workflow ceiling rules
+	// (e.g. developer → cannot mark done directly).
+	// It is only consulted when the user lacks manage_all_projects.
+	const projectRole = canManageAllProjects
+		? null // bypass: no workflow ceiling applies
 		: (membersQuery.data?.find((m) => m.userId === currentUserId)?.role ?? null);
 
-	// Statuses the current user is allowed to set
+	// ── Status options filtered by permissions ────────────────────────────────
+	// Priority order:
+	//   1. manage_all_projects OR manage_tasks → all statuses.
+	//   2. project membership role = developer → in_progress, in_review only.
+	//   3. project membership role = qa        → in_progress, qa, done.
+	//   4. edit_tasks OR work_on_tasks         → in_progress, in_review.
+	//   5. No matching permission              → read-only, empty list.
 	const allowedStatusOptions = (() => {
-		if (isGlobalAdmin || projectRole === "manager" || projectRole === "tech_lead") {
+		if (canManageAllProjects || canManageTasks) {
 			return EXECUTION_TASK_STATUS_OPTIONS;
 		}
 		if (projectRole === "developer") {
@@ -287,12 +305,11 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 		if (projectRole === "qa") {
 			return EXECUTION_TASK_STATUS_OPTIONS.filter((o) => [ExecutionTaskStatus.IN_PROGRESS, ExecutionTaskStatus.QA, ExecutionTaskStatus.DONE].includes(o.value as (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus]));
 		}
-		// Unknown / non-member: read-only — no transitions allowed
-		return [];
+		if (canEditTasks || canWorkOnTasks) {
+			return EXECUTION_TASK_STATUS_OPTIONS.filter((o) => [ExecutionTaskStatus.IN_PROGRESS, ExecutionTaskStatus.IN_REVIEW].includes(o.value as (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus]));
+		}
+		return []; // read-only
 	})();
-
-	// Whether the current user may add deliverables
-	const canAddDeliverables = isGlobalAdmin || projectRole === "manager" || projectRole === "tech_lead";
 
 	// ── Manual time form ──────────────────────────────────────────────────────
 	const manualTimeForm = useForm<ManualTimeFormData>({
@@ -435,33 +452,52 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	});
 
 	// ── Derived state ─────────────────────────────────────────────────────────
-	const deliverables = task.deliverables ?? [];
-	const subtasks = task.subtasks ?? [];
-	const timeEntries = task.timeEntries ?? [];
+	const deliverables = task?.deliverables ?? [];
+	const subtasks = task?.subtasks ?? [];
+	const timeEntries = task?.timeEntries ?? [];
 	const totalDeliverables = deliverables.length;
 	const completedDeliverables = deliverables.filter((d) => d.isCompleted).length;
 	const allDeliverablesDone = totalDeliverables === 0 || completedDeliverables === totalDeliverables;
 
-	const isDone = task.status === ExecutionTaskStatus.DONE;
+	const isDone = task?.status === ExecutionTaskStatus.DONE;
 	const runningEntry = timeEntries.find((e) => e.isRunning) ?? null;
 	const isTimerRunning = runningEntry !== null;
 
-	const currentStatusColor = getStatusColor(task.status);
-	const totalLogged = formatMinutes(task.totalLoggedMinutes);
+	const currentStatusColor = getStatusColor(task?.status ?? "");
+	const totalLogged = formatMinutes(task?.totalLoggedMinutes ?? 0);
 
-	// ── RBAC: Primary footer action ──────────────────────────────────────────
-	// Derives what the footer CTA does based on the user's project role and the
-	// task's current status. Developers never see "Mark as Done" — their ceiling
-	// is "Submit for Review" which transitions to `in_review`.
+	// ── PBAC: Primary footer action ──────────────────────────────────────────
+	// Derives the footer CTA based on permissions, not global roles.
+	//
+	// Logic:
+	//   - edit_tasks permission (managers, tech leads, QA)
+	//     → "Mark as Done" via the /complete endpoint.
+	//   - work_on_tasks permission without edit_tasks (developers)
+	//     → "Submit for Review" which transitions to in_review.
+	//   - Neither permission → no footer action (read-only observer).
+	//
+	// The project-membership role (developer) is still used as a secondary
+	// signal to hide the button once the developer has already submitted
+	// (in_review / qa / done), since there is nothing left for them to do.
 	const primaryAction = (() => {
-		if (isDone) return null; // footer shows "Task completed" banner instead
+		if (!task || isDone) return null; // footer shows "Task completed" banner instead
 
-		if (projectRole === "developer") {
-			// Developer's ceiling: in_review. Hide the button once they've
-			// already submitted (in_review, qa, or done).
+		if (canEditTasks || canManageAllProjects || canManageTasks) {
+			// Full completion access — "Mark as Done"
+			return {
+				label: "Mark as Done",
+				targetStatus: ExecutionTaskStatus.DONE,
+				useCompleteEndpoint: true,
+				requiresAllDeliverables: true,
+			} as const;
+		}
+
+		if (canWorkOnTasks) {
+			// Work-only access — ceiling is in_review.
+			// Hide the button once the task is already submitted.
 			const alreadySubmitted = [ExecutionTaskStatus.IN_REVIEW, ExecutionTaskStatus.QA, ExecutionTaskStatus.DONE].includes(task.status as (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus]);
 
-			if (alreadySubmitted) return null; // nothing to do — awaiting QA
+			if (alreadySubmitted) return null; // awaiting QA — nothing to do
 
 			return {
 				label: "Submit for Review",
@@ -471,18 +507,12 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 			} as const;
 		}
 
-		// QA, manager, tech_lead, founder, admin → "Mark as Done"
-		return {
-			label: "Mark as Done",
-			targetStatus: ExecutionTaskStatus.DONE,
-			useCompleteEndpoint: true,
-			requiresAllDeliverables: true,
-		} as const;
+		return null; // read-only observer
 	})();
 
 	// ── Primary action handler ────────────────────────────────────────────────
 	const handlePrimaryAction = useCallback(() => {
-		if (!primaryAction) return;
+		if (!task || !primaryAction) return;
 
 		if (primaryAction.useCompleteEndpoint) {
 			// "Mark as Done" — uses the /complete endpoint which enforces
@@ -507,7 +537,12 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 				},
 			);
 		}
-	}, [primaryAction, completeTask, updateStatus, projectId, task.taskId, onOpenChange]);
+	}, [primaryAction, completeTask, updateStatus, projectId, task, onOpenChange]);
+
+	// ── Early return after all hooks ──────────────────────────────────────────
+	if (!task) {
+		return null;
+	}
 
 	return (
 		<Sheet
@@ -671,12 +706,14 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 										</div>
 									)}
 
-									{!isDone && canAddDeliverables && (
-										<QuickAddForm
-											placeholder="Add a deliverable…"
-											onSubmit={handleAddDeliverable}
-											isPending={createDeliverable.isPending}
-										/>
+									{!isDone && (
+										<Can permission={["edit_tasks", "manage_tasks"]}>
+											<QuickAddForm
+												placeholder="Add a deliverable…"
+												onSubmit={handleAddDeliverable}
+												isPending={createDeliverable.isPending}
+											/>
+										</Can>
 									)}
 								</div>
 

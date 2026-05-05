@@ -6,10 +6,10 @@ import { Button } from "@/shared/ui/button";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 
 export default function UnauthorizedPage() {
-	const { role } = useAuthStore();
+	const hasPermission = useAuthStore((state) => state.hasPermission);
 
 	const getRedirectPath = () => {
-		if (role === "client") return "/client";
+		if (hasPermission("access_client_portal")) return "/client";
 		return "/dashboard";
 	};
 

@@ -16,6 +16,7 @@ interface RawMeetingResource {
 	subjectName?: string;
 	status: string;
 	statusLabel?: string;
+	statusColor?: string;
 	typeLabel?: string;
 	title: string;
 	description?: string | null;
@@ -33,11 +34,9 @@ interface RawMeetingResource {
 	updatedAt: string;
 }
 
-/** Shape of data.meetings when MeetingResource::collection() is nested in a plain array */
+/** Shape of data when ClientController::meetings() returns { meetings: MeetingResource[] } */
 interface MeetingsEnvelope {
-	meetings: {
-		data: RawMeetingResource[];
-	};
+	meetings: RawMeetingResource[];
 }
 
 function toMeeting(raw: RawMeetingResource): Meeting {
@@ -49,8 +48,11 @@ function toMeeting(raw: RawMeetingResource): Meeting {
 		typeLabel: raw.typeLabel,
 		status: raw.status,
 		statusLabel: raw.statusLabel,
+		statusColor: raw.statusColor,
 		title: raw.title,
 		description: raw.description ?? null,
+		location: raw.location ?? null,
+		locationDetails: raw.locationDetails ?? null,
 		assignedTo: raw.assignedTo ?? undefined,
 		scheduledAt: raw.scheduledAt ?? null,
 		createdAt: raw.createdAt,
@@ -66,8 +68,11 @@ export const meetingApi = {
 
 	async getClientMeetings(clientId: number): Promise<Meeting[]> {
 		const response = await api.get<ApiEnvelope<MeetingsEnvelope>>(`/clients/${clientId}/meetings`);
-		// MeetingResource::collection() nested in a plain array serializes as { data: [...] }
-		return (response.data.data?.meetings?.data ?? []).map(toMeeting);
+		// Backend returns: { success, data: { meetings: MeetingResource[] } }
+		// MeetingResource::collection() on a plain collection (not paginated) returns
+		// a plain array — there is no nested .data wrapper inside meetings.
+		const raw = response.data.data?.meetings;
+		return (Array.isArray(raw) ? raw : []).map(toMeeting);
 	},
 };
 

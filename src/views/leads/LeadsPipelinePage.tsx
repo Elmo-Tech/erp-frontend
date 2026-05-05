@@ -13,37 +13,20 @@
  * Kanban board uses overflow-x-auto internally so it never bleeds outside.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlusIcon, LayoutGrid, List } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/toggle-group";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
-import { usePipelineStore } from "@/features/leads/model/usePipelineStore";
-import { getLeads } from "@/features/leads/api/leads.api";
+import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
+import { useGetLeads } from "@/features/leads/api/leads.api";
 import { CreateLeadModal } from "@/features/leads/ui/CreateLeadModal";
 import { LeadsKanbanBoard } from "@/widgets/leads-management";
-import { PIPELINE_STAGES, STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
+import { STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
 import type { Lead } from "@/features/leads/model/types";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Backend → frontend stage mapping
-// ─────────────────────────────────────────────────────────────────────────────
-
-const BACKEND_TO_FRONTEND_STAGE: Record<string, PipelineStage> = {
-	new_lead: "new",
-	meeting: "meeting",
-	proposal: "proposal",
-	quotation: "quotation",
-	contract: "contract",
-	won: "closed_won",
-	// pass-through for already-mapped values
-	new: "new",
-	closed_won: "closed_won",
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stage badge colours
@@ -68,56 +51,68 @@ interface LeadsTableProps {
 }
 
 function LeadsTable({ leads, onRowClick }: LeadsTableProps) {
-	if (leads.length === 0) {
-		return <div className="flex items-center justify-center h-48 text-muted-foreground text-sm border rounded-xl bg-muted/20">No leads found. Add your first lead to get started.</div>;
-	}
+	const columns: Column<Lead>[] = [
+		{
+			key: "title",
+			header: "Title",
+			render: (lead) => <span className="font-medium">{lead.name}</span>,
+		},
+		{
+			key: "company",
+			header: "Company",
+			render: (lead) => <span className="text-muted-foreground">{lead.company ?? "—"}</span>,
+		},
+		{
+			key: "stage",
+			header: "Stage",
+			render: (lead) => (
+				<Badge
+					variant="outline"
+					className={STAGE_BADGE_CLASS[lead.stage]}
+				>
+					{STAGE_LABELS[lead.stage]}
+				</Badge>
+			),
+		},
+		{
+			key: "expectedBudget",
+			header: "Expected Budget",
+			className: "text-right",
+			render: (lead) => (
+				<span className="tabular-nums text-muted-foreground">
+					{lead.expectedBudget != null
+						? lead.expectedBudget.toLocaleString(undefined, {
+								style: "currency",
+								currency: "USD",
+								maximumFractionDigits: 0,
+							})
+						: "—"}
+				</span>
+			),
+		},
+		{
+			key: "assignedTo",
+			header: "Assigned To",
+			render: (lead) => <span className="text-muted-foreground">{lead.assignedTo ? `#${lead.assignedTo}` : "—"}</span>,
+		},
+		{
+			key: "createdAt",
+			header: "Created At",
+			render: (lead) => <span className="text-sm text-muted-foreground">{format(new Date(lead.createdAt), "MMM d, yyyy")}</span>,
+		},
+	];
 
 	return (
-		<div className="rounded-xl border overflow-hidden">
-			<Table>
-				<TableHeader>
-					<TableRow className="bg-muted/40 hover:bg-muted/40">
-						<TableHead className="font-semibold">Title</TableHead>
-						<TableHead className="font-semibold">Company</TableHead>
-						<TableHead className="font-semibold">Stage</TableHead>
-						<TableHead className="font-semibold text-right">Expected Budget</TableHead>
-						<TableHead className="font-semibold">Assigned To</TableHead>
-						<TableHead className="font-semibold">Created At</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{leads.map((lead) => (
-						<TableRow
-							key={lead.id}
-							className="cursor-pointer hover:bg-muted/30 transition-colors"
-							onClick={() => onRowClick(lead.id)}
-						>
-							<TableCell className="font-medium">{lead.name}</TableCell>
-							<TableCell className="text-muted-foreground">{lead.company ?? "—"}</TableCell>
-							<TableCell>
-								<Badge
-									variant="outline"
-									className={STAGE_BADGE_CLASS[lead.stage]}
-								>
-									{STAGE_LABELS[lead.stage]}
-								</Badge>
-							</TableCell>
-							<TableCell className="text-right tabular-nums text-muted-foreground">
-								{lead.expectedBudget != null
-									? lead.expectedBudget.toLocaleString(undefined, {
-											style: "currency",
-											currency: "USD",
-											maximumFractionDigits: 0,
-										})
-									: "—"}
-							</TableCell>
-							<TableCell className="text-muted-foreground">{lead.assignedTo ? `#${lead.assignedTo}` : "—"}</TableCell>
-							<TableCell className="text-muted-foreground text-sm">{format(new Date(lead.createdAt), "MMM d, yyyy")}</TableCell>
-						</TableRow>
-					))}
-				</TableBody>
-			</Table>
-		</div>
+		<DataTable
+			columns={columns}
+			data={leads}
+			keyExtractor={(lead) => lead.id}
+			onRowClick={(lead) => onRowClick(lead.id)}
+			emptyState={{
+				title: "No leads found",
+				description: "Add your first lead to get started.",
+			}}
+		/>
 	);
 }
 
@@ -129,56 +124,10 @@ type ViewMode = "board" | "table";
 
 export default function LeadsPipelinePage() {
 	const router = useRouter();
-	const setLeads = usePipelineStore((s) => s.setLeads);
-	const leads = usePipelineStore((s) => s.leads);
+	const leadsQuery = useGetLeads();
+	const leads = leadsQuery.data ?? [];
 	const [isModalOpen, setIsModalOpen] = useState(false);
-	const [isLoading, setIsLoading] = useState(true);
 	const [viewMode, setViewMode] = useState<ViewMode>("board");
-
-	// Fetch leads from the server on mount and seed the Zustand store.
-	useEffect(() => {
-		let cancelled = false;
-
-		async function fetchLeads() {
-			setIsLoading(true);
-			try {
-				const response = await getLeads();
-				if (cancelled) return;
-
-				const mapped: Lead[] = response.data
-					.map((item): Lead | null => {
-						const stage = BACKEND_TO_FRONTEND_STAGE[item.stage];
-						if (!stage || !PIPELINE_STAGES.includes(stage)) return null;
-
-						return {
-							id: item.id,
-							name: item.title,
-							company: item.company ?? undefined,
-							email: item.email ?? undefined,
-							phone: item.phone ?? undefined,
-							stage,
-							assignedTo: item.assignedTo ?? undefined,
-							expectedBudget: item.expected_budget ?? undefined,
-							createdAt: item.createdAt,
-							updatedAt: item.updatedAt,
-						};
-					})
-					.filter((l): l is Lead => l !== null);
-
-				setLeads(mapped);
-			} catch (err) {
-				console.error("[LeadsPipelinePage] Failed to fetch leads:", err);
-				setLeads([]);
-			} finally {
-				if (!cancelled) setIsLoading(false);
-			}
-		}
-
-		fetchLeads();
-		return () => {
-			cancelled = true;
-		};
-	}, [setLeads]);
 
 	const handleRowClick = (id: number) => {
 		router.push(`/dashboard/leads/${id}`);
@@ -225,13 +174,18 @@ export default function LeadsPipelinePage() {
 			</div>
 
 			{/* ── Content area ─────────────────────────────────────────────── */}
-			{isLoading ? (
+			{leadsQuery.isLoading ? (
 				<div className="flex items-center justify-center flex-1 text-muted-foreground text-sm">Loading pipeline…</div>
+			) : leadsQuery.isError ? (
+				<div className="flex items-center justify-center flex-1 rounded-md border bg-background px-4 py-10 text-sm text-muted-foreground">Unable to load leads.</div>
 			) : viewMode === "board" ? (
 				/* Board: overflow-x-auto so columns scroll horizontally.
 				   No flex-1 here — the parent is a normal block flow container. */
 				<div className="w-full overflow-x-auto pb-4">
-					<LeadsKanbanBoard onCardClick={handleRowClick} />
+					<LeadsKanbanBoard
+						leads={leads}
+						onCardClick={handleRowClick}
+					/>
 				</div>
 			) : (
 				<LeadsTable
