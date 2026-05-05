@@ -4,7 +4,7 @@
  * ProjectTeamTab
  *
  * Renders a responsive grid of team member cards.
- * Each card shows: Avatar · Name · Email · Role badge.
+ * Each card shows: Avatar · Name · Email · Role badge · Remove button (guarded).
  *
  * Role values come from the backend ProjectRole enum:
  *   manager | tech_lead | developer | qa | designer
@@ -14,7 +14,7 @@ import { useState, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Users, UserPlus } from "lucide-react";
+import { Users, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
@@ -27,8 +27,9 @@ import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
+import { Can } from "@/shared/ui/Can";
 import { cn } from "@/shared/lib/utils";
-import { useProjectMembers, useAddProjectMember } from "@/features/projects/api/execution.api";
+import { useProjectMembers, useAddProjectMember, useRemoveProjectMember } from "@/features/projects/api/execution.api";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
 import type { ProjectMemberResource } from "@/features/projects/api/execution.api";
 
@@ -103,7 +104,7 @@ function getInitials(name: string): string {
 // Member card
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MemberCard({ member }: { member: ProjectMemberResource }) {
+function MemberCard({ member, onRemove, isRemoving }: { member: ProjectMemberResource; onRemove?: () => void; isRemoving?: boolean }) {
 	const user = member.user;
 	const name = user?.name ?? `User #${member.userId}`;
 	const email = user?.email ?? "";
@@ -134,6 +135,19 @@ function MemberCard({ member }: { member: ProjectMemberResource }) {
 					</div>
 					{email && <p className="mt-0.5 truncate text-xs text-muted-foreground">{email}</p>}
 				</div>
+
+				<Can permission="remove_project_members">
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className="shrink-0 text-muted-foreground hover:text-destructive"
+						onClick={onRemove}
+						disabled={isRemoving}
+						aria-label={`Remove ${name} from project`}
+					>
+						<Trash2 className="size-4" />
+					</Button>
+				</Can>
 			</CardContent>
 		</Card>
 	);
@@ -180,6 +194,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const membersQuery = useProjectMembers(projectId);
 	const addMember = useAddProjectMember();
+	const removeMember = useRemoveProjectMember();
 	const usersQuery = useGetInternalUsers(dialogOpen);
 
 	const form = useForm<AddMemberFormData>({
@@ -200,6 +215,18 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 		form.reset({ userId: "", role: "developer" });
 		setDialogOpen(true);
 	}, [form]);
+
+	const handleRemoveMember = useCallback(
+		async (member: ProjectMemberResource) => {
+			try {
+				await removeMember.mutateAsync({ projectId, memberId: member.memberId });
+				toast.success("Team member removed.");
+			} catch {
+				toast.error("Failed to remove team member.");
+			}
+		},
+		[projectId, removeMember],
+	);
 
 	const handleSubmit = form.handleSubmit(async (data) => {
 		try {
@@ -236,13 +263,15 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 				<p className="text-sm text-muted-foreground">
 					{members.length} {members.length === 1 ? "member" : "members"}
 				</p>
-				<Button
-					size="sm"
-					onClick={handleOpenDialog}
-				>
-					<UserPlus className="size-4" />
-					Add Member
-				</Button>
+				<Can permission="add_project_members">
+					<Button
+						size="sm"
+						onClick={handleOpenDialog}
+					>
+						<UserPlus className="size-4" />
+						Add Member
+					</Button>
+				</Can>
 			</div>
 
 			{members.length === 0 ? (
@@ -258,6 +287,8 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 						<MemberCard
 							key={member.memberId}
 							member={member}
+							onRemove={() => handleRemoveMember(member)}
+							isRemoving={removeMember.isPending}
 						/>
 					))}
 				</div>

@@ -362,6 +362,52 @@ export function useCreateChangeRequest() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Update Change Request Status mutation
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface UpdateChangeRequestStatusVars {
+	projectId: number;
+	changeRequestId: number;
+	status: string;
+}
+
+export function useUpdateChangeRequestStatus() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ChangeRequest, Error, UpdateChangeRequestStatusVars>({
+		mutationFn: async ({ projectId, changeRequestId, status }) => {
+			const response = await api.patch<ApiEnvelope<ChangeRequest>>(`/projects/${projectId}/change-requests/${changeRequestId}`, { status });
+			return response.data.data;
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.changeRequests(projectId) });
+		},
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Delete Change Request mutation
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface DeleteChangeRequestVars {
+	projectId: number;
+	changeRequestId: number;
+}
+
+export function useDeleteChangeRequest() {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, DeleteChangeRequestVars>({
+		mutationFn: async ({ projectId, changeRequestId }) => {
+			await api.delete(`/projects/${projectId}/change-requests/${changeRequestId}`);
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.changeRequests(projectId) });
+		},
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Project History (Activity) hooks
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -599,6 +645,28 @@ export function useAddProjectMember() {
 		mutationFn: async ({ projectId, payload }) => {
 			const response = await api.post<ApiEnvelope<ProjectMemberResource>>(`/projects/${projectId}/members`, payload);
 			return response.data.data;
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
+		},
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Remove Project Member mutation
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface RemoveMemberVars {
+	projectId: number;
+	memberId: number;
+}
+
+export function useRemoveProjectMember() {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, RemoveMemberVars>({
+		mutationFn: async ({ projectId, memberId }) => {
+			await api.delete(`/projects/${projectId}/members/${memberId}`);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
