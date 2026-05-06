@@ -4,7 +4,29 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, X, Shield, Sunrise, ClipboardList, Target, Star, CalendarCheck, FileText, Clock, Users, DollarSign, SlidersHorizontal } from "lucide-react";
+import {
+	LayoutDashboard,
+	FolderKanban,
+	Settings,
+	ChevronLeft,
+	ChevronRight,
+	Building2,
+	X,
+	Shield,
+	Sunrise,
+	ClipboardList,
+	Target,
+	Star,
+	CalendarCheck,
+	FileText,
+	Clock,
+	Users,
+	DollarSign,
+	SlidersHorizontal,
+	Receipt,
+	CreditCard,
+	CalendarDays,
+} from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
@@ -117,6 +139,34 @@ const navGroups: NavGroup[] = [
 				href: "/dashboard/hr/admin/settings",
 				icon: SlidersHorizontal,
 				permission: "manage_payroll",
+			},
+		],
+	},
+	{
+		title: "Finance",
+		items: [
+			{
+				title: "Invoices",
+				href: "/dashboard/finance/invoices",
+				icon: Receipt,
+				permission: "manage_invoices",
+			},
+			{
+				title: "Subscriptions",
+				href: "/dashboard/finance/subscriptions",
+				icon: CreditCard,
+				permission: "manage_subscriptions",
+			},
+		],
+	},
+	{
+		title: "Calendar",
+		items: [
+			{
+				title: "Master Calendar",
+				href: "/dashboard/calendar",
+				icon: CalendarDays,
+				permission: "view_calendar",
 			},
 		],
 	},
