@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, X, Shield, Sunrise, ClipboardList, Target } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, X, Shield, Sunrise, ClipboardList, Target, Star, CalendarCheck, FileText, Clock, Users, DollarSign, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
@@ -65,6 +65,58 @@ const navGroups: NavGroup[] = [
 				href: "/dashboard/projects",
 				icon: FolderKanban,
 				permission: "view_projects",
+			},
+		],
+	},
+	{
+		title: "HR & Payroll",
+		items: [
+			{
+				title: "My Points",
+				href: "/dashboard/hr/my-points",
+				icon: Star,
+				permission: "view_my_points",
+			},
+			{
+				title: "My Attendance",
+				href: "/dashboard/hr/attendance",
+				icon: CalendarCheck,
+				permission: "view_my_attendance",
+			},
+			{
+				title: "My Payslips",
+				href: "/dashboard/hr/payslips",
+				icon: FileText,
+				permission: "view_payroll",
+			},
+		],
+	},
+	{
+		title: "HR Admin",
+		items: [
+			{
+				title: "Shifts",
+				href: "/dashboard/hr/admin/shifts",
+				icon: Clock,
+				permission: "manage_shifts",
+			},
+			{
+				title: "Employee Profiles",
+				href: "/dashboard/hr/admin/employees",
+				icon: Users,
+				permission: "manage_employees",
+			},
+			{
+				title: "Payroll",
+				href: "/dashboard/hr/admin/payroll",
+				icon: DollarSign,
+				permission: "manage_payroll",
+			},
+			{
+				title: "HR Settings",
+				href: "/dashboard/hr/admin/settings",
+				icon: SlidersHorizontal,
+				permission: "manage_payroll",
 			},
 		],
 	},
