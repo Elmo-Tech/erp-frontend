@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Users, Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { Users, Plus, Pencil, Trash2, AlertTriangle, BarChart2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
@@ -80,8 +80,23 @@ function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (pro
 			header: "",
 			className: "text-right",
 			render: (p) => (
-				<Can permission="manage_employees">
-					<div className="flex items-center justify-end gap-1">
+				<div className="flex items-center justify-end gap-1">
+					{/* View Performance Report — visible to anyone with manage_employees */}
+					<Can permission="manage_employees">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 text-primary hover:text-primary"
+							title="View Performance Report"
+							asChild
+						>
+							<Link href={`/dashboard/hr/admin/reports/${p.userId}`}>
+								<BarChart2 className="h-3.5 w-3.5" />
+								<span className="sr-only">Performance report for {p.user?.name}</span>
+							</Link>
+						</Button>
+					</Can>
+					<Can permission="manage_employees">
 						<Button
 							variant="ghost"
 							size="icon"
@@ -106,8 +121,8 @@ function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (pro
 							<Trash2 className="h-3.5 w-3.5" />
 							<span className="sr-only">Remove {p.user?.name}</span>
 						</Button>
-					</div>
-				</Can>
+					</Can>
+				</div>
 			),
 		},
 	];

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { SKIP_REASONS } from "../../model/pipelineConstants";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared primitives
@@ -52,13 +51,13 @@ export const taskTabSchema = z.object({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Skip tab — skip_reason is STRICTLY REQUIRED (no optional)
+// BUG FIX: was z.enum(SKIP_REASONS) — now z.string() because reasons are
+// managed dynamically via the settings/skip-reasons dictionary.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const skipTabSchema = z.object({
 	/** REQUIRED — a skip reason must always be provided. */
-	skipReason: z.enum(SKIP_REASONS, {
-		message: "A skip reason is required to skip this stage.",
-	}),
+	skipReason: z.string().trim().min(1, "A skip reason is required to skip this stage."),
 	skipNotes: z.string().optional(),
 });
 
@@ -232,11 +231,23 @@ const contractBaseSchema = z.object({
 });
 
 // Standard contract = base + standard financials
-export const contractStandardSchema = contractBaseSchema.merge(contractStandardFinancialsSchema);
+// BUG FIX: added .superRefine to validate payment_stages sum equals total_amount
+export const contractStandardSchema = contractBaseSchema.merge(contractStandardFinancialsSchema).superRefine((data, ctx) => {
+	if (data.payment_stages.length > 0) {
+		const stagesTotal = data.payment_stages.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
+		const diff = Math.abs(stagesTotal - data.total_amount);
+		if (diff > 0.01) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["payment_stages"],
+				message: `Payment stages (${stagesTotal.toFixed(2)}) must equal the total amount (${data.total_amount.toFixed(2)}).`,
+			});
+		}
+	}
+});
 
 // SaaS contract = base + SaaS financials
 export const contractSaasSchema = contractBaseSchema.merge(contractSaasFinancialsSchema);
-
 // Union used for validation — we validate each branch separately in StageModal
 export type ContractStandardValues = z.infer<typeof contractStandardSchema>;
 export type ContractSaasValues = z.infer<typeof contractSaasSchema>;

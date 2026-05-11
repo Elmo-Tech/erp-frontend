@@ -147,3 +147,67 @@ export const hrSettingsSchema = z.object({
 });
 
 export type HrSettingsFormData = z.infer<typeof hrSettingsSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Leave Request Schema
+// Matches: StoreLeaveRequestRequest / UpdateLeaveRequestRequest
+//   user_id: required, integer, exists:users,id
+//   start_date: required, date
+//   end_date: required, date, after_or_equal:start_date
+//   type: required, in:annual,sick,unpaid,permission
+//   status: sometimes, in:pending,approved,rejected
+//   reason: nullable, max:1000
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const leaveRequestSchema = z
+	.object({
+		user_id: z.coerce.number({ invalid_type_error: "Please select an employee" }).int().positive("Please select an employee"),
+		start_date: z.string().min(1, "Start date is required"),
+		end_date: z.string().min(1, "End date is required"),
+		type: z.enum(["annual", "sick", "unpaid", "permission"], { message: "Please select a leave type" }),
+		status: z.enum(["pending", "approved", "rejected"]).default("pending"),
+		reason: z.string().max(1000, "Reason must be 1000 characters or less").optional().or(z.literal("")),
+	})
+	.refine((d) => d.end_date >= d.start_date, {
+		message: "End date must be on or after start date",
+		path: ["end_date"],
+	});
+
+export type LeaveRequestFormData = z.infer<typeof leaveRequestSchema>;
+
+export const LEAVE_REQUEST_DEFAULT_VALUES: LeaveRequestFormData = {
+	user_id: 0,
+	start_date: new Date().toISOString().slice(0, 10),
+	end_date: new Date().toISOString().slice(0, 10),
+	type: "annual",
+	status: "pending",
+	reason: "",
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payroll Transaction Schema
+// Matches: StorePayrollTransactionRequest / UpdatePayrollTransactionRequest
+//   user_id: required, integer, exists:users,id
+//   amount: required, numeric, min:0.01
+//   type: required, in:manual_bonus,manual_deduction
+//   reason: required, max:500
+//   transaction_date: required, date
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const payrollTransactionSchema = z.object({
+	user_id: z.coerce.number({ invalid_type_error: "Please select an employee" }).int().positive("Please select an employee"),
+	amount: z.coerce.number({ invalid_type_error: "Amount must be a number" }).min(0.01, "Amount must be at least 0.01"),
+	type: z.enum(["manual_bonus", "manual_deduction"], { message: "Please select a transaction type" }),
+	reason: z.string().min(1, "Reason is required").max(500, "Reason must be 500 characters or less"),
+	transaction_date: z.string().min(1, "Transaction date is required"),
+});
+
+export type PayrollTransactionFormData = z.infer<typeof payrollTransactionSchema>;
+
+export const PAYROLL_TRANSACTION_DEFAULT_VALUES: PayrollTransactionFormData = {
+	user_id: 0,
+	amount: 0,
+	type: "manual_bonus",
+	reason: "",
+	transaction_date: new Date().toISOString().slice(0, 10),
+};

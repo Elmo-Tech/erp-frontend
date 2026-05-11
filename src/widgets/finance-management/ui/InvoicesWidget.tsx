@@ -11,7 +11,7 @@ import { DeleteInvoiceDialog } from "@/features/finance/ui/DeleteInvoiceDialog";
 import { useInvoices } from "@/features/finance/model/use-finance-actions";
 import type { Invoice, InvoiceStatus } from "@/entities/finance/model/types";
 import { formatCurrency } from "@/shared/lib/formatters";
-import { format } from "date-fns";
+import { formatDate } from "@/shared/lib/dateUtils";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -23,14 +23,6 @@ const STATUS_VARIANT: Record<InvoiceStatus, "default" | "secondary" | "destructi
 	paid: "outline",
 	overdue: "destructive",
 };
-
-function formatDate(dateStr: string) {
-	try {
-		return format(new Date(dateStr), "MMM d, yyyy");
-	} catch {
-		return dateStr;
-	}
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Column definitions

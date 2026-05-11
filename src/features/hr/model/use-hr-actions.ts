@@ -13,7 +13,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { hrKeys, hrAdminKeys } from "@/entities/hr/model/query-keys";
 import * as hrApi from "@/entities/hr/api/hr.api";
-import type { CreateShiftPayload, UpdateShiftPayload, CreateEmployeeProfilePayload, UpdateEmployeeProfilePayload, GeneratePayrollPayload, UpdateSystemSettingPayload } from "@/entities/hr/model/types";
+import type {
+	CreateShiftPayload,
+	UpdateShiftPayload,
+	CreateEmployeeProfilePayload,
+	UpdateEmployeeProfilePayload,
+	GeneratePayrollPayload,
+	UpdateSystemSettingPayload,
+	CreateLeaveRequestPayload,
+	UpdateLeaveRequestPayload,
+	CreatePayrollTransactionPayload,
+	UpdatePayrollTransactionPayload,
+} from "@/entities/hr/model/types";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // EMPLOYEE PORTAL — Queries & Mutations
@@ -252,5 +263,102 @@ export function useUpdateSystemSetting() {
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({ queryKey: hrAdminKeys.systemSetting(variables.key) });
 		},
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Leave Requests
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function useLeaveRequests(params?: Record<string, string>) {
+	return useQuery({
+		queryKey: hrAdminKeys.leaveRequestList(params),
+		queryFn: () => hrApi.fetchLeaveRequests(params),
+		staleTime: 2 * 60 * 1000,
+	});
+}
+
+export function useCreateLeaveRequest() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: CreateLeaveRequestPayload) => hrApi.postLeaveRequest(payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrAdminKeys.leaveRequests() });
+		},
+	});
+}
+
+export function useUpdateLeaveRequest() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ id, payload }: { id: number; payload: UpdateLeaveRequestPayload }) => hrApi.putLeaveRequest(id, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrAdminKeys.leaveRequests() });
+		},
+	});
+}
+
+export function useDeleteLeaveRequest() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (id: number) => hrApi.deleteLeaveRequest(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrAdminKeys.leaveRequests() });
+		},
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payroll Transactions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function usePayrollTransactions(params?: Record<string, string>) {
+	return useQuery({
+		queryKey: hrAdminKeys.payrollTransactionList(params),
+		queryFn: () => hrApi.fetchPayrollTransactions(params),
+		staleTime: 2 * 60 * 1000,
+	});
+}
+
+export function useCreatePayrollTransaction() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (payload: CreatePayrollTransactionPayload) => hrApi.postPayrollTransaction(payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrAdminKeys.payrollTransactions() });
+		},
+	});
+}
+
+export function useUpdatePayrollTransaction() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ id, payload }: { id: number; payload: UpdatePayrollTransactionPayload }) => hrApi.putPayrollTransaction(id, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrAdminKeys.payrollTransactions() });
+		},
+	});
+}
+
+export function useDeletePayrollTransaction() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: (id: number) => hrApi.deletePayrollTransaction(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrAdminKeys.payrollTransactions() });
+		},
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Employee 360 Report
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function useEmployeeReport(userId: number, month: number, year: number, enabled = true) {
+	return useQuery({
+		queryKey: hrAdminKeys.employeeReport(userId, month, year),
+		queryFn: () => hrApi.fetchEmployeeReport(userId, { month, year }),
+		enabled: enabled && userId > 0 && month > 0 && year > 0,
+		staleTime: 5 * 60 * 1000,
 	});
 }

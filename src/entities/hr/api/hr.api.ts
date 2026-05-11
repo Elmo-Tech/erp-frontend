@@ -13,15 +13,22 @@ import type {
 	ApiEnvelope,
 	AttendanceRecord,
 	CreateEmployeeProfilePayload,
+	CreateLeaveRequestPayload,
+	CreatePayrollTransactionPayload,
 	CreateShiftPayload,
 	EmployeeProfile,
+	EmployeeReport,
 	GeneratePayrollPayload,
+	LeaveRequest,
 	PaginatedResponse,
 	Payslip,
+	PayrollTransaction,
 	PointTransaction,
 	Shift,
 	SystemSetting,
 	UpdateEmployeeProfilePayload,
+	UpdateLeaveRequestPayload,
+	UpdatePayrollTransactionPayload,
 	UpdateShiftPayload,
 	UpdateSystemSettingPayload,
 } from "@/entities/hr/model/types";
@@ -148,5 +155,66 @@ export async function fetchSystemSetting(key: string): Promise<SystemSetting> {
 
 export async function putSystemSetting(key: string, payload: UpdateSystemSettingPayload): Promise<SystemSetting> {
 	const res = await api.put<ApiEnvelope<SystemSetting>>(`/settings/system/${key}`, payload);
+	return res.data.data;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Leave Requests
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function fetchLeaveRequests(params?: Record<string, string>): Promise<PaginatedResponse<LeaveRequest>> {
+	const query = params ? `?${new URLSearchParams(params).toString()}` : "";
+	const res = await api.get<ApiEnvelope<PaginatedResponse<LeaveRequest>>>(`/hr/leave-requests${query}`);
+	return res.data.data;
+}
+
+export async function postLeaveRequest(payload: CreateLeaveRequestPayload): Promise<LeaveRequest> {
+	const res = await api.post<ApiEnvelope<LeaveRequest>>("/hr/leave-requests", payload);
+	return res.data.data;
+}
+
+export async function putLeaveRequest(id: number, payload: UpdateLeaveRequestPayload): Promise<LeaveRequest> {
+	const res = await api.put<ApiEnvelope<LeaveRequest>>(`/hr/leave-requests/${id}`, payload);
+	return res.data.data;
+}
+
+export async function deleteLeaveRequest(id: number): Promise<void> {
+	await api.delete(`/hr/leave-requests/${id}`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Payroll Transactions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function fetchPayrollTransactions(params?: Record<string, string>): Promise<PaginatedResponse<PayrollTransaction>> {
+	const query = params ? `?${new URLSearchParams(params).toString()}` : "";
+	const res = await api.get<ApiEnvelope<PaginatedResponse<PayrollTransaction>>>(`/hr/payroll-transactions${query}`);
+	return res.data.data;
+}
+
+export async function postPayrollTransaction(payload: CreatePayrollTransactionPayload): Promise<PayrollTransaction> {
+	const res = await api.post<ApiEnvelope<PayrollTransaction>>("/hr/payroll-transactions", payload);
+	return res.data.data;
+}
+
+export async function putPayrollTransaction(id: number, payload: UpdatePayrollTransactionPayload): Promise<PayrollTransaction> {
+	const res = await api.put<ApiEnvelope<PayrollTransaction>>(`/hr/payroll-transactions/${id}`, payload);
+	return res.data.data;
+}
+
+export async function deletePayrollTransaction(id: number): Promise<void> {
+	await api.delete(`/hr/payroll-transactions/${id}`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Admin — Employee 360 Report
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function fetchEmployeeReport(userId: number, params: { month: number; year: number }): Promise<EmployeeReport> {
+	const query = new URLSearchParams({
+		month: String(params.month),
+		year: String(params.year),
+	});
+	const res = await api.get<ApiEnvelope<EmployeeReport>>(`/hr/employee-report/${userId}?${query.toString()}`);
 	return res.data.data;
 }

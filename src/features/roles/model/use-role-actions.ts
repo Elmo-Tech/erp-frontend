@@ -39,8 +39,21 @@ export function useUpdateRole() {
 
 	return useMutation<Role, Error, { id: number; payload: UpdateRolePayload }>({
 		mutationFn: ({ id, payload }) => userApi.updateRole(id, payload),
-		onSuccess: (role) => {
-			queryClient.setQueryData(userKeys.role(role.id), role);
+		onSuccess: (updatedRole) => {
+			// 1. Update the individual role cache
+			queryClient.setQueryData(userKeys.role(updatedRole.id), updatedRole);
+
+			// 2. Optimistically patch the roles list so the matrix reflects the
+			//    change instantly without waiting for a full refetch.
+			queryClient.setQueryData<RoleListResponse>(userKeys.roles(), (prev) => {
+				if (!prev) return prev;
+				return {
+					...prev,
+					roles: prev.roles.map((r) => (r.id === updatedRole.id ? updatedRole : r)),
+				};
+			});
+
+			// 3. Invalidate to ensure eventual consistency with the server.
 			queryClient.invalidateQueries({ queryKey: userKeys.roles() });
 		},
 	});

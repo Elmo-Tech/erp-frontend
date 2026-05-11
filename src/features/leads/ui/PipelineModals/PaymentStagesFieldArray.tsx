@@ -24,6 +24,7 @@ interface PaymentStagesFieldArrayProps {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	control: Control<any>;
 	fieldArrayName: string;
+	/** The reference total. Pass 0 (not undefined) when total is not yet entered. */
 	finalTotal: number;
 	currency: string;
 }
@@ -37,7 +38,7 @@ export function PaymentStagesFieldArray({ control, fieldArrayName, finalTotal, c
 	const { fields, append, remove } = useFieldArray({ control, name: fieldArrayName });
 
 	// useFormContext gives us the same control — useWatch needs the exact control ref
-	const { control: ctxControl } = useFormContext();
+	const { control: ctxControl, setValue } = useFormContext();
 	const stages = useWatch({ control: ctxControl, name: fieldArrayName }) as StageRow[] | undefined;
 
 	const allocated = (stages ?? []).reduce((sum, s) => sum + (Number(s?.amount) || 0), 0);
@@ -46,6 +47,16 @@ export function PaymentStagesFieldArray({ control, fieldArrayName, finalTotal, c
 
 	const handleAdd = () => {
 		append({ stage_name: "", percentage: 0, amount: 0 });
+	};
+
+	// BUG FIX: auto-calculate amount when percentage changes
+	const handlePercentageChange = (index: number, percentageValue: string) => {
+		const percentage = Number(percentageValue) || 0;
+		const amount = finalTotal > 0 ? (percentage / 100) * finalTotal : 0;
+		setValue(`${fieldArrayName}.${index}.amount`, Number(amount.toFixed(2)), {
+			shouldValidate: true,
+			shouldDirty: true,
+		});
 	};
 
 	return (
@@ -89,6 +100,7 @@ export function PaymentStagesFieldArray({ control, fieldArrayName, finalTotal, c
 							min={0}
 							max={100}
 							step={0.01}
+							onChange={(e) => handlePercentageChange(index, e.target.value)}
 						/>
 						<FormInput
 							control={control}
@@ -117,7 +129,12 @@ export function PaymentStagesFieldArray({ control, fieldArrayName, finalTotal, c
 			{fields.length > 0 && (
 				<>
 					<Separator />
-					<div className={cn("flex items-center justify-between rounded-md px-3 py-2 text-sm", isOverAllocated ? "bg-destructive/10 text-destructive" : "bg-muted/60 text-muted-foreground")}>
+					<div
+						className={cn(
+							"flex items-center justify-between rounded-md px-3 py-2 text-sm",
+							isOverAllocated ? "bg-destructive/10 text-destructive" : remaining > 0.001 ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400" : "bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400",
+						)}
+					>
 						<span>
 							Allocated:{" "}
 							<strong className="text-foreground">
@@ -134,15 +151,17 @@ export function PaymentStagesFieldArray({ control, fieldArrayName, finalTotal, c
 								maximumFractionDigits: 2,
 							})}
 						</span>
-						<span className={cn("font-medium", isOverAllocated && "text-destructive")}>
-							Remaining: {currency}{" "}
-							{remaining.toLocaleString(undefined, {
-								minimumFractionDigits: 2,
-								maximumFractionDigits: 2,
-							})}
-							{isOverAllocated && " ⚠ Over-allocated"}
+						<span className="font-medium">
+							{isOverAllocated
+								? `⚠ Over-allocated by ${currency} ${Math.abs(remaining).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+								: remaining > 0.001
+									? `Remaining: ${currency} ${remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+									: "✓ Fully allocated"}
 						</span>
 					</div>
+					{(isOverAllocated || remaining > 0.001) && finalTotal > 0 && (
+						<p className="text-xs text-destructive">{isOverAllocated ? "Payment stages exceed the total amount. Adjust the amounts before submitting." : "Payment stages must add up to the total amount before submitting."}</p>
+					)}
 				</>
 			)}
 		</div>

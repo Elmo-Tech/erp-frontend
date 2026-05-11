@@ -150,3 +150,53 @@ export function combineDateTimeForAPI(dateString: string, timeString: string): s
 
 // Legacy function names for backward compatibility
 export const parseUTCDateTime = parseDateTime;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Global date formatter — DD/MM/YYYY
+//
+// This is the canonical display format for all dates across the system.
+// Use this in DataTables, cards, and any read-only date display.
+//
+// Usage:
+//   formatDate("2026-05-11")           → "11/05/2026"
+//   formatDate("2026-05-11T10:00:00")  → "11/05/2026"
+//   formatDate(null)                   → "—"
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Format any date string or Date object as DD/MM/YYYY.
+ * Returns "—" for null/undefined/invalid inputs.
+ */
+export function formatDate(value: string | Date | null | undefined): string {
+	if (!value) return "—";
+
+	const date = value instanceof Date ? value : new Date(value);
+
+	if (isNaN(date.getTime())) return "—";
+
+	const day = String(date.getDate()).padStart(2, "0");
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const year = date.getFullYear();
+
+	return `${day}/${month}/${year}`;
+}
+
+/**
+ * Format any date string or Date object as DD/MM/YYYY HH:MM.
+ * Returns "—" for null/undefined/invalid inputs.
+ */
+export function formatDateTime(value: string | Date | null | undefined): string {
+	if (!value) return "—";
+
+	const date = value instanceof Date ? value : new Date(value);
+
+	if (isNaN(date.getTime())) return "—";
+
+	const day = String(date.getDate()).padStart(2, "0");
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const year = date.getFullYear();
+	const hours = String(date.getHours()).padStart(2, "0");
+	const minutes = String(date.getMinutes()).padStart(2, "0");
+
+	return `${day}/${month}/${year} ${hours}:${minutes}`;
+}

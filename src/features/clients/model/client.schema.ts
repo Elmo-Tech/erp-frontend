@@ -95,7 +95,10 @@ export function toAddClientPayload(data: AddClientFormData): CreateClientPayload
 
 	if (data.type === ClientType.COMPANY) {
 		const companyName = data.companyName.trim();
-		const contactDisplayName = [data.contactFirstName, data.contactLastName].map((value) => value?.trim()).filter(Boolean).join(" ");
+		const contactDisplayName = [data.contactFirstName, data.contactLastName]
+			.map((value) => value?.trim())
+			.filter(Boolean)
+			.join(" ");
 
 		return {
 			type: ClientType.COMPANY,
@@ -127,7 +130,10 @@ export function toAddClientPayload(data: AddClientFormData): CreateClientPayload
 		};
 	}
 
-	const displayName = [data.firstName, data.lastName].map((value) => value?.trim()).filter(Boolean).join(" ");
+	const displayName = [data.firstName, data.lastName]
+		.map((value) => value?.trim())
+		.filter(Boolean)
+		.join(" ");
 
 	return {
 		type: ClientType.INDIVIDUAL,
@@ -152,22 +158,30 @@ export function toEditClientPayload(data: AddClientFormData): UpdateClientPayloa
 }
 
 export function toAddClientFormData(client: Client): AddClientFormData {
-	const interests = Array.isArray(client.interests)
-		? client.interests
-		: Array.isArray(client.metadata?.interests)
-			? client.metadata.interests.filter((interest): interest is string => typeof interest === "string")
-			: [];
-	const primaryContact = client.contacts?.find((contact) => contact.isPrimary) ?? client.contacts?.[0];
-	const displayName = client.displayName || client.name || "";
-	const [firstName = "", ...lastNameParts] = displayName.split(" ").filter(Boolean);
-	const lastName = lastNameParts.join(" ");
+	const interests = Array.isArray(client.interests) ? client.interests : Array.isArray(client.metadata?.interests) ? client.metadata.interests.filter((interest): interest is string => typeof interest === "string") : [];
 
+	const primaryContact = client.contacts?.find((contact) => contact.isPrimary) ?? client.contacts?.[0];
+
+	// ── Name splitting helper ─────────────────────────────────────────────────
+	// BUG FIX: was splitting displayName which is unreliable (could be a company
+	// name or missing). Now prefers dedicated contact fields when available.
+	function splitDisplayName(raw: string | null | undefined): { first: string; last: string } {
+		const parts = (raw ?? "").trim().split(/\s+/).filter(Boolean);
+		if (parts.length === 0) return { first: "", last: "" };
+		const [first, ...rest] = parts;
+		return { first, last: rest.join(" ") };
+	}
+
+	// ── Individual branch ─────────────────────────────────────────────────────
 	if (client.type === ClientType.INDIVIDUAL) {
+		// Prefer explicit contact record fields, then fall back to name splitting
+		const { first: splitFirst, last: splitLast } = splitDisplayName(client.displayName || client.name);
+
 		return {
 			...DEFAULT_ADD_CLIENT_VALUES,
 			type: ClientType.INDIVIDUAL,
-			firstName,
-			lastName,
+			firstName: primaryContact?.firstName || splitFirst,
+			lastName: primaryContact?.lastName || splitLast,
 			individualPhone: client.primaryPhone || client.phone || "",
 			individualEmail: client.primaryEmail || client.email || "",
 			country: client.country || "",
@@ -179,7 +193,13 @@ export function toAddClientFormData(client: Client): AddClientFormData {
 		};
 	}
 
-	const companyName = client.companyName || client.company || displayName;
+	// ── Company branch ────────────────────────────────────────────────────────
+	const companyName = client.companyName || client.company || client.displayName || client.name || "";
+
+	// BUG FIX: contact last name was falling back to companyName which is wrong.
+	// Now falls back to an empty string so the field is blank rather than
+	// pre-filled with the company name.
+	const { first: splitFirst, last: splitLast } = splitDisplayName(primaryContact ? `${primaryContact.firstName ?? ""} ${primaryContact.lastName ?? ""}`.trim() : client.displayName || client.name);
 
 	return {
 		...DEFAULT_ADD_CLIENT_VALUES,
@@ -187,8 +207,8 @@ export function toAddClientFormData(client: Client): AddClientFormData {
 		companyName,
 		companyPhone: client.primaryPhone || client.phone || "",
 		companyEmail: client.primaryEmail || client.email || "",
-		contactFirstName: primaryContact?.firstName || firstName,
-		contactLastName: primaryContact?.lastName || lastName || companyName,
+		contactFirstName: primaryContact?.firstName || splitFirst,
+		contactLastName: primaryContact?.lastName || splitLast,
 		contactPhone: primaryContact?.phone || "",
 		contactEmail: primaryContact?.email || "",
 		country: client.country || "",

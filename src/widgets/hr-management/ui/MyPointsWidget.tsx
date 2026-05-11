@@ -1,7 +1,7 @@
 "use client";
 
 import { Star } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateTime } from "@/shared/lib/dateUtils";
 import { Badge } from "@/shared/ui/badge";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { cn } from "@/shared/lib/utils";
@@ -25,7 +25,7 @@ const columns: Column<PointTransaction>[] = [
 	{
 		key: "created_at",
 		header: "Date",
-		render: (tx) => <span className="whitespace-nowrap text-sm text-muted-foreground">{format(new Date(tx.created_at), "dd MMM yyyy, HH:mm")}</span>,
+		render: (tx) => <span className="whitespace-nowrap text-sm text-muted-foreground">{formatDateTime(tx.created_at)}</span>,
 	},
 	{
 		key: "reason",

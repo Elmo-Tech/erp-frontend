@@ -8,7 +8,10 @@ import { MEETING_TYPES, LOCATION_TYPES, MEETING_STATUSES, STATUSES_REQUIRING_NOT
 export const createMeetingSchema = z
 	.object({
 		meetingType: z.enum(MEETING_TYPES, { message: "Please select a meeting type" }),
-		title: z.string().trim().min(1, "Title is required"),
+		// BUG FIX: title was required (min 1) which caused validation to fail before
+		// PolyMeetingForm's auto-generation logic could run. It is now optional here;
+		// the component auto-generates a title from meetingType when left blank.
+		title: z.string().trim().default(""),
 		date: z.string().trim().min(1, "Date is required"),
 		time: z.string().trim().min(1, "Time is required"),
 		locationType: z.enum(LOCATION_TYPES, { message: "Please select a location type" }),

@@ -53,4 +53,17 @@ export const hrAdminKeys = {
 	// System Settings
 	systemSettings: () => [...hrAdminKeys.all, "system-settings"] as const,
 	systemSetting: (key: string) => [...hrAdminKeys.systemSettings(), key] as const,
+
+	// Leave Requests
+	leaveRequests: () => [...hrAdminKeys.all, "leave-requests"] as const,
+	leaveRequestList: (filters?: Record<string, unknown>) => [...hrAdminKeys.leaveRequests(), "list", filters] as const,
+	leaveRequestDetail: (id: number) => [...hrAdminKeys.leaveRequests(), id] as const,
+
+	// Payroll Transactions
+	payrollTransactions: () => [...hrAdminKeys.all, "payroll-transactions"] as const,
+	payrollTransactionList: (filters?: Record<string, unknown>) => [...hrAdminKeys.payrollTransactions(), "list", filters] as const,
+	payrollTransactionDetail: (id: number) => [...hrAdminKeys.payrollTransactions(), id] as const,
+
+	// Employee 360 Report
+	employeeReport: (userId: number, month: number, year: number) => [...hrAdminKeys.all, "employee-report", userId, month, year] as const,
 };

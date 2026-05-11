@@ -1,31 +1,49 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { CalendarDays, Plus, ChevronLeft, ChevronRight, Clock, CheckSquare, FileText, Pencil, Trash2 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
+/**
+ * MasterCalendarWidget
+ *
+ * Powered by react-big-calendar + date-fns localizer.
+ * Maps AggregatedCalendarItem → RBC Event format.
+ * Vercel-style minimal CSS overrides via Tailwind.
+ */
+
+import { useState, useMemo, useCallback } from "react";
+import { Calendar, dateFnsLocalizer, Views, type View } from "react-big-calendar";
+import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
+import { enUS } from "date-fns/locale/en-US";
+import { CalendarDays, Plus, ChevronLeft, ChevronRight, Clock, CheckSquare, FileText } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Can } from "@/shared/ui/Can";
 import { EventFormModal } from "@/features/calendar/ui/EventFormModal";
 import { DeleteEventDialog } from "@/features/calendar/ui/DeleteEventDialog";
 import { useCalendarFeed } from "@/features/calendar/model/use-calendar-actions";
 import type { AggregatedCalendarItem, AggregatedItemType, EventMeta } from "@/entities/calendar/model/types";
+import { cn } from "@/shared/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers
+// date-fns localizer
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TYPE_ICON: Record<AggregatedItemType, React.ElementType> = {
-	event: Clock,
-	task: CheckSquare,
-	invoice: FileText,
-};
+const locales = { "en-US": enUS };
 
-const TYPE_BADGE_VARIANT: Record<AggregatedItemType, "default" | "secondary" | "outline" | "destructive"> = {
-	event: "default",
-	task: "secondary",
-	invoice: "outline",
+const localizer = dateFnsLocalizer({
+	format,
+	parse,
+	startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 0 }),
+	getDay,
+	locales,
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────────────────────
+
+const TYPE_COLOR_HEX: Record<AggregatedItemType, string> = {
+	event: "#3b82f6", // blue-500
+	task: "#8b5cf6", // violet-500
+	invoice: "#f59e0b", // amber-500
 };
 
 const TYPE_LABEL: Record<AggregatedItemType, string> = {
@@ -34,94 +52,54 @@ const TYPE_LABEL: Record<AggregatedItemType, string> = {
 	invoice: "Invoice",
 };
 
-function formatTime(iso: string | null) {
-	if (!iso) return null;
-	try {
-		return format(new Date(iso), "h:mm a");
-	} catch {
-		return null;
-	}
-}
+const TYPE_ICON: Record<AggregatedItemType, React.ElementType> = {
+	event: Clock,
+	task: CheckSquare,
+	invoice: FileText,
+};
 
-function formatDateHeading(dateStr: string) {
-	try {
-		return format(new Date(dateStr + "T00:00:00"), "EEEE, MMMM d");
-	} catch {
-		return dateStr;
-	}
+// ─────────────────────────────────────────────────────────────────────────────
+// RBC Event shape
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface CalendarEvent {
+	title: string;
+	start: Date;
+	end: Date;
+	resource: AggregatedCalendarItem;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Item Card
+// Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface ItemCardProps {
-	item: AggregatedCalendarItem;
-	onEdit: (item: AggregatedCalendarItem) => void;
-	onDelete: (item: AggregatedCalendarItem) => void;
+function toCalendarEvent(item: AggregatedCalendarItem): CalendarEvent {
+	// Use startTime/endTime when available; fall back to the item's date (all-day)
+	const baseDate = new Date(item.date);
+	const start = item.startTime ? new Date(item.startTime) : baseDate;
+	const end = item.endTime
+		? new Date(item.endTime)
+		: item.startTime
+			? new Date(start.getTime() + 60 * 60 * 1000) // +1 h default
+			: new Date(baseDate.getTime() + 24 * 60 * 60 * 1000 - 1); // end of day
+
+	return { title: item.title, start, end, resource: item };
 }
 
-function CalendarItemCard({ item, onEdit, onDelete }: ItemCardProps) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom event component — compact pill with type colour
+// ─────────────────────────────────────────────────────────────────────────────
+
+function EventPill({ event }: { event: CalendarEvent }) {
+	const item = event.resource;
 	const Icon = TYPE_ICON[item.type];
-	const startTime = formatTime(item.startTime);
-	const endTime = formatTime(item.endTime);
-	const isNativeEvent = item.type === "event";
-	const meta = item.meta as EventMeta;
-
 	return (
-		<div className="flex items-start gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-muted/40">
-			<div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10">
-				<Icon className="h-3.5 w-3.5 text-primary" />
-			</div>
-
-			<div className="min-w-0 flex-1">
-				<div className="flex items-start justify-between gap-2">
-					<p className="text-sm font-medium leading-snug">{item.title}</p>
-					<Badge
-						variant={TYPE_BADGE_VARIANT[item.type]}
-						className="shrink-0 text-xs capitalize"
-					>
-						{TYPE_LABEL[item.type]}
-					</Badge>
-				</div>
-
-				{startTime && (
-					<p className="mt-0.5 text-xs text-muted-foreground">
-						{startTime}
-						{endTime ? ` – ${endTime}` : ""}
-					</p>
-				)}
-
-				{item.status && <p className="mt-0.5 text-xs text-muted-foreground capitalize">Status: {item.status}</p>}
-
-				{isNativeEvent && meta.description && <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{meta.description}</p>}
-			</div>
-
-			{/* Only native events can be edited/deleted */}
-			{isNativeEvent && (
-				<Can permission="view_calendar">
-					<div className="flex shrink-0 items-center gap-1">
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-7 w-7"
-							onClick={() => onEdit(item)}
-						>
-							<Pencil className="h-3 w-3" />
-							<span className="sr-only">Edit event</span>
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-7 w-7 text-destructive hover:text-destructive"
-							onClick={() => onDelete(item)}
-						>
-							<Trash2 className="h-3 w-3" />
-							<span className="sr-only">Delete event</span>
-						</Button>
-					</div>
-				</Can>
-			)}
+		<div
+			className="flex items-center gap-1 truncate rounded px-1 py-0.5 text-[11px] font-medium text-white"
+			style={{ backgroundColor: TYPE_COLOR_HEX[item.type] }}
+		>
+			<Icon className="h-2.5 w-2.5 shrink-0" />
+			<span className="truncate">{event.title}</span>
 		</div>
 	);
 }
@@ -131,40 +109,25 @@ function CalendarItemCard({ item, onEdit, onDelete }: ItemCardProps) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function MasterCalendarWidget() {
-	// Current month navigation
-	const [currentMonth, setCurrentMonth] = useState(() => new Date());
-
-	const startDate = format(startOfMonth(currentMonth), "yyyy-MM-dd");
-	const endDate = format(endOfMonth(currentMonth), "yyyy-MM-dd");
-
-	const { data, isLoading, error } = useCalendarFeed({ startDate, endDate });
+	const [currentDate, setCurrentDate] = useState(() => new Date());
+	const [view, setView] = useState<View>(Views.MONTH);
 
 	// Modal state
 	const [formOpen, setFormOpen] = useState(false);
 	const [editTarget, setEditTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [deleteTarget, setDeleteTarget] = useState<AggregatedCalendarItem | null>(null);
 
-	// Group items by date
-	const groupedByDate = useMemo(() => {
-		const items = data?.items ?? [];
-		const map = new Map<string, AggregatedCalendarItem[]>();
+	// Fetch range based on current month
+	const startDate = format(startOfMonth(currentDate), "yyyy-MM-dd");
+	const endDate = format(endOfMonth(currentDate), "yyyy-MM-dd");
 
-		for (const item of items) {
-			const existing = map.get(item.date) ?? [];
-			map.set(item.date, [...existing, item]);
-		}
+	const { data, isLoading, error } = useCalendarFeed({ startDate, endDate });
 
-		// Return sorted date entries
-		return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-	}, [data]);
+	// Map items → RBC events
+	const events = useMemo<CalendarEvent[]>(() => (data?.items ?? []).map(toCalendarEvent), [data]);
 
 	const handleCreateEvent = () => {
 		setEditTarget(null);
-		setFormOpen(true);
-	};
-
-	const handleEditEvent = (item: AggregatedCalendarItem) => {
-		setEditTarget(item);
 		setFormOpen(true);
 	};
 
@@ -173,7 +136,30 @@ export function MasterCalendarWidget() {
 		setEditTarget(null);
 	};
 
-	// Convert aggregated item back to CalendarEvent shape for the edit modal
+	// RBC event click — only native events are editable
+	const handleSelectEvent = useCallback((event: CalendarEvent) => {
+		const item = event.resource;
+		if (item.type === "event") {
+			setEditTarget(item);
+			setFormOpen(true);
+		}
+	}, []);
+
+	// Colour each event by type
+	const eventPropGetter = useCallback(
+		(event: CalendarEvent) => ({
+			style: {
+				backgroundColor: TYPE_COLOR_HEX[event.resource.type],
+				border: "none",
+				borderRadius: "4px",
+				color: "#fff",
+				fontSize: "11px",
+				padding: "1px 4px",
+			},
+		}),
+		[],
+	);
+
 	const editTargetAsEvent = editTarget
 		? {
 				id: parseInt(editTarget.id.replace("event-", ""), 10),
@@ -189,74 +175,159 @@ export function MasterCalendarWidget() {
 		: null;
 
 	return (
-		<section className="flex flex-col gap-6">
-			{/* ── Header ── */}
-			<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-				<div className="min-w-0">
-					<h1 className="text-2xl font-semibold tracking-tight">Master Calendar</h1>
-					<p className="text-sm text-muted-foreground">Unified view of events, project tasks, and invoice due dates.</p>
+		<>
+			{/*
+			  ── Minimal RBC CSS overrides ──────────────────────────────────────
+			  We import the base stylesheet and override only what's needed to
+			  match the Shadcn / Vercel design language (neutral palette, no
+			  heavy borders, clean typography).
+			*/}
+			<style>{`
+				.rbc-calendar { font-family: inherit; }
+				.rbc-header { padding: 6px 4px; font-size: 11px; font-weight: 600;
+				              text-transform: uppercase; letter-spacing: .05em;
+				              color: hsl(var(--muted-foreground)); border-bottom: 1px solid hsl(var(--border)); }
+				.rbc-month-view { border: 1px solid hsl(var(--border)); border-radius: 8px; overflow: hidden; }
+				.rbc-day-bg + .rbc-day-bg { border-left: 1px solid hsl(var(--border)); }
+				.rbc-month-row + .rbc-month-row { border-top: 1px solid hsl(var(--border)); }
+				.rbc-off-range-bg { background: hsl(var(--muted) / .3); }
+				.rbc-today { background: hsl(var(--primary) / .05); }
+				.rbc-date-cell { padding: 4px 6px; font-size: 12px; }
+				.rbc-date-cell.rbc-now > a { display: inline-flex; align-items: center; justify-content: center;
+				                             width: 20px; height: 20px; border-radius: 50%;
+				                             background: hsl(var(--primary)); color: hsl(var(--primary-foreground));
+				                             font-weight: 600; }
+				.rbc-event { padding: 0; background: transparent; border: none; }
+				.rbc-event:focus { outline: 2px solid hsl(var(--ring)); outline-offset: 1px; }
+				.rbc-show-more { font-size: 11px; color: hsl(var(--muted-foreground)); padding: 0 4px; }
+				.rbc-toolbar { display: none; }
+				.rbc-agenda-view table.rbc-agenda-table { border: 1px solid hsl(var(--border)); border-radius: 8px; overflow: hidden; }
+				.rbc-agenda-table thead > tr > th { background: hsl(var(--muted) / .4); font-size: 11px;
+				                                    font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+				                                    color: hsl(var(--muted-foreground)); padding: 8px 12px; }
+				.rbc-agenda-table tbody > tr > td { padding: 8px 12px; font-size: 13px; }
+				.rbc-agenda-table tbody > tr + tr > td { border-top: 1px solid hsl(var(--border)); }
+				.rbc-time-view { border: 1px solid hsl(var(--border)); border-radius: 8px; overflow: hidden; }
+				.rbc-time-header { border-bottom: 1px solid hsl(var(--border)); }
+				.rbc-time-content { border-top: none; }
+				.rbc-timeslot-group { border-bottom: 1px solid hsl(var(--border) / .5); }
+				.rbc-current-time-indicator { background: hsl(var(--primary)); height: 2px; }
+			`}</style>
+
+			<section className="flex flex-col gap-6">
+				{/* ── Header ── */}
+				<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+					<div className="min-w-0">
+						<h1 className="text-2xl font-semibold tracking-tight">Master Calendar</h1>
+						<p className="text-sm text-muted-foreground">Unified view of events, project tasks, and invoice due dates.</p>
+					</div>
+					<Can permission="view_calendar">
+						<Button
+							size="sm"
+							className="gap-2 shrink-0"
+							onClick={handleCreateEvent}
+						>
+							<Plus className="h-4 w-4" />
+							New Event
+						</Button>
+					</Can>
 				</div>
-				<Can permission="view_calendar">
-					<Button
-						size="sm"
-						className="gap-2 shrink-0"
-						onClick={handleCreateEvent}
-					>
-						<Plus className="h-4 w-4" />
-						New Event
-					</Button>
-				</Can>
-			</div>
 
-			{/* ── Month Navigator ── */}
-			<div className="flex items-center gap-3">
-				<Button
-					variant="outline"
-					size="icon"
-					className="h-8 w-8"
-					onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
-				>
-					<ChevronLeft className="h-4 w-4" />
-					<span className="sr-only">Previous month</span>
-				</Button>
-				<span className="min-w-[160px] text-center text-sm font-semibold">{format(currentMonth, "MMMM yyyy")}</span>
-				<Button
-					variant="outline"
-					size="icon"
-					className="h-8 w-8"
-					onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-				>
-					<ChevronRight className="h-4 w-4" />
-					<span className="sr-only">Next month</span>
-				</Button>
-				<Button
-					variant="ghost"
-					size="sm"
-					className="ml-2 text-xs"
-					onClick={() => setCurrentMonth(new Date())}
-				>
-					Today
-				</Button>
-			</div>
+				{/* ── Toolbar: navigator + view switcher ── */}
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					{/* Month navigator */}
+					<div className="flex items-center gap-2">
+						<Button
+							variant="outline"
+							size="icon"
+							className="h-8 w-8"
+							onClick={() => setCurrentDate((d) => subMonths(d, 1))}
+						>
+							<ChevronLeft className="h-4 w-4" />
+							<span className="sr-only">Previous</span>
+						</Button>
+						<span className="min-w-[160px] text-center text-sm font-semibold">{format(currentDate, "MMMM yyyy")}</span>
+						<Button
+							variant="outline"
+							size="icon"
+							className="h-8 w-8"
+							onClick={() => setCurrentDate((d) => addMonths(d, 1))}
+						>
+							<ChevronRight className="h-4 w-4" />
+							<span className="sr-only">Next</span>
+						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="ml-1 text-xs"
+							onClick={() => setCurrentDate(new Date())}
+						>
+							Today
+						</Button>
+					</div>
 
-			{/* ── Timeline ── */}
-			{isLoading && (
-				<Card>
-					<CardContent className="py-12 text-center text-sm text-muted-foreground">Loading calendar…</CardContent>
-				</Card>
-			)}
+					{/* View switcher */}
+					<div className="flex items-center gap-1 rounded-md border p-0.5">
+						{([Views.MONTH, Views.WEEK, Views.AGENDA] as View[]).map((v) => (
+							<button
+								key={v}
+								type="button"
+								onClick={() => setView(v)}
+								className={cn("rounded px-3 py-1 text-xs font-medium capitalize transition-colors", view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+							>
+								{v}
+							</button>
+						))}
+					</div>
+				</div>
 
-			{error && (
-				<Card>
-					<CardContent className="py-12 text-center text-sm text-destructive">Failed to load calendar data.</CardContent>
-				</Card>
-			)}
+				{/* ── Legend ── */}
+				<div className="flex items-center gap-4 text-xs text-muted-foreground">
+					{(Object.keys(TYPE_COLOR_HEX) as AggregatedItemType[]).map((type) => (
+						<span
+							key={type}
+							className="flex items-center gap-1.5"
+						>
+							<span
+								className="h-2 w-2 rounded-full"
+								style={{ backgroundColor: TYPE_COLOR_HEX[type] }}
+							/>
+							{TYPE_LABEL[type]}
+						</span>
+					))}
+				</div>
 
-			{!isLoading && !error && groupedByDate.length === 0 && (
-				<Card>
-					<CardContent className="flex flex-col items-center gap-3 py-16">
-						<CalendarDays className="h-10 w-10 text-muted-foreground/40" />
-						<p className="text-sm font-medium text-muted-foreground">Nothing scheduled for {format(currentMonth, "MMMM yyyy")}</p>
+				{/* ── Loading / Error ── */}
+				{isLoading && <div className="rounded-lg border bg-card py-12 text-center text-sm text-muted-foreground">Loading calendar…</div>}
+				{error && <div className="rounded-lg border bg-card py-12 text-center text-sm text-destructive">Failed to load calendar data.</div>}
+
+				{/* ── Calendar ── */}
+				{!isLoading && !error && (
+					<div className="rounded-lg bg-card">
+						<Calendar<CalendarEvent>
+							localizer={localizer}
+							events={events}
+							date={currentDate}
+							view={view}
+							onNavigate={setCurrentDate}
+							onView={setView}
+							onSelectEvent={handleSelectEvent}
+							eventPropGetter={eventPropGetter}
+							components={{
+								event: EventPill,
+							}}
+							style={{ height: 640 }}
+							popup
+							showMultiDayTimes
+						/>
+					</div>
+				)}
+
+				{/* ── Empty state ── */}
+				{!isLoading && !error && events.length === 0 && (
+					<div className="flex flex-col items-center gap-3 py-8">
+						<CalendarDays className="h-8 w-8 text-muted-foreground/40" />
+						<p className="text-sm font-medium text-muted-foreground">Nothing scheduled for {format(currentDate, "MMMM yyyy")}</p>
 						<Can permission="view_calendar">
 							<Button
 								size="sm"
@@ -267,41 +338,33 @@ export function MasterCalendarWidget() {
 								Create an Event
 							</Button>
 						</Can>
-					</CardContent>
-				</Card>
-			)}
+					</div>
+				)}
 
-			{!isLoading && !error && groupedByDate.length > 0 && (
-				<div className="flex flex-col gap-6">
-					{groupedByDate.map(([date, items]) => (
-						<div
-							key={date}
-							className="flex flex-col gap-2"
-						>
-							{/* Date heading */}
-							<div className="flex items-center gap-3">
-								<h2 className="text-sm font-semibold text-foreground">{formatDateHeading(date)}</h2>
-								<div className="h-px flex-1 bg-border" />
-								<span className="text-xs text-muted-foreground">
-									{items.length} {items.length === 1 ? "item" : "items"}
-								</span>
-							</div>
-
-							{/* Items for this date */}
-							<div className="flex flex-col gap-2 pl-0 md:pl-4">
-								{items.map((item) => (
-									<CalendarItemCard
-										key={item.id}
-										item={item}
-										onEdit={handleEditEvent}
-										onDelete={setDeleteTarget}
+				{/* ── Event count badges ── */}
+				{!isLoading && !error && events.length > 0 && (
+					<div className="flex flex-wrap gap-2">
+						{(Object.keys(TYPE_COLOR_HEX) as AggregatedItemType[]).map((type) => {
+							const count = events.filter((e) => e.resource.type === type).length;
+							if (count === 0) return null;
+							return (
+								<Badge
+									key={type}
+									variant="outline"
+									className="gap-1.5 text-xs"
+								>
+									<span
+										className="h-1.5 w-1.5 rounded-full"
+										style={{ backgroundColor: TYPE_COLOR_HEX[type] }}
 									/>
-								))}
-							</div>
-						</div>
-					))}
-				</div>
-			)}
+									{count} {TYPE_LABEL[type]}
+									{count !== 1 ? "s" : ""}
+								</Badge>
+							);
+						})}
+					</div>
+				)}
+			</section>
 
 			{/* ── Modals ── */}
 			<EventFormModal
@@ -309,12 +372,11 @@ export function MasterCalendarWidget() {
 				onClose={handleCloseForm}
 				editTarget={editTargetAsEvent}
 			/>
-
 			<DeleteEventDialog
 				open={deleteTarget !== null}
 				onClose={() => setDeleteTarget(null)}
 				event={deleteTarget}
 			/>
-		</section>
+		</>
 	);
 }

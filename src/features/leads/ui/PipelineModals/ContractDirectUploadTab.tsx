@@ -26,12 +26,13 @@ import { FormSwitch } from "@/shared/ui/forms/FormSwitch";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { PlusIcon, Trash2Icon } from "lucide-react";
-import { CURRENCIES, BILLING_CYCLES, CONTRACT_MODELS } from "./stageModal.schema";
+import { useSettingsDictionary } from "@/shared/api/settings.api";
+import { BILLING_CYCLES, CONTRACT_MODELS } from "./stageModal.schema";
 import { PaymentStagesFieldArray } from "./PaymentStagesFieldArray";
 
 // ─── option lists ────────────────────────────────────────────────────────────
-
-const CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: c }));
+// BUG FIX: CURRENCY_OPTIONS was hardcoded — now loaded from settings/currencies
+// via useSettingsDictionary inside the component.
 
 const BILLING_CYCLE_OPTIONS = BILLING_CYCLES.map((b) => ({
 	value: b,
@@ -53,6 +54,9 @@ export function ContractDirectUploadTab() {
 	const totalAmount = useWatch({ control, name: "total_amount" }) as number | undefined;
 	const currency = useWatch({ control, name: "currency" }) as string | undefined;
 	const applyPromo = useWatch({ control, name: "apply_promo" }) as boolean | undefined;
+
+	// BUG FIX: currency options loaded dynamically from settings/currencies
+	const currencyDict = useSettingsDictionary("currencies");
 
 	const {
 		fields: addonFields,
@@ -166,8 +170,9 @@ export function ContractDirectUploadTab() {
 								control={control}
 								name="currency"
 								label="Currency"
-								placeholder="Select currency…"
-								options={CURRENCY_OPTIONS}
+								placeholder={currencyDict.isLoading ? "Loading currencies…" : "Select currency…"}
+								options={currencyDict.options}
+								disabled={currencyDict.isLoading}
 							/>
 							<FormInput
 								control={control}
@@ -179,13 +184,12 @@ export function ContractDirectUploadTab() {
 								step={0.01}
 							/>
 						</div>
-
 						<PaymentStagesFieldArray
 							control={control}
 							fieldArrayName="payment_stages"
 							finalTotal={totalAmount ?? 0}
 							currency={currency ?? ""}
-						/>
+						/>{" "}
 					</div>
 				)}
 
@@ -197,8 +201,9 @@ export function ContractDirectUploadTab() {
 								control={control}
 								name="currency"
 								label="Currency"
-								placeholder="Select currency…"
-								options={CURRENCY_OPTIONS}
+								placeholder={currencyDict.isLoading ? "Loading currencies…" : "Select currency…"}
+								options={currencyDict.options}
+								disabled={currencyDict.isLoading}
 							/>
 							<FormInput
 								control={control}

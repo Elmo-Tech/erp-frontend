@@ -44,14 +44,7 @@ const LEAD_TYPE = {
 } as const;
 type LeadType = (typeof LEAD_TYPE)[keyof typeof LEAD_TYPE];
 
-const CURRENCY_OPTIONS: SelectOption[] = [
-	{ value: "USD", label: "USD — US Dollar" },
-	{ value: "EUR", label: "EUR — Euro" },
-	{ value: "GBP", label: "GBP — British Pound" },
-	{ value: "SAR", label: "SAR — Saudi Riyal" },
-	{ value: "AED", label: "AED — UAE Dirham" },
-	{ value: "EGP", label: "EGP — Egyptian Pound" },
-];
+// BUG FIX: currency options are now loaded dynamically from settings/currencies
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Schema — mirrors addClientSchema structure
@@ -162,6 +155,8 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 
 	// Lead sources — dynamic from settings/lead-sources
 	const leadSourcesDict = useSettingsDictionary("lead-sources", open);
+	// BUG FIX: currency — dynamic from settings/currencies instead of hardcoded array
+	const currencyDict = useSettingsDictionary("currencies", open);
 
 	const leadType = useWatch({ control: form.control, name: "type" }) as "company" | "individual";
 	const isSubmitting = form.formState.isSubmitting || createLeadMutation.isPending;
@@ -381,9 +376,9 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 								control={form.control}
 								name="budget_currency"
 								label="Currency"
-								placeholder="Select currency…"
-								options={CURRENCY_OPTIONS}
-								disabled={isSubmitting}
+								placeholder={currencyDict.isLoading ? "Loading currencies…" : "Select currency…"}
+								options={currencyDict.options}
+								disabled={isSubmitting || currencyDict.isLoading}
 							/>
 							<FormInput
 								control={form.control}

@@ -26,6 +26,9 @@ import {
 	Receipt,
 	CreditCard,
 	CalendarDays,
+	CalendarOff,
+	ArrowLeftRight,
+	UserCog,
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
@@ -135,6 +138,18 @@ const navGroups: NavGroup[] = [
 				permission: "manage_payroll",
 			},
 			{
+				title: "Leave Requests",
+				href: "/dashboard/hr/admin/leaves",
+				icon: CalendarOff,
+				permission: "manage_hr",
+			},
+			{
+				title: "Manual Transactions",
+				href: "/dashboard/hr/admin/manual-transactions",
+				icon: ArrowLeftRight,
+				permission: "manage_payroll",
+			},
+			{
 				title: "HR Settings",
 				href: "/dashboard/hr/admin/settings",
 				icon: SlidersHorizontal,
@@ -173,6 +188,12 @@ const navGroups: NavGroup[] = [
 	{
 		title: "Administration",
 		items: [
+			{
+				title: "Users",
+				href: "/dashboard/users",
+				icon: UserCog,
+				permission: "manage_users",
+			},
 			{
 				title: "Roles & Permissions",
 				href: "/dashboard/roles",

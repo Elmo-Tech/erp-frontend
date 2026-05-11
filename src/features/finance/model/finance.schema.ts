@@ -32,13 +32,18 @@ export type InvoiceItemFormData = z.infer<typeof invoiceItemSchema>;
 export const invoiceSchema = z
 	.object({
 		clientId: z.coerce.number().int().positive("Please select a client"),
-		projectId: z.coerce
-			.number()
-			.int()
-			.positive()
+		// Accept string (from Combobox), number, null, or undefined.
+		// Coercing an empty string or null via z.coerce.number() produces NaN/0,
+		// so we handle the conversion manually in the transform step.
+		projectId: z
+			.union([z.string(), z.number(), z.null(), z.undefined()])
+			.transform((v) => {
+				if (v === null || v === undefined || v === "" || v === 0) return null;
+				const n = Number(v);
+				return Number.isFinite(n) && n > 0 ? n : null;
+			})
 			.nullable()
-			.optional()
-			.transform((v) => (v === 0 || v === null || v === undefined ? null : v)),
+			.optional(),
 		issueDate: z.string().min(1, "Issue date is required"),
 		dueDate: z.string().min(1, "Due date is required"),
 		taxRate: z.coerce.number().nonnegative("Cannot be negative").max(100, "Cannot exceed 100%").default(0),

@@ -159,7 +159,10 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 				</TabsContent>
 
 				<TabsContent value="meetings">
-					<ProjectMeetingsTab projectId={projectId} />
+					<ProjectMeetingsTab
+						projectId={projectId}
+						clientId={project.clientId}
+					/>
 				</TabsContent>
 
 				<TabsContent value="team">

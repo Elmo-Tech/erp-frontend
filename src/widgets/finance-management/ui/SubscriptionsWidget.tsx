@@ -11,19 +11,11 @@ import { DeleteSubscriptionDialog } from "@/features/finance/ui/DeleteSubscripti
 import { useSubscriptions } from "@/features/finance/model/use-finance-actions";
 import type { Subscription } from "@/entities/finance/model/types";
 import { formatCurrency } from "@/shared/lib/formatters";
-import { format } from "date-fns";
+import { formatDate } from "@/shared/lib/dateUtils";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function formatDate(dateStr: string) {
-	try {
-		return format(new Date(dateStr), "MMM d, yyyy");
-	} catch {
-		return dateStr;
-	}
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Column definitions

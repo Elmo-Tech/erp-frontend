@@ -109,10 +109,27 @@ export const meetingsApi = {
 	/**
 	 * POST /meetings
 	 * Creates a new meeting for a polymorphic parent.
+	 *
+	 * The frontend payload uses snake_case keys (model_type, model_id,
+	 * scheduled_at) but the backend StoreMeetingRequest / CreateMeetingRequest
+	 * expects camelCase (subjectType, subjectId, scheduledAt).
+	 * We transform here so the form layer never needs to know about the mismatch.
 	 */
 	async createMeeting(payload: CreateMeetingPayload): Promise<PolyMeeting> {
-		const res = await api.post<ApiEnvelope<RawMeetingResource>>("/meetings", payload);
-		// Derive modelType from the morph string in the payload
+		// Map frontend snake_case keys → backend camelCase keys
+		const backendPayload = {
+			subjectType: payload.model_type,
+			subjectId: payload.model_id,
+			title: payload.title,
+			description: payload.description,
+			scheduledAt: payload.scheduled_at,
+			location: payload.location_type,
+			locationDetails: payload.location_details,
+			assignedTo: payload.assigned_to,
+		};
+
+		const res = await api.post<ApiEnvelope<RawMeetingResource>>("/meetings", backendPayload);
+		// Derive modelType from the morph string in the original payload
 		const reverseMap = Object.entries(MODEL_TYPE_TO_MORPH).find(([, v]) => v === payload.model_type);
 		const modelType = (reverseMap?.[0] ?? "lead") as MeetingModelType;
 		return toPolyMeeting(res.data.data, modelType, payload.model_id);

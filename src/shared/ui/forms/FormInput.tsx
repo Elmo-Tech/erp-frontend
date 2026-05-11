@@ -29,9 +29,30 @@ interface FormInputProps<TFieldValues extends FieldValues, TTransformedValues = 
 	step?: number | string;
 	minDate?: Date;
 	maxDate?: Date;
+	/** Optional extra onChange handler called AFTER RHF field.onChange */
+	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function FormInput<TFieldValues extends FieldValues, TTransformedValues = TFieldValues>({ control, name, label, placeholder, description, type = "text", disabled = false, readOnly = false, autoComplete, className, inputClassName, endAdornment, min, max, step, minDate, maxDate }: FormInputProps<TFieldValues, TTransformedValues>) {
+export function FormInput<TFieldValues extends FieldValues, TTransformedValues = TFieldValues>({
+	control,
+	name,
+	label,
+	placeholder,
+	description,
+	type = "text",
+	disabled = false,
+	readOnly = false,
+	autoComplete,
+	className,
+	inputClassName,
+	endAdornment,
+	min,
+	max,
+	step,
+	minDate,
+	maxDate,
+	onChange: onChangeProp,
+}: FormInputProps<TFieldValues, TTransformedValues>) {
 	// Use Calendar for date type
 	if (type === "date") {
 		return (
@@ -110,6 +131,7 @@ export function FormInput<TFieldValues extends FieldValues, TTransformedValues =
 									} else {
 										field.onChange(e.target.value);
 									}
+									onChangeProp?.(e);
 								}}
 							/>
 						</FormControl>

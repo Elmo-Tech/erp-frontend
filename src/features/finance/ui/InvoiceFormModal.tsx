@@ -16,18 +16,9 @@ import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { useCreateInvoice, useUpdateInvoice } from "@/features/finance/model/use-finance-actions";
 import { invoiceSchema, INVOICE_DEFAULT_VALUES, type InvoiceFormData } from "@/features/finance/model/finance.schema";
 import type { Invoice } from "@/entities/finance/model/types";
-import { useGetInternalUsers } from "@/entities/user/api/user.api";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
-
-const STATUS_OPTIONS = [
-	{ value: "draft", label: "Draft" },
-	{ value: "sent", label: "Sent" },
-	{ value: "paid", label: "Paid" },
-	{ value: "overdue", label: "Overdue" },
-];
+import { useClientsQuery } from "@/entities/client/api/client.api";
+import { useGetClientProjects } from "@/entities/project/api/project.api";
+import { useSettingsDictionary } from "@/shared/api/settings.api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -48,23 +39,50 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 	const createInvoice = useCreateInvoice();
 	const updateInvoice = useUpdateInvoice();
 
-	// Fetch clients for the combobox
-	const usersQuery = useGetInternalUsers(open);
-	const clientOptions = useMemo(
-		() =>
-			(usersQuery.data?.users ?? []).map((u) => ({
-				value: String(u.id),
-				label: u.name,
-			})),
-		[usersQuery.data],
-	);
-
 	// Cast resolver to bypass z.coerce type mismatch (Zod v4 + @hookform/resolvers v5)
 	const form = useForm<InvoiceFormData>({
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		resolver: zodResolver(invoiceSchema) as any,
 		defaultValues: INVOICE_DEFAULT_VALUES,
 	});
+
+	// Watch clientId so we can filter projects
+	const selectedClientId = form.watch("clientId");
+
+	// Fetch clients for the combobox
+	const clientsQuery = useClientsQuery(open ? undefined : undefined);
+	const clientOptions = useMemo(
+		() =>
+			(clientsQuery.data?.clients ?? []).map((c) => ({
+				value: String(c.id),
+				label: c.display_name,
+			})),
+		[clientsQuery.data],
+	);
+
+	// Fetch projects filtered by selected client
+	const projectsQuery = useGetClientProjects(Number(selectedClientId) || 0, open && Number(selectedClientId) > 0);
+	const projectOptions = useMemo(
+		() =>
+			(projectsQuery.data ?? []).map((p) => ({
+				value: String(p.projectId),
+				label: p.title,
+			})),
+		[projectsQuery.data],
+	);
+
+	// Invoice statuses from settings dictionary
+	const statusDict = useSettingsDictionary("invoice-statuses", open);
+	// Fallback to hardcoded options if dictionary is empty (e.g. not yet seeded)
+	const statusOptions =
+		statusDict.options.length > 0
+			? statusDict.options
+			: [
+					{ value: "draft", label: "Draft" },
+					{ value: "sent", label: "Sent" },
+					{ value: "paid", label: "Paid" },
+					{ value: "overdue", label: "Overdue" },
+				];
 
 	// useFieldArray for dynamic line items
 	const { fields, append, remove } = useFieldArray({
@@ -98,6 +116,12 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 			form.reset(INVOICE_DEFAULT_VALUES);
 		}
 	}, [open, editTarget, form]);
+
+	// Reset project when client changes
+	useEffect(() => {
+		form.setValue("projectId", null);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedClientId]);
 
 	const handleSubmit = async (data: InvoiceFormData) => {
 		try {
@@ -143,18 +167,20 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 							control={form.control}
 							name="clientId"
 							label="Client"
-							placeholder="Select a client…"
+							placeholder={clientsQuery.isLoading ? "Loading clients…" : "Select a client…"}
 							searchPlaceholder="Search clients…"
 							options={clientOptions}
-							disabled={isPending || usersQuery.isLoading}
+							disabled={isPending || clientsQuery.isLoading}
 						/>
-						<FormInput
+						<FormCombobox
 							control={form.control}
 							name="projectId"
-							label="Project ID (optional)"
-							type="number"
-							placeholder="e.g. 5"
-							disabled={isPending}
+							label="Project (optional)"
+							placeholder={!selectedClientId || Number(selectedClientId) === 0 ? "Select a client first…" : projectsQuery.isLoading ? "Loading projects…" : "Select a project…"}
+							searchPlaceholder="Search projects…"
+							emptyText="No projects found for this client."
+							options={projectOptions}
+							disabled={isPending || !selectedClientId || Number(selectedClientId) === 0 || projectsQuery.isLoading}
 						/>
 					</div>
 
@@ -203,8 +229,8 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 							control={form.control}
 							name="status"
 							label="Status"
-							options={STATUS_OPTIONS}
-							disabled={isPending}
+							options={statusOptions}
+							disabled={isPending || statusDict.isLoading}
 						/>
 					</div>
 

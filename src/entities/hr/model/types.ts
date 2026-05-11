@@ -206,3 +206,180 @@ export interface GeneratePayrollPayload {
 export interface UpdateSystemSettingPayload {
 	value: string;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Leave Request  (LeaveRequestResource)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type LeaveType = "annual" | "sick" | "unpaid" | "permission";
+export type LeaveStatus = "pending" | "approved" | "rejected";
+
+export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
+	annual: "Annual",
+	sick: "Sick",
+	unpaid: "Unpaid",
+	permission: "Permission",
+};
+
+export const LEAVE_STATUS_LABELS: Record<LeaveStatus, string> = {
+	pending: "Pending",
+	approved: "Approved",
+	rejected: "Rejected",
+};
+
+export interface LeaveRequest {
+	id: number;
+	userId: number;
+	startDate: string; // YYYY-MM-DD
+	endDate: string; // YYYY-MM-DD
+	durationDays: number;
+	type: LeaveType;
+	status: LeaveStatus;
+	reason: string | null;
+	user?: {
+		id: number;
+		name: string;
+		email: string;
+	};
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface CreateLeaveRequestPayload {
+	user_id: number;
+	start_date: string;
+	end_date: string;
+	type: LeaveType;
+	status?: LeaveStatus;
+	reason?: string | null;
+}
+
+export interface UpdateLeaveRequestPayload {
+	start_date?: string;
+	end_date?: string;
+	type?: LeaveType;
+	status?: LeaveStatus;
+	reason?: string | null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payroll Transaction  (PayrollTransactionResource)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PayrollTransactionType = "manual_bonus" | "manual_deduction";
+
+export const PAYROLL_TRANSACTION_TYPE_LABELS: Record<PayrollTransactionType, string> = {
+	manual_bonus: "Manual Bonus",
+	manual_deduction: "Manual Deduction",
+};
+
+export interface PayrollTransaction {
+	id: number;
+	userId: number;
+	amount: number;
+	type: PayrollTransactionType;
+	reason: string;
+	transactionDate: string; // YYYY-MM-DD
+	user?: {
+		id: number;
+		name: string;
+		email: string;
+	};
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface CreatePayrollTransactionPayload {
+	user_id: number;
+	amount: number;
+	type: PayrollTransactionType;
+	reason: string;
+	transaction_date: string;
+}
+
+export interface UpdatePayrollTransactionPayload {
+	amount?: number;
+	type?: PayrollTransactionType;
+	reason?: string;
+	transaction_date?: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Employee 360 Report
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** One row in the attendance section of the report */
+export interface ReportAttendanceDay {
+	date: string; // YYYY-MM-DD
+	dayLabel: string; // "Mon 03"
+	clockIn: string | null; // "09:05"
+	clockOut: string | null; // "17:30"
+	workedHours: number; // decimal hours, e.g. 8.25
+	lateMinutes: number;
+	status: AttendanceStatus;
+	usedGraceDay: boolean;
+	deductionMinutes: number;
+}
+
+/** One row in the point ledger section */
+export interface ReportPointEntry {
+	id: number;
+	date: string; // YYYY-MM-DD
+	points: number; // signed — positive = earned, negative = deducted
+	reason: string;
+	sourceType: string | null; // "task" | "attendance" | "code_review" | …
+}
+
+/** One row in the deliverables / daily checklist section */
+export interface ReportDeliverableDay {
+	date: string;
+	submitted: boolean;
+	taskCount: number;
+	completedTaskCount: number;
+	qaIssues: string[]; // list of QA/PM notes for that day
+}
+
+/** Financial breakdown card */
+export interface ReportFinancialBreakdown {
+	baseSalary: number;
+	pointsBonusAmount: number;
+	manualBonusTotal: number;
+	latenessDeductionAmount: number;
+	manualDeductionTotal: number;
+	netSalary: number;
+	/** Payslip status if one exists for this period */
+	payslipStatus: PayslipStatus | null;
+}
+
+/** Top-level summary stats */
+export interface ReportSummary {
+	totalTaskHours: number;
+	completedTaskCount: number;
+	pointsBalance: number; // net points for the 2-month cycle
+	lateDays: number;
+	absentDays: number;
+	presentDays: number;
+	netSalary: number;
+}
+
+/** Root type returned by GET /hr/employee-report/{id}?month=X&year=Y */
+export interface EmployeeReport {
+	employee: {
+		id: number;
+		name: string;
+		email: string;
+		avatar: string | null;
+		roles: string[];
+	};
+	period: {
+		month: number;
+		year: number;
+		label: string; // "May 2026"
+	};
+	summary: ReportSummary;
+	attendanceDays: ReportAttendanceDay[];
+	pointLedger: ReportPointEntry[];
+	deliverableDays: ReportDeliverableDay[];
+	financialBreakdown: ReportFinancialBreakdown;
+	manualTransactions: PayrollTransaction[];
+}
