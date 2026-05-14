@@ -31,6 +31,7 @@ import { usePipelineStore, selectActiveModal, selectPendingDrag } from "@/featur
 import { PIPELINE_STAGES } from "@/features/leads/model/pipelineConstants";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
 import type { Lead, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
+import { getPipelineStageGateFailure } from "@/features/leads/model/pipelineGates";
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
 import { leadKeys, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
 import { KanbanColumn } from "./KanbanColumn";
@@ -88,17 +89,18 @@ export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) 
 		async (leadId: number) => {
 			try {
 				const result = await convertLeadToProjectMutation.mutateAsync(leadId);
-				const { project_id, project_title, client_name } = result.data;
+				const { project_title, client_name } = result.data;
 
 				// Celebratory toast with action link
 				toast.success(`🎉 Deal Won! "${project_title}" is now live.`, {
-					description: `Client "${client_name}" created. Redirecting to the project…`,
+					description: `Client "${client_name}" created. Redirecting to clients...`,
 					duration: 6000,
 				});
 
 				// Give the toast a moment to render before navigating
 				setTimeout(() => {
-					router.push(`/dashboard/projects/${project_id}`);
+					router.push("/dashboard/clients");
+					router.refresh();
 				}, 1200);
 			} catch (conversionErr) {
 				// Stage update already succeeded — don't revert the board.
@@ -153,6 +155,15 @@ export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) 
 			const leadId = Number(draggableId);
 			const fromStage = source.droppableId as PipelineStage;
 			const toStage = destination.droppableId as PipelineStage;
+			const lead = leads.find((item) => item.id === leadId);
+
+			if (lead) {
+				const gateFailure = getPipelineStageGateFailure(lead, toStage);
+				if (gateFailure) {
+					toast.error(gateFailure);
+					return;
+				}
+			}
 
 			const intercepted = startDrag(leadId, fromStage, toStage);
 			if (!intercepted) return;
@@ -171,7 +182,7 @@ export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) 
 			}
 			// Otherwise the modal queue is non-empty — StageModal will render.
 		},
-		[startDrag, setCachedLeadStage, commitStageUpdate],
+		[leads, startDrag, setCachedLeadStage, commitStageUpdate],
 	);
 
 	// ── Modal submit handler ──────────────────────────────────────────────────

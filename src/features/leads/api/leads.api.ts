@@ -113,6 +113,8 @@ export function mapLeadResourceToLead(item: GetLeadsResponse["data"][number] | G
 		stage,
 		assignedTo: item.assignedTo ?? undefined,
 		expectedBudget: item.expected_budget ?? undefined,
+		hasCompletedMeeting: item.hasCompletedMeeting ?? false,
+		hasAcceptedProposalOrQuotation: item.hasAcceptedProposalOrQuotation ?? false,
 		createdAt: item.createdAt,
 		updatedAt: item.updatedAt,
 	};
@@ -327,7 +329,7 @@ export function useConvertLeadToProject() {
 		mutationFn: convertLeadToProject,
 		onSuccess: (_data, leadId) => {
 			queryClient.invalidateQueries({ queryKey: leadKeys.all });
-			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
+			queryClient.removeQueries({ queryKey: leadKeys.detail(leadId) });
 		},
 	});
 }
@@ -372,6 +374,8 @@ export interface GetLeadsResponse {
 		expected_budget: number | null;
 		source: string | null;
 		assignedTo: number | null;
+		hasCompletedMeeting?: boolean;
+		hasAcceptedProposalOrQuotation?: boolean;
 		createdAt: string;
 		updatedAt: string;
 	}>;
@@ -419,6 +423,8 @@ export interface GetLeadResponse {
 		notes: string | null;
 		expected_close_date: string | null;
 		assignedTo: number | null;
+		hasCompletedMeeting?: boolean;
+		hasAcceptedProposalOrQuotation?: boolean;
 		assignee: {
 			id: number;
 			name: string;
@@ -571,12 +577,75 @@ export async function createLeadProposal(leadId: number, payload: Record<string,
 	return res.data;
 }
 
+export function useCreateLeadProposal(leadId: number) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: Record<string, unknown>) => createLeadProposal(leadId, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.proposals(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.list() });
+		},
+	});
+}
+
+export async function updateLeadProposal(leadId: number, proposalId: number, payload: Partial<Pick<LeadProposal, "status" | "file_path" | "assigned_to">>): Promise<{ data: LeadProposal }> {
+	const res = await api.patch<{ success: boolean; data: LeadProposal }>(`/leads/${leadId}/proposals/${proposalId}`, payload);
+	return res.data;
+}
+
+export function useUpdateLeadProposal(leadId: number) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ proposalId, payload }: { proposalId: number; payload: Partial<Pick<LeadProposal, "status" | "file_path" | "assigned_to">> }) => updateLeadProposal(leadId, proposalId, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.proposals(leadId) });
+		},
+	});
+}
+
 export async function createLeadQuotation(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadQuotation }> {
 	const res = await api.post<{ success: boolean; data: LeadQuotation }>(`/leads/${leadId}/quotations`, payload);
 	return res.data;
 }
 
+export async function updateLeadQuotationStatus(leadId: number, quotationId: number, status: string): Promise<{ data: LeadQuotation }> {
+	const res = await api.patch<{ success: boolean; data: LeadQuotation }>(`/leads/${leadId}/quotations/${quotationId}`, { status });
+	return res.data;
+}
+
+export function useUpdateQuotationStatus(leadId: number) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ quotationId, status }: { quotationId: number; status: string }) => updateLeadQuotationStatus(leadId, quotationId, status),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.quotations(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.list() });
+		},
+	});
+}
+
 export async function createLeadContract(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadContract }> {
 	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts`, payload);
 	return res.data;
+}
+
+export async function updateLeadContract(leadId: number, contractId: number, payload: Partial<Pick<LeadContract, "status" | "file_path" | "assigned_to">>): Promise<{ data: LeadContract }> {
+	const res = await api.patch<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts/${contractId}`, payload);
+	return res.data;
+}
+
+export function useUpdateLeadContract(leadId: number) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ contractId, payload }: { contractId: number; payload: Partial<Pick<LeadContract, "status" | "file_path" | "assigned_to">> }) => updateLeadContract(leadId, contractId, payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.contracts(leadId) });
+		},
+	});
 }

@@ -14,6 +14,8 @@ export interface Lead {
 	stage: PipelineStage;
 	assignedTo?: number;
 	expectedBudget?: number;
+	hasCompletedMeeting?: boolean;
+	hasAcceptedProposalOrQuotation?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }

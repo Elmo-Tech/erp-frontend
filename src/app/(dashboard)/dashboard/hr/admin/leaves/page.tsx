@@ -1,6 +1,7 @@
+import type { Metadata } from "next";
 import LeaveRequestsPage from "@/views/hr/admin/LeaveRequestsPage";
 
-export const metadata = {
+export const metadata: Metadata = {
 	title: "Leave Requests | HR Admin",
 };
 

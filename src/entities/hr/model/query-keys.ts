@@ -23,6 +23,7 @@ export const hrKeys = {
 	attendance: () => [...hrKeys.all, "attendance"] as const,
 	attendanceList: () => [...hrKeys.attendance(), "list"] as const,
 	attendanceToday: () => [...hrKeys.attendance(), "today"] as const,
+	teamPulse: () => [...hrKeys.all, "team-pulse"] as const,
 
 	// Payslips
 	payslips: () => [...hrKeys.all, "payslips"] as const,

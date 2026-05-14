@@ -4,7 +4,7 @@
  * TaskExecutionSheet — Task Control Center
  *
  * Wide tabbed sheet with 3 tabs:
- *   Tab 1 — Execution & Details: description, deliverables, subtasks
+ *   Tab 1 — Execution & Details: description, deliverables (subtasks removed)
  *   Tab 2 — Time Logs: time entries list + manual log dialog
  *   Tab 3 — Notes & Files: placeholder UI
  *
@@ -12,7 +12,8 @@
  */
 
 import { useState, useCallback, useRef } from "react";
-import { Clock, CheckCircle2, Circle, AlertCircle, Play, Square, Plus, GitBranch, Timer, FileText, StickyNote, Upload, Paperclip, X, MessageSquarePlus } from "lucide-react";
+import { Clock, CheckCircle2, Circle, AlertCircle, Play, Square, Plus, Timer, FileText, StickyNote, Upload, Paperclip, X, MessageSquarePlus, Pencil, Trash2 } from "lucide-react";
+// REMOVED: GitBranch - subtasks are no longer supported
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,9 +43,13 @@ import {
 	useCompleteTask,
 	useToggleTaskTimer,
 	useCreateDeliverable,
+	useUpdateDeliverable,
+	useDeleteDeliverable,
 	useCreateTask,
 	useUpdateTaskStatus,
 	useLogManualTime,
+	useUpdateTimeEntry,
+	useDeleteTimeEntry,
 	useProjectMembers,
 	ExecutionTaskStatus,
 	ExecutionTaskStatusLabels,
@@ -54,7 +59,6 @@ import {
 import type { ProjectTask, TaskDeliverable, ProjectTimeEntry } from "../api/execution.api";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useTaskPermissions } from "@/entities/user/model/permissions";
-import { Can } from "@/shared/ui/Can";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -97,14 +101,45 @@ interface DeliverableRowProps {
 	projectId: number;
 	taskId: number;
 	disabled: boolean;
+	canManage: boolean;
 }
 
-function DeliverableRow({ deliverable, projectId, taskId, disabled }: DeliverableRowProps) {
+function DeliverableRow({ deliverable, projectId, taskId, disabled, canManage }: DeliverableRowProps) {
+	const [isEditing, setIsEditing] = useState(false);
+	const [title, setTitle] = useState(deliverable.title);
 	const toggleDeliverable = useToggleDeliverable();
+	const updateDeliverable = useUpdateDeliverable();
+	const deleteDeliverable = useDeleteDeliverable();
 
 	const handleToggle = useCallback(() => {
 		toggleDeliverable.mutate({ projectId, taskId, deliverableId: deliverable.deliverableId }, { onError: () => toast.error("Failed to update deliverable.") });
 	}, [toggleDeliverable, projectId, taskId, deliverable.deliverableId]);
+
+	const handleSave = useCallback(() => {
+		const trimmedTitle = title.trim();
+		if (!trimmedTitle) return;
+
+		updateDeliverable.mutate(
+			{ projectId, taskId, deliverableId: deliverable.deliverableId, title: trimmedTitle },
+			{
+				onSuccess: () => {
+					toast.success("Deliverable updated.");
+					setIsEditing(false);
+				},
+				onError: () => toast.error("Failed to update deliverable."),
+			},
+		);
+	}, [deliverable.deliverableId, projectId, taskId, title, updateDeliverable]);
+
+	const handleDelete = useCallback(() => {
+		deleteDeliverable.mutate(
+			{ projectId, taskId, deliverableId: deliverable.deliverableId },
+			{
+				onSuccess: () => toast.success("Deliverable deleted."),
+				onError: () => toast.error("Failed to delete deliverable."),
+			},
+		);
+	}, [deleteDeliverable, projectId, taskId, deliverable.deliverableId]);
 
 	return (
 		<div className={cn("flex items-start gap-3 px-3 py-2.5 transition-colors hover:bg-muted/50", deliverable.isCompleted && "opacity-60")}>
@@ -115,12 +150,66 @@ function DeliverableRow({ deliverable, projectId, taskId, disabled }: Deliverabl
 				disabled={disabled || toggleDeliverable.isPending}
 				className="mt-0.5 shrink-0"
 			/>
-			<label
-				htmlFor={`del-${deliverable.deliverableId}`}
-				className={cn("cursor-pointer text-sm leading-snug", deliverable.isCompleted ? "text-muted-foreground line-through" : "text-foreground")}
-			>
-				{deliverable.title}
-			</label>
+			{isEditing ? (
+				<form
+					className="flex min-w-0 flex-1 items-center gap-2"
+					onSubmit={(event) => {
+						event.preventDefault();
+						handleSave();
+					}}
+				>
+					<Input
+						value={title}
+						onChange={(event) => setTitle(event.target.value)}
+						className="h-8 text-sm"
+						disabled={updateDeliverable.isPending}
+					/>
+					<Button
+						type="submit"
+						size="sm"
+						variant="outline"
+						className="h-8"
+						disabled={!title.trim() || updateDeliverable.isPending}
+					>
+						Save
+					</Button>
+				</form>
+			) : (
+				<label
+					htmlFor={`del-${deliverable.deliverableId}`}
+					className={cn("min-w-0 flex-1 cursor-pointer text-sm leading-snug", deliverable.isCompleted ? "text-muted-foreground line-through" : "text-foreground")}
+				>
+					{deliverable.title}
+				</label>
+			)}
+			{canManage && !disabled && !isEditing && (
+				<div className="ml-auto flex shrink-0 items-center gap-1">
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7"
+						onClick={() => {
+							setTitle(deliverable.title);
+							setIsEditing(true);
+						}}
+					>
+						<Pencil className="size-3.5" />
+						<span className="sr-only">Edit deliverable</span>
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-7 w-7 text-destructive hover:text-destructive"
+						disabled={deleteDeliverable.isPending}
+						onClick={handleDelete}
+					>
+						<Trash2 className="size-3.5" />
+						<span className="sr-only">Delete deliverable</span>
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -180,7 +269,7 @@ function QuickAddForm({ placeholder, onSubmit, isPending, disabled }: QuickAddFo
 // Time entry row
 // ─────────────────────────────────────────────────────────────────────────────
 
-function TimeEntryRow({ entry }: { entry: ProjectTimeEntry }) {
+function TimeEntryRow({ entry, canManage, onEdit, onDelete }: { entry: ProjectTimeEntry; canManage: boolean; onEdit: (entry: ProjectTimeEntry) => void; onDelete: (entry: ProjectTimeEntry) => void }) {
 	const userName = entry.user?.name ?? `User #${entry.userId}`;
 	const duration = entry.durationMinutes != null ? formatMinutes(entry.durationMinutes) : entry.isRunning ? "Running…" : "—";
 
@@ -212,6 +301,30 @@ function TimeEntryRow({ entry }: { entry: ProjectTimeEntry }) {
 					</Badge>
 				)}
 				<span className="tabular-nums text-xs font-medium">{duration}</span>
+				{canManage && !entry.isRunning && (
+					<div className="flex items-center gap-1">
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7"
+							onClick={() => onEdit(entry)}
+						>
+							<Pencil className="size-3.5" />
+							<span className="sr-only">Edit time entry</span>
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7 text-destructive hover:text-destructive"
+							onClick={() => onDelete(entry)}
+						>
+							<Trash2 className="size-3.5" />
+							<span className="sr-only">Delete time entry</span>
+						</Button>
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -245,6 +358,7 @@ type ManualTimeFormData = z.infer<typeof manualTimeSchema>;
 
 export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: TaskExecutionSheetProps) {
 	const [manualTimeOpen, setManualTimeOpen] = useState(false);
+	const [editingTimeEntry, setEditingTimeEntry] = useState<ProjectTimeEntry | null>(null);
 
 	// ── Reopen interceptor state ──────────────────────────────────────────────
 	const [isReopenDialogOpen, setIsReopenDialogOpen] = useState(false);
@@ -263,52 +377,66 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const completeTask = useCompleteTask();
 	const toggleTimer = useToggleTaskTimer();
 	const createDeliverable = useCreateDeliverable();
-	const createSubtask = useCreateTask();
+	// REMOVED: createSubtask - subtasks are no longer supported
 	const updateStatus = useUpdateTaskStatus();
 	const logManualTime = useLogManualTime();
+	const updateTimeEntry = useUpdateTimeEntry();
+	const deleteTimeEntry = useDeleteTimeEntry();
 
 	// ── PBAC: Permission flags from the auth store ────────────────────────────
-	// globalRole, isGlobalAdmin, and role-string comparisons are gone.
 	// Every access decision is driven by granular permissions.
 	const currentUserId = useAuthStore((s) => s.user?.userId);
 	const membersQuery = useProjectMembers(projectId);
 
-	const { canManageTasks, canEditTasks, canWorkOnTasks } = useTaskPermissions();
+	const { canManageTasks, canEditTasks, canWorkOnTasks, canManageDeliverables } = useTaskPermissions();
 
 	// manage_all_projects replaces the old isGlobalAdmin bypass.
 	// Users with this permission skip project-membership workflow ceilings.
 	const canManageAllProjects = useAuthStore((s) => s.hasPermission("manage_all_projects"));
+	const canManageTimeEntries = useAuthStore((s) => s.hasAnyPermission(["manage_time_entries", "manage_all_projects"]));
 
 	// projectRole is the user's MEMBERSHIP role within this specific project
 	// (manager, tech_lead, developer, qa, designer).
-	// This is NOT a global system role — it only drives workflow ceiling rules
-	// (e.g. developer → cannot mark done directly).
-	// It is only consulted when the user lacks manage_all_projects.
 	const projectRole = canManageAllProjects
 		? null // bypass: no workflow ceiling applies
 		: (membersQuery.data?.find((m) => m.userId === currentUserId)?.role ?? null);
 
+	// ── ABAC: Assignee check ──────────────────────────────────────────────────
+	// isAssignee is true when the current user is the task's explicit assignee.
+	const isAssignee = task ? task.assigneeId === currentUserId : false;
+	const isManagerLevel = canManageAllProjects || canManageTasks || canEditTasks || projectRole === "manager" || projectRole === "tech_lead";
+	// Deliverables can be toggled by the assignee or a manager-level user
+	const canToggleDeliverables = isAssignee || isManagerLevel;
+	const canManageDeliverableRecords = isManagerLevel || canManageDeliverables;
+
+	// ── CRITICAL: "COMPLETED" STATUS GUARD ────────────────────────────────────
+	// ONLY users with these permissions can mark tasks as "done":
+	//   1. manage_all_projects (global admin)
+	//   2. manage_deliverables (deliverable managers)
+	//   3. manage_tasks (task managers)
+	//   4. Project manager or tech_lead role
+	//
+	// Regular assignees (developers, QA without special permissions) CANNOT
+	// select "done" from the status dropdown. Their ceiling is "in_review".
+	const canMarkAsCompleted = canManageAllProjects || canManageDeliverables || canManageTasks || projectRole === "manager" || projectRole === "tech_lead";
+
 	// ── Status options filtered by permissions ────────────────────────────────
-	// Priority order:
-	//   1. manage_all_projects OR manage_tasks → all statuses.
-	//   2. project membership role = developer → in_progress, in_review only.
-	//   3. project membership role = qa        → in_progress, qa, done.
-	//   4. edit_tasks OR work_on_tasks         → in_progress, in_review.
-	//   5. No matching permission              → read-only, empty list.
+	// Filter out "done" status if the user cannot mark tasks as completed.
 	const allowedStatusOptions = (() => {
-		if (canManageAllProjects || canManageTasks) {
-			return EXECUTION_TASK_STATUS_OPTIONS;
+		// Start with all status options
+		let options = [...EXECUTION_TASK_STATUS_OPTIONS];
+
+		// If user cannot mark as completed, remove "done" from the list
+		if (!canMarkAsCompleted) {
+			options = options.filter((o) => o.value !== ExecutionTaskStatus.DONE);
 		}
-		if (projectRole === "developer") {
-			return EXECUTION_TASK_STATUS_OPTIONS.filter((o) => [ExecutionTaskStatus.IN_PROGRESS, ExecutionTaskStatus.IN_REVIEW].includes(o.value as (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus]));
+
+		// If user has no update permissions at all, return empty (read-only)
+		if (!canManageAllProjects && !canManageTasks && !canEditTasks && !canWorkOnTasks) {
+			return [];
 		}
-		if (projectRole === "qa") {
-			return EXECUTION_TASK_STATUS_OPTIONS.filter((o) => [ExecutionTaskStatus.IN_PROGRESS, ExecutionTaskStatus.QA, ExecutionTaskStatus.DONE].includes(o.value as (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus]));
-		}
-		if (canEditTasks || canWorkOnTasks) {
-			return EXECUTION_TASK_STATUS_OPTIONS.filter((o) => [ExecutionTaskStatus.IN_PROGRESS, ExecutionTaskStatus.IN_REVIEW].includes(o.value as (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus]));
-		}
-		return []; // read-only
+
+		return options;
 	})();
 
 	// ── Manual time form ──────────────────────────────────────────────────────
@@ -337,15 +465,7 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 		[toggleTimer, projectId, task],
 	);
 
-	const handleSubtaskTimerToggle = useCallback(
-		(e: React.MouseEvent, subtaskId: number) => {
-			e.preventDefault();
-			e.stopPropagation();
-			e.nativeEvent.stopImmediatePropagation();
-			toggleTimer.mutate({ projectId, taskId: subtaskId }, { onError: () => toast.error("Failed to toggle subtask timer.") });
-		},
-		[toggleTimer, projectId],
-	);
+	// REMOVED: handleSubtaskTimerToggle - subtasks are no longer supported
 
 	const handleStatusChange = useCallback(
 		(newStatus: string) => {
@@ -411,49 +531,75 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 		[createDeliverable, projectId, task],
 	);
 
-	const handleAddSubtask = useCallback(
-		(title: string, onSuccess: () => void) => {
-			if (!task) return;
-			createSubtask.mutate(
-				{
-					projectId,
-					payload: { title, parentId: task.taskId, milestoneId: task.milestoneId ?? null },
-				},
-				{
-					onSuccess: () => {
-						toast.success("Subtask added.");
-						onSuccess();
-					},
-					onError: () => toast.error("Failed to add subtask."),
-				},
-			);
-		},
-		[createSubtask, projectId, task],
-	);
+	// REMOVED: handleAddSubtask - subtasks are no longer supported
+	// REMOVED: handleSubtaskTimerToggle - subtasks are no longer supported
 
 	const handleManualTimeSubmit = manualTimeForm.handleSubmit(async (data) => {
 		if (!task) return;
 		try {
-			await logManualTime.mutateAsync({
-				projectId,
-				taskId: task.taskId,
-				payload: {
-					startTime: `${data.date}T${data.startTime}:00`,
-					endTime: `${data.date}T${data.endTime}:00`,
-					note: data.note?.trim() || undefined,
-				},
-			});
-			toast.success("Time logged.");
+			const payload = {
+				startTime: `${data.date}T${data.startTime}:00`,
+				endTime: `${data.date}T${data.endTime}:00`,
+				note: data.note?.trim() || undefined,
+			};
+
+			if (editingTimeEntry) {
+				await updateTimeEntry.mutateAsync({
+					projectId,
+					taskId: task.taskId,
+					entryId: editingTimeEntry.entryId,
+					payload,
+				});
+			} else {
+				await logManualTime.mutateAsync({
+					projectId,
+					taskId: task.taskId,
+					payload,
+				});
+			}
+			toast.success(editingTimeEntry ? "Time entry updated." : "Time logged.");
 			setManualTimeOpen(false);
+			setEditingTimeEntry(null);
 			manualTimeForm.reset();
 		} catch {
-			toast.error("Failed to log time.");
+			toast.error(editingTimeEntry ? "Failed to update time entry." : "Failed to log time.");
 		}
 	});
 
+	const handleEditTimeEntry = useCallback(
+		(entry: ProjectTimeEntry) => {
+			const start = entry.startTime ? new Date(entry.startTime) : new Date();
+			const end = entry.endTime ? new Date(entry.endTime) : start;
+
+			manualTimeForm.reset({
+				date: start.toISOString().slice(0, 10),
+				startTime: start.toTimeString().slice(0, 5),
+				endTime: end.toTimeString().slice(0, 5),
+				note: entry.note ?? "",
+			});
+			setEditingTimeEntry(entry);
+			setManualTimeOpen(true);
+		},
+		[manualTimeForm],
+	);
+
+	const handleDeleteTimeEntry = useCallback(
+		(entry: ProjectTimeEntry) => {
+			if (!task) return;
+			deleteTimeEntry.mutate(
+				{ projectId, taskId: task.taskId, entryId: entry.entryId },
+				{
+					onSuccess: () => toast.success("Time entry deleted."),
+					onError: () => toast.error("Failed to delete time entry."),
+				},
+			);
+		},
+		[deleteTimeEntry, projectId, task],
+	);
+
 	// ── Derived state ─────────────────────────────────────────────────────────
 	const deliverables = task?.deliverables ?? [];
-	const subtasks = task?.subtasks ?? [];
+	// REMOVED: subtasks - subtasks are no longer supported
 	const timeEntries = task?.timeEntries ?? [];
 	const totalDeliverables = deliverables.length;
 	const completedDeliverables = deliverables.filter((d) => d.isCompleted).length;
@@ -465,6 +611,10 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 
 	const currentStatusColor = getStatusColor(task?.status ?? "");
 	const totalLogged = formatMinutes(task?.totalLoggedMinutes ?? 0);
+	const canManageTimeEntry = useCallback(
+		(entry: ProjectTimeEntry) => entry.userId === currentUserId || canManageTimeEntries || isManagerLevel,
+		[currentUserId, canManageTimeEntries, isManagerLevel],
+	);
 
 	// ── PBAC: Primary footer action ──────────────────────────────────────────
 	// Derives the footer CTA based on permissions, not global roles.
@@ -495,7 +645,12 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 		if (canWorkOnTasks) {
 			// Work-only access — ceiling is in_review.
 			// Hide the button once the task is already submitted.
-			const alreadySubmitted = [ExecutionTaskStatus.IN_REVIEW, ExecutionTaskStatus.QA, ExecutionTaskStatus.DONE].includes(task.status as (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus]);
+			// SECURITY: Also hide if the current user is NOT the assignee.
+			// Only the explicitly assigned user may submit their own task.
+			const isAssignee = task.assigneeId === currentUserId;
+			if (!isAssignee) return null; // not the assignee — read-only
+
+			const alreadySubmitted = [ExecutionTaskStatus.IN_REVIEW, ExecutionTaskStatus.QA, ExecutionTaskStatus.DONE].includes(task.status as typeof ExecutionTaskStatus.IN_REVIEW | typeof ExecutionTaskStatus.QA | typeof ExecutionTaskStatus.DONE);
 
 			if (alreadySubmitted) return null; // awaiting QA — nothing to do
 
@@ -696,7 +851,8 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 													deliverable={d}
 													projectId={projectId}
 													taskId={task.taskId}
-													disabled={isDone}
+													disabled={isDone || !canToggleDeliverables}
+													canManage={canManageDeliverableRecords}
 												/>
 											))}
 										</div>
@@ -706,79 +862,16 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 										</div>
 									)}
 
-									{!isDone && (
-										<Can permission={["edit_tasks", "manage_tasks"]}>
-											<QuickAddForm
-												placeholder="Add a deliverable…"
-												onSubmit={handleAddDeliverable}
-												isPending={createDeliverable.isPending}
-											/>
-										</Can>
-									)}
-								</div>
-
-								<Separator />
-
-								{/* Subtasks */}
-								<div>
-									<div className="mb-3 flex items-center gap-2">
-										<h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Subtasks</h4>
-										{subtasks.length > 0 && <span className="text-xs text-muted-foreground/60">({subtasks.length})</span>}
-									</div>
-
-									{subtasks.length > 0 ? (
-										<div className="flex flex-col divide-y rounded-md border">
-											{subtasks.map((sub) => {
-												const subRunning = sub.timeEntries?.find((e) => e.isRunning) ?? null;
-												const subIsDone = sub.status === ExecutionTaskStatus.DONE;
-												return (
-													<div
-														key={sub.taskId}
-														className="flex items-center justify-between gap-3 px-3 py-2.5"
-													>
-														<div className="flex min-w-0 items-center gap-2">
-															<GitBranch className="size-3 shrink-0 text-muted-foreground/50" />
-															<span className={cn("truncate text-sm", subIsDone && "text-muted-foreground line-through")}>{sub.title}</span>
-														</div>
-														<div className="flex shrink-0 items-center gap-2">
-															<Badge
-																variant="outline"
-																className={cn("rounded-sm border px-1.5 py-0 font-mono text-[10px] uppercase tracking-wide", getStatusColor(sub.status))}
-															>
-																{getStatusLabel(sub.status)}
-															</Badge>
-															{!subIsDone && (
-																<Button
-																	type="button"
-																	size="sm"
-																	variant={subRunning ? "destructive" : "ghost"}
-																	className={cn("h-6 w-6 p-0", subRunning && "animate-pulse")}
-																	disabled={toggleTimer.isPending}
-																	onClick={(e) => handleSubtaskTimerToggle(e, sub.taskId)}
-																	aria-label={subRunning ? "Stop subtask timer" : "Start subtask timer"}
-																>
-																	{subRunning ? <Square className="size-3 fill-current" /> : <Play className="size-3 fill-current" />}
-																</Button>
-															)}
-														</div>
-													</div>
-												);
-											})}
-										</div>
-									) : (
-										<div className="flex min-h-14 items-center justify-center rounded-md border border-dashed">
-											<p className="text-xs text-muted-foreground">No subtasks yet.</p>
-										</div>
-									)}
-
-									{!isDone && (
+									{!isDone && canManageDeliverableRecords && (
 										<QuickAddForm
-											placeholder="Add a subtask…"
-											onSubmit={handleAddSubtask}
-											isPending={createSubtask.isPending}
+											placeholder="Add a deliverable…"
+											onSubmit={handleAddDeliverable}
+											isPending={createDeliverable.isPending}
 										/>
 									)}
 								</div>
+
+								{/* REMOVED: Subtasks section - subtasks are no longer supported */}
 							</div>
 						</ScrollArea>
 					</TabsContent>
@@ -805,11 +898,12 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 												manualTimeForm.reset({
 													date: new Date().toISOString().slice(0, 10),
 													startTime: "09:00",
-													endTime: "10:00",
-													note: "",
-												});
-												setManualTimeOpen(true);
-											}}
+												endTime: "10:00",
+												note: "",
+											});
+											setEditingTimeEntry(null);
+											setManualTimeOpen(true);
+										}}
 										>
 											<Plus className="size-3.5" />
 											Log Time
@@ -823,6 +917,9 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 											<TimeEntryRow
 												key={entry.entryId}
 												entry={entry}
+												canManage={canManageTimeEntry(entry)}
+												onEdit={handleEditTimeEntry}
+												onDelete={handleDeleteTimeEntry}
 											/>
 										))}
 									</div>
@@ -1100,11 +1197,16 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 			{/* ── Manual time log dialog ─────────────────────────────────────── */}
 			<FormDialog
 				open={manualTimeOpen}
-				onOpenChange={setManualTimeOpen}
-				title="Log Time Manually"
-				description="Record past work time for this task."
-				submitLabel="Log Time"
-				isLoading={logManualTime.isPending}
+				onOpenChange={(nextOpen) => {
+					setManualTimeOpen(nextOpen);
+					if (!nextOpen) {
+						setEditingTimeEntry(null);
+					}
+				}}
+				title={editingTimeEntry ? "Edit Time Entry" : "Log Time Manually"}
+				description={editingTimeEntry ? "Update the recorded work time for this task." : "Record past work time for this task."}
+				submitLabel={editingTimeEntry ? "Save Time" : "Log Time"}
+				isLoading={logManualTime.isPending || updateTimeEntry.isPending}
 				onSubmit={handleManualTimeSubmit}
 				size="sm"
 			>

@@ -10,13 +10,14 @@ import { LocationType, LocationTypeLabels, MeetingType, MeetingTypeLabels, type 
 interface ScheduleMeetingFormProps {
 	form: UseFormReturn<ScheduleMeetingFormData>;
 	projectOptions?: SelectOption[];
+	meetingTypeOptions?: SelectOption[];
 	internalAttendeeOptions?: FormTagOption[];
 	externalAttendeeOptions?: FormTagOption[];
 	isLoadingInternalUsers?: boolean;
 	disabled?: boolean;
 }
 
-const MEETING_TYPE_OPTIONS = Object.values(MeetingType).map((type) => ({
+export const FALLBACK_MEETING_TYPE_OPTIONS = Object.values(MeetingType).map((type) => ({
 	value: type,
 	label: MeetingTypeLabels[type],
 }));
@@ -26,7 +27,7 @@ const LOCATION_TYPE_OPTIONS = Object.values(LocationType).map((type) => ({
 	label: LocationTypeLabels[type],
 }));
 
-export function ScheduleMeetingForm({ form, projectOptions = [], internalAttendeeOptions = [], externalAttendeeOptions = [], isLoadingInternalUsers = false, disabled = false }: ScheduleMeetingFormProps) {
+export function ScheduleMeetingForm({ form, projectOptions = [], meetingTypeOptions = FALLBACK_MEETING_TYPE_OPTIONS, internalAttendeeOptions = [], externalAttendeeOptions = [], isLoadingInternalUsers = false, disabled = false }: ScheduleMeetingFormProps) {
 	const locationType = form.watch("location_type");
 	const isOnlineMeeting = locationType === LocationType.ONLINE;
 
@@ -56,8 +57,8 @@ export function ScheduleMeetingForm({ form, projectOptions = [], internalAttende
 						control={form.control}
 						name="meetingType"
 						label="Meeting Type"
-						options={MEETING_TYPE_OPTIONS}
-						disabled={disabled}
+						options={meetingTypeOptions}
+						disabled={disabled || meetingTypeOptions.length === 0}
 					/>
 				</div>
 

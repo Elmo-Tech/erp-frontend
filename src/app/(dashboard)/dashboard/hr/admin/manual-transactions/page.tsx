@@ -1,6 +1,7 @@
+import type { Metadata } from "next";
 import PayrollTransactionsPage from "@/views/hr/admin/PayrollTransactionsPage";
 
-export const metadata = {
+export const metadata: Metadata = {
 	title: "Manual Transactions | HR Admin",
 };
 

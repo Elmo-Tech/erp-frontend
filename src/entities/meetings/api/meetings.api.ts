@@ -35,6 +35,7 @@ interface RawMeetingResource {
 	subjectId: number;
 	subjectType: string;
 	subjectName?: string;
+	meetingType?: string | null;
 	status: string;
 	statusLabel?: string;
 	statusColor?: string;
@@ -70,7 +71,7 @@ function toPolyMeeting(raw: RawMeetingResource, modelType: MeetingModelType, mod
 		modelType,
 		modelId,
 		// Backend has no meeting_type column — default to "discovery" as a safe fallback
-		meetingType: "discovery",
+		meetingType: (raw.meetingType ?? "discovery") as PolyMeeting["meetingType"],
 		status: raw.status as PolyMeeting["status"],
 		title: raw.title,
 		description: raw.description ?? null,
@@ -85,6 +86,11 @@ function toPolyMeeting(raw: RawMeetingResource, modelType: MeetingModelType, mod
 		createdAt: raw.createdAt,
 		updatedAt: raw.updatedAt,
 	};
+}
+
+function inferModelType(subjectType: string): MeetingModelType {
+	const match = Object.entries(MODEL_TYPE_TO_MORPH).find(([, morph]) => morph === subjectType);
+	return (match?.[0] ?? "project") as MeetingModelType;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,6 +112,12 @@ export const meetingsApi = {
 		return meetings.map((raw) => toPolyMeeting(raw, modelType, modelId));
 	},
 
+	async getTodayMeetings(): Promise<PolyMeeting[]> {
+		const res = await api.get<ApiEnvelope<RawMeetingResource[]>>("/schedule/today");
+		const meetings = res.data.data ?? [];
+		return meetings.map((raw) => toPolyMeeting(raw, inferModelType(raw.subjectType), raw.subjectId));
+	},
+
 	/**
 	 * POST /meetings
 	 * Creates a new meeting for a polymorphic parent.
@@ -121,10 +133,13 @@ export const meetingsApi = {
 			subjectType: payload.model_type,
 			subjectId: payload.model_id,
 			title: payload.title,
+			meetingType: payload.meeting_type,
 			description: payload.description,
 			scheduledAt: payload.scheduled_at,
 			location: payload.location_type,
 			locationDetails: payload.location_details,
+			internalAttendees: payload.internal_attendees,
+			externalAttendees: payload.external_attendees,
 			assignedTo: payload.assigned_to,
 		};
 
@@ -136,13 +151,16 @@ export const meetingsApi = {
 	},
 
 	/**
-	 * PATCH /meetings/{id}/status
+	 * PATCH /meetings/{id}
 	 * Updates the status of a meeting.
 	 * completion_note is REQUIRED for any status other than "scheduled".
 	 */
 	async updateMeetingStatus(meetingId: number, payload: UpdateMeetingStatusPayload): Promise<PolyMeeting> {
-		const res = await api.patch<ApiEnvelope<PolyMeeting>>(`/meetings/${meetingId}/status`, payload);
-		return res.data.data;
+		const res = await api.patch<ApiEnvelope<RawMeetingResource>>(`/meetings/${meetingId}`, {
+			status: payload.status,
+			outcomeSummary: payload.completion_note,
+		});
+		return toPolyMeeting(res.data.data, inferModelType(res.data.data.subjectType), res.data.data.subjectId);
 	},
 };
 
@@ -156,6 +174,15 @@ export function useGetMeetings(modelType: MeetingModelType, modelId: number, ena
 		queryFn: () => meetingsApi.getMeetings(modelType, modelId),
 		enabled: enabled && modelId > 0,
 		staleTime: 2 * 60 * 1000,
+	});
+}
+
+export function useGetTodayMeetings() {
+	return useQuery({
+		queryKey: [...polyMeetingKeys.lists(), "today"] as const,
+		queryFn: meetingsApi.getTodayMeetings,
+		staleTime: 60 * 1000,
+		refetchInterval: 60 * 1000,
 	});
 }
 

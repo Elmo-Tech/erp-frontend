@@ -13,10 +13,12 @@
 
 import { useState } from "react";
 import { PlusIcon, FileText, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
-import { useGetLeadProposals, type LeadProposal } from "@/features/leads/api/leads.api";
+import { useGetLeadProposals, useUpdateLeadProposal, type LeadProposal } from "@/features/leads/api/leads.api";
 import { CreateProposalModal } from "@/features/leads/ui/CreateProposalModal";
 import { format } from "date-fns";
 
@@ -38,6 +40,12 @@ const CREATION_TYPE_LABEL: Record<string, string> = {
 	skipped: "Skipped",
 };
 
+const PROPOSAL_STATUS_OPTIONS = ["draft", "sent", "accepted", "rejected", "skipped"] as const;
+
+function hasRenderableProposal(proposal: LeadProposal): boolean {
+	return Boolean(proposal.file_path || proposal.assigned_to || proposal.assignee || proposal.skip_reason || proposal.creation_type !== "direct_upload" || proposal.status !== "draft");
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface LeadProposalsTabProps {
@@ -47,7 +55,8 @@ interface LeadProposalsTabProps {
 export function LeadProposalsTab({ leadId }: LeadProposalsTabProps) {
 	const [modalOpen, setModalOpen] = useState(false);
 	const proposalsQuery = useGetLeadProposals(leadId);
-	const proposals = proposalsQuery.data ?? [];
+	const updateProposal = useUpdateLeadProposal(leadId);
+	const proposals = (proposalsQuery.data ?? []).filter(hasRenderableProposal);
 
 	const columns: Column<LeadProposal>[] = [
 		{ key: "id", header: "ID", render: (proposal) => <span className="font-mono text-xs text-muted-foreground">#{proposal.id}</span> },
@@ -55,12 +64,38 @@ export function LeadProposalsTab({ leadId }: LeadProposalsTabProps) {
 			key: "status",
 			header: "Status",
 			render: (proposal) => (
-				<Badge
-					variant="outline"
-					className={STATUS_CLASS[proposal.status] ?? "bg-muted text-muted-foreground"}
+				<Select
+					value={proposal.status}
+					disabled={updateProposal.isPending}
+					onValueChange={(status) => {
+						updateProposal.mutate(
+							{ proposalId: proposal.id, payload: { status } },
+							{
+								onSuccess: () => toast.success("Proposal status updated."),
+								onError: () => toast.error("Failed to update proposal status."),
+							},
+						);
+					}}
 				>
-					{proposal.status}
-				</Badge>
+					<SelectTrigger className="h-8 w-32">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{PROPOSAL_STATUS_OPTIONS.map((status) => (
+							<SelectItem
+								key={status}
+								value={status}
+							>
+								<Badge
+									variant="outline"
+									className={STATUS_CLASS[status] ?? "bg-muted text-muted-foreground"}
+								>
+									{status}
+								</Badge>
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			),
 		},
 		{ key: "type", header: "Type", render: (proposal) => <span className="text-sm text-muted-foreground">{CREATION_TYPE_LABEL[proposal.creation_type] ?? proposal.creation_type}</span> },

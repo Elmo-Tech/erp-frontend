@@ -10,9 +10,11 @@ import { projectKeys } from "@/entities/project/model/query-keys";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import type { FormTagOption, SelectOption } from "@/shared/ui/forms";
+import { useSettingsDictionary } from "@/shared/api/settings.api";
+import { getApiErrorMessage, getApiValidationErrors } from "@/shared/lib/api-error";
 import { LocationType, MeetingType, scheduleMeetingSchema, type ScheduleMeetingFormData, toScheduleMeetingPayload } from "../model/meeting.schema";
 import { useScheduleMeeting } from "../model/use-meeting-actions";
-import { ScheduleMeetingForm } from "./ScheduleMeetingForm";
+import { FALLBACK_MEETING_TYPE_OPTIONS, ScheduleMeetingForm } from "./ScheduleMeetingForm";
 
 interface ScheduleMeetingModalProps {
 	clientId: number;
@@ -58,6 +60,8 @@ export function ScheduleMeetingModal({ clientId, clientName, open, onOpenChange,
 	});
 
 	const usersQuery = useGetInternalUsers(open);
+	const meetingTypesDict = useSettingsDictionary("meeting-types", open);
+	useSettingsDictionary("meeting-statuses", open);
 
 	const projectOptions = useMemo<SelectOption[]>(() => {
 		return (projectsQuery.data?.projects ?? []).map((project) => ({
@@ -72,6 +76,8 @@ export function ScheduleMeetingModal({ clientId, clientName, open, onOpenChange,
 			label: user.name,
 		}));
 	}, [usersQuery.data?.users]);
+
+	const meetingTypeOptions = meetingTypesDict.options.length > 0 ? meetingTypesDict.options : FALLBACK_MEETING_TYPE_OPTIONS;
 
 	const externalAttendeeOptions = useMemo<FormTagOption[]>(
 		() => [
@@ -93,12 +99,19 @@ export function ScheduleMeetingModal({ clientId, clientName, open, onOpenChange,
 
 	const handleSubmit = async (data: ScheduleMeetingFormData) => {
 		try {
-			await scheduleMeeting.mutateAsync(toScheduleMeetingPayload(data));
+			const selectedType = meetingTypeOptions.find((option) => option.value === data.meetingType);
+			await scheduleMeeting.mutateAsync(toScheduleMeetingPayload(data, selectedType?.label));
 			toast.success("Meeting scheduled successfully");
 			onOpenChange(false);
 			onSuccess?.();
-		} catch {
-			toast.error("Failed to schedule meeting");
+		} catch (error) {
+			const errors = getApiValidationErrors(error);
+			if (errors.scheduledAt?.[0]) {
+				form.setError("date", { type: "server", message: errors.scheduledAt[0] });
+				form.setError("time", { type: "server", message: errors.scheduledAt[0] });
+			}
+
+			toast.error(getApiErrorMessage(error, "Failed to schedule meeting"));
 		}
 	};
 
@@ -116,10 +129,11 @@ export function ScheduleMeetingModal({ clientId, clientName, open, onOpenChange,
 			<ScheduleMeetingForm
 				form={form}
 				projectOptions={projectOptions}
+				meetingTypeOptions={meetingTypeOptions}
 				internalAttendeeOptions={internalAttendeeOptions}
 				externalAttendeeOptions={externalAttendeeOptions}
 				isLoadingInternalUsers={usersQuery.isLoading}
-				disabled={scheduleMeeting.isPending}
+				disabled={scheduleMeeting.isPending || meetingTypesDict.isLoading}
 			/>
 		</FormDialog>
 	);

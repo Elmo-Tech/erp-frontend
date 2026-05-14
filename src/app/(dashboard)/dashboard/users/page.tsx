@@ -1,6 +1,7 @@
+import type { Metadata } from "next";
 import UsersPage from "@/views/settings/UsersPage";
 
-export const metadata = {
+export const metadata: Metadata = {
 	title: "Users | Settings",
 };
 

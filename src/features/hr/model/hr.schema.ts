@@ -12,6 +12,7 @@
  */
 
 import { z } from "zod";
+import { nullableNumberInput, requiredNumberInput } from "@/shared/lib/zod-number";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shift Schema
@@ -31,7 +32,7 @@ export const shiftSchema = z
 		start_time: z.string().min(1, "Start time is required").regex(TIME_REGEX, "Must be HH:MM format (e.g. 09:00)"),
 		end_time: z.string().min(1, "End time is required").regex(TIME_REGEX, "Must be HH:MM format (e.g. 17:00)"),
 		working_days: z.array(z.enum(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])).min(1, "Select at least one working day"),
-		grace_period_minutes: z.number({ invalid_type_error: "Must be a whole number" }).int("Must be a whole number").min(0, "Cannot be negative").max(120, "Maximum grace period is 120 minutes").default(0),
+		grace_period_minutes: requiredNumberInput("Grace period is required").pipe(z.number().int("Must be a whole number").min(0, "Cannot be negative").max(120, "Maximum grace period is 120 minutes")).default(0),
 	})
 	.refine((d) => d.end_time > d.start_time, {
 		message: "End time must be after start time",
@@ -60,16 +61,10 @@ export const SHIFT_DEFAULT_VALUES: ShiftFormData = {
 
 export const assignHrProfileSchema = z.object({
 	// FormCombobox always emits a string value — coerce to number before validation
-	user_id: z.coerce.number({ invalid_type_error: "Please select a user" }).int().positive("Please select a user"),
-	shift_id: z.coerce
-		.number()
-		.int()
-		.positive()
-		.nullable()
-		.optional()
-		.transform((v) => (v === 0 || v === null || v === undefined ? null : v)),
-	base_salary: z.coerce.number({ invalid_type_error: "Base salary must be a number" }).nonnegative("Base salary cannot be negative"),
-	hourly_rate: z.coerce.number({ invalid_type_error: "Hourly rate must be a number" }).nonnegative("Hourly rate cannot be negative"),
+	user_id: requiredNumberInput("Please select a user").pipe(z.number().int().positive("Please select a user")),
+	shift_id: nullableNumberInput().pipe(z.number().int().positive().nullable()),
+	base_salary: requiredNumberInput("Base salary is required", "Base salary must be a number").pipe(z.number().nonnegative("Base salary cannot be negative")),
+	hourly_rate: requiredNumberInput("Hourly rate is required", "Hourly rate must be a number").pipe(z.number().nonnegative("Hourly rate cannot be negative")),
 	join_date: z.string().min(1, "Join date is required"),
 });
 
@@ -94,15 +89,9 @@ export const ASSIGN_HR_PROFILE_DEFAULT_VALUES: AssignHrProfileFormData = {
 
 export const editHrProfileSchema = z.object({
 	// FormCombobox always emits a string value — coerce to number before validation
-	shift_id: z.coerce
-		.number()
-		.int()
-		.positive()
-		.nullable()
-		.optional()
-		.transform((v) => (v === 0 || v === null || v === undefined ? null : v)),
-	base_salary: z.coerce.number({ invalid_type_error: "Base salary must be a number" }).nonnegative("Base salary cannot be negative"),
-	hourly_rate: z.coerce.number({ invalid_type_error: "Hourly rate must be a number" }).nonnegative("Hourly rate cannot be negative"),
+	shift_id: nullableNumberInput().pipe(z.number().int().positive().nullable()),
+	base_salary: requiredNumberInput("Base salary is required", "Base salary must be a number").pipe(z.number().nonnegative("Base salary cannot be negative")),
+	hourly_rate: requiredNumberInput("Hourly rate is required", "Hourly rate must be a number").pipe(z.number().nonnegative("Hourly rate cannot be negative")),
 	join_date: z.string().min(1, "Join date is required"),
 });
 
@@ -120,14 +109,10 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 export const generatePayrollSchema = z.object({
 	// FormCombobox always emits a string value — coerce to number before validation
-	user_id: z.coerce.number({ invalid_type_error: "Please select an employee" }).int().positive("Please select an employee"),
+	user_id: requiredNumberInput("Please select an employee").pipe(z.number().int().positive("Please select an employee")),
 	// FormSelect emits strings for month/year — coerce to number
-	month: z.coerce.number({ invalid_type_error: "Month is required" }).int().min(1, "Invalid month").max(12, "Invalid month"),
-	year: z.coerce
-		.number({ invalid_type_error: "Year is required" })
-		.int()
-		.min(2020, "Year must be 2020 or later")
-		.max(CURRENT_YEAR + 1, `Year cannot exceed ${CURRENT_YEAR + 1}`),
+	month: requiredNumberInput("Month is required").pipe(z.number().int().min(1, "Invalid month").max(12, "Invalid month")),
+	year: requiredNumberInput("Year is required").pipe(z.number().int().min(2020, "Year must be 2020 or later").max(CURRENT_YEAR + 1, `Year cannot exceed ${CURRENT_YEAR + 1}`)),
 });
 
 export type GeneratePayrollFormData = z.infer<typeof generatePayrollSchema>;
@@ -143,7 +128,7 @@ export const GENERATE_PAYROLL_DEFAULT_VALUES: GeneratePayrollFormData = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const hrSettingsSchema = z.object({
-	gamification_point_value: z.number({ invalid_type_error: "Must be a number" }).positive("Value must be greater than 0").max(1000, "Value cannot exceed 1000"),
+	gamification_point_value: requiredNumberInput("Point value is required").pipe(z.number().positive("Value must be greater than 0").max(1000, "Value cannot exceed 1000")),
 });
 
 export type HrSettingsFormData = z.infer<typeof hrSettingsSchema>;
@@ -161,7 +146,7 @@ export type HrSettingsFormData = z.infer<typeof hrSettingsSchema>;
 
 export const leaveRequestSchema = z
 	.object({
-		user_id: z.coerce.number({ invalid_type_error: "Please select an employee" }).int().positive("Please select an employee"),
+		user_id: requiredNumberInput("Please select an employee").pipe(z.number().int().positive("Please select an employee")),
 		start_date: z.string().min(1, "Start date is required"),
 		end_date: z.string().min(1, "End date is required"),
 		type: z.enum(["annual", "sick", "unpaid", "permission"], { message: "Please select a leave type" }),
@@ -195,8 +180,8 @@ export const LEAVE_REQUEST_DEFAULT_VALUES: LeaveRequestFormData = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const payrollTransactionSchema = z.object({
-	user_id: z.coerce.number({ invalid_type_error: "Please select an employee" }).int().positive("Please select an employee"),
-	amount: z.coerce.number({ invalid_type_error: "Amount must be a number" }).min(0.01, "Amount must be at least 0.01"),
+	user_id: requiredNumberInput("Please select an employee").pipe(z.number().int().positive("Please select an employee")),
+	amount: requiredNumberInput("Amount is required", "Amount must be a number").pipe(z.number().min(0.01, "Amount must be at least 0.01")),
 	type: z.enum(["manual_bonus", "manual_deduction"], { message: "Please select a transaction type" }),
 	reason: z.string().min(1, "Reason is required").max(500, "Reason must be 500 characters or less"),
 	transaction_date: z.string().min(1, "Transaction date is required"),

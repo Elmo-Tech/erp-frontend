@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalNumberInput, requiredNumberInput } from "@/shared/lib/zod-number";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared primitives
@@ -22,8 +23,8 @@ export type ContractModel = (typeof CONTRACT_MODELS)[number];
 
 export const paymentStageSchema = z.object({
 	stage_name: z.string().min(1, "Stage name is required"),
-	percentage: z.number({ message: "Required" }).min(0, "Must be ≥ 0").max(100, "Must be ≤ 100"),
-	amount: z.number({ message: "Required" }).min(0, "Must be ≥ 0"),
+	percentage: requiredNumberInput("Required").pipe(z.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 100")),
+	amount: requiredNumberInput("Required").pipe(z.number().min(0, "Must be ≥ 0")),
 });
 
 export type PaymentStage = z.infer<typeof paymentStageSchema>;
@@ -34,7 +35,7 @@ export type PaymentStage = z.infer<typeof paymentStageSchema>;
 
 export const saasAddonSchema = z.object({
 	name: z.string().min(1, "Add-on name is required"),
-	price: z.number({ message: "Required" }).min(0, "Must be ≥ 0"),
+	price: requiredNumberInput("Required").pipe(z.number().min(0, "Must be ≥ 0")),
 });
 
 export type SaasAddon = z.infer<typeof saasAddonSchema>;
@@ -44,7 +45,7 @@ export type SaasAddon = z.infer<typeof saasAddonSchema>;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const taskTabSchema = z.object({
-	assignedTo: z.coerce.number().int().positive("Please select a user"),
+	assignedTo: requiredNumberInput("Please select a user").pipe(z.number().int().positive("Please select a user")),
 	deadline: z.string().min(1, "Deadline is required"),
 	taskNotes: z.string().optional(),
 });
@@ -104,7 +105,7 @@ export const proposalDirectUploadSchema = z.discriminatedUnion("proposal_source"
 			.any()
 			.refine((f: File | null | undefined) => f instanceof File, { message: "Please upload a PDF file" })
 			.refine((f: File | null | undefined) => !(f instanceof File) || f.type === "application/pdf", { message: "Only PDF files are accepted" }),
-		template_id: z.number().optional(),
+		template_id: optionalNumberInput().pipe(z.number().int().positive().optional()),
 		validity_date: z.string().min(1, "Validity date is required"),
 		notes: z.string().optional(),
 	}),
@@ -112,7 +113,7 @@ export const proposalDirectUploadSchema = z.discriminatedUnion("proposal_source"
 	z.object({
 		proposal_source: z.literal("use_template"),
 		upload_file: z.any().optional(),
-		template_id: z.number({ message: "Please select a template" }).int().positive("Please select a template"),
+		template_id: requiredNumberInput("Please select a template").pipe(z.number().int().positive("Please select a template")),
 		validity_date: z.string().min(1, "Validity date is required"),
 		notes: z.string().optional(),
 	}),
@@ -170,12 +171,12 @@ export const quotationDirectUploadSchema = z.object({
 		.any()
 		.refine((f: File | null | undefined) => f instanceof File, { message: "Please upload a PDF file" })
 		.refine((f: File | null | undefined) => !(f instanceof File) || f.type === "application/pdf", { message: "Only PDF files are accepted" }),
-	base_price: z.number({ message: "Base price is required" }).min(0, "Must be ≥ 0"),
+	base_price: requiredNumberInput("Base price is required").pipe(z.number().min(0, "Must be ≥ 0")),
 	commission_type: z.enum(COMMISSION_TYPES, {
 		message: "Please select a commission type",
 	}),
 	currency: z.enum(CURRENCIES, { message: "Please select a currency" }),
-	final_total: z.number({ message: "Final total is required" }).min(0, "Must be ≥ 0"),
+	final_total: requiredNumberInput("Final total is required").pipe(z.number().min(0, "Must be ≥ 0")),
 	payment_stages: z.array(paymentStageSchema).default([]),
 	notes: z.string().optional(),
 });
@@ -189,7 +190,7 @@ export type QuotationDirectUploadValues = z.infer<typeof quotationDirectUploadSc
 const contractStandardFinancialsSchema = z.object({
 	contract_model: z.literal("standard"),
 	currency: z.enum(CURRENCIES, { message: "Please select a currency" }),
-	total_amount: z.number({ message: "Total amount is required" }).min(0, "Must be ≥ 0"),
+	total_amount: requiredNumberInput("Total amount is required").pipe(z.number().min(0, "Must be ≥ 0")),
 	payment_stages: z.array(paymentStageSchema).default([]),
 });
 
@@ -200,14 +201,14 @@ const contractStandardFinancialsSchema = z.object({
 const contractSaasFinancialsSchema = z.object({
 	contract_model: z.literal("saas_subscription"),
 	currency: z.enum(CURRENCIES, { message: "Please select a currency" }),
-	setup_fee: z.number({ message: "Required" }).min(0, "Must be ≥ 0"),
-	recurring_fee: z.number({ message: "Required" }).min(0, "Must be ≥ 0"),
+	setup_fee: requiredNumberInput("Required").pipe(z.number().min(0, "Must be ≥ 0")),
+	recurring_fee: requiredNumberInput("Required").pipe(z.number().min(0, "Must be ≥ 0")),
 	billing_cycle: z.enum(BILLING_CYCLES, {
 		message: "Please select a billing cycle",
 	}),
 	subscription_start_date: z.string().min(1, "Start date is required"),
 	apply_promo: z.boolean().default(false),
-	promo_discount: z.number().min(0).max(100).optional(),
+	promo_discount: optionalNumberInput().pipe(z.number().min(0).max(100).optional()),
 	addons: z.array(saasAddonSchema).default([]),
 });
 
@@ -220,13 +221,13 @@ const contractBaseSchema = z.object({
 		.any()
 		.refine((f: File | null | undefined) => f instanceof File, { message: "Please upload a PDF file" })
 		.refine((f: File | null | undefined) => !(f instanceof File) || f.type === "application/pdf", { message: "Only PDF files are accepted" }),
-	development_days: z.number({ message: "Required" }).int().min(1, "Must be ≥ 1"),
-	review_days: z.number({ message: "Required" }).int().min(0, "Must be ≥ 0"),
-	testing_days: z.number({ message: "Required" }).int().min(0, "Must be ≥ 0"),
-	delay_penalty: z.number({ message: "Required" }).min(0, "Must be ≥ 0").max(100, "Must be ≤ 100"),
+	development_days: requiredNumberInput("Required").pipe(z.number().int().min(1, "Must be ≥ 1")),
+	review_days: requiredNumberInput("Required").pipe(z.number().int().min(0, "Must be ≥ 0")),
+	testing_days: requiredNumberInput("Required").pipe(z.number().int().min(0, "Must be ≥ 0")),
+	delay_penalty: requiredNumberInput("Required").pipe(z.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 100")),
 	source_code_handover: z.boolean().default(false),
 	execution_start_date: z.string().min(1, "Start date is required"),
-	working_days_per_week: z.number({ message: "Required" }).int().min(1, "Must be ≥ 1").max(7, "Must be ≤ 7"),
+	working_days_per_week: requiredNumberInput("Required").pipe(z.number().int().min(1, "Must be ≥ 1").max(7, "Must be ≤ 7")),
 	notes: z.string().optional(),
 });
 
@@ -296,7 +297,7 @@ export const proposalStageModalSchema = z.discriminatedUnion("mode", [
 				}
 			}),
 		// use_template branch
-		template_id: z.number().int().positive().optional(),
+		template_id: optionalNumberInput().pipe(z.number().int().positive().optional()),
 		// Shared fields
 		validity_date: z.string().min(1, "Validity date is required"),
 		notes: z.string().optional(),
@@ -326,14 +327,14 @@ export const contractStageModalSchema = z.discriminatedUnion("mode", [
 				contract_model: z.enum(CONTRACT_MODELS, { message: "Please select a contract model" }),
 				// Optional fields that exist in one branch or the other — validated at runtime
 				currency: z.enum(CURRENCIES, { message: "Please select a currency" }).optional(),
-				total_amount: z.number().min(0).optional(),
+				total_amount: optionalNumberInput().pipe(z.number().min(0).optional()),
 				payment_stages: z.array(paymentStageSchema).default([]),
-				setup_fee: z.number().min(0).optional(),
-				recurring_fee: z.number().min(0).optional(),
+				setup_fee: optionalNumberInput().pipe(z.number().min(0).optional()),
+				recurring_fee: optionalNumberInput().pipe(z.number().min(0).optional()),
 				billing_cycle: z.enum(BILLING_CYCLES).optional(),
 				subscription_start_date: z.string().optional(),
 				apply_promo: z.boolean().default(false),
-				promo_discount: z.number().min(0).max(100).optional(),
+				promo_discount: optionalNumberInput().pipe(z.number().min(0).max(100).optional()),
 				addons: z.array(saasAddonSchema).default([]),
 			}),
 		),

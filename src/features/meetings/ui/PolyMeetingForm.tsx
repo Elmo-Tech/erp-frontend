@@ -27,6 +27,7 @@ import { Button } from "@/shared/ui/button";
 import { useCreateMeeting } from "@/entities/meetings/api/meetings.api";
 import { createMeetingSchema, type CreateMeetingFormData } from "@/entities/meetings/model/meeting.schema";
 import { MODEL_TYPE_TO_MORPH, type MeetingModelType } from "@/entities/meetings/model/types";
+import { getApiErrorMessage, getApiValidationErrors } from "@/shared/lib/api-error";
 import { ScheduleMeetingFormFields } from "./ScheduleMeetingFormFields";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,8 +103,14 @@ export function PolyMeetingForm({ modelType, modelId, onMeetingScheduled }: Poly
 			form.reset(buildDefaultValues());
 			setIsOpen(false);
 			onMeetingScheduled?.();
-		} catch {
-			toast.error("Failed to schedule meeting. Please try again.");
+		} catch (error) {
+			const errors = getApiValidationErrors(error);
+			if (errors.scheduledAt?.[0]) {
+				form.setError("date", { type: "server", message: errors.scheduledAt[0] });
+				form.setError("time", { type: "server", message: errors.scheduledAt[0] });
+			}
+
+			toast.error(getApiErrorMessage(error, "Failed to schedule meeting. Please try again."));
 		}
 	});
 

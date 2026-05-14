@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, CircleDollarSign, Clock3, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { BriefcaseBusiness, CircleDollarSign, Clock3, FolderKanban, TrendingDown, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/utils";
 
@@ -14,6 +14,8 @@ export interface ExecutiveFinancialSnapshot {
 	total_collected?: number;
 	pending_receivables?: number;
 	active_clients?: number;
+	total_projects?: number;
+	active_projects?: number;
 	pipeline_value?: number;
 	invoiced_total?: number;
 	paid_total?: number;
@@ -60,11 +62,11 @@ export function ExecutiveStatsWidget({ financial }: ExecutiveStatsWidgetProps) {
 			icon: Clock3,
 		},
 		{
-			key: "active_clients",
-			label: "Active Clients",
-			value: integerFormatter.format(financial?.active_clients ?? 0),
+			key: "total_projects",
+			label: "Total Projects",
+			value: integerFormatter.format(financial?.total_projects ?? financial?.active_projects ?? financial?.active_clients ?? 0),
 			trend: financial?.trends?.active_clients,
-			icon: Users,
+			icon: FolderKanban,
 		},
 		{
 			key: "pipeline_value",

@@ -19,10 +19,20 @@ import type { CreateInvoicePayload, CreateSubscriptionPayload, UpdateInvoicePayl
 // ═════════════════════════════════════════════════════════════════════════════
 
 /** Returns PaginatedResponse<Invoice> — widgets extract .data for the array */
-export function useInvoices() {
+export function useInvoices(params?: { clientId?: number }) {
 	return useQuery({
-		queryKey: financeKeys.invoiceList(),
-		queryFn: financeApi.fetchInvoices,
+		queryKey: financeKeys.invoiceList(params),
+		queryFn: () => financeApi.fetchInvoices(params),
+		staleTime: 5 * 60 * 1000,
+	});
+}
+
+/** Fetch a single invoice with all relations (client, project, items) */
+export function useInvoice(id: number | null) {
+	return useQuery({
+		queryKey: financeKeys.invoiceDetail(id ?? 0),
+		queryFn: () => financeApi.fetchInvoice(id!),
+		enabled: id !== null && id > 0,
 		staleTime: 5 * 60 * 1000,
 	});
 }

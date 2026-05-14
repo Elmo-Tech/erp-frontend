@@ -27,7 +27,7 @@ import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
-import { Can } from "@/shared/ui/Can";
+import { Can, usePermissionGate } from "@/shared/ui/Can";
 import { cn } from "@/shared/lib/utils";
 import { useProjectMembers, useAddProjectMember, useRemoveProjectMember } from "@/features/projects/api/execution.api";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
@@ -136,7 +136,7 @@ function MemberCard({ member, onRemove, isRemoving }: { member: ProjectMemberRes
 					{email && <p className="mt-0.5 truncate text-xs text-muted-foreground">{email}</p>}
 				</div>
 
-				<Can permission="remove_project_members">
+				<Can permission={["remove_project_members", "manage_project_members"]}>
 					<Button
 						variant="ghost"
 						size="icon-sm"
@@ -191,11 +191,13 @@ interface ProjectTeamTabProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
+	const { canAny } = usePermissionGate();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const membersQuery = useProjectMembers(projectId);
 	const addMember = useAddProjectMember();
 	const removeMember = useRemoveProjectMember();
 	const usersQuery = useGetInternalUsers(dialogOpen);
+	const canAddProjectMembers = canAny(["add_project_members", "manage_project_members"]);
 
 	const form = useForm<AddMemberFormData>({
 		resolver: zodResolver(addMemberSchema),
@@ -263,7 +265,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 				<p className="text-sm text-muted-foreground">
 					{members.length} {members.length === 1 ? "member" : "members"}
 				</p>
-				<Can permission="add_project_members">
+				<Can permission={["add_project_members", "manage_project_members"]}>
 					<Button
 						size="sm"
 						onClick={handleOpenDialog}
@@ -279,7 +281,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 					icon={Users}
 					title="No team members yet"
 					description="Assign team members to this project to track who is working on it."
-					action={{ label: "Add Member", onClick: handleOpenDialog }}
+					action={canAddProjectMembers ? { label: "Add Member", onClick: handleOpenDialog } : undefined}
 				/>
 			) : (
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -295,39 +297,41 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 			)}
 
 			{/* ── Add Member dialog ──────────────────────────────────────────── */}
-			<FormDialog
-				open={dialogOpen}
-				onOpenChange={setDialogOpen}
-				title="Add Team Member"
-				description="Assign an internal user to this project with a specific role."
-				submitLabel="Add Member"
-				isLoading={addMember.isPending}
-				isSubmitDisabled={usersQuery.isLoading}
-				onSubmit={handleSubmit}
-				size="sm"
-			>
-				<Form {...form}>
-					<div className="flex flex-col gap-4">
-						<FormCombobox
-							control={form.control}
-							name="userId"
-							label="User"
-							placeholder={usersQuery.isLoading ? "Loading users…" : "Select a user…"}
-							searchPlaceholder="Search by name…"
-							emptyText="No users found."
-							options={userOptions}
-							disabled={usersQuery.isLoading}
-						/>
-						<FormSelect
-							control={form.control}
-							name="role"
-							label="Project role"
-							placeholder="Select a role"
-							options={MEMBER_ROLE_OPTIONS}
-						/>
-					</div>
-				</Form>
-			</FormDialog>
+			<Can permission={["add_project_members", "manage_project_members"]}>
+				<FormDialog
+					open={dialogOpen}
+					onOpenChange={setDialogOpen}
+					title="Add Team Member"
+					description="Assign an internal user to this project with a specific role."
+					submitLabel="Add Member"
+					isLoading={addMember.isPending}
+					isSubmitDisabled={usersQuery.isLoading}
+					onSubmit={handleSubmit}
+					size="sm"
+				>
+					<Form {...form}>
+						<div className="flex flex-col gap-4">
+							<FormCombobox
+								control={form.control}
+								name="userId"
+								label="User"
+								placeholder={usersQuery.isLoading ? "Loading users…" : "Select a user…"}
+								searchPlaceholder="Search by name…"
+								emptyText="No users found."
+								options={userOptions}
+								disabled={usersQuery.isLoading}
+							/>
+							<FormSelect
+								control={form.control}
+								name="role"
+								label="Project role"
+								placeholder="Select a role"
+								options={MEMBER_ROLE_OPTIONS}
+							/>
+						</div>
+					</Form>
+				</FormDialog>
+			</Can>
 		</>
 	);
 }

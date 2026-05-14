@@ -79,6 +79,25 @@ export interface AttendanceRecord {
 	updatedAt: string;
 }
 
+export interface TeamPulseItem {
+	user: {
+		id: number;
+		name: string;
+		email: string;
+		avatar: string | null;
+	} | null;
+	attendanceId: number | null;
+	status: "clocked_in" | "idle";
+	clockIn: string | null;
+	activeTaskId: number | null;
+	activeTaskTitle: string | null;
+	activeProjectId: number | null;
+	activeProjectTitle: string | null;
+	activeTimeEntryId: number | null;
+	timerStartedAt: string | null;
+	elapsedSeconds: number | null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Payslip  (PayslipResource)
 // ─────────────────────────────────────────────────────────────────────────────

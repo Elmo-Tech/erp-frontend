@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MEETING_TYPES, LOCATION_TYPES, MEETING_STATUSES, STATUSES_REQUIRING_NOTE } from "./types";
+import { LOCATION_TYPES, STATUSES_REQUIRING_NOTE } from "./types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Create meeting schema
@@ -7,7 +7,7 @@ import { MEETING_TYPES, LOCATION_TYPES, MEETING_STATUSES, STATUSES_REQUIRING_NOT
 
 export const createMeetingSchema = z
 	.object({
-		meetingType: z.enum(MEETING_TYPES, { message: "Please select a meeting type" }),
+		meetingType: z.string().trim().min(1, "Please select a meeting type"),
 		// BUG FIX: title was required (min 1) which caused validation to fail before
 		// PolyMeetingForm's auto-generation logic could run. It is now optional here;
 		// the component auto-generates a title from meetingType when left blank.
@@ -41,7 +41,7 @@ export type CreateMeetingFormData = z.infer<typeof createMeetingSchema>;
 
 export const updateMeetingStatusSchema = z
 	.object({
-		status: z.enum(MEETING_STATUSES, { message: "Please select a status" }),
+		status: z.string().trim().min(1, "Please select a status"),
 		completionNote: z.string().trim().optional(),
 	})
 	.superRefine((data, ctx) => {

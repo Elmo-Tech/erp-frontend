@@ -1,13 +1,12 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import Cookies from "js-cookie";
 
-// نستخدم الـ proxy route بدل الـ direct URL عشان نتجنب CORS في production
-const API_BASE_URL = "/api/proxy";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 const LOGIN_ROUTE = "/login";
 const AUTH_STORAGE_KEY = "auth-storage";
 
 interface PersistedAuthStorage {
 	state?: {
-		token?: string | null;
 		tokenExpiresAt?: string | null;
 	};
 }
@@ -32,14 +31,6 @@ function readPersistedAuth(): PersistedAuthStorage | null {
 		clearClientAuthState();
 		return null;
 	}
-}
-
-function getAuthToken() {
-	if (!isBrowser()) {
-		return null;
-	}
-
-	return readPersistedAuth()?.state?.token ?? null;
 }
 
 function isTokenExpired(tokenExpiresAt: string | null | undefined) {
@@ -84,14 +75,13 @@ export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
 		return Promise.reject(new Error("Token expired"));
 	}
 
-	const token = getAuthToken();
-
-	if (token?.trim() && config.headers) {
-		config.headers.Authorization = `Bearer ${token}`;
-	}
-
 	if (config.headers) {
 		config.headers["Accept-Language"] = "en";
+
+		const token = Cookies.get("auth_token");
+		if (token) {
+			config.headers.Authorization = `Bearer ${token}`;
+		}
 	}
 
 	return config;

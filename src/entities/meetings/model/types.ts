@@ -10,27 +10,28 @@
 // Meeting status — with strict completion_note requirement
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const MEETING_STATUSES = ["scheduled", "held", "cancelled", "no_show"] as const;
-export type MeetingStatus = (typeof MEETING_STATUSES)[number];
+export const MEETING_STATUSES = ["scheduled", "in_progress", "completed", "cancelled", "no_show"] as const;
+export type MeetingStatus = string;
 
-export const MEETING_STATUS_LABELS: Record<MeetingStatus, string> = {
+export const MEETING_STATUS_LABELS: Record<string, string> = {
 	scheduled: "Scheduled",
-	held: "Held",
+	in_progress: "In Progress",
+	completed: "Completed",
 	cancelled: "Cancelled",
 	no_show: "No-Show",
 };
 
 /** Statuses that require a completion_note before saving */
-export const STATUSES_REQUIRING_NOTE: MeetingStatus[] = ["held", "cancelled", "no_show"];
+export const STATUSES_REQUIRING_NOTE: MeetingStatus[] = ["completed", "cancelled", "no_show"];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Meeting types
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const MEETING_TYPES = ["discovery", "kickoff", "review", "status", "handover", "demo", "negotiation"] as const;
-export type MeetingType = (typeof MEETING_TYPES)[number];
+export type MeetingType = string;
 
-export const MEETING_TYPE_LABELS: Record<MeetingType, string> = {
+export const MEETING_TYPE_LABELS: Record<string, string> = {
 	discovery: "Discovery",
 	kickoff: "Kickoff",
 	review: "Review",

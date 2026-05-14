@@ -23,17 +23,20 @@ import { toast } from "sonner";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { Button } from "@/shared/ui/button";
+import { Can } from "@/shared/ui/Can";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
-import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { MilestoneSwimlane } from "@/features/projects/ui/MilestoneSwimlane";
 import { ProjectTaskCard } from "@/features/projects/ui/ProjectTaskCard";
 import { TaskExecutionSheet } from "@/features/projects/ui/TaskExecutionSheet";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
+import { optionalNumberInput } from "@/shared/lib/zod-number";
 import { useMilestones, useProjectTasks, useProjectMembers, useCreateMilestone, useCreateTask } from "@/features/projects/api/execution.api";
 import type { ProjectTask } from "@/features/projects/api/execution.api";
+import { useAuthStore } from "@/entities/user/model/auth.store";
+import { useTaskPermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Schemas
@@ -49,7 +52,7 @@ const addTaskSchema = z.object({
 	description: z.string().optional(),
 	milestoneId: z.string().optional(),
 	assigneeId: z.string().optional(),
-	estimatedHours: z.number({ invalid_type_error: "Must be a number" }).min(0).optional().or(z.literal(0)),
+	estimatedHours: optionalNumberInput().optional().pipe(z.number().min(0).optional()),
 });
 type AddTaskFormData = z.infer<typeof addTaskSchema>;
 
@@ -109,6 +112,27 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 	const membersQuery = useProjectMembers(projectId);
 	const createMilestone = useCreateMilestone();
 	const createTask = useCreateTask();
+
+	// ── ABAC: Determine if the current user can manage tasks/milestones ───────
+	// Priority order:
+	//   1. manage_all_projects → full access (global bypass).
+	//   2. manage_tasks → full access.
+	//   3. create_tasks + project manager/tech_lead role → can add tasks/milestones.
+	//   4. Everyone else (developers, QA, designers) → read-only view.
+	const currentUserId = useAuthStore((s) => s.user?.userId);
+	const canManageAllProjects = useAuthStore((s) => s.hasPermission("manage_all_projects"));
+	const canManageProjects = useAuthStore((s) => s.hasPermission("manage_projects"));
+	const { canManageTasks, canCreateTasks } = useTaskPermissions();
+
+	// Derive the user's project-level role from the members list
+	const currentMember = membersQuery.data?.find((m) => m.userId === currentUserId);
+	const projectRole = currentMember?.role ?? null;
+	const isProjectManagerLevel = projectRole === "manager" || projectRole === "tech_lead";
+
+	// The user can add tasks/milestones if they are a global admin, have manage_tasks,
+	// or have create_tasks AND are a project manager/tech_lead.
+	const canAddMilestones = canManageAllProjects || canManageProjects;
+	const canAddTasks = canManageAllProjects || canManageTasks || (canCreateTasks && isProjectManagerLevel);
 
 	const milestoneForm = useForm<AddMilestoneFormData>({
 		resolver: zodResolver(addMilestoneSchema),
@@ -231,23 +255,33 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 				<p className="text-sm text-muted-foreground">
 					{milestones.length} {milestones.length === 1 ? "milestone" : "milestones"} · {allTasks.length} {allTasks.length === 1 ? "task" : "tasks"}
 				</p>
-				<div className="flex items-center gap-2">
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={handleOpenMilestoneDialog}
-					>
-						<Layers className="size-4" />
-						Add Milestone
-					</Button>
-					<Button
-						size="sm"
-						onClick={handleOpenTaskDialog}
-					>
-						<Plus className="size-4" />
-						Add Task
-					</Button>
-				</div>
+				{(canAddMilestones || canAddTasks) && (
+					<div className="flex items-center gap-2">
+						{canAddMilestones && (
+							<Can permission={["manage_projects", "manage_all_projects"]}>
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={handleOpenMilestoneDialog}
+								>
+									<Layers className="size-4" />
+									Add Milestone
+								</Button>
+							</Can>
+						)}
+						{canAddTasks && (
+							<Can permission={["create_tasks", "manage_tasks"]}>
+								<Button
+									size="sm"
+									onClick={handleOpenTaskDialog}
+								>
+									<Plus className="size-4" />
+									Add Task
+								</Button>
+							</Can>
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* ── Empty state ──────────────────────────────────────────────────── */}
@@ -256,23 +290,33 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 					<Inbox className="size-8 text-muted-foreground/40" />
 					<div className="text-sm font-medium text-muted-foreground">No tasks yet</div>
 					<p className="max-w-xs text-xs text-muted-foreground/70">Create a milestone to group tasks, or add a task directly to the backlog.</p>
-					<div className="flex items-center gap-2">
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={handleOpenMilestoneDialog}
-						>
-							<Layers className="size-4" />
-							Add Milestone
-						</Button>
-						<Button
-							size="sm"
-							onClick={handleOpenTaskDialog}
-						>
-							<ListTodo className="size-4" />
-							Add Task
-						</Button>
-					</div>
+					{(canAddMilestones || canAddTasks) && (
+						<div className="flex items-center gap-2">
+							{canAddMilestones && (
+								<Can permission={["manage_projects", "manage_all_projects"]}>
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={handleOpenMilestoneDialog}
+									>
+										<Layers className="size-4" />
+										Add Milestone
+									</Button>
+								</Can>
+							)}
+							{canAddTasks && (
+								<Can permission={["create_tasks", "manage_tasks"]}>
+									<Button
+										size="sm"
+										onClick={handleOpenTaskDialog}
+									>
+										<ListTodo className="size-4" />
+										Add Task
+									</Button>
+								</Can>
+							)}
+						</div>
+					)}
 				</div>
 			) : (
 				<div className="flex flex-col gap-5">
@@ -319,92 +363,96 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 			/>
 
 			{/* ── Add Milestone dialog ─────────────────────────────────────────── */}
-			<FormDialog
-				open={milestoneDialogOpen}
-				onOpenChange={setMilestoneDialogOpen}
-				title="New Milestone"
-				description="Group related tasks under a milestone to track delivery phases."
-				submitLabel="Create Milestone"
-				isLoading={createMilestone.isPending}
-				onSubmit={handleMilestoneSubmit}
-				size="sm"
-			>
-				<Form {...milestoneForm}>
-					<FormInput
-						control={milestoneForm.control}
-						name="title"
-						label="Milestone title"
-						placeholder="e.g. Phase 1 — Design"
-					/>
-				</Form>
-			</FormDialog>
+			{canAddMilestones && (
+				<FormDialog
+					open={milestoneDialogOpen}
+					onOpenChange={setMilestoneDialogOpen}
+					title="New Milestone"
+					description="Group related tasks under a milestone to track delivery phases."
+					submitLabel="Create Milestone"
+					isLoading={createMilestone.isPending}
+					onSubmit={handleMilestoneSubmit}
+					size="sm"
+				>
+					<Form {...milestoneForm}>
+						<FormInput
+							control={milestoneForm.control}
+							name="title"
+							label="Milestone title"
+							placeholder="e.g. Phase 1 — Design"
+						/>
+					</Form>
+				</FormDialog>
+			)}
 
 			{/* ── Add Task dialog ──────────────────────────────────────────────── */}
-			<FormDialog
-				open={taskDialogOpen}
-				onOpenChange={setTaskDialogOpen}
-				title="New Task"
-				description="Add a task to this project. Optionally assign it to a milestone."
-				submitLabel="Create Task"
-				isLoading={createTask.isPending}
-				onSubmit={handleTaskSubmit}
-				size="md"
-			>
-				<Form {...taskForm}>
-					<div className="flex flex-col gap-4">
-						{/* Title */}
-						<FormInput
-							control={taskForm.control}
-							name="title"
-							label="Task title"
-							placeholder="e.g. Build login page"
-						/>
-
-						{/* Description */}
-						<FormTextarea
-							control={taskForm.control}
-							name="description"
-							label="Description (optional)"
-							placeholder="What needs to be done, acceptance criteria, notes…"
-							rows={3}
-						/>
-
-						{/* Milestone + Assignee — 2-col grid */}
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<FormCombobox
+			{canAddTasks && (
+				<FormDialog
+					open={taskDialogOpen}
+					onOpenChange={setTaskDialogOpen}
+					title="New Task"
+					description="Add a task to this project. Optionally assign it to a milestone."
+					submitLabel="Create Task"
+					isLoading={createTask.isPending}
+					onSubmit={handleTaskSubmit}
+					size="md"
+				>
+					<Form {...taskForm}>
+						<div className="flex flex-col gap-4">
+							{/* Title */}
+							<FormInput
 								control={taskForm.control}
-								name="milestoneId"
-								label="Milestone (optional)"
-								placeholder="Backlog — no milestone"
-								searchPlaceholder="Search milestones…"
-								emptyText="No milestone found."
-								options={milestoneOptions}
+								name="title"
+								label="Task title"
+								placeholder="e.g. Build login page"
 							/>
-							<FormCombobox
+
+							{/* Description */}
+							<FormTextarea
 								control={taskForm.control}
-								name="assigneeId"
-								label="Assignee (optional)"
-								placeholder={membersQuery.isLoading ? "Loading members…" : "Unassigned"}
-								searchPlaceholder="Search team members…"
-								emptyText="No member found."
-								options={assigneeOptions}
-								disabled={membersQuery.isLoading}
+								name="description"
+								label="Description (optional)"
+								placeholder="What needs to be done, acceptance criteria, notes…"
+								rows={3}
+							/>
+
+							{/* Milestone + Assignee — 2-col grid */}
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+								<FormCombobox
+									control={taskForm.control}
+									name="milestoneId"
+									label="Milestone (optional)"
+									placeholder="Backlog — no milestone"
+									searchPlaceholder="Search milestones…"
+									emptyText="No milestone found."
+									options={milestoneOptions}
+								/>
+								<FormCombobox
+									control={taskForm.control}
+									name="assigneeId"
+									label="Assignee (optional)"
+									placeholder={membersQuery.isLoading ? "Loading members…" : "Unassigned"}
+									searchPlaceholder="Search team members…"
+									emptyText="No member found."
+									options={assigneeOptions}
+									disabled={membersQuery.isLoading}
+								/>
+							</div>
+
+							{/* Estimated hours */}
+							<FormInput
+								control={taskForm.control}
+								name="estimatedHours"
+								label="Estimated hours (optional)"
+								type="number"
+								placeholder="0"
+								min={0}
+								step={0.5}
 							/>
 						</div>
-
-						{/* Estimated hours */}
-						<FormInput
-							control={taskForm.control}
-							name="estimatedHours"
-							label="Estimated hours (optional)"
-							type="number"
-							placeholder="0"
-							min={0}
-							step={0.5}
-						/>
-					</div>
-				</Form>
-			</FormDialog>
+					</Form>
+				</FormDialog>
+			)}
 		</>
 	);
 }

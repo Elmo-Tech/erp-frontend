@@ -12,11 +12,13 @@
  */
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { PlusIcon, Receipt, ExternalLink } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
-import { useGetLeadQuotations, type LeadQuotation } from "@/features/leads/api/leads.api";
+import { useGetLeadQuotations, useUpdateQuotationStatus, type LeadQuotation } from "@/features/leads/api/leads.api";
 import { CreateQuotationModal } from "@/features/leads/ui/CreateQuotationModal";
 import { format } from "date-fns";
 
@@ -32,6 +34,8 @@ const STATUS_CLASS: Record<string, string> = {
 	expired: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
+const QUOTATION_STATUS_OPTIONS = ["draft", "sent", "accepted", "rejected"] as const;
+
 function formatMoney(amount: number | null, currency: string | null): string {
 	if (amount == null) return "—";
 	return `${currency ?? ""} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`.trim();
@@ -46,6 +50,7 @@ interface LeadQuotationsTabProps {
 export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
 	const [modalOpen, setModalOpen] = useState(false);
 	const quotationsQuery = useGetLeadQuotations(leadId);
+	const updateStatus = useUpdateQuotationStatus(leadId);
 	const quotations = quotationsQuery.data ?? [];
 
 	const columns: Column<LeadQuotation>[] = [
@@ -54,12 +59,38 @@ export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
 			key: "status",
 			header: "Status",
 			render: (q) => (
-				<Badge
-					variant="outline"
-					className={STATUS_CLASS[q.status] ?? "bg-muted text-muted-foreground"}
+				<Select
+					value={q.status}
+					disabled={updateStatus.isPending}
+					onValueChange={(status) => {
+						updateStatus.mutate(
+							{ quotationId: q.id, status },
+							{
+								onSuccess: () => toast.success("Quotation status updated."),
+								onError: () => toast.error("Failed to update quotation status."),
+							},
+						);
+					}}
 				>
-					{q.status}
-				</Badge>
+					<SelectTrigger className="h-8 w-32">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{QUOTATION_STATUS_OPTIONS.map((status) => (
+							<SelectItem
+								key={status}
+								value={status}
+							>
+								<Badge
+									variant="outline"
+									className={STATUS_CLASS[status] ?? "bg-muted text-muted-foreground"}
+								>
+									{status}
+								</Badge>
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			),
 		},
 		{ key: "basePrice", header: "Base Price", render: (q) => <span className="text-sm font-medium">{formatMoney(q.base_price, q.currency)}</span> },

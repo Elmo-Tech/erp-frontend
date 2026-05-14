@@ -5,15 +5,50 @@ import api from "@/shared/api/base";
 import { useNotificationStore } from "./notification.store";
 import type { Notification } from "@/entities/notification/model/types";
 
+interface BackendNotification {
+	id: string;
+	type: string;
+	data?: {
+		title?: string;
+		message?: string;
+		body?: string;
+		[key: string]: unknown;
+	};
+	read_at?: string | null;
+	readAt?: string | null;
+	created_at?: string;
+	createdAt?: string;
+}
+
+function normalizeNotification(notification: BackendNotification | Notification): Notification {
+	if ("notificationId" in notification) {
+		return notification;
+	}
+
+	const data = notification.data ?? {};
+
+	return {
+		notificationId: notification.id,
+		type: notification.type,
+		title: typeof data.title === "string" ? data.title : "Notification",
+		body: typeof data.message === "string" ? data.message : typeof data.body === "string" ? data.body : "",
+		readAt: notification.read_at ?? notification.readAt ?? null,
+		createdAt: notification.created_at ?? notification.createdAt ?? "",
+		data,
+	};
+}
+
 export function useNotifications(limit = 20) {
 	const setNotifications = useNotificationStore((s) => s.setNotifications);
 
 	return useQuery({
 		queryKey: ["notifications", limit],
 		queryFn: async () => {
-			const { data } = await api.get<{ data: Notification[] }>(`/notifications?limit=${limit}`);
-			setNotifications(data.data ?? []);
-			return data.data ?? [];
+			const { data } = await api.get<{ data: Notification[] | { notifications: BackendNotification[] } }>(`/notifications?limit=${limit}`);
+			const raw = Array.isArray(data.data) ? data.data : data.data?.notifications ?? [];
+			const notifications = raw.map(normalizeNotification);
+			setNotifications(notifications);
+			return notifications;
 		},
 		refetchInterval: 30_000,
 		retry: false,

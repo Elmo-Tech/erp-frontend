@@ -33,6 +33,7 @@ export interface DashboardOverview {
 export interface PermissionDashboardOverview {
 	financial?: {
 		total_invoices: number;
+		total_projects: number;
 		invoiced_total: number;
 		paid_total: number;
 		overdue_total: number;

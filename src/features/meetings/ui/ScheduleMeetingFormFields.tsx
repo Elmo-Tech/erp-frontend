@@ -27,6 +27,7 @@ import { Video } from "lucide-react";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTagSelector, type FormTagOption } from "@/shared/ui/forms/FormTagSelector";
+import { useSettingsDictionary } from "@/shared/api/settings.api";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
 import type { CreateMeetingFormData } from "@/entities/meetings/model/meeting.schema";
 import { MEETING_TYPES, MEETING_TYPE_LABELS, LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/entities/meetings/model/types";
@@ -59,6 +60,8 @@ const EXTERNAL_ATTENDEE_OPTIONS: FormTagOption[] = [
 
 export function ScheduleMeetingFormFields() {
 	const { control, setValue } = useFormContext<CreateMeetingFormData>();
+	const meetingTypesDict = useSettingsDictionary("meeting-types");
+	useSettingsDictionary("meeting-statuses");
 
 	// Watch locationType to swap the label/type of the details field
 	const locationType = useWatch({ control, name: "locationType" });
@@ -75,6 +78,7 @@ export function ScheduleMeetingFormFields() {
 			})),
 		[usersQuery.data?.users],
 	);
+	const meetingTypeOptions = meetingTypesDict.options.length > 0 ? meetingTypesDict.options : MEETING_TYPE_OPTIONS;
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -84,7 +88,7 @@ export function ScheduleMeetingFormFields() {
 				name="meetingType"
 				label="Meeting Type"
 				placeholder="Select type…"
-				options={MEETING_TYPE_OPTIONS}
+				options={meetingTypeOptions}
 			/>
 
 			{/* ── Row 2: Date | Time ────────────────────────────────────────── */}

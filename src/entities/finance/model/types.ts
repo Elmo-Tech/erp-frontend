@@ -74,10 +74,18 @@ export interface Invoice {
 	client?: {
 		id: number;
 		name: string;
-	};
+		displayName?: string;
+		companyName?: string | null;
+		primaryEmail?: string | null;
+		primaryPhone?: string | null;
+		status?: string | null;
+	} | null;
 	project?: {
 		id: number;
 		title: string;
+		status?: string | null;
+		budget?: number | null;
+		deadline?: string | null;
 	} | null;
 	items?: InvoiceItem[];
 	createdAt: string;

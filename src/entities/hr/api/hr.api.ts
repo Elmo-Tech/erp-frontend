@@ -26,6 +26,7 @@ import type {
 	PointTransaction,
 	Shift,
 	SystemSetting,
+	TeamPulseItem,
 	UpdateEmployeeProfilePayload,
 	UpdateLeaveRequestPayload,
 	UpdatePayrollTransactionPayload,
@@ -56,8 +57,18 @@ export async function fetchTodayAttendance(): Promise<AttendanceRecord | null> {
 	return res.data.data;
 }
 
+export async function postCheckIn(): Promise<AttendanceRecord> {
+	const res = await api.post<ApiEnvelope<AttendanceRecord>>("/hr/attendance/check-in");
+	return res.data.data;
+}
+
 export async function postCheckOut(): Promise<AttendanceRecord> {
 	const res = await api.post<ApiEnvelope<AttendanceRecord>>("/hr/attendance/check-out");
+	return res.data.data;
+}
+
+export async function fetchTeamPulse(): Promise<TeamPulseItem[]> {
+	const res = await api.get<ApiEnvelope<TeamPulseItem[]>>("/hr/team-pulse");
 	return res.data.data;
 }
 

@@ -17,7 +17,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/base";
 import { projectKeys } from "@/entities/project/model/query-keys";
-import type { TaskStatus, TaskPriority, MilestoneStatus } from "@/shared/lib/statusHelpers";
+import { hrKeys } from "@/entities/hr/model/query-keys";
+import type { TaskPriority, MilestoneStatus } from "@/shared/lib/statusHelpers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API envelope
@@ -51,6 +52,7 @@ export interface TaskDeliverable {
 export interface ProjectTimeEntry {
 	entryId: number;
 	taskId: number;
+	projectId?: number | null;
 	userId: number;
 	startTime: string | null;
 	endTime: string | null;
@@ -59,6 +61,16 @@ export interface ProjectTimeEntry {
 	isRunning: boolean;
 	note: string | null;
 	user?: TaskAssignee | null;
+	task?: {
+		taskId: number;
+		projectId: number;
+		title: string;
+		status: string | null;
+	} | null;
+	project?: {
+		projectId: number;
+		title: string;
+	} | null;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -67,12 +79,13 @@ export interface ProjectTask {
 	taskId: number;
 	projectId: number;
 	milestoneId: number | null;
-	parentId: number | null;
+	// REMOVED: parentId - subtasks are no longer supported
 	title: string;
 	description: string | null;
-	status: TaskStatus;
+	status: string;
 	statusLabel: string | null;
 	estimatedHours: number | null;
+	dueDate?: string | null;
 	assigneeId: number | null;
 	isInBacklog: boolean;
 	totalLoggedMinutes: number;
@@ -82,7 +95,11 @@ export interface ProjectTask {
 		title: string;
 		status: MilestoneStatus | null;
 	} | null;
-	subtasks?: ProjectTask[];
+	project?: {
+		projectId: number;
+		title: string;
+	} | null;
+	// REMOVED: subtasks - subtasks are no longer supported
 	deliverables?: TaskDeliverable[];
 	timeEntries?: ProjectTimeEntry[];
 	createdAt: string;
@@ -120,7 +137,7 @@ export interface ChangeRequest {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ProjectTaskFilters {
-	status?: TaskStatus;
+	status?: string;
 	priority?: TaskPriority;
 	milestoneId?: number;
 	assigneeId?: number;
@@ -136,6 +153,8 @@ export const executionKeys = {
 	milestones: (projectId: number) => [...projectKeys.detail(projectId), "milestones"] as const,
 	tasks: (projectId: number, filters?: ProjectTaskFilters) => [...projectKeys.detail(projectId), "tasks", filters] as const,
 	changeRequests: (projectId: number) => [...projectKeys.detail(projectId), "change-requests"] as const,
+	activeTimeEntry: () => ["project-execution", "time-entries", "active"] as const,
+	myActiveTasks: () => ["project-execution", "tasks", "my-active"] as const,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -192,6 +211,20 @@ export function useProjectTasks(projectId: number, filters?: ProjectTaskFilters)
 	});
 }
 
+export async function getMyActiveProjectTasks(): Promise<ProjectTask[]> {
+	const response = await api.get<ApiEnvelope<TaskListData>>("/projects/tasks/my-active");
+	return response.data.data.tasks;
+}
+
+export function useMyActiveProjectTasks() {
+	return useQuery({
+		queryKey: executionKeys.myActiveTasks(),
+		queryFn: getMyActiveProjectTasks,
+		staleTime: 60 * 1000,
+		refetchInterval: 60 * 1000,
+	});
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Execution Task Status — mirrors backend ExecutionTaskStatus enum exactly
 // ─────────────────────────────────────────────────────────────────────────────
@@ -244,6 +277,20 @@ interface ToggleTimerVars {
 	taskId: number;
 }
 
+export async function getActiveProjectTimeEntry(): Promise<ProjectTimeEntry | null> {
+	const response = await api.get<ApiEnvelope<ProjectTimeEntry | null>>("/projects/time-entries/active");
+	return response.data.data;
+}
+
+export function useActiveProjectTimeEntry() {
+	return useQuery({
+		queryKey: executionKeys.activeTimeEntry(),
+		queryFn: getActiveProjectTimeEntry,
+		staleTime: 15 * 1000,
+		refetchInterval: 30 * 1000,
+	});
+}
+
 export function useToggleTaskTimer() {
 	const queryClient = useQueryClient();
 
@@ -256,6 +303,10 @@ export function useToggleTaskTimer() {
 			// Invalidate tasks (carries timeEntries + totalLoggedMinutes) and milestones (progress)
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.activeTimeEntry() });
+			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
+			queryClient.invalidateQueries({ queryKey: hrKeys.attendance() });
+			queryClient.invalidateQueries({ queryKey: hrKeys.teamPulse() });
 		},
 	});
 }
@@ -512,7 +563,7 @@ export function useCreateMilestone() {
 export interface CreateTaskPayload {
 	title: string;
 	milestoneId?: number | null;
-	parentId?: number | null;
+	// REMOVED: parentId - subtasks are no longer supported
 	description?: string;
 	estimatedHours?: number | null;
 	assigneeId?: number | null;
@@ -556,6 +607,54 @@ export function useCreateDeliverable() {
 		mutationFn: async ({ projectId, taskId, title }) => {
 			const response = await api.post<ApiEnvelope<TaskDeliverable>>(`/projects/${projectId}/tasks/${taskId}/deliverables`, { title });
 			return response.data.data;
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+		},
+	});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Update / Delete Deliverable mutations
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface UpdateDeliverableVars {
+	projectId: number;
+	taskId: number;
+	deliverableId: number;
+	title: string;
+}
+
+export function useUpdateDeliverable() {
+	const queryClient = useQueryClient();
+
+	return useMutation<TaskDeliverable, Error, UpdateDeliverableVars>({
+		mutationFn: async ({ projectId, taskId, deliverableId, title }) => {
+			const response = await api.patch<ApiEnvelope<TaskDeliverable>>(`/projects/${projectId}/tasks/${taskId}/deliverables/${deliverableId}`, { title });
+			return response.data.data;
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+		},
+	});
+}
+
+interface DeleteDeliverableVars {
+	projectId: number;
+	taskId: number;
+	deliverableId: number;
+}
+
+export function useDeleteDeliverable() {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, DeleteDeliverableVars>({
+		mutationFn: async ({ projectId, taskId, deliverableId }) => {
+			await api.delete(`/projects/${projectId}/tasks/${taskId}/deliverables/${deliverableId}`);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
@@ -617,6 +716,46 @@ export function useLogManualTime() {
 		mutationFn: async ({ projectId, taskId, payload }) => {
 			const response = await api.post<ApiEnvelope<ProjectTimeEntry>>(`/projects/${projectId}/tasks/${taskId}/time-entries`, payload);
 			return response.data.data;
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+		},
+	});
+}
+
+interface UpdateTimeEntryVars {
+	projectId: number;
+	taskId: number;
+	entryId: number;
+	payload: LogManualTimePayload;
+}
+
+export function useUpdateTimeEntry() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectTimeEntry, Error, UpdateTimeEntryVars>({
+		mutationFn: async ({ projectId, taskId, entryId, payload }) => {
+			const response = await api.patch<ApiEnvelope<ProjectTimeEntry>>(`/projects/${projectId}/tasks/${taskId}/time-entries/${entryId}`, payload);
+			return response.data.data;
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+		},
+	});
+}
+
+interface DeleteTimeEntryVars {
+	projectId: number;
+	taskId: number;
+	entryId: number;
+}
+
+export function useDeleteTimeEntry() {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, DeleteTimeEntryVars>({
+		mutationFn: async ({ projectId, taskId, entryId }) => {
+			await api.delete(`/projects/${projectId}/tasks/${taskId}/time-entries/${entryId}`);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });

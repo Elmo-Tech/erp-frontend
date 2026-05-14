@@ -23,7 +23,7 @@ import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { ProposalDirectUploadTab } from "./PipelineModals/ProposalDirectUploadTab";
 import { proposalStageModalSchema } from "./PipelineModals/stageModal.schema";
-import { createLeadProposal } from "@/features/leads/api/leads.api";
+import { useCreateLeadProposal } from "@/features/leads/api/leads.api";
 
 // ─── Extract the direct_upload branch for this standalone form ────────────────
 
@@ -40,6 +40,7 @@ interface CreateProposalModalProps {
 }
 
 export function CreateProposalModal({ leadId, open, onOpenChange, onCreated }: CreateProposalModalProps) {
+	const createProposal = useCreateLeadProposal(leadId);
 	const form = useForm<ProposalDirectUploadMode>({
 		resolver: zodResolver(
 			proposalStageModalSchema.options.find((o) => {
@@ -66,7 +67,7 @@ export function CreateProposalModal({ leadId, open, onOpenChange, onCreated }: C
 
 	const onSubmit = async (values: ProposalDirectUploadMode) => {
 		try {
-			await createLeadProposal(leadId, {
+			await createProposal.mutateAsync({
 				creation_type: "direct_upload",
 				proposal_source: values.proposal_source,
 				template_id: values.template_id ?? null,
@@ -120,9 +121,9 @@ export function CreateProposalModal({ leadId, open, onOpenChange, onCreated }: C
 					</Button>
 					<Button
 						onClick={handleSubmit(onSubmit)}
-						disabled={isSubmitting}
+						disabled={isSubmitting || createProposal.isPending}
 					>
-						{isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+						{(isSubmitting || createProposal.isPending) && <Loader2 className="mr-2 size-4 animate-spin" />}
 						Create Proposal
 					</Button>
 				</DialogFooter>

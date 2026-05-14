@@ -1,4 +1,5 @@
-import api from "@/shared/api/base";
+import api, { clearClientAuthState } from "@/shared/api/base";
+import Cookies from "js-cookie";
 import type { LoginRequest, LoginResponse } from "../model/types";
 
 export const authApi = {
@@ -8,7 +9,12 @@ export const authApi = {
 	},
 
 	logout: async (): Promise<void> => {
-		await api.post("/auth/logout");
+		try {
+			await api.post("/auth/logout");
+		} finally {
+			Cookies.remove("auth_token", { path: "/" });
+			clearClientAuthState();
+		}
 	},
 
 	getProfile: async () => {

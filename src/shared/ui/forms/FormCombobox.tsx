@@ -32,6 +32,7 @@ interface FormComboboxProps<TFieldValues extends FieldValues, TTransformedValues
 	options: ComboboxOption[];
 	disabled?: boolean;
 	className?: string;
+	onValueChange?: (value: string) => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,6 +60,7 @@ export function FormCombobox<TFieldValues extends FieldValues, TTransformedValue
 	options,
 	disabled = false,
 	className,
+	onValueChange,
 }: FormComboboxProps<TFieldValues, TTransformedValues>) {
 	const [open, setOpen] = useState(false);
 
@@ -67,7 +69,8 @@ export function FormCombobox<TFieldValues extends FieldValues, TTransformedValue
 			control={control}
 			name={name}
 			render={({ field }) => {
-				const selected = options.find((o) => o.value === field.value);
+				const fieldValue = field.value == null ? "" : String(field.value);
+				const selected = options.find((o) => o.value === fieldValue);
 
 				return (
 					<FormItem className={className}>
@@ -107,10 +110,11 @@ export function FormCombobox<TFieldValues extends FieldValues, TTransformedValue
 													disabled={option.disabled}
 													onSelect={() => {
 														field.onChange(option.value);
+														onValueChange?.(option.value);
 														setOpen(false);
 													}}
 												>
-													<Check className={cn("mr-2 size-4 shrink-0", field.value === option.value ? "opacity-100" : "opacity-0")} />
+													<Check className={cn("mr-2 size-4 shrink-0", fieldValue === option.value ? "opacity-100" : "opacity-0")} />
 													<div className="min-w-0">
 														<p className="truncate text-sm">{option.label}</p>
 														{option.description && <p className="truncate text-xs text-muted-foreground">{option.description}</p>}

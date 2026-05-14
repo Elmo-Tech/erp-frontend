@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { Can } from "@/shared/ui/Can";
+import { Can, usePermissionGate } from "@/shared/ui/Can";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { InvoiceFormModal } from "@/features/finance/ui/InvoiceFormModal";
 import { DeleteInvoiceDialog } from "@/features/finance/ui/DeleteInvoiceDialog";
@@ -38,7 +38,7 @@ function buildColumns(onEdit: (invoice: Invoice) => void, onDelete: (invoice: In
 		{
 			key: "client",
 			header: "Client",
-			render: (inv) => <span className="text-sm">{inv.client?.name ?? `Client #${inv.clientId}`}</span>,
+			render: (inv) => <span className="text-sm">{inv.client?.displayName ?? inv.client?.name ?? `Client #${inv.clientId}`}</span>,
 		},
 		{
 			key: "dueDate",
@@ -106,8 +106,10 @@ function buildColumns(onEdit: (invoice: Invoice) => void, onDelete: (invoice: In
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function InvoicesWidget() {
+	const { can } = usePermissionGate();
 	const { data, isLoading, error } = useInvoices();
 	const invoices = data?.data ?? [];
+	const canManageInvoices = can("manage_invoices");
 
 	const [formOpen, setFormOpen] = useState(false);
 	const [editTarget, setEditTarget] = useState<Invoice | null>(null);
@@ -161,7 +163,7 @@ export function InvoicesWidget() {
 					icon: FileText,
 					title: "No invoices yet",
 					description: "Create your first invoice to start billing clients.",
-					action: { label: "New Invoice", onClick: handleCreate },
+					action: canManageInvoices ? { label: "New Invoice", onClick: handleCreate } : undefined,
 				}}
 			/>
 

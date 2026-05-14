@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ScheduleMeetingPayload } from "@/entities/meeting/model/types";
+import type { CreateMeetingPayload } from "@/entities/meetings/model/types";
 
 export const MeetingType = {
 	DISCOVERY: "discovery",
@@ -40,7 +40,7 @@ export const scheduleMeetingSchema = z
 		clientId: z.number().min(1, "Client is required"),
 		clientName: z.string().trim().min(1, "Client is required"),
 		relatedProjectId: z.string().trim().optional().or(z.literal("")),
-		meetingType: z.enum([MeetingType.DISCOVERY, MeetingType.KICKOFF, MeetingType.REVIEW, MeetingType.STATUS, MeetingType.HANDOVER]),
+		meetingType: z.string().trim().min(1, "Meeting type is required"),
 		date: z.string().trim().min(1, "Date is required"),
 		time: z.string().trim().min(1, "Time is required"),
 		location_type: z.enum([LocationType.ONLINE, LocationType.CLIENT_SITE, LocationType.OUR_OFFICE, LocationType.OTHER]),
@@ -65,7 +65,11 @@ export const scheduleMeetingSchema = z
 
 export type ScheduleMeetingFormData = z.infer<typeof scheduleMeetingSchema>;
 
-export function toScheduleMeetingPayload(data: ScheduleMeetingFormData): ScheduleMeetingPayload {
+function meetingTypeLabel(meetingType: string): string {
+	return MeetingTypeLabels[meetingType as MeetingType] ?? meetingType.replace(/[-_]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function toScheduleMeetingPayload(data: ScheduleMeetingFormData, label = meetingTypeLabel(data.meetingType)): CreateMeetingPayload {
 	const scheduledAt = new Date(`${data.date}T${data.time}`).toISOString();
 	const subjectId = data.relatedProjectId ? Number(data.relatedProjectId) : data.clientId;
 	// Use the correct backend namespace — must match CreateMeetingRequest validation
@@ -73,7 +77,7 @@ export function toScheduleMeetingPayload(data: ScheduleMeetingFormData): Schedul
 
 	const description = [
 		`Client: ${data.clientName}`,
-		`Meeting Type: ${MeetingTypeLabels[data.meetingType]}`,
+		`Meeting Type: ${label}`,
 		`Location Type: ${LocationTypeLabels[data.location_type]}`,
 		`Location Details: ${data.location_details}`,
 		data.internalAttendees.length ? `Internal Attendees: ${data.internalAttendees.join(", ")}` : null,
@@ -81,12 +85,16 @@ export function toScheduleMeetingPayload(data: ScheduleMeetingFormData): Schedul
 	].filter(Boolean);
 
 	return {
-		subjectType,
-		subjectId,
-		type: "meeting",
-		title: `${MeetingTypeLabels[data.meetingType]} Meeting`,
+		model_type: subjectType,
+		model_id: subjectId,
+		meeting_type: data.meetingType,
+		title: `${label} Meeting`,
 		description: description.join("\n"),
-		scheduledAt,
-		assignedTo: data.internalAttendees[0] ? Number(data.internalAttendees[0]) : undefined,
+		scheduled_at: scheduledAt,
+		location_type: data.location_type,
+		location_details: data.location_details,
+		internal_attendees: data.internalAttendees.map(Number).filter((n) => !isNaN(n)),
+		external_attendees: data.externalAttendees,
+		assigned_to: data.internalAttendees[0] ? Number(data.internalAttendees[0]) : undefined,
 	};
 }

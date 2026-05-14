@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -9,6 +9,9 @@ import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { createDirectProjectSchema, toUpdateProjectPayload, type CreateDirectProjectFormData } from "../model/project.schema";
 import { useUpdateProject } from "../model/use-project-actions";
 import { ProjectFormFields } from "./ProjectFormFields";
+import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
+import { Alert, AlertDescription } from "@/shared/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface UpdateProjectFormProps {
 	open: boolean;
@@ -25,6 +28,7 @@ function getDefaultValues(project: Project): CreateDirectProjectFormData {
 		budget: Number(project.budget || 0),
 		deadline: project.deadline || "",
 		status: project.status || ProjectStatus.DRAFT,
+		reason: "",
 	};
 }
 
@@ -41,6 +45,16 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 		},
 	];
 
+	// Watch budget and deadline to determine if reason is required
+	const watchedBudget = form.watch("budget");
+	const watchedDeadline = form.watch("deadline");
+
+	const requiresReason = useMemo(() => {
+		const budgetChanged = watchedBudget !== Number(project.budget || 0);
+		const deadlineChanged = watchedDeadline !== (project.deadline || "");
+		return budgetChanged || deadlineChanged;
+	}, [watchedBudget, watchedDeadline, project.budget, project.deadline]);
+
 	useEffect(() => {
 		if (open) {
 			form.reset(getDefaultValues(project));
@@ -56,6 +70,15 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 	};
 
 	const handleSubmit = async (data: CreateDirectProjectFormData) => {
+		// Validate reason is provided if budget or deadline changed
+		if (requiresReason && !data.reason?.trim()) {
+			form.setError("reason", {
+				type: "manual",
+				message: "A reason is required when changing the budget or deadline.",
+			});
+			return;
+		}
+
 		try {
 			await updateProject.mutateAsync({
 				id: project.projectId,
@@ -85,6 +108,24 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 				clientOptions={clientOptions}
 				lockClient
 			/>
+
+			{/* Conditional reason field */}
+			{requiresReason && (
+				<div className="space-y-3">
+					<Alert>
+						<AlertCircle className="h-4 w-4" />
+						<AlertDescription>You are changing the budget or deadline. Please provide a reason for this change.</AlertDescription>
+					</Alert>
+					<FormTextarea
+						form={form}
+						name="reason"
+						label="Reason for change"
+						placeholder="Explain why the budget or deadline is being changed..."
+						required
+						rows={3}
+					/>
+				</div>
+			)}
 		</FormDialog>
 	);
 }

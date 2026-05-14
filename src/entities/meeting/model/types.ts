@@ -28,11 +28,14 @@ export interface MeetingListResponse {
 }
 
 export interface ScheduleMeetingPayload {
-	subjectType: "App\\Modules\\CRM\\Models\\Client" | "App\\Modules\\Project\\Models\\Project";
+	subjectType: "App\\Modules\\Client\\Models\\Client" | "App\\Modules\\Project\\Models\\Project";
 	subjectId: number;
 	type: "meeting";
 	title: string;
 	description?: string;
 	scheduledAt: string;
 	assignedTo?: number;
+	meeting_type?: string;
+	internal_attendees?: number[];
+	external_attendees?: string[];
 }

@@ -32,8 +32,10 @@ interface PaginatedResponse<T> {
 // Finance Invoices
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function fetchInvoices(): Promise<PaginatedResponse<Invoice>> {
-	const res = await api.get<ApiEnvelope<PaginatedResponse<Invoice>>>("/finance/invoices");
+export async function fetchInvoices(params?: { clientId?: number }): Promise<PaginatedResponse<Invoice>> {
+	const res = await api.get<ApiEnvelope<PaginatedResponse<Invoice>>>("/finance/invoices", {
+		params: params?.clientId ? { client_id: params.clientId } : undefined,
+	});
 	return res.data.data;
 }
 

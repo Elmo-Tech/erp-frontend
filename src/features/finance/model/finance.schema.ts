@@ -11,6 +11,7 @@
  */
 
 import { z } from "zod";
+import { nullableNumberInput, requiredNumberInput } from "@/shared/lib/zod-number";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Invoice Item Schema
@@ -18,8 +19,8 @@ import { z } from "zod";
 
 export const invoiceItemSchema = z.object({
 	description: z.string().min(1, "Description is required").max(500, "Max 500 characters"),
-	quantity: z.coerce.number().int("Must be a whole number").min(1, "Quantity must be at least 1"),
-	unitPrice: z.coerce.number().nonnegative("Unit price cannot be negative"),
+	quantity: requiredNumberInput("Quantity is required").pipe(z.number().int("Must be a whole number").min(1, "Quantity must be at least 1")),
+	unitPrice: requiredNumberInput("Unit price is required").pipe(z.number().nonnegative("Unit price cannot be negative")),
 });
 
 export type InvoiceItemFormData = z.infer<typeof invoiceItemSchema>;
@@ -31,23 +32,12 @@ export type InvoiceItemFormData = z.infer<typeof invoiceItemSchema>;
 
 export const invoiceSchema = z
 	.object({
-		clientId: z.coerce.number().int().positive("Please select a client"),
-		// Accept string (from Combobox), number, null, or undefined.
-		// Coercing an empty string or null via z.coerce.number() produces NaN/0,
-		// so we handle the conversion manually in the transform step.
-		projectId: z
-			.union([z.string(), z.number(), z.null(), z.undefined()])
-			.transform((v) => {
-				if (v === null || v === undefined || v === "" || v === 0) return null;
-				const n = Number(v);
-				return Number.isFinite(n) && n > 0 ? n : null;
-			})
-			.nullable()
-			.optional(),
+		clientId: requiredNumberInput("Please select a client").pipe(z.number().int().positive("Please select a client")),
+		projectId: nullableNumberInput().pipe(z.number().int().positive().nullable()),
 		issueDate: z.string().min(1, "Issue date is required"),
 		dueDate: z.string().min(1, "Due date is required"),
-		taxRate: z.coerce.number().nonnegative("Cannot be negative").max(100, "Cannot exceed 100%").default(0),
-		discountAmount: z.coerce.number().nonnegative("Cannot be negative").default(0),
+		taxRate: requiredNumberInput("Tax rate is required").pipe(z.number().nonnegative("Cannot be negative").max(100, "Cannot exceed 100%")).default(0),
+		discountAmount: requiredNumberInput("Discount is required").pipe(z.number().nonnegative("Cannot be negative")).default(0),
 		status: z.enum(["draft", "sent", "paid", "overdue"]).default("draft"),
 		notes: z.string().nullable().optional(),
 		items: z.array(invoiceItemSchema).min(1, "At least one line item is required"),
@@ -80,7 +70,7 @@ export const subscriptionSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255, "Max 255 characters"),
 	provider: z.string().max(255, "Max 255 characters").nullable().optional(),
 	billingCycle: z.enum(["monthly", "yearly"]),
-	cost: z.coerce.number().nonnegative("Cost cannot be negative"),
+	cost: requiredNumberInput("Cost is required").pipe(z.number().nonnegative("Cost cannot be negative")),
 	currency: z.string().length(3, "Currency must be a 3-letter code (e.g. USD)").default("USD"),
 	nextBillingDate: z.string().min(1, "Next billing date is required"),
 	status: z.enum(["active", "cancelled"]).default("active"),

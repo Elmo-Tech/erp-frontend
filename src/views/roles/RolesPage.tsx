@@ -50,7 +50,7 @@ const GROUP_ORDER: string[] = [
 	"Other",
 ];
 
-const PROTECTED_ROLES = new Set(["founder", "pmo", "techdev", "dev", "client"]);
+const PROTECTED_ROLES = new Set(["founder", "admin", "pmo", "techdev", "dev", "client"]);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -98,16 +98,16 @@ export default function RolesPage() {
 	const isLoading = rolesQuery.isLoading || permissionsQuery.isLoading;
 	const isError = rolesQuery.isError || permissionsQuery.isError;
 
-		const toggleGroup = (group: string) =>
-			setCollapsedGroups((prev) => {
-				const next = new Set(prev);
-				if (next.has(group)) {
-					next.delete(group);
-				} else {
-					next.add(group);
-				}
-				return next;
-			});
+	const toggleGroup = (group: string) =>
+		setCollapsedGroups((prev) => {
+			const next = new Set(prev);
+			if (next.has(group)) {
+				next.delete(group);
+			} else {
+				next.add(group);
+			}
+			return next;
+		});
 
 	const handleDeleteConfirm = () => {
 		if (!deleteTarget) return;
@@ -298,7 +298,7 @@ function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, 
 	const groups = sortedGroups(permissions);
 
 	const toggle = async (role: Role, permName: string) => {
-		if (isProtected(role) || !canManage) return;
+		if (!canManage) return;
 		const key = `${role.id}:${permName}`;
 		const next = role.permissions.includes(permName) ? role.permissions.filter((p) => p !== permName) : [...role.permissions, permName];
 		setUpdatingCell(key);
@@ -422,7 +422,10 @@ function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, 
 													const key = `${role.id}:${perm.name}`;
 													const checked = role.permissions.includes(perm.name);
 													const isUpdating = updatingCell === key;
-													const locked = isProtected(role) || !canManage;
+													// Only lock when the current user lacks manage_roles.
+													// Protected-role flag is informational only — the Founder
+													// must be able to edit any role.
+													const locked = !canManage;
 
 													return (
 														<td

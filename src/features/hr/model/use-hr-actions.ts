@@ -75,6 +75,28 @@ export function useCheckOutMutation() {
 	});
 }
 
+export function useCheckInMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: hrApi.postCheckIn,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrKeys.attendance() });
+			queryClient.invalidateQueries({ queryKey: hrKeys.teamPulse() });
+		},
+	});
+}
+
+export function useTeamPulse(enabled = true) {
+	return useQuery({
+		queryKey: hrKeys.teamPulse(),
+		queryFn: hrApi.fetchTeamPulse,
+		enabled,
+		staleTime: 15 * 1000,
+		refetchInterval: 30 * 1000,
+	});
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Payslips
 // ─────────────────────────────────────────────────────────────────────────────

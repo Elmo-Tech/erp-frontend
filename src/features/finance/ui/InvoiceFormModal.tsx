@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
@@ -13,7 +12,7 @@ import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
-import { useCreateInvoice, useUpdateInvoice } from "@/features/finance/model/use-finance-actions";
+import { useCreateInvoice, useUpdateInvoice, useInvoice } from "@/features/finance/model/use-finance-actions";
 import { invoiceSchema, INVOICE_DEFAULT_VALUES, type InvoiceFormData } from "@/features/finance/model/finance.schema";
 import type { Invoice } from "@/entities/finance/model/types";
 import { useClientsQuery } from "@/entities/client/api/client.api";
@@ -38,6 +37,13 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 	const isEditing = editTarget !== null;
 	const createInvoice = useCreateInvoice();
 	const updateInvoice = useUpdateInvoice();
+
+	// Fetch the full invoice (with items) when editing — the list endpoint
+	// does not eager-load items, so we need the detail endpoint.
+	const invoiceDetailQuery = useInvoice(isEditing && open ? editTarget.id : null);
+	// Use the fully-loaded invoice if available, otherwise fall back to the
+	// list-level editTarget (covers the brief loading window).
+	const fullInvoice = invoiceDetailQuery.data ?? editTarget;
 
 	// Cast resolver to bypass z.coerce type mismatch (Zod v4 + @hookform/resolvers v5)
 	const form = useForm<InvoiceFormData>({
@@ -90,22 +96,22 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 		name: "items",
 	});
 
-	// Sync form when modal opens or editTarget changes
+	// Sync form when modal opens, editTarget changes, or the full invoice detail loads
 	useEffect(() => {
 		if (!open) return;
 
-		if (editTarget) {
+		if (fullInvoice) {
 			form.reset({
-				clientId: editTarget.clientId,
-				projectId: editTarget.projectId ?? null,
-				issueDate: editTarget.issueDate,
-				dueDate: editTarget.dueDate,
-				taxRate: editTarget.taxRate,
-				discountAmount: editTarget.discountAmount,
-				status: editTarget.status,
-				notes: editTarget.notes ?? "",
-				items: editTarget.items?.length
-					? editTarget.items.map((item) => ({
+				clientId: Number(fullInvoice.clientId),
+				projectId: fullInvoice.projectId ? Number(fullInvoice.projectId) : null,
+				issueDate: fullInvoice.issueDate,
+				dueDate: fullInvoice.dueDate,
+				taxRate: fullInvoice.taxRate,
+				discountAmount: fullInvoice.discountAmount,
+				status: fullInvoice.status,
+				notes: fullInvoice.notes ?? "",
+				items: fullInvoice.items?.length
+					? fullInvoice.items.map((item) => ({
 							description: item.description,
 							quantity: item.quantity,
 							unitPrice: item.unitPrice,
@@ -115,13 +121,7 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 		} else {
 			form.reset(INVOICE_DEFAULT_VALUES);
 		}
-	}, [open, editTarget, form]);
-
-	// Reset project when client changes
-	useEffect(() => {
-		form.setValue("projectId", null);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedClientId]);
+	}, [open, fullInvoice, form]);
 
 	const handleSubmit = async (data: InvoiceFormData) => {
 		try {
@@ -145,6 +145,7 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 	};
 
 	const isPending = createInvoice.isPending || updateInvoice.isPending;
+	const isLoadingDetail = isEditing && invoiceDetailQuery.isLoading;
 
 	return (
 		<FormDialog
@@ -156,7 +157,7 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 			description={isEditing ? "Update the invoice details and line items." : "Create a new invoice with line items for a client."}
 			onSubmit={form.handleSubmit(handleSubmit as Parameters<typeof form.handleSubmit>[0])}
 			submitLabel={isEditing ? "Save Changes" : "Create Invoice"}
-			isLoading={isPending}
+			isLoading={isPending || isLoadingDetail}
 			size="4xl"
 		>
 			<Form {...form}>
@@ -171,6 +172,7 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 							searchPlaceholder="Search clients…"
 							options={clientOptions}
 							disabled={isPending || clientsQuery.isLoading}
+							onValueChange={() => form.setValue("projectId", null)}
 						/>
 						<FormCombobox
 							control={form.control}

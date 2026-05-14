@@ -1,5 +1,21 @@
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
+import Cookies from "js-cookie";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+function broadcastingAuthEndpoint() {
+	return new URL("/api/broadcasting/auth", new URL(API_BASE_URL).origin).toString();
+}
+
+function authHeaders(): Record<string, string> {
+	const token = Cookies.get("auth_token");
+	if (!token) {
+		return {};
+	}
+
+	return { Authorization: `Bearer ${token}` };
+}
 
 if (typeof window !== "undefined") {
 	(window as unknown as { Pusher: typeof Pusher }).Pusher = Pusher;
@@ -16,9 +32,6 @@ export function getEcho(): Echo<"reverb"> | null {
 		return echoInstance;
 	}
 
-	const token = localStorage.getItem("auth_token");
-	const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api/v1", "") || "http://localhost:8000";
-
 	echoInstance = new Echo({
 		broadcaster: "reverb",
 		key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
@@ -27,11 +40,9 @@ export function getEcho(): Echo<"reverb"> | null {
 		wssPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 443,
 		forceTLS: process.env.NEXT_PUBLIC_REVERB_SCHEME === "https",
 		enabledTransports: ["ws", "wss"],
-		authEndpoint: `${baseUrl}/api/broadcasting/auth`,
+		authEndpoint: broadcastingAuthEndpoint(),
 		auth: {
-			headers: {
-				Authorization: token ? `Bearer ${token}` : "",
-			},
+			headers: authHeaders(),
 		},
 	});
 
@@ -48,11 +59,8 @@ export function updateEchoAuth() {
 		return;
 	}
 
-	const token = localStorage.getItem("auth_token");
+	echoInstance.connector.options.authEndpoint = broadcastingAuthEndpoint();
 	echoInstance.connector.options.auth = {
-		headers: {
-			Authorization: token ? `Bearer ${token}` : "",
-		},
+		headers: authHeaders(),
 	};
 }
-

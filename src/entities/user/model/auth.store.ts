@@ -35,7 +35,7 @@ export interface AuthState {
 	isAuthenticated: boolean;
 
 	// ── Actions ──────────────────────────────────────────────────────────────
-	setAuth: (data: { user: User; token: string; expiresIn: number; role: string; permissions: Permission[] }) => void;
+	setAuth: (data: { user: User; expiresIn: number; role: string; permissions: Permission[] }) => void;
 	logout: () => void;
 	updateUser: (user: Partial<User>) => void;
 
@@ -62,9 +62,9 @@ export const useAuthStore = create<AuthState>()(
 			permissions: [],
 			isAuthenticated: false,
 
-			setAuth: ({ user, token, expiresIn, role, permissions }) => {
+			setAuth: ({ user, expiresIn, role, permissions }) => {
 				const expiresAt = new Date(Date.now() + expiresIn * 60 * 1000).toISOString();
-				set({ user, token, tokenExpiresAt: expiresAt, role, permissions, isAuthenticated: true });
+				set({ user, token: null, tokenExpiresAt: expiresAt, role, permissions, isAuthenticated: true });
 			},
 
 			logout: () => {
@@ -104,7 +104,6 @@ export const useAuthStore = create<AuthState>()(
 			storage: createJSONStorage(() => localStorage),
 			partialize: (state) => ({
 				user: state.user,
-				token: state.token,
 				tokenExpiresAt: state.tokenExpiresAt,
 				role: state.role,
 				permissions: state.permissions,

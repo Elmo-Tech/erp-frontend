@@ -15,7 +15,7 @@ interface AssignPermissionsMatrixProps {
 	permissions: Permission[];
 }
 
-const protectedRoleNames = new Set(["founder", "pmo", "techdev", "dev", "client"]);
+const protectedRoleNames = new Set(["founder", "admin", "pmo", "techdev", "dev", "client"]);
 
 export function AssignPermissionsMatrix({ roles, permissions }: AssignPermissionsMatrixProps) {
 	const [updatingCell, setUpdatingCell] = useState<string | null>(null);
@@ -23,10 +23,8 @@ export function AssignPermissionsMatrix({ roles, permissions }: AssignPermission
 	const groupedPermissions = groupPermissions(permissions);
 
 	const togglePermission = async (role: Role, permission: string) => {
-		if (isProtectedRole(role)) {
-			toast.error("Protected roles cannot be modified");
-			return;
-		}
+		// Protected-role flag is informational only — do not block editing.
+		// The manage_roles permission gate on the backend enforces real access control.
 
 		const cellKey = `${role.id}:${permission}`;
 		const nextPermissions = role.permissions.includes(permission) ? role.permissions.filter((item) => item !== permission) : [...role.permissions, permission];
@@ -50,11 +48,17 @@ export function AssignPermissionsMatrix({ roles, permissions }: AssignPermission
 						<TableRow>
 							<TableHead className="sticky left-0 z-10 min-w-64 bg-background">Permission</TableHead>
 							{roles.map((role) => (
-								<TableHead key={role.id} className="min-w-32 text-center">
+								<TableHead
+									key={role.id}
+									className="min-w-32 text-center"
+								>
 									<div className="flex items-center justify-center gap-1">
 										<span className="capitalize">{role.name}</span>
 										{isProtectedRole(role) && (
-											<Badge variant="secondary" className="h-5 rounded-sm px-1 text-[10px]">
+											<Badge
+												variant="secondary"
+												className="h-5 rounded-sm px-1 text-[10px]"
+											>
 												<Lock className="mr-1 size-3" />
 												Locked
 											</Badge>
@@ -68,7 +72,10 @@ export function AssignPermissionsMatrix({ roles, permissions }: AssignPermission
 						{Object.entries(groupedPermissions).map(([group, items]) => (
 							<Fragment key={group}>
 								<TableRow className="bg-muted/50">
-									<TableCell colSpan={roles.length + 1} className="h-8 py-1 text-xs font-semibold uppercase text-muted-foreground">
+									<TableCell
+										colSpan={roles.length + 1}
+										className="h-8 py-1 text-xs font-semibold uppercase text-muted-foreground"
+									>
 										{group}
 									</TableCell>
 								</TableRow>
@@ -88,15 +95,23 @@ export function AssignPermissionsMatrix({ roles, permissions }: AssignPermission
 										{roles.map((role) => {
 											const cellKey = `${role.id}:${permission.name}`;
 											const isUpdating = updatingCell === cellKey;
-											const disabled = isProtectedRole(role) || updateRole.isPending;
+											// Only disable while a mutation is in-flight — not based on role protection flag.
+											const disabled = updateRole.isPending;
 
 											return (
-												<TableCell key={cellKey} className="text-center">
+												<TableCell
+													key={cellKey}
+													className="text-center"
+												>
 													<div className="flex justify-center">
 														{isUpdating ? (
 															<Loader2 className="size-4 animate-spin text-muted-foreground" />
 														) : (
-															<Checkbox checked={role.permissions.includes(permission.name)} disabled={disabled} onCheckedChange={() => togglePermission(role, permission.name)} />
+															<Checkbox
+																checked={role.permissions.includes(permission.name)}
+																disabled={disabled}
+																onCheckedChange={() => togglePermission(role, permission.name)}
+															/>
 														)}
 													</div>
 												</TableCell>

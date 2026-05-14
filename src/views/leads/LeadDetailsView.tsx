@@ -32,6 +32,7 @@ import { cn } from "@/shared/lib/utils";
 import { getLead, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
 import { usePipelineStore } from "@/features/leads/model/usePipelineStore";
 import { PIPELINE_STAGES, STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
+import { getPipelineStageGateFailure } from "@/features/leads/model/pipelineGates";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
 import type { Lead, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
@@ -220,6 +221,8 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 					stage,
 					assignedTo: res.data.assignedTo ?? undefined,
 					expectedBudget: res.data.expected_budget ?? undefined,
+					hasCompletedMeeting: res.data.hasCompletedMeeting ?? false,
+					hasAcceptedProposalOrQuotation: res.data.hasAcceptedProposalOrQuotation ?? false,
 					createdAt: res.data.createdAt,
 					updatedAt: res.data.updatedAt,
 				});
@@ -247,12 +250,12 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 				if (toStage === "closed_won") {
 					try {
 						const result = await convertLeadToProjectMutation.mutateAsync(leadId);
-						const { project_id, project_title, client_name } = result.data;
+						const { project_title, client_name } = result.data;
 						toast.success(`🎉 Deal Won! "${project_title}" is now live.`, {
-							description: `Client "${client_name}" created. Redirecting to the project…`,
+							description: `Client "${client_name}" created.`,
 							duration: 6000,
 						});
-						setTimeout(() => router.push(`/dashboard/projects/${project_id}`), 1200);
+						window.location.href = "/dashboard/clients";
 					} catch {
 						toast.warning("Lead marked as won, but automatic conversion failed.", {
 							description: "Please convert the lead manually.",
@@ -264,7 +267,17 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 					// Refresh lead data
 					const res = await getLead(leadId);
 					const stage = BACKEND_TO_FRONTEND_STAGE[res.data.stage] ?? "new";
-					setLead((prev) => (prev ? { ...prev, stage, updatedAt: res.data.updatedAt } : prev));
+					setLead((prev) =>
+						prev
+							? {
+									...prev,
+									stage,
+									hasCompletedMeeting: res.data.hasCompletedMeeting ?? false,
+									hasAcceptedProposalOrQuotation: res.data.hasAcceptedProposalOrQuotation ?? false,
+									updatedAt: res.data.updatedAt,
+								}
+							: prev,
+					);
 				}
 			} catch (err) {
 				console.error("[LeadDetailsView] Stage update failed:", err);
@@ -274,13 +287,19 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 				setIsAdvancing(false);
 			}
 		},
-		[leadId, router, cancelDrag, convertLeadToProjectMutation, updateLeadStageMutation],
+		[leadId, cancelDrag, convertLeadToProjectMutation, updateLeadStageMutation],
 	);
 
 	// ── Stepper advance handler ───────────────────────────────────────────────
 	const handleAdvance = useCallback(
 		(toStage: PipelineStage) => {
 			if (!lead) return;
+
+			const gateFailure = getPipelineStageGateFailure(lead, toStage);
+			if (gateFailure) {
+				toast.error(gateFailure);
+				return;
+			}
 
 			const intercepted = startDrag(lead.id, lead.stage, toStage);
 			if (!intercepted) return;

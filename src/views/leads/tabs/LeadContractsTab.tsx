@@ -13,10 +13,12 @@
 
 import { useState } from "react";
 import { PlusIcon, FileSignature, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
-import { useGetLeadContracts, type LeadContract } from "@/features/leads/api/leads.api";
+import { useGetLeadContracts, useUpdateLeadContract, type LeadContract } from "@/features/leads/api/leads.api";
 import { CreateContractModal } from "@/features/leads/ui/CreateContractModal";
 import { format } from "date-fns";
 
@@ -42,6 +44,22 @@ const MODEL_LABEL: Record<string, string> = {
 	saas_subscription: "SaaS",
 };
 
+const CONTRACT_STATUS_OPTIONS = ["draft", "sent", "signed", "rejected", "skipped"] as const;
+
+function hasRenderableContract(contract: LeadContract): boolean {
+	return Boolean(
+		contract.file_path ||
+			contract.assigned_to ||
+			contract.assignee ||
+			contract.skip_reason ||
+			contract.total_amount != null ||
+			contract.setup_fee != null ||
+			contract.recurring_fee != null ||
+			contract.development_days != null ||
+			contract.status !== "draft",
+	);
+}
+
 function formatMoney(amount: number | null, currency: string | null): string {
 	if (amount == null) return "—";
 	return `${currency ?? ""} ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`.trim();
@@ -56,7 +74,8 @@ interface LeadContractsTabProps {
 export function LeadContractsTab({ leadId }: LeadContractsTabProps) {
 	const [modalOpen, setModalOpen] = useState(false);
 	const contractsQuery = useGetLeadContracts(leadId);
-	const contracts = contractsQuery.data ?? [];
+	const updateContract = useUpdateLeadContract(leadId);
+	const contracts = (contractsQuery.data ?? []).filter(hasRenderableContract);
 
 	const columns: Column<LeadContract>[] = [
 		{ key: "id", header: "ID", render: (c) => <span className="font-mono text-xs text-muted-foreground">#{c.id}</span> },
@@ -64,12 +83,38 @@ export function LeadContractsTab({ leadId }: LeadContractsTabProps) {
 			key: "status",
 			header: "Status",
 			render: (c) => (
-				<Badge
-					variant="outline"
-					className={STATUS_CLASS[c.status] ?? "bg-muted text-muted-foreground"}
+				<Select
+					value={c.status}
+					disabled={updateContract.isPending}
+					onValueChange={(status) => {
+						updateContract.mutate(
+							{ contractId: c.id, payload: { status } },
+							{
+								onSuccess: () => toast.success("Contract status updated."),
+								onError: () => toast.error("Failed to update contract status."),
+							},
+						);
+					}}
 				>
-					{c.status}
-				</Badge>
+					<SelectTrigger className="h-8 w-32">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{CONTRACT_STATUS_OPTIONS.map((status) => (
+							<SelectItem
+								key={status}
+								value={status}
+							>
+								<Badge
+									variant="outline"
+									className={STATUS_CLASS[status] ?? "bg-muted text-muted-foreground"}
+								>
+									{status}
+								</Badge>
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			),
 		},
 		{

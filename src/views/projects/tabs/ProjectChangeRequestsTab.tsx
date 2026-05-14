@@ -35,6 +35,7 @@ import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { Can } from "@/shared/ui/Can";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { formatDateDisplay } from "@/shared/lib/dateUtils";
+import { requiredNumberInput } from "@/shared/lib/zod-number";
 import { useChangeRequests, useCreateChangeRequest, useUpdateChangeRequestStatus, useDeleteChangeRequest } from "@/features/projects/api/execution.api";
 import type { ChangeRequest } from "@/features/projects/api/execution.api";
 
@@ -58,7 +59,7 @@ const CHANGE_REQUEST_STATUS_OPTIONS = [
 const createChangeRequestSchema = z.object({
 	title: z.string().trim().min(1, "Title is required").max(255, "Title must be 255 characters or less"),
 	description: z.string().trim().min(1, "Description is required"),
-	price: z.number({ invalid_type_error: "Price must be a number" }).min(0, "Price must be at least 0"),
+	price: requiredNumberInput("Price is required", "Price must be a number").pipe(z.number().min(0, "Price must be at least 0")),
 });
 
 type CreateChangeRequestFormData = z.infer<typeof createChangeRequestSchema>;

@@ -4,380 +4,155 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import {
-	LayoutDashboard,
-	FolderKanban,
-	Settings,
-	ChevronLeft,
-	ChevronRight,
-	Building2,
-	X,
-	Shield,
-	Sunrise,
-	ClipboardList,
-	Target,
-	Star,
-	CalendarCheck,
-	FileText,
-	Clock,
-	Users,
-	DollarSign,
-	SlidersHorizontal,
-	Receipt,
-	CreditCard,
-	CalendarDays,
-	CalendarOff,
-	ArrowLeftRight,
-	UserCog,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
 import { Button } from "@/shared/ui/button";
+import { Can } from "@/shared/ui/Can";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
+import { SidebarConfig } from "@/shared/config/sidebar";
 
 interface NavItem {
-	title: string;
-	href: string;
-	icon: React.ElementType;
-	permission?: string;
+    title: string;
+    href: string;
+    icon: React.ElementType;
+    permission?: string;
 }
 
 interface NavGroup {
-	title: string;
-	items: NavItem[];
+    title: string;
+    items: NavItem[];
 }
 
-const navGroups: NavGroup[] = [
-	{
-		title: "Overview",
-		items: [
-			{
-				title: "Dashboard",
-				href: "/dashboard",
-				icon: LayoutDashboard,
-			},
-			{
-				title: "Morning SOP",
-				href: "/dashboard/sop",
-				icon: Sunrise,
-				permission: "view_morning_sop",
-			},
-		],
-	},
-	{
-		title: "CRM",
-		items: [
-			{
-				title: "Clients",
-				href: "/dashboard/clients",
-				icon: Building2,
-				permission: "view_clients",
-			},
-			{
-				title: "Sales Pipeline",
-				href: "/dashboard/leads",
-				icon: Target,
-				permission: "view_leads",
-			},
-		],
-	},
-	{
-		title: "Project Management",
-		items: [
-			{
-				title: "Projects",
-				href: "/dashboard/projects",
-				icon: FolderKanban,
-				permission: "view_projects",
-			},
-		],
-	},
-	{
-		title: "HR & Payroll",
-		items: [
-			{
-				title: "My Points",
-				href: "/dashboard/hr/my-points",
-				icon: Star,
-				permission: "view_my_points",
-			},
-			{
-				title: "My Attendance",
-				href: "/dashboard/hr/attendance",
-				icon: CalendarCheck,
-				permission: "view_my_attendance",
-			},
-			{
-				title: "My Payslips",
-				href: "/dashboard/hr/payslips",
-				icon: FileText,
-				permission: "view_payroll",
-			},
-		],
-	},
-	{
-		title: "HR Admin",
-		items: [
-			{
-				title: "Shifts",
-				href: "/dashboard/hr/admin/shifts",
-				icon: Clock,
-				permission: "manage_shifts",
-			},
-			{
-				title: "Employee Profiles",
-				href: "/dashboard/hr/admin/employees",
-				icon: Users,
-				permission: "manage_employees",
-			},
-			{
-				title: "Payroll",
-				href: "/dashboard/hr/admin/payroll",
-				icon: DollarSign,
-				permission: "manage_payroll",
-			},
-			{
-				title: "Leave Requests",
-				href: "/dashboard/hr/admin/leaves",
-				icon: CalendarOff,
-				permission: "manage_hr",
-			},
-			{
-				title: "Manual Transactions",
-				href: "/dashboard/hr/admin/manual-transactions",
-				icon: ArrowLeftRight,
-				permission: "manage_payroll",
-			},
-			{
-				title: "HR Settings",
-				href: "/dashboard/hr/admin/settings",
-				icon: SlidersHorizontal,
-				permission: "manage_payroll",
-			},
-		],
-	},
-	{
-		title: "Finance",
-		items: [
-			{
-				title: "Invoices",
-				href: "/dashboard/finance/invoices",
-				icon: Receipt,
-				permission: "manage_invoices",
-			},
-			{
-				title: "Subscriptions",
-				href: "/dashboard/finance/subscriptions",
-				icon: CreditCard,
-				permission: "manage_subscriptions",
-			},
-		],
-	},
-	{
-		title: "Calendar",
-		items: [
-			{
-				title: "Master Calendar",
-				href: "/dashboard/calendar",
-				icon: CalendarDays,
-				permission: "view_calendar",
-			},
-		],
-	},
-	{
-		title: "Administration",
-		items: [
-			{
-				title: "Users",
-				href: "/dashboard/users",
-				icon: UserCog,
-				permission: "manage_users",
-			},
-			{
-				title: "Roles & Permissions",
-				href: "/dashboard/roles",
-				icon: Shield,
-				permission: "manage_roles",
-			},
-			{
-				title: "Manage SOPs",
-				href: "/dashboard/admin/sops",
-				icon: ClipboardList,
-				permission: "manage_sops",
-			},
-			{
-				title: "Settings",
-				href: "/dashboard/settings",
-				icon: Settings,
-				permission: "view_settings",
-			},
-		],
-	},
-];
+const navGroups: NavGroup[] = SidebarConfig;
 
 export function Sidebar() {
-	const { isCollapsed, isMobileOpen, toggleCollapsed, closeMobile } = useSidebarStore();
-	const pathname = usePathname();
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+    const { isCollapsed, isMobileOpen, toggleCollapsed, closeMobile } = useSidebarStore();
+    const pathname = usePathname();
+    const hasPermission = useAuthStore((state) => state.hasPermission);
 
-	useEffect(() => {
-		closeMobile();
-	}, [pathname, closeMobile]);
+    useEffect(() => {
+        closeMobile();
+    }, [pathname, closeMobile]);
 
-	const isItemActive = (href: string) => {
-		if (href === "/dashboard") {
-			return pathname === "/dashboard";
-		}
+    const isItemActive = (href: string) => {
+        if (href === "/dashboard") {
+            return pathname === "/dashboard";
+        }
 
-		return pathname === href || pathname.startsWith(`${href}/`);
-	};
+        return pathname === href || pathname.startsWith(`${href}/`);
+    };
 
-	const filterItems = (items: NavItem[]) => {
-		return items.filter((item) => {
-			if (item.permission && !hasPermission(item.permission)) return false;
-			return true;
-		});
-	};
+    const filterItems = (items: NavItem[]) => {
+        return items.filter((item) => {
+            if (item.permission && !hasPermission(item.permission)) return false;
+            return true;
+        });
+    };
 
-	const showCollapsed = isCollapsed && !isMobileOpen;
+    const showCollapsed = isCollapsed && !isMobileOpen;
 
-	return (
-		<TooltipProvider delayDuration={0}>
-			{isMobileOpen && (
-				<div
-					className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-					onClick={closeMobile}
-				/>
-			)}
+    return (
+        <TooltipProvider delayDuration={0}>
+            {isMobileOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={closeMobile} />}
 
-			<aside
-				className={cn(
-					"fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300",
-					"lg:translate-x-0",
-					isCollapsed ? "lg:w-17.5" : "lg:w-64",
-					isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full",
-				)}
-			>
-				<div className="flex h-16 items-center justify-between border-b px-4">
-					{(!isCollapsed || isMobileOpen) && (
-						<Link
-							href="/dashboard"
-							className="flex items-center gap-2"
-						>
-							<Image
-								src="/logo.webp"
-								alt="Elmo ERP"
-								width={32}
-								height={32}
-								className="rounded-lg"
-							/>
-							<span className="text-lg font-semibold">Elmo ERP</span>
-						</Link>
-					)}
-					{isCollapsed && !isMobileOpen && (
-						<Link
-							href="/dashboard"
-							className="mx-auto"
-						>
-							<Image
-								src="/logo.webp"
-								alt="Elmo ERP"
-								width={32}
-								height={32}
-								className="rounded-lg"
-							/>
-						</Link>
-					)}
-					<Button
-						variant="ghost"
-						size="icon"
-						onClick={closeMobile}
-						className="h-8 w-8 lg:hidden"
-					>
-						<X className="h-4 w-4" />
-					</Button>
-					{!isCollapsed && (
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={toggleCollapsed}
-							className="hidden h-8 w-8 lg:flex"
-						>
-							<ChevronLeft className="h-4 w-4" />
-						</Button>
-					)}
-				</div>
+            <aside
+                className={cn(
+                    "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300",
+                    "lg:translate-x-0",
+                    isCollapsed ? "lg:w-17.5" : "lg:w-64",
+                    isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full",
+                )}
+            >
+                <div className="flex h-16 items-center justify-between border-b px-4">
+                    {(!isCollapsed || isMobileOpen) && (
+                        <Link href="/dashboard" className="flex items-center gap-2">
+                            <Image src="/logo.webp" alt="Elmo ERP" width={32} height={32} className="rounded-lg" />
+                            <span className="text-lg font-semibold">Elmo ERP</span>
+                        </Link>
+                    )}
+                    {isCollapsed && !isMobileOpen && (
+                        <Link href="/dashboard" className="mx-auto">
+                            <Image src="/logo.webp" alt="Elmo ERP" width={32} height={32} className="rounded-lg" />
+                        </Link>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={closeMobile} className="h-8 w-8 lg:hidden">
+                        <X className="h-4 w-4" />
+                    </Button>
+                    {!isCollapsed && (
+                        <Button variant="ghost" size="icon" onClick={toggleCollapsed} className="hidden h-8 w-8 lg:flex">
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
 
-				{isCollapsed && (
-					<div className="hidden lg:flex justify-center py-2 border-b">
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={toggleCollapsed}
-							className="h-8 w-8"
-						>
-							<ChevronRight className="h-4 w-4" />
-						</Button>
-					</div>
-				)}
+                {isCollapsed && (
+                    <div className="hidden lg:flex justify-center py-2 border-b">
+                        <Button variant="ghost" size="icon" onClick={toggleCollapsed} className="h-8 w-8">
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
 
-				<nav className="flex-1 overflow-y-auto py-4">
-					{navGroups.map((group) => {
-						const filteredItems = filterItems(group.items);
-						if (filteredItems.length === 0) return null;
+                <nav className="flex-1 overflow-y-auto py-4">
+                    {navGroups.map((group) => {
+                        const filteredItems = filterItems(group.items);
+                        if (filteredItems.length === 0) return null;
 
-						return (
-							<div
-								key={group.title}
-								className="mb-6"
-							>
-								{!showCollapsed && <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.title}</h3>}
-								{showCollapsed && <div className="h-px bg-border mx-3 mb-2" />}
+                        return (
+                            <div key={group.title} className="mb-6">
+                                {!showCollapsed && <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.title}</h3>}
+                                {showCollapsed && <div className="h-px bg-border mx-3 mb-2" />}
 
-								<div className="space-y-1 px-3">
-									{filteredItems.map((item) => {
-										const isActive = isItemActive(item.href);
-										const Icon = item.icon;
+                                <div className="space-y-1 px-3">
+                                    {filteredItems.map((item) => {
+                                        const isActive = isItemActive(item.href);
+                                        const Icon = item.icon;
 
-										const linkContent = (
-											<Link
-												href={item.href}
-												className={cn(
-													"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
-													isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-													showCollapsed && "justify-center px-2",
-												)}
-											>
-												<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary-foreground")} />
-												{!showCollapsed && <span>{item.title}</span>}
-											</Link>
-										);
+                                        const linkContent = (
+                                            <Link
+                                                href={item.href}
+                                                className={cn(
+                                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+                                                    isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                                    showCollapsed && "justify-center px-2",
+                                                )}
+                                            >
+                                                <Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary-foreground")} />
+                                                {!showCollapsed && <span>{item.title}</span>}
+                                            </Link>
+                                        );
 
-										if (showCollapsed) {
-											return (
-												<Tooltip key={item.href}>
-													<TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-													<TooltipContent
-														side="right"
-														className="font-medium"
-													>
-														{item.title}
-													</TooltipContent>
-												</Tooltip>
-											);
-										}
+                                        const navItem = showCollapsed ? (
+                                            <Tooltip key={item.href}>
+                                                <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                                                <TooltipContent side="right" className="font-medium">
+                                                    {item.title}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        ) : (
+                                            <div key={item.href}>{linkContent}</div>
+                                        );
 
-										return <div key={item.href}>{linkContent}</div>;
-									})}
-								</div>
-							</div>
-						);
-					})}
-				</nav>
+                                        if (item.permission) {
+                                            return (
+                                                <Can key={item.href} permission={item.permission}>
+                                                    {navItem}
+                                                </Can>
+                                            );
+                                        }
 
-				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2026 Elmo ERP</p>}</div>
-			</aside>
-		</TooltipProvider>
-	);
+                                        return navItem;
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </nav>
+
+                <div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2026 Elmo ERP</p>}</div>
+            </aside>
+        </TooltipProvider>
+    );
 }

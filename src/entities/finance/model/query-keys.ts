@@ -10,7 +10,7 @@ export const financeKeys = {
 
 	// Invoices
 	invoices: () => [...financeKeys.all, "invoices"] as const,
-	invoiceList: () => [...financeKeys.invoices(), "list"] as const,
+	invoiceList: (params?: { clientId?: number }) => (params?.clientId ? ([...financeKeys.invoices(), "list", { clientId: params.clientId }] as const) : ([...financeKeys.invoices(), "list"] as const)),
 	invoiceDetail: (id: number) => [...financeKeys.invoices(), id] as const,
 
 	// Subscriptions

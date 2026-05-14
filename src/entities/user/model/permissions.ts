@@ -32,6 +32,7 @@ export const TASK_PERMISSIONS = {
 	VIEW_INTERNAL_NOTES: "view_internal_notes",
 	ASSIGN_TASKS: "assign_tasks",
 	WORK_ON_TASKS: "work_on_tasks",
+	MANAGE_DELIVERABLES: "manage_deliverables",
 } as const;
 
 export const INVOICE_PERMISSIONS = {
@@ -76,21 +77,18 @@ export const EMPLOYEE_PERMISSIONS = {
 export function useClientPermissions() {
 	const hasPermission = useAuthStore((state) => state.hasPermission);
 
-	return useMemo(
-		() => {
-			const canManageClients = hasPermission(CLIENT_PERMISSIONS.MANAGE_CLIENTS);
+	return useMemo(() => {
+		const canManageClients = hasPermission(CLIENT_PERMISSIONS.MANAGE_CLIENTS);
 
-			// After backend permission seed changes, users must re-login so auth local storage receives the refreshed permissions array.
-			return {
-				canManageClients,
-				canViewClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.VIEW_CLIENTS),
-				canCreateClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.CREATE_CLIENTS),
-				canEditClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.EDIT_CLIENTS),
-				canDeleteClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.DELETE_CLIENTS),
-			};
-		},
-		[hasPermission]
-	);
+		// After backend permission seed changes, users must re-login so auth local storage receives the refreshed permissions array.
+		return {
+			canManageClients,
+			canViewClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.VIEW_CLIENTS),
+			canCreateClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.CREATE_CLIENTS),
+			canEditClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.EDIT_CLIENTS),
+			canDeleteClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.DELETE_CLIENTS),
+		};
+	}, [hasPermission]);
 }
 
 export function useProjectPermissions() {
@@ -106,7 +104,7 @@ export function useProjectPermissions() {
 			canApproveProjectUI: hasPermission(PROJECT_PERMISSIONS.APPROVE_PROJECT_UI),
 			canViewProjectBudget: hasPermission(PROJECT_PERMISSIONS.VIEW_PROJECT_BUDGET),
 		}),
-		[hasPermission]
+		[hasPermission],
 	);
 }
 
@@ -117,7 +115,7 @@ export function useMeetingPermissions() {
 		() => ({
 			canScheduleMeetings: hasPermission(MEETING_PERMISSIONS.SCHEDULE_MEETINGS),
 		}),
-		[hasPermission]
+		[hasPermission],
 	);
 }
 
@@ -134,8 +132,9 @@ export function useTaskPermissions() {
 			canViewInternalNotes: hasPermission(TASK_PERMISSIONS.VIEW_INTERNAL_NOTES),
 			canAssignTasks: hasPermission(TASK_PERMISSIONS.ASSIGN_TASKS),
 			canWorkOnTasks: hasPermission(TASK_PERMISSIONS.WORK_ON_TASKS),
+			canManageDeliverables: hasPermission(TASK_PERMISSIONS.MANAGE_DELIVERABLES),
 		}),
-		[hasPermission]
+		[hasPermission],
 	);
 }
 
@@ -152,7 +151,7 @@ export function useInvoicePermissions() {
 			canSendInvoices: hasPermission(INVOICE_PERMISSIONS.SEND_INVOICES),
 			canCancelInvoices: hasPermission(INVOICE_PERMISSIONS.CANCEL_INVOICES),
 		}),
-		[hasPermission]
+		[hasPermission],
 	);
 }
 
@@ -174,7 +173,7 @@ export function useSalesPermissions() {
 			canDeleteContracts: hasPermission(SALES_PERMISSIONS.DELETE_CONTRACTS),
 			canSignContracts: hasPermission(SALES_PERMISSIONS.SIGN_CONTRACTS),
 		}),
-		[hasPermission]
+		[hasPermission],
 	);
 }
 
@@ -195,6 +194,6 @@ export function useEmployeePermissions() {
 			canAddProjectMembers: hasPermission(EMPLOYEE_PERMISSIONS.ADD_PROJECT_MEMBERS),
 			canRemoveProjectMembers: hasPermission(EMPLOYEE_PERMISSIONS.REMOVE_PROJECT_MEMBERS),
 		}),
-		[hasPermission]
+		[hasPermission],
 	);
 }

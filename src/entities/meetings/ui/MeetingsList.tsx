@@ -14,7 +14,7 @@
  */
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { CalendarClock, MapPin, Users, MoreHorizontal, CheckCircle2, XCircle, AlertCircle, Clock } from "lucide-react";
@@ -28,6 +28,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/shared/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { cn } from "@/shared/lib/utils";
+import { useSettingsDictionary } from "@/shared/api/settings.api";
+import { getApiErrorMessage } from "@/shared/lib/api-error";
 import { useGetMeetings, useUpdateMeetingStatus } from "../api/meetings.api";
 import { updateMeetingStatusSchema, type UpdateMeetingStatusFormData } from "../model/meeting.schema";
 import { MEETING_STATUS_LABELS, MEETING_TYPE_LABELS, LOCATION_TYPE_LABELS, MEETING_STATUSES, STATUSES_REQUIRING_NOTE, type MeetingModelType, type PolyMeeting, type MeetingStatus } from "../model/types";
@@ -36,12 +38,16 @@ import { MEETING_STATUS_LABELS, MEETING_TYPE_LABELS, LOCATION_TYPE_LABELS, MEETI
 // Status badge config
 // ─────────────────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<MeetingStatus, { className: string; icon: React.ElementType }> = {
+const STATUS_CONFIG: Record<string, { className: string; icon: React.ElementType }> = {
 	scheduled: {
 		className: "bg-blue-50 text-blue-700 border-blue-200",
 		icon: Clock,
 	},
-	held: {
+	in_progress: {
+		className: "bg-amber-50 text-amber-700 border-amber-200",
+		icon: AlertCircle,
+	},
+	completed: {
 		className: "bg-emerald-50 text-emerald-700 border-emerald-200",
 		icon: CheckCircle2,
 	},
@@ -69,6 +75,8 @@ interface UpdateStatusDialogProps {
 
 function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange }: UpdateStatusDialogProps) {
 	const { mutateAsync, isPending } = useUpdateMeetingStatus(modelType, modelId);
+	const statusesDict = useSettingsDictionary("meeting-statuses", open);
+	const statusOptions = statusesDict.options.length > 0 ? statusesDict.options : MEETING_STATUSES.map((status) => ({ value: status, label: MEETING_STATUS_LABELS[status] ?? status }));
 
 	const form = useForm<UpdateMeetingStatusFormData>({
 		resolver: zodResolver(updateMeetingStatusSchema),
@@ -78,7 +86,10 @@ function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange }:
 		},
 	});
 
-	const watchedStatus = form.watch("status") as MeetingStatus;
+	const watchedStatus = useWatch({
+		control: form.control,
+		name: "status",
+	}) as MeetingStatus;
 	const requiresNote = STATUSES_REQUIRING_NOTE.includes(watchedStatus);
 
 	const handleSubmit = form.handleSubmit(async (data) => {
@@ -92,8 +103,8 @@ function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange }:
 			});
 			toast.success("Meeting status updated.");
 			onOpenChange(false);
-		} catch {
-			toast.error("Failed to update meeting status.");
+		} catch (error) {
+			toast.error(getApiErrorMessage(error, "Failed to update meeting status."));
 		}
 	});
 
@@ -106,7 +117,7 @@ function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange }:
 				<DialogHeader>
 					<DialogTitle>Update Meeting Status</DialogTitle>
 					<DialogDescription>
-						{`"${meeting.title}"`} — changing status from <strong>{MEETING_STATUS_LABELS[meeting.status]}</strong>.
+						{`"${meeting.title}"`} — changing status from <strong>{MEETING_STATUS_LABELS[meeting.status] ?? meeting.status}</strong>.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -131,12 +142,12 @@ function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange }:
 											</SelectTrigger>
 										</FormControl>
 										<SelectContent>
-											{MEETING_STATUSES.map((s) => (
+											{statusOptions.map((status) => (
 												<SelectItem
-													key={s}
-													value={s}
+													key={status.value}
+													value={status.value}
 												>
-													{MEETING_STATUS_LABELS[s]}
+													{status.label}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -164,7 +175,7 @@ function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange }:
 									</FormControl>
 									{requiresNote && (
 										<p className="text-xs text-muted-foreground">
-											A completion note is required when marking a meeting as <strong>{MEETING_STATUS_LABELS[watchedStatus]}</strong>.
+											A completion note is required when marking a meeting as <strong>{MEETING_STATUS_LABELS[watchedStatus] ?? watchedStatus}</strong>.
 										</p>
 									)}
 									<FormMessage />
@@ -207,7 +218,7 @@ interface MeetingCardProps {
 
 function MeetingCard({ meeting, modelType, modelId }: MeetingCardProps) {
 	const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-	const config = STATUS_CONFIG[meeting.status];
+	const config = STATUS_CONFIG[meeting.status] ?? STATUS_CONFIG.scheduled;
 	const StatusIcon = config.icon;
 
 	return (
@@ -217,7 +228,7 @@ function MeetingCard({ meeting, modelType, modelId }: MeetingCardProps) {
 				<div className="flex items-start justify-between gap-2">
 					<div className="flex-1 min-w-0">
 						<p className="font-semibold text-sm truncate">{meeting.title}</p>
-						<p className="text-xs text-muted-foreground mt-0.5">{MEETING_TYPE_LABELS[meeting.meetingType]}</p>
+						<p className="text-xs text-muted-foreground mt-0.5">{MEETING_TYPE_LABELS[meeting.meetingType] ?? meeting.meetingType}</p>
 					</div>
 					<div className="flex items-center gap-2 shrink-0">
 						<Badge
@@ -225,7 +236,7 @@ function MeetingCard({ meeting, modelType, modelId }: MeetingCardProps) {
 							className={cn("text-xs flex items-center gap-1", config.className)}
 						>
 							<StatusIcon className="size-3" />
-							{MEETING_STATUS_LABELS[meeting.status]}
+							{MEETING_STATUS_LABELS[meeting.status] ?? meeting.status}
 						</Badge>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
