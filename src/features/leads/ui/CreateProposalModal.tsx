@@ -22,12 +22,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/shared/ui/button";
 import { ScrollArea } from "@/shared/ui/scroll-area";
 import { ProposalDirectUploadTab } from "./PipelineModals/ProposalDirectUploadTab";
-import { proposalStageModalSchema } from "./PipelineModals/stageModal.schema";
+import { proposalDirectUploadBranchSchema } from "./PipelineModals/stageModal.schema";
 import { useCreateLeadProposal } from "@/features/leads/api/leads.api";
 
 // ─── Extract the direct_upload branch for this standalone form ────────────────
 
-type ProposalDirectUploadMode = Extract<z.infer<typeof proposalStageModalSchema>, { mode: "direct_upload" }>;
+type ProposalDirectUploadMode = z.infer<typeof proposalDirectUploadBranchSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -42,13 +42,7 @@ interface CreateProposalModalProps {
 export function CreateProposalModal({ leadId, open, onOpenChange, onCreated }: CreateProposalModalProps) {
 	const createProposal = useCreateLeadProposal(leadId);
 	const form = useForm<ProposalDirectUploadMode>({
-		resolver: zodResolver(
-			proposalStageModalSchema.options.find((o) => {
-				// Pull the direct_upload branch from the discriminated union
-				const shape = (o as z.ZodObject<z.ZodRawShape>).shape;
-				return shape?.mode instanceof z.ZodLiteral && shape.mode.value === "direct_upload";
-			}) as z.ZodTypeAny,
-		),
+		resolver: zodResolver(proposalDirectUploadBranchSchema as any),
 		defaultValues: {
 			mode: "direct_upload",
 			proposal_source: "upload_new",

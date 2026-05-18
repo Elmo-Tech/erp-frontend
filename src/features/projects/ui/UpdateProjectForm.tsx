@@ -117,11 +117,10 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 						<AlertDescription>You are changing the budget or deadline. Please provide a reason for this change.</AlertDescription>
 					</Alert>
 					<FormTextarea
-						form={form}
+						control={form.control}
 						name="reason"
 						label="Reason for change"
 						placeholder="Explain why the budget or deadline is being changed..."
-						required
 						rows={3}
 					/>
 				</div>

@@ -63,7 +63,7 @@ export function LeaveRequestFormModal({ open, onClose, editTarget }: LeaveReques
 		[usersQuery.data],
 	);
 
-	const form = useForm<LeaveRequestFormData>({
+	const form = useForm<LeaveRequestFormData, unknown, LeaveRequestFormData>({
 		resolver: zodResolver(leaveRequestSchema),
 		defaultValues: LEAVE_REQUEST_DEFAULT_VALUES,
 	});

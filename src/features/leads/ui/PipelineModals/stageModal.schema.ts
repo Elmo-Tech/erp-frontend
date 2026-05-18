@@ -177,7 +177,7 @@ export const quotationDirectUploadSchema = z.object({
 	}),
 	currency: z.enum(CURRENCIES, { message: "Please select a currency" }),
 	final_total: requiredNumberInput("Final total is required").pipe(z.number().min(0, "Must be ≥ 0")),
-	payment_stages: z.array(paymentStageSchema).default([]),
+	payment_stages: z.array(paymentStageSchema),
 	notes: z.string().optional(),
 });
 
@@ -277,31 +277,28 @@ export const meetingStageModalSchema = z.discriminatedUnion("mode", [z.object({ 
 // fields directly into the direct_upload object using `.merge()` on a base that
 // carries all possible fields as optional, then enforce the conditional
 // requirement at the component level (the segmented control makes it obvious).
+export const proposalDirectUploadBranchSchema = z.object({
+	mode: z.literal("direct_upload"),
+	proposal_source: z.enum(PROPOSAL_SOURCES, { message: "Please select a proposal source" }),
+	upload_file: z
+		.any()
+		.optional()
+		.superRefine((f, ctx) => {
+			if (f !== undefined && f !== null && !(f instanceof File)) {
+				ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Must be a file" });
+			}
+			if (f instanceof File && f.type !== "application/pdf") {
+				ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Only PDF files are accepted" });
+			}
+		}),
+	template_id: optionalNumberInput().pipe(z.number().int().positive().optional()),
+	validity_date: z.string().min(1, "Validity date is required"),
+	notes: z.string().optional(),
+});
+
 export const proposalStageModalSchema = z.discriminatedUnion("mode", [
 	z.object({ mode: z.literal("task") }).merge(taskTabSchema),
-	z.object({
-		mode: z.literal("direct_upload"),
-		// Source switcher — always present
-		proposal_source: z.enum(PROPOSAL_SOURCES, { message: "Please select a proposal source" }),
-		// upload_new branch
-		upload_file: z
-			.any()
-			.optional()
-			.superRefine((f, ctx) => {
-				// Validated at component level; schema just allows the field through
-				if (f !== undefined && f !== null && !(f instanceof File)) {
-					ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Must be a file" });
-				}
-				if (f instanceof File && f.type !== "application/pdf") {
-					ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Only PDF files are accepted" });
-				}
-			}),
-		// use_template branch
-		template_id: optionalNumberInput().pipe(z.number().int().positive().optional()),
-		// Shared fields
-		validity_date: z.string().min(1, "Validity date is required"),
-		notes: z.string().optional(),
-	}),
+	proposalDirectUploadBranchSchema,
 	z.object({ mode: z.literal("skip") }).merge(skipTabSchema),
 ]);
 
@@ -328,14 +325,14 @@ export const contractStageModalSchema = z.discriminatedUnion("mode", [
 				// Optional fields that exist in one branch or the other — validated at runtime
 				currency: z.enum(CURRENCIES, { message: "Please select a currency" }).optional(),
 				total_amount: optionalNumberInput().pipe(z.number().min(0).optional()),
-				payment_stages: z.array(paymentStageSchema).default([]),
+payment_stages: z.array(paymentStageSchema),
 				setup_fee: optionalNumberInput().pipe(z.number().min(0).optional()),
 				recurring_fee: optionalNumberInput().pipe(z.number().min(0).optional()),
 				billing_cycle: z.enum(BILLING_CYCLES).optional(),
 				subscription_start_date: z.string().optional(),
-				apply_promo: z.boolean().default(false),
+apply_promo: z.boolean(),
 				promo_discount: optionalNumberInput().pipe(z.number().min(0).max(100).optional()),
-				addons: z.array(saasAddonSchema).default([]),
+addons: z.array(saasAddonSchema),
 			}),
 		),
 	z.object({ mode: z.literal("skip") }).merge(skipTabSchema),

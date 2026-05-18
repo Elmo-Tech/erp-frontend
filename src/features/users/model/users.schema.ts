@@ -38,8 +38,8 @@ export const createUserSchema = z
 		email: z.string().min(1, "Email is required").email("Invalid email address"),
 		password: z.string().min(8, "Password must be at least 8 characters"),
 		password_confirmation: z.string().min(1, "Please confirm the password"),
-		roles: z.array(z.string()).default([]),
-		isActive: z.boolean().default(true),
+		roles: z.array(z.string()),
+		isActive: z.boolean(),
 	})
 	.refine((d) => d.password === d.password_confirmation, {
 		message: "Passwords do not match",
@@ -69,8 +69,8 @@ export const editUserSchema = z
 		// Password is optional on edit — only validated when non-empty
 		password: z.string().optional().or(z.literal("")),
 		password_confirmation: z.string().optional().or(z.literal("")),
-		roles: z.array(z.string()).default([]),
-		isActive: z.boolean().default(true),
+		roles: z.array(z.string()),
+		isActive: z.boolean(),
 	})
 	.refine(
 		(d) => {

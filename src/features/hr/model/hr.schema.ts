@@ -32,7 +32,7 @@ export const shiftSchema = z
 		start_time: z.string().min(1, "Start time is required").regex(TIME_REGEX, "Must be HH:MM format (e.g. 09:00)"),
 		end_time: z.string().min(1, "End time is required").regex(TIME_REGEX, "Must be HH:MM format (e.g. 17:00)"),
 		working_days: z.array(z.enum(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])).min(1, "Select at least one working day"),
-		grace_period_minutes: requiredNumberInput("Grace period is required").pipe(z.number().int("Must be a whole number").min(0, "Cannot be negative").max(120, "Maximum grace period is 120 minutes")).default(0),
+		grace_period_minutes: requiredNumberInput("Grace period is required").pipe(z.number().int("Must be a whole number").min(0, "Cannot be negative").max(120, "Maximum grace period is 120 minutes")),
 	})
 	.refine((d) => d.end_time > d.start_time, {
 		message: "End time must be after start time",
@@ -112,7 +112,13 @@ export const generatePayrollSchema = z.object({
 	user_id: requiredNumberInput("Please select an employee").pipe(z.number().int().positive("Please select an employee")),
 	// FormSelect emits strings for month/year — coerce to number
 	month: requiredNumberInput("Month is required").pipe(z.number().int().min(1, "Invalid month").max(12, "Invalid month")),
-	year: requiredNumberInput("Year is required").pipe(z.number().int().min(2020, "Year must be 2020 or later").max(CURRENT_YEAR + 1, `Year cannot exceed ${CURRENT_YEAR + 1}`)),
+	year: requiredNumberInput("Year is required").pipe(
+		z
+			.number()
+			.int()
+			.min(2020, "Year must be 2020 or later")
+			.max(CURRENT_YEAR + 1, `Year cannot exceed ${CURRENT_YEAR + 1}`),
+	),
 });
 
 export type GeneratePayrollFormData = z.infer<typeof generatePayrollSchema>;
@@ -150,7 +156,7 @@ export const leaveRequestSchema = z
 		start_date: z.string().min(1, "Start date is required"),
 		end_date: z.string().min(1, "End date is required"),
 		type: z.enum(["annual", "sick", "unpaid", "permission"], { message: "Please select a leave type" }),
-		status: z.enum(["pending", "approved", "rejected"]).default("pending"),
+		status: z.enum(["pending", "approved", "rejected"], { message: "Please select a status" }),
 		reason: z.string().max(1000, "Reason must be 1000 characters or less").optional().or(z.literal("")),
 	})
 	.refine((d) => d.end_date >= d.start_date, {

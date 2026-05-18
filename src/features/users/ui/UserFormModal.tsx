@@ -47,13 +47,13 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 
 	// ── Create form ────────────────────────────────────────────────────────────
 	const createForm = useForm<CreateUserFormData>({
-		resolver: zodResolver(createUserSchema),
+		resolver: zodResolver(createUserSchema as any),
 		defaultValues: CREATE_USER_DEFAULT_VALUES,
 	});
 
 	// ── Edit form ──────────────────────────────────────────────────────────────
 	const editForm = useForm<EditUserFormData>({
-		resolver: zodResolver(editUserSchema),
+		resolver: zodResolver(editUserSchema as any),
 		defaultValues: {
 			name: "",
 			email: "",

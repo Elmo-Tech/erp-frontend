@@ -35,7 +35,7 @@ interface CreateQuotationModalProps {
 
 export function CreateQuotationModal({ leadId, open, onOpenChange, onCreated }: CreateQuotationModalProps) {
 	const form = useForm<QuotationDirectUploadValues>({
-		resolver: zodResolver(quotationDirectUploadSchema),
+		resolver: zodResolver(quotationDirectUploadSchema as any),
 		defaultValues: {
 			upload_file: undefined,
 			base_price: undefined,
