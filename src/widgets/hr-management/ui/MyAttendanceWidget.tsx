@@ -2,15 +2,16 @@
 
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Clock, LogOut, CheckCircle2, AlertCircle, CalendarDays } from "lucide-react";
+import { Clock, LogOut, CheckCircle2, AlertCircle, CalendarDays, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { cn } from "@/shared/lib/utils";
-import { useMyAttendance, useTodayAttendance, useCheckOutMutation } from "@/features/hr/model/use-hr-actions";
+import { useAttendanceSummary, useMyAttendance, useTodayAttendance, useCheckOutMutation, useUpdateAttendance } from "@/features/hr/model/use-hr-actions";
 import type { AttendanceRecord, AttendanceStatus } from "@/entities/hr/model/types";
+import { useAuthStore } from "@/entities/user/model/auth.store";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -24,6 +25,11 @@ function formatTime(iso: string | null): string {
 function formatDate(dateStr: string | null): string {
 	if (!dateStr) return "—";
 	return format(new Date(dateStr), "dd MMM yyyy");
+}
+
+function formatMinutes(value: number | null | undefined): string {
+	if (value == null) return "—";
+	return `${Math.floor(value / 60)}h ${value % 60}m`;
 }
 
 const STATUS_CONFIG: Record<AttendanceStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -52,7 +58,7 @@ function TodayAttendanceCard() {
 		return (
 			<Card>
 				<CardHeader>
-					<CardTitle className="text-base">Today's Attendance</CardTitle>
+						<CardTitle className="text-base">Today&apos;s Attendance</CardTitle>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-3">
 					<Skeleton className="h-6 w-48" />
@@ -69,7 +75,7 @@ function TodayAttendanceCard() {
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2 text-base">
 						<CalendarDays className="h-4 w-4 text-muted-foreground" />
-						Today's Attendance
+							Today&apos;s Attendance
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
@@ -89,7 +95,7 @@ function TodayAttendanceCard() {
 				<CardHeader>
 					<CardTitle className="flex items-center gap-2 text-base">
 						<Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
-						Today's Attendance
+							Today&apos;s Attendance
 					</CardTitle>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -126,7 +132,7 @@ function TodayAttendanceCard() {
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2 text-base">
 					<CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-					Today's Attendance
+						Today&apos;s Attendance
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex flex-wrap gap-6">
@@ -159,7 +165,8 @@ function TodayAttendanceCard() {
 // Historical table columns
 // ─────────────────────────────────────────────────────────────────────────────
 
-const columns: Column<AttendanceRecord>[] = [
+function buildColumns(canManageAttendance: boolean, onTreatment: (record: AttendanceRecord, treatment: "deduct" | "grace" | "excused") => void): Column<AttendanceRecord>[] {
+	return [
 	{
 		key: "date",
 		header: "Date",
@@ -195,11 +202,37 @@ const columns: Column<AttendanceRecord>[] = [
 	},
 	{
 		key: "worked",
-		header: "Worked",
+		header: "Actual",
 		className: "text-right",
-		render: (rec) => <span className={cn("text-sm tabular-nums", !rec.totalWorkedMinutes && "text-muted-foreground")}>{rec.totalWorkedMinutes != null ? `${Math.floor(rec.totalWorkedMinutes / 60)}h ${rec.totalWorkedMinutes % 60}m` : "—"}</span>,
+		render: (rec) => <span className={cn("text-sm tabular-nums", !rec.actualWorkedMinutes && "text-muted-foreground")}>{formatMinutes(rec.actualWorkedMinutes)}</span>,
+	},
+	{
+		key: "stopped",
+		header: "Stopped",
+		className: "text-right",
+		render: (rec) => <span className="text-sm tabular-nums text-muted-foreground">{formatMinutes(rec.stoppedMinutes)}</span>,
+	},
+	{
+		key: "late",
+		header: "Late",
+		className: "text-right",
+		render: (rec) => <span className={cn("text-sm tabular-nums", !rec.lateMinutes && "text-muted-foreground")}>{rec.lateMinutes ? `${rec.lateMinutes}m` : "—"}</span>,
+	},
+	{
+		key: "admin",
+		header: "",
+		className: "text-right",
+		render: (rec) =>
+			canManageAttendance ? (
+				<div className="flex justify-end gap-1">
+					<Button variant="ghost" size="sm" onClick={() => onTreatment(rec, "deduct")}>Deduct</Button>
+					<Button variant="ghost" size="sm" onClick={() => onTreatment(rec, "grace")}>Grace</Button>
+					<Button variant="ghost" size="sm" onClick={() => onTreatment(rec, "excused")}>Excuse</Button>
+				</div>
+			) : null,
 	},
 ];
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Widget
@@ -207,7 +240,20 @@ const columns: Column<AttendanceRecord>[] = [
 
 export function MyAttendanceWidget() {
 	const { data, isLoading, error } = useMyAttendance();
+	const weekSummary = useAttendanceSummary("week");
+	const monthSummary = useAttendanceSummary("month");
+	const canManageAttendance = useAuthStore((s) => s.hasPermission("manage_attendance"));
+	const updateAttendance = useUpdateAttendance();
 	const records = data?.data ?? [];
+	const columns = buildColumns(canManageAttendance, (record, lateTreatment) => {
+		updateAttendance.mutate(
+			{ id: record.id, payload: { lateTreatment } },
+			{
+				onSuccess: () => toast.success("Attendance updated"),
+				onError: () => toast.error("Failed to update attendance"),
+			},
+		);
+	});
 
 	return (
 		<section className="flex flex-col gap-6">
@@ -217,6 +263,11 @@ export function MyAttendanceWidget() {
 			</div>
 
 			<TodayAttendanceCard />
+
+			<div className="grid gap-3 md:grid-cols-2">
+				<SummaryCard title="This week" summary={weekSummary.data} isLoading={weekSummary.isLoading} />
+				<SummaryCard title="This month" summary={monthSummary.data} isLoading={monthSummary.isLoading} />
+			</div>
 
 			<DataTable<AttendanceRecord>
 				title="Attendance History"
@@ -233,5 +284,37 @@ export function MyAttendanceWidget() {
 				}}
 			/>
 		</section>
+	);
+}
+
+function SummaryCard({ title, summary, isLoading }: { title: string; summary?: { expectedMinutes: number; actualWorkedMinutes: number; stoppedMinutes: number; lateMinutes: number }; isLoading: boolean }) {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2 text-base">
+					<ShieldCheck className="h-4 w-4 text-muted-foreground" />
+					{title}
+				</CardTitle>
+			</CardHeader>
+			<CardContent className="grid grid-cols-2 gap-4">
+				{isLoading ? (
+					<>
+						<Skeleton className="h-10" />
+						<Skeleton className="h-10" />
+					</>
+				) : (
+					<>
+						<div>
+							<p className="text-xs text-muted-foreground">Actual / Expected</p>
+							<p className="text-sm font-semibold tabular-nums">{formatMinutes(summary?.actualWorkedMinutes)} / {formatMinutes(summary?.expectedMinutes)}</p>
+						</div>
+						<div>
+							<p className="text-xs text-muted-foreground">Stopped / Late</p>
+							<p className="text-sm font-semibold tabular-nums">{formatMinutes(summary?.stoppedMinutes)} / {summary?.lateMinutes ?? 0}m</p>
+						</div>
+					</>
+				)}
+			</CardContent>
+		</Card>
 	);
 }

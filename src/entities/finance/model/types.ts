@@ -23,6 +23,7 @@ export interface ApiEnvelope<T> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue";
+export type InvoiceType = "one_time" | "subscription";
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
 	draft: "Draft",
@@ -62,6 +63,9 @@ export interface Invoice {
 	invoiceNumber: string;
 	clientId: number;
 	projectId: number | null;
+	invoiceType: InvoiceType;
+	billingCycle: BillingCycle | null;
+	subscriptionId: number | null;
 	issueDate: string; // YYYY-MM-DD
 	dueDate: string; // YYYY-MM-DD
 	subtotal: number;
@@ -97,7 +101,7 @@ export interface Invoice {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type SubscriptionStatus = "active" | "cancelled";
-export type BillingCycle = "monthly" | "yearly";
+export type BillingCycle = "monthly" | "quarterly" | "semi_annual" | "annual";
 
 export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
 	active: "Active",
@@ -106,11 +110,15 @@ export const SUBSCRIPTION_STATUS_LABELS: Record<SubscriptionStatus, string> = {
 
 export const BILLING_CYCLE_LABELS: Record<BillingCycle, string> = {
 	monthly: "Monthly",
-	yearly: "Yearly",
+	quarterly: "Quarterly",
+	semi_annual: "Semi-Annual",
+	annual: "Annual",
 };
 
 export interface Subscription {
 	id: number;
+	clientId: number | null;
+	projectId: number | null;
 	name: string;
 	provider: string | null;
 	billingCycle: BillingCycle;
@@ -119,6 +127,14 @@ export interface Subscription {
 	nextBillingDate: string; // YYYY-MM-DD
 	status: SubscriptionStatus;
 	notes: string | null;
+	client?: {
+		id: number;
+		name: string | null;
+	} | null;
+	project?: {
+		id: number;
+		title: string;
+	} | null;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -136,6 +152,8 @@ export interface InvoiceItemPayload {
 export interface CreateInvoicePayload {
 	clientId: number;
 	projectId?: number | null;
+	invoiceType?: InvoiceType;
+	billingCycle?: BillingCycle | null;
 	issueDate: string;
 	dueDate: string;
 	taxRate?: number;

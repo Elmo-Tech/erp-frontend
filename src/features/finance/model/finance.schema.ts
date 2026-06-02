@@ -34,6 +34,8 @@ export const invoiceSchema = z
 	.object({
 		clientId: requiredNumberInput("Please select a client").pipe(z.number().int().positive("Please select a client")),
 		projectId: nullableNumberInput().pipe(z.number().int().positive().nullable()),
+		invoiceType: z.enum(["one_time", "subscription"]).default("one_time"),
+		billingCycle: z.enum(["monthly", "quarterly", "semi_annual", "annual"]).nullable().optional(),
 		issueDate: z.string().min(1, "Issue date is required"),
 		dueDate: z.string().min(1, "Due date is required"),
 		taxRate: requiredNumberInput("Tax rate is required").pipe(z.number().nonnegative("Cannot be negative").max(100, "Cannot exceed 100%")).default(0),
@@ -45,6 +47,10 @@ export const invoiceSchema = z
 	.refine((d) => !d.dueDate || !d.issueDate || d.dueDate >= d.issueDate, {
 		message: "Due date must be on or after the issue date",
 		path: ["dueDate"],
+	})
+	.refine((d) => d.invoiceType !== "subscription" || Boolean(d.billingCycle), {
+		message: "Billing cycle is required for SaaS subscriptions",
+		path: ["billingCycle"],
 	});
 
 export type InvoiceFormData = z.output<typeof invoiceSchema>;
@@ -52,6 +58,8 @@ export type InvoiceFormData = z.output<typeof invoiceSchema>;
 export const INVOICE_DEFAULT_VALUES = {
 	clientId: 0,
 	projectId: null as number | null,
+	invoiceType: "one_time" as const,
+	billingCycle: null as "monthly" | "quarterly" | "semi_annual" | "annual" | null,
 	issueDate: new Date().toISOString().slice(0, 10),
 	dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
 	taxRate: 0,
@@ -69,7 +77,7 @@ export const INVOICE_DEFAULT_VALUES = {
 export const subscriptionSchema = z.object({
 	name: z.string().min(1, "Name is required").max(255, "Max 255 characters"),
 	provider: z.string().max(255, "Max 255 characters").nullable().optional(),
-	billingCycle: z.enum(["monthly", "yearly"]),
+	billingCycle: z.enum(["monthly", "quarterly", "semi_annual", "annual"]),
 	cost: requiredNumberInput("Cost is required").pipe(z.number().nonnegative("Cost cannot be negative")),
 	currency: z.string().length(3, "Currency must be a 3-letter code (e.g. USD)").default("USD"),
 	nextBillingDate: z.string().min(1, "Next billing date is required"),

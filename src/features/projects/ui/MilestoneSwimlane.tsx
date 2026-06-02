@@ -11,7 +11,7 @@
  * so the parent (ProjectTasksTab) doesn't need to pre-filter.
  */
 
-import { Layers } from "lucide-react";
+import { ChevronDown, ChevronRight, Layers } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Progress } from "@/shared/ui/progress";
 import { cn } from "@/shared/lib/utils";
@@ -28,13 +28,15 @@ export interface MilestoneSwimlaneProps {
 	tasks: ProjectTask[];
 	projectId: number;
 	onTaskClick: (task: ProjectTask) => void;
+	isCollapsed?: boolean;
+	onToggleCollapse?: () => void;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function MilestoneSwimlane({ milestone, tasks, projectId, onTaskClick }: MilestoneSwimlaneProps) {
+export function MilestoneSwimlane({ milestone, tasks, projectId, onTaskClick, isCollapsed = false, onToggleCollapse }: MilestoneSwimlaneProps) {
 	const progress = milestone.progressPercentage ?? 0;
 	const statusColorClass = MilestoneStatusColors[milestone.status as MilestoneStatus] ?? "bg-gray-100 text-gray-800 border-gray-200";
 	const statusLabel = MilestoneStatusLabels[milestone.status as MilestoneStatus] ?? milestone.statusLabel ?? milestone.status ?? "Pending";
@@ -45,6 +47,14 @@ export function MilestoneSwimlane({ milestone, tasks, projectId, onTaskClick }: 
 			<div className="flex flex-col gap-2">
 				<div className="flex items-center justify-between gap-3">
 					<div className="flex min-w-0 items-center gap-2">
+						<button
+							type="button"
+							className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+							onClick={onToggleCollapse}
+							aria-label={isCollapsed ? `Expand ${milestone.title}` : `Collapse ${milestone.title}`}
+						>
+							{isCollapsed ? <ChevronRight className="size-4" /> : <ChevronDown className="size-4" />}
+						</button>
 						<Layers className="size-4 shrink-0 text-muted-foreground" />
 						<h3 className="truncate text-sm font-semibold">{milestone.title}</h3>
 					</div>
@@ -77,7 +87,7 @@ export function MilestoneSwimlane({ milestone, tasks, projectId, onTaskClick }: 
 			</div>
 
 			{/* ── Task grid ────────────────────────────────────────────────────── */}
-			{tasks.length > 0 ? (
+			{!isCollapsed && tasks.length > 0 ? (
 				<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
 					{tasks.map((task) => (
 						<ProjectTaskCard
@@ -88,11 +98,11 @@ export function MilestoneSwimlane({ milestone, tasks, projectId, onTaskClick }: 
 						/>
 					))}
 				</div>
-			) : (
+			) : !isCollapsed ? (
 				<div className="flex min-h-20 items-center justify-center rounded-md border border-dashed">
 					<p className="text-xs text-muted-foreground">No tasks in this milestone yet.</p>
 				</div>
-			)}
+			) : null}
 		</div>
 	);
 }

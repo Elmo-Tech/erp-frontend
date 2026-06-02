@@ -60,6 +60,9 @@ export interface AttendanceRecord {
 	clockOut: string | null; // ISO-8601
 	status: AttendanceStatus;
 	totalWorkedMinutes: number | null;
+	actualWorkedMinutes: number | null;
+	stoppedMinutes: number | null;
+	expectedWorkedMinutes: number | null;
 	lateMinutes: number | null;
 	isLate: boolean;
 	idleMinutes: number | null;
@@ -77,6 +80,35 @@ export interface AttendanceRecord {
 	};
 	createdAt: string;
 	updatedAt: string;
+}
+
+export interface AttendanceSummaryDay {
+	date: string;
+	expectedMinutes: number;
+	actualWorkedMinutes: number;
+	stoppedMinutes: number;
+	lateMinutes: number;
+	deductionMinutes: number;
+	status: AttendanceStatus;
+}
+
+export interface AttendanceSummary {
+	scope: "week" | "month";
+	from: string;
+	to: string;
+	userId: number;
+	expectedMinutes: number;
+	actualWorkedMinutes: number;
+	stoppedMinutes: number;
+	lateMinutes: number;
+	deductionMinutes: number;
+	daily: AttendanceSummaryDay[];
+}
+
+export interface UpdateAttendancePayload {
+	status?: AttendanceStatus;
+	notes?: string | null;
+	lateTreatment?: "deduct" | "grace" | "excused";
 }
 
 export interface TeamPulseItem {

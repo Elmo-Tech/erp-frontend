@@ -20,6 +20,7 @@ import type {
 	UpdateEmployeeProfilePayload,
 	GeneratePayrollPayload,
 	UpdateSystemSettingPayload,
+	UpdateAttendancePayload,
 	CreateLeaveRequestPayload,
 	UpdateLeaveRequestPayload,
 	CreatePayrollTransactionPayload,
@@ -63,6 +64,14 @@ export function useTodayAttendance() {
 	});
 }
 
+export function useAttendanceSummary(scope: "week" | "month") {
+	return useQuery({
+		queryKey: [...hrKeys.attendance(), "summary", scope] as const,
+		queryFn: () => hrApi.fetchAttendanceSummary({ scope }),
+		staleTime: 60 * 1000,
+	});
+}
+
 export function useCheckOutMutation() {
 	const queryClient = useQueryClient();
 
@@ -80,6 +89,18 @@ export function useCheckInMutation() {
 
 	return useMutation({
 		mutationFn: hrApi.postCheckIn,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrKeys.attendance() });
+			queryClient.invalidateQueries({ queryKey: hrKeys.teamPulse() });
+		},
+	});
+}
+
+export function useUpdateAttendance() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ id, payload }: { id: number; payload: UpdateAttendancePayload }) => hrApi.patchAttendance(id, payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: hrKeys.attendance() });
 			queryClient.invalidateQueries({ queryKey: hrKeys.teamPulse() });

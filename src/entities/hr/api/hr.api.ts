@@ -12,6 +12,7 @@ import api from "@/shared/api/base";
 import type {
 	ApiEnvelope,
 	AttendanceRecord,
+	AttendanceSummary,
 	CreateEmployeeProfilePayload,
 	CreateLeaveRequestPayload,
 	CreatePayrollTransactionPayload,
@@ -28,6 +29,7 @@ import type {
 	SystemSetting,
 	TeamPulseItem,
 	UpdateEmployeeProfilePayload,
+	UpdateAttendancePayload,
 	UpdateLeaveRequestPayload,
 	UpdatePayrollTransactionPayload,
 	UpdateShiftPayload,
@@ -52,6 +54,18 @@ export async function fetchAttendanceList(): Promise<PaginatedResponse<Attendanc
 	return res.data.data;
 }
 
+export async function fetchAttendanceSummary(params?: { scope?: "week" | "month"; userId?: number; from?: string; to?: string }): Promise<AttendanceSummary> {
+	const queryParams = new URLSearchParams();
+	if (params?.scope) queryParams.set("scope", params.scope);
+	if (params?.userId) queryParams.set("user_id", String(params.userId));
+	if (params?.from) queryParams.set("from", params.from);
+	if (params?.to) queryParams.set("to", params.to);
+
+	const query = queryParams.toString();
+	const res = await api.get<ApiEnvelope<AttendanceSummary>>(query ? `/hr/attendance/summary?${query}` : "/hr/attendance/summary");
+	return res.data.data;
+}
+
 export async function fetchTodayAttendance(): Promise<AttendanceRecord | null> {
 	const res = await api.get<ApiEnvelope<AttendanceRecord | null>>("/hr/attendance/today");
 	return res.data.data;
@@ -64,6 +78,11 @@ export async function postCheckIn(): Promise<AttendanceRecord> {
 
 export async function postCheckOut(): Promise<AttendanceRecord> {
 	const res = await api.post<ApiEnvelope<AttendanceRecord>>("/hr/attendance/check-out");
+	return res.data.data;
+}
+
+export async function patchAttendance(id: number, payload: UpdateAttendancePayload): Promise<AttendanceRecord> {
+	const res = await api.patch<ApiEnvelope<AttendanceRecord>>(`/hr/attendance/${id}`, payload);
 	return res.data.data;
 }
 

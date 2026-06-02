@@ -54,6 +54,7 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 
 	// Watch clientId so we can filter projects
 	const selectedClientId = form.watch("clientId");
+	const invoiceType = form.watch("invoiceType");
 
 	// Fetch clients for the combobox
 	const clientsQuery = useClientsQuery(open ? undefined : undefined);
@@ -104,6 +105,8 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 			form.reset({
 				clientId: Number(fullInvoice.clientId),
 				projectId: fullInvoice.projectId ? Number(fullInvoice.projectId) : null,
+				invoiceType: fullInvoice.invoiceType ?? "one_time",
+				billingCycle: fullInvoice.billingCycle ?? null,
 				issueDate: fullInvoice.issueDate,
 				dueDate: fullInvoice.dueDate,
 				taxRate: fullInvoice.taxRate,
@@ -129,6 +132,7 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 				...data,
 				clientId: Number(data.clientId),
 				projectId: data.projectId ? Number(data.projectId) : null,
+				billingCycle: data.invoiceType === "subscription" ? data.billingCycle : null,
 			};
 
 			if (isEditing) {
@@ -184,6 +188,36 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 							options={projectOptions}
 							disabled={isPending || !selectedClientId || Number(selectedClientId) === 0 || projectsQuery.isLoading}
 						/>
+					</div>
+
+					{/* ── Dates ── */}
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+						<FormSelect
+							control={form.control}
+							name="invoiceType"
+							label="Invoice Type"
+							options={[
+								{ value: "one_time", label: "Normal invoice" },
+								{ value: "subscription", label: "SaaS subscription" },
+							]}
+							disabled={isPending}
+						/>
+						{invoiceType === "subscription" ? (
+							<FormSelect
+								control={form.control}
+								name="billingCycle"
+								label="Billing Cycle"
+								options={[
+									{ value: "monthly", label: "Monthly" },
+									{ value: "quarterly", label: "Every 3 months" },
+									{ value: "semi_annual", label: "Every 6 months" },
+									{ value: "annual", label: "Annual" },
+								]}
+								disabled={isPending}
+							/>
+						) : (
+							<div className="hidden sm:block" />
+						)}
 					</div>
 
 					{/* ── Dates ── */}

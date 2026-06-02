@@ -41,6 +41,28 @@ describe("numeric form schemas", () => {
 		}
 	});
 
+	it("requires a billing cycle for subscription invoices", () => {
+		const missingCycle = invoiceSchema.safeParse({
+			...invoiceBase,
+			invoiceType: "subscription",
+			billingCycle: null,
+			taxRate: "0",
+			discountAmount: "0",
+		});
+
+		expect(missingCycle.success).toBe(false);
+
+		const validCycle = invoiceSchema.safeParse({
+			...invoiceBase,
+			invoiceType: "subscription",
+			billingCycle: "quarterly",
+			taxRate: "0",
+			discountAmount: "0",
+		});
+
+		expect(validCycle.success).toBe(true);
+	});
+
 	it("does not coerce blank HR salary or payroll amounts to zero", () => {
 		expect(
 			assignHrProfileSchema.safeParse({

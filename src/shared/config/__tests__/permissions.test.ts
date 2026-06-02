@@ -6,4 +6,19 @@ describe("SYSTEM_PERMISSIONS dashboard split", () => {
 		expect(SYSTEM_PERMISSIONS).toContain("view_my_workspace");
 		expect(SYSTEM_PERMISSIONS).toContain("view_global_stats");
 	});
+
+	it("includes team timer and granular calendar permissions", () => {
+		expect(SYSTEM_PERMISSIONS).toEqual(
+			expect.arrayContaining([
+				"manage_team_timers",
+				"view_calendar_events",
+				"view_calendar_meetings",
+				"view_calendar_tasks",
+				"view_calendar_milestones",
+				"view_calendar_invoices",
+				"view_calendar_subscriptions",
+				"collect_subscription_payments",
+			]),
+		);
+	});
 });

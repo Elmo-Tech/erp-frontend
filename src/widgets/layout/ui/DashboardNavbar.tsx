@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Activity, Loader2, LogIn, LogOut, Menu, Moon, Pause, Search, Settings, Square, Sun, Timer, User } from 'lucide-react';
+import { Activity, ExternalLink, ListTodo, Loader2, LogIn, LogOut, Menu, Moon, Play, Search, Settings, Square, Sun, Timer, User } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '@/features/auth/api/auth.api';
 import { useAuthStore } from '@/entities/user/model/auth.store';
 import { useActiveTimeEntryStore } from '@/features/time-tracking/model/active-time-entry.store';
 import { elapsedSecondsSince, formatElapsedTime } from '@/features/time-tracking/model/timer-format';
-import { useActiveProjectTimeEntry, useToggleTaskTimer } from '@/features/projects/api/execution.api';
-import { useCheckInMutation, useTeamPulse, useTodayAttendance } from '@/features/hr/model/use-hr-actions';
+import { useActiveProjectTimeEntry, useMyActiveProjectTasks, useToggleTaskTimer } from '@/features/projects/api/execution.api';
+import { useCheckInMutation, useCheckOutMutation, useTeamPulse, useTodayAttendance } from '@/features/hr/model/use-hr-actions';
 import type { TeamPulseItem } from '@/entities/hr/model/types';
 import { useSidebarStore } from '@/widgets/layout/model/sidebar.store';
 import { Button } from '@/shared/ui/button';
@@ -142,6 +142,7 @@ export function DashboardNavbar() {
 
 function ActiveTimerPill() {
 	const activeQuery = useActiveProjectTimeEntry();
+	const tasksQuery = useMyActiveProjectTasks();
 	const setActiveTimeEntry = useActiveTimeEntryStore((s) => s.setActiveTimeEntry);
 	const activeTimeEntry = useActiveTimeEntryStore((s) => s.activeTimeEntry);
 	const toggleTimer = useToggleTaskTimer();
@@ -161,47 +162,125 @@ function ActiveTimerPill() {
 	const projectId = activeTimeEntry?.projectId ?? activeTimeEntry?.project?.projectId ?? activeTimeEntry?.task?.projectId;
 	const taskId = activeTimeEntry?.taskId;
 	const taskName = activeTimeEntry?.task?.title ?? 'Active task';
+	const projectName = activeTimeEntry?.project?.title ?? 'Project';
 	const elapsed = formatElapsedTime(elapsedSecondsSince(activeTimeEntry?.startTime, now));
 
-	if (!activeTimeEntry || !taskId || !projectId) {
-		return null;
-	}
-
-	const stopTimer = () => {
+	const stopTimer = (event?: MouseEvent) => {
+		event?.stopPropagation();
+		if (!projectId || !taskId) return;
 		toggleTimer.mutate({ projectId, taskId });
 	};
 
 	return (
-		<div className="flex max-w-[46vw] items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1.5 text-emerald-700 shadow-[0_0_20px_rgba(16,185,129,0.24)] dark:text-emerald-300 sm:max-w-[520px]">
-			<Timer className="size-4 shrink-0 animate-pulse" />
-			<span className="min-w-0 truncate text-sm font-semibold tabular-nums">
-				{elapsed} - {taskName}
-			</span>
-			<div className="ml-1 flex shrink-0 items-center gap-1">
+		<Popover>
+			<PopoverTrigger asChild>
 				<Button
 					type="button"
-					variant="ghost"
-					size="icon"
-					className="size-7 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
-					onClick={stopTimer}
-					disabled={toggleTimer.isPending}
-					aria-label="Pause active timer"
+					variant={activeTimeEntry ? "outline" : "ghost"}
+					size="sm"
+					className={activeTimeEntry ? "max-w-[46vw] border-emerald-400/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 sm:max-w-[420px]" : "hidden sm:inline-flex"}
+					aria-label="Open task timer"
 				>
-					{toggleTimer.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Pause className="size-3.5" />}
+					<Timer className={activeTimeEntry ? "size-4 animate-pulse" : "size-4"} />
+					<span className="min-w-0 truncate text-xs font-semibold tabular-nums">
+						{activeTimeEntry ? `${elapsed} - ${taskName}` : "Tasks"}
+					</span>
 				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					className="size-7 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
-					onClick={stopTimer}
-					disabled={toggleTimer.isPending}
-					aria-label="Stop active timer"
-				>
-					<Square className="size-3.5" />
-				</Button>
-			</div>
-		</div>
+			</PopoverTrigger>
+			<PopoverContent
+				align="end"
+				className="z-50 w-96 border bg-popover p-0 text-popover-foreground shadow-xl"
+			>
+				<div className="border-b px-4 py-3">
+					<p className="text-sm font-medium">Task Timer</p>
+					<p className="text-xs text-muted-foreground">{activeTimeEntry ? `${projectName} / ${taskName}` : "No timer is running"}</p>
+				</div>
+
+				{activeTimeEntry && projectId && taskId && (
+					<div className="border-b p-3">
+						<div className="rounded-md border bg-emerald-500/5 p-3">
+							<div className="flex items-start justify-between gap-3">
+								<div className="min-w-0">
+									<p className="truncate text-sm font-medium">{taskName}</p>
+									<p className="truncate text-xs text-muted-foreground">{projectName}</p>
+									<p className="mt-2 font-mono text-lg font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">{elapsed}</p>
+								</div>
+								<div className="flex shrink-0 items-center gap-1">
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										asChild
+									>
+										<Link
+											href={`/dashboard/projects/${projectId}?taskId=${taskId}`}
+											aria-label="Open active task"
+										>
+											<ExternalLink className="size-4" />
+										</Link>
+									</Button>
+									<Button
+										type="button"
+										variant="destructive"
+										size="icon-sm"
+										onClick={stopTimer}
+										disabled={toggleTimer.isPending}
+										aria-label="Stop active timer"
+									>
+										{toggleTimer.isPending ? <Loader2 className="size-4 animate-spin" /> : <Square className="size-4" />}
+									</Button>
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
+
+				<div className="max-h-80 overflow-y-auto p-2">
+					<div className="mb-2 flex items-center gap-2 px-2 text-xs font-medium text-muted-foreground">
+						<ListTodo className="size-3.5" />
+						My tasks
+					</div>
+					{tasksQuery.isLoading ? (
+						<div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-muted-foreground">
+							<Loader2 className="size-4 animate-spin" />
+							Loading tasks
+						</div>
+					) : tasksQuery.data?.length ? (
+						<div className="space-y-1">
+							{tasksQuery.data.map((task) => {
+								const running = activeTimeEntry?.taskId === task.taskId;
+								return (
+									<div
+										key={task.taskId}
+										className="flex items-center justify-between gap-2 rounded-md px-2 py-2 hover:bg-muted/50"
+									>
+										<Link
+											href={`/dashboard/projects/${task.projectId}?taskId=${task.taskId}`}
+											className="min-w-0 flex-1"
+										>
+											<p className="truncate text-sm font-medium">{task.title}</p>
+											<p className="truncate text-xs text-muted-foreground">{task.project?.title ?? "Project"}</p>
+										</Link>
+										<Button
+											type="button"
+											variant={running ? "destructive" : "outline"}
+											size="icon-sm"
+											disabled={toggleTimer.isPending}
+											onClick={() => toggleTimer.mutate({ projectId: task.projectId, taskId: task.taskId })}
+											aria-label={running ? "Stop task timer" : "Start task timer"}
+										>
+											{running ? <Square className="size-3.5" /> : <Play className="size-3.5" />}
+										</Button>
+									</div>
+								);
+							})}
+						</div>
+					) : (
+						<div className="px-4 py-8 text-center text-sm text-muted-foreground">No assigned tasks.</div>
+					)}
+				</div>
+			</PopoverContent>
+		</Popover>
 	);
 }
 
@@ -217,16 +296,35 @@ function formatAttendanceTime(value: string | null | undefined) {
 function AttendanceStatusPill() {
 	const todayQuery = useTodayAttendance();
 	const checkIn = useCheckInMutation();
+	const checkOut = useCheckOutMutation();
 	const checkedInAt = todayQuery.data?.clockIn;
 
 	if (todayQuery.isLoading) {
 		return null;
 	}
 
-	if (checkedInAt) {
+	if (checkedInAt && todayQuery.data?.isClockedIn) {
 		return (
-			<div className="hidden items-center rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 sm:flex">
-				Checked in at {formatAttendanceTime(checkedInAt)}
+			<div className="hidden items-center gap-1 sm:flex">
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					className="border-emerald-400/40 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300"
+					asChild
+				>
+					<Link href="/dashboard/hr/attendance">In {formatAttendanceTime(checkedInAt)}</Link>
+				</Button>
+				<Button
+					type="button"
+					variant="destructive"
+					size="sm"
+					onClick={() => checkOut.mutate()}
+					disabled={checkOut.isPending}
+				>
+					{checkOut.isPending ? <Loader2 className="size-4 animate-spin" /> : <LogOut className="size-4" />}
+					Check Out
+				</Button>
 			</div>
 		);
 	}

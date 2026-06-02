@@ -10,7 +10,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import type { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import type { LucideIcon } from "lucide-react";
-import { CalendarDays, CheckSquare, Clock, ExternalLink, FileText, Flag, Plus } from "lucide-react";
+import { CalendarDays, CheckSquare, Clock, CreditCard, ExternalLink, FileText, Flag, Plus } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Can } from "@/shared/ui/Can";
@@ -22,7 +22,7 @@ import { TaskExecutionSheet } from "@/features/projects/ui/TaskExecutionSheet";
 import { useCalendarFeed } from "@/features/calendar/model/use-calendar-actions";
 import { useProjectTasks } from "@/features/projects/api/execution.api";
 import type { Invoice, InvoiceStatus } from "@/entities/finance/model/types";
-import type { AggregatedCalendarItem, AggregatedItemType, EventMeta, InvoiceMeta, MilestoneMeta, TaskMeta } from "@/entities/calendar/model/types";
+import type { AggregatedCalendarItem, AggregatedItemType, EventMeta, InvoiceMeta, MilestoneMeta, SubscriptionMeta, TaskMeta } from "@/entities/calendar/model/types";
 import { cn } from "@/shared/lib/utils";
 
 const TYPE_THEME: Record<
@@ -75,6 +75,14 @@ const TYPE_THEME: Record<
 		eventClass: "calendar-event-milestone bg-emerald-500 text-white border-none",
 		softClass: "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-900/60",
 		textClass: "text-emerald-700 dark:text-emerald-300",
+	},
+	subscription: {
+		label: "Subscriptions",
+		icon: CreditCard,
+		color: "#0f766e",
+		eventClass: "calendar-event-subscription bg-teal-700 text-white border-none",
+		softClass: "bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-900/60",
+		textClass: "text-teal-700 dark:text-teal-300",
 	},
 };
 
@@ -133,6 +141,9 @@ function buildInvoiceEditTarget(item: AggregatedCalendarItem): Invoice {
 		invoiceNumber: meta.invoiceNumber,
 		clientId: meta.clientId,
 		projectId: meta.projectId ?? null,
+		invoiceType: "one_time",
+		billingCycle: null,
+		subscriptionId: null,
 		issueDate: item.date,
 		dueDate: item.date,
 		subtotal: meta.totalAmount,
@@ -241,6 +252,10 @@ function agendaSubtitle(item: AggregatedCalendarItem) {
 		const meta = item.meta as InvoiceMeta;
 		return `${meta.clientName ?? "Client"} / ${money(meta.totalAmount, meta.currency)}`;
 	}
+	if (item.type === "subscription") {
+		const meta = item.meta as SubscriptionMeta;
+		return `${meta.clientName ?? "Client"} / ${money(meta.totalAmount, meta.currency)} / ${meta.billingCycle}`;
+	}
 	if (item.type === "milestone") {
 		const meta = item.meta as MilestoneMeta;
 		return `${meta.projectTitle ?? "Project"} / ${meta.progressPercentage}% complete`;
@@ -299,6 +314,7 @@ function MilestoneSheet({ item, onOpenChange }: { item: AggregatedCalendarItem |
 }
 
 export function MasterCalendarWidget() {
+	const router = useRouter();
 	const calendarRef = useRef<FullCalendar>(null);
 	const [currentDate, setCurrentDate] = useState(() => new Date());
 	const [formOpen, setFormOpen] = useState(false);
@@ -334,8 +350,12 @@ export function MasterCalendarWidget() {
 			setTaskTarget(item);
 			return;
 		}
+		if (item.type === "subscription") {
+			router.push("/dashboard/finance/subscriptions");
+			return;
+		}
 		setMilestoneTarget(item);
-	}, []);
+	}, [router]);
 
 	const renderEventContent = useCallback((eventInfo: EventContentArg) => {
 		const type = eventInfo.event.extendedProps.type as AggregatedItemType;

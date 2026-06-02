@@ -15,7 +15,7 @@
  *  └──────────────────────────────────────────────────────────────┘
  */
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { useState } from "react";
@@ -23,7 +23,6 @@ import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Progress } from "@/shared/ui/progress";
-import { cn } from "@/shared/lib/utils";
 import { projectApi } from "@/entities/project/api/project.api";
 import { projectKeys } from "@/entities/project/model/query-keys";
 import { ProjectStatusBadge } from "@/entities/project/ui/ProjectStatusBadge";
@@ -51,8 +50,12 @@ interface ProjectDetailsViewProps {
 
 export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const initialTaskId = Number(searchParams.get("taskId") ?? 0) || null;
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
+	const [activeTab, setActiveTab] = useState(initialTaskId ? "tasks" : "overview");
 	const { canEditProjects } = useProjectPermissions();
+
 
 	const projectQuery = useQuery({
 		queryKey: projectKeys.detail(projectId),
@@ -137,7 +140,8 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 
 			{/* ── Tabs ────────────────────────────────────────────────────────── */}
 			<Tabs
-				defaultValue="overview"
+				value={activeTab}
+				onValueChange={setActiveTab}
 				className="flex flex-col gap-4"
 			>
 				<TabsList className="w-fit">
@@ -155,7 +159,10 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 				</TabsContent>
 
 				<TabsContent value="tasks">
-					<ProjectTasksTab projectId={projectId} />
+					<ProjectTasksTab
+						projectId={projectId}
+						initialTaskId={initialTaskId}
+					/>
 				</TabsContent>
 
 				<TabsContent value="meetings">

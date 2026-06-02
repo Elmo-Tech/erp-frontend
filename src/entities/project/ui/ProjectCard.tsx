@@ -65,7 +65,24 @@ export function ProjectCard({ project, canViewBudget = true, onView, onEdit, onD
 			</div>
 
 			<div className="min-w-0">
-				<div className="truncate font-medium leading-5">{project.title}</div>
+				<div className="flex min-w-0 items-center gap-2">
+					{onTogglePin && (
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							aria-label={project.isPinned ? `Unpin ${project.title}` : `Pin ${project.title}`}
+							className={cn("size-7 shrink-0 text-muted-foreground md:hidden", project.isPinned && "text-foreground")}
+							onClick={(event) => {
+								event.stopPropagation();
+								onTogglePin(project);
+							}}
+						>
+							<Pin className={cn(project.isPinned && "fill-current")} />
+						</Button>
+					)}
+					<div className="truncate font-medium leading-5">{project.title}</div>
+				</div>
 				<div className="truncate text-xs text-muted-foreground">{project.client?.name ?? "No client"}</div>
 			</div>
 

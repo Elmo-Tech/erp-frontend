@@ -58,7 +58,7 @@ export interface CalendarEvent {
 // Each item has a consistent shape regardless of its source module.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type AggregatedItemType = "event" | "meeting" | "task" | "invoice" | "milestone";
+export type AggregatedItemType = "event" | "meeting" | "task" | "invoice" | "milestone" | "subscription";
 
 /** Meta fields for type === "event" */
 export interface EventMeta {
@@ -88,6 +88,17 @@ export interface InvoiceMeta {
 	currency: string;
 }
 
+export interface SubscriptionMeta {
+	subscriptionId: number;
+	billingCycle: string;
+	clientId: number | null;
+	clientName: string | null;
+	projectId: number | null;
+	projectTitle: string | null;
+	totalAmount: number;
+	currency: string;
+}
+
 /** Meta fields for type === "milestone" */
 export interface MilestoneMeta {
 	milestoneId: number;
@@ -108,7 +119,7 @@ export interface AggregatedCalendarItem {
 	startTime: string | null; // ISO-8601 (events only)
 	endTime: string | null; // ISO-8601 (events only)
 	status: string | null;
-	meta: EventMeta | TaskMeta | InvoiceMeta | MilestoneMeta;
+	meta: EventMeta | TaskMeta | InvoiceMeta | MilestoneMeta | SubscriptionMeta;
 }
 
 export interface AggregatedCalendarResponse {

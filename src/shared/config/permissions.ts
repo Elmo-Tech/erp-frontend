@@ -146,6 +146,7 @@ export const SYSTEM_PERMISSIONS = [
 
 	// ── Time Tracking ────────────────────────────────────────────────────────
 	"manage_time_entries",
+	"manage_team_timers",
 	"view_time_entries",
 	"start_timer",
 	"stop_timer",
@@ -214,6 +215,13 @@ export const SYSTEM_PERMISSIONS = [
 
 	// ── Calendar ─────────────────────────────────────────────────────────────
 	"view_calendar",
+	"view_calendar_events",
+	"view_calendar_meetings",
+	"view_calendar_tasks",
+	"view_calendar_milestones",
+	"view_calendar_invoices",
+	"view_calendar_subscriptions",
+	"collect_subscription_payments",
 ] as const;
 
 export type SystemPermission = (typeof SYSTEM_PERMISSIONS)[number];

@@ -18,7 +18,7 @@ import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Inbox, AlertCircle, Layers, Plus, ListTodo } from "lucide-react";
+import { Inbox, AlertCircle, Layers, Plus, ListTodo, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
@@ -62,6 +62,7 @@ type AddTaskFormData = z.infer<typeof addTaskSchema>;
 
 interface ProjectTasksTabProps {
 	projectId: number;
+	initialTaskId?: number | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -101,11 +102,13 @@ function TasksBoardSkeleton() {
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
+export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTasksTabProps) {
 	const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
 	const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
 	const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+	const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+	const [dismissedInitialTask, setDismissedInitialTask] = useState(false);
 
 	const milestonesQuery = useMilestones(projectId);
 	const tasksQuery = useProjectTasks(projectId);
@@ -185,6 +188,8 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 		}
 	});
 
+	const allTasks = tasksQuery.data ?? [];
+
 	// ── Loading ──────────────────────────────────────────────────────────────
 	if (milestonesQuery.isLoading || tasksQuery.isLoading) {
 		return <TasksBoardSkeleton />;
@@ -202,7 +207,6 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 	}
 
 	const milestones = milestonesQuery.data ?? [];
-	const allTasks = tasksQuery.data ?? [];
 
 	// Build a lookup: milestoneId → tasks[]
 	const tasksByMilestone = new Map<number, ProjectTask[]>();
@@ -236,7 +240,9 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 	// is still holding the stale object. We derive `liveSelectedTask` by looking
 	// up the matching task in the freshly-fetched `allTasks` array so the sheet
 	// always receives the latest server state without needing to close/reopen.
-	const liveSelectedTask = selectedTask ? (allTasks.find((t) => t.taskId === selectedTask.taskId) ?? selectedTask) : null;
+	const initialTask = !dismissedInitialTask && initialTaskId ? (allTasks.find((task) => task.taskId === initialTaskId) ?? null) : null;
+	const taskForSheet = selectedTask ?? initialTask;
+	const liveSelectedTask = taskForSheet ? (allTasks.find((t) => t.taskId === taskForSheet.taskId) ?? taskForSheet) : null;
 
 	const handleTaskClick = (task: ProjectTask) => {
 		setSelectedTask(task);
@@ -245,7 +251,14 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 
 	const handleSheetOpenChange = (open: boolean) => {
 		setSheetOpen(open);
-		if (!open) setSelectedTask(null);
+		if (!open) {
+			setSelectedTask(null);
+			setDismissedInitialTask(true);
+		}
+	};
+
+	const toggleSection = (key: string) => {
+		setCollapsedSections((current) => ({ ...current, [key]: !current[key] }));
 	};
 
 	return (
@@ -328,6 +341,8 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 							tasks={tasksByMilestone.get(milestone.milestoneId) ?? []}
 							projectId={projectId}
 							onTaskClick={handleTaskClick}
+							isCollapsed={collapsedSections[`milestone-${milestone.milestoneId}`] ?? false}
+							onToggleCollapse={() => toggleSection(`milestone-${milestone.milestoneId}`)}
 						/>
 					))}
 
@@ -335,20 +350,30 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 					{backlogTasks.length > 0 && (
 						<div className="flex flex-col gap-3 rounded-lg border border-dashed bg-muted/10 p-4">
 							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+									onClick={() => toggleSection("backlog")}
+									aria-label={collapsedSections.backlog ? "Expand backlog" : "Collapse backlog"}
+								>
+									{collapsedSections.backlog ? <ChevronRight className="size-4" /> : <ChevronDown className="size-4" />}
+								</button>
 								<Inbox className="size-4 text-muted-foreground" />
 								<h3 className="text-sm font-semibold text-muted-foreground">Backlog</h3>
 								<span className="text-xs text-muted-foreground/60">({backlogTasks.length})</span>
 							</div>
-							<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-								{backlogTasks.map((task) => (
-									<ProjectTaskCard
-										key={task.taskId}
-										task={task}
-										projectId={projectId}
-										onClick={handleTaskClick}
-									/>
-								))}
-							</div>
+							{!collapsedSections.backlog && (
+								<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+									{backlogTasks.map((task) => (
+										<ProjectTaskCard
+											key={task.taskId}
+											task={task}
+											projectId={projectId}
+											onClick={handleTaskClick}
+										/>
+									))}
+								</div>
+							)}
 						</div>
 					)}
 				</div>
@@ -358,7 +383,7 @@ export function ProjectTasksTab({ projectId }: ProjectTasksTabProps) {
 			<TaskExecutionSheet
 				task={liveSelectedTask}
 				projectId={projectId}
-				open={sheetOpen}
+				open={sheetOpen || Boolean(initialTask)}
 				onOpenChange={handleSheetOpenChange}
 			/>
 
