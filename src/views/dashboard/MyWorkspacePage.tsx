@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useGetTodayMeetings } from "@/entities/meetings";
 import { useCheckInMutation, useCheckOutMutation, useMyPoints, useTodayAttendance } from "@/features/hr/model/use-hr-actions";
+import { PersonalTasksWidget } from "@/features/personal-tasks/ui/PersonalTasksWidget";
 import { ExecutionTaskStatusLabels, type ExecutionTaskStatusValue, useMyActiveProjectTasks } from "@/features/projects/api/execution.api";
 import { useDashboardOverview } from "@/widgets/dashboard-management/model/dashboard.api";
 import { Badge } from "@/shared/ui/badge";
@@ -277,6 +278,7 @@ export default function MyWorkspacePage() {
 				<AttendanceControl />
 				<QuickStats />
 				<DailySchedule />
+				<PersonalTasksWidget />
 				<ActiveTasks />
 			</div>
 		</section>

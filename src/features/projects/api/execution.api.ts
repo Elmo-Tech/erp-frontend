@@ -305,6 +305,7 @@ export function useToggleTaskTimer() {
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: executionKeys.activeTimeEntry() });
 			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
+			queryClient.invalidateQueries({ queryKey: ["personal-tasks"] });
 			queryClient.invalidateQueries({ queryKey: hrKeys.attendance() });
 			queryClient.invalidateQueries({ queryKey: hrKeys.teamPulse() });
 		},
