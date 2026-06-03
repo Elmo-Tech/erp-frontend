@@ -58,7 +58,7 @@ export interface CalendarEvent {
 // Each item has a consistent shape regardless of its source module.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type AggregatedItemType = "event" | "meeting" | "task" | "invoice" | "milestone" | "subscription";
+export type AggregatedItemType = "event" | "meeting" | "task" | "invoice" | "milestone" | "subscription" | "attendance";
 
 /** Meta fields for type === "event" */
 export interface EventMeta {
@@ -99,6 +99,36 @@ export interface SubscriptionMeta {
 	currency: string;
 }
 
+export interface AttendanceWorkedTask {
+	taskId: number;
+	projectId: number | null;
+	title: string;
+	status: string | null;
+	projectTitle: string | null;
+	durationMinutes: number;
+	entriesCount: number;
+	lastStartTime: string | null;
+}
+
+export interface AttendanceMeta {
+	attendanceId: number;
+	userId: number;
+	userName: string | null;
+	clockIn: string | null;
+	clockOut: string | null;
+	isClockedIn: boolean;
+	totalWorkedMinutes: number | null;
+	actualWorkedMinutes: number | null;
+	expectedWorkedMinutes: number | null;
+	stoppedMinutes: number | null;
+	lateMinutes: number | null;
+	deductionMinutes: number | null;
+	idleMinutes: number | null;
+	usedGraceDay: boolean;
+	notes: string | null;
+	workedTasks: AttendanceWorkedTask[];
+}
+
 /** Meta fields for type === "milestone" */
 export interface MilestoneMeta {
 	milestoneId: number;
@@ -119,7 +149,7 @@ export interface AggregatedCalendarItem {
 	startTime: string | null; // ISO-8601 (events only)
 	endTime: string | null; // ISO-8601 (events only)
 	status: string | null;
-	meta: EventMeta | TaskMeta | InvoiceMeta | MilestoneMeta | SubscriptionMeta;
+	meta: EventMeta | TaskMeta | InvoiceMeta | MilestoneMeta | SubscriptionMeta | AttendanceMeta;
 }
 
 export interface AggregatedCalendarResponse {

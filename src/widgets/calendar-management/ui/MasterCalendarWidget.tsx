@@ -10,7 +10,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import type { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import type { LucideIcon } from "lucide-react";
-import { CalendarDays, CheckSquare, Clock, CreditCard, ExternalLink, FileText, Flag, Plus } from "lucide-react";
+import { BriefcaseBusiness, CalendarCheck, CalendarDays, CheckSquare, Clock, CreditCard, ExternalLink, FileText, Flag, Loader2, Plus, Timer } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Can } from "@/shared/ui/Can";
@@ -22,7 +22,7 @@ import { TaskExecutionSheet } from "@/features/projects/ui/TaskExecutionSheet";
 import { useCalendarFeed } from "@/features/calendar/model/use-calendar-actions";
 import { useProjectTasks } from "@/features/projects/api/execution.api";
 import type { Invoice, InvoiceStatus } from "@/entities/finance/model/types";
-import type { AggregatedCalendarItem, AggregatedItemType, EventMeta, InvoiceMeta, MilestoneMeta, SubscriptionMeta, TaskMeta } from "@/entities/calendar/model/types";
+import type { AggregatedCalendarItem, AggregatedItemType, AttendanceMeta, EventMeta, InvoiceMeta, MilestoneMeta, SubscriptionMeta, TaskMeta } from "@/entities/calendar/model/types";
 import { cn } from "@/shared/lib/utils";
 
 const TYPE_THEME: Record<
@@ -84,6 +84,14 @@ const TYPE_THEME: Record<
 		softClass: "bg-teal-50 text-teal-700 border-teal-100 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-900/60",
 		textClass: "text-teal-700 dark:text-teal-300",
 	},
+	attendance: {
+		label: "Attendance",
+		icon: CalendarCheck,
+		color: "#16a34a",
+		eventClass: "calendar-event-attendance bg-green-600 text-white border-none",
+		softClass: "bg-green-50 text-green-700 border-green-100 dark:bg-green-950/40 dark:text-green-200 dark:border-green-900/60",
+		textClass: "text-green-700 dark:text-green-300",
+	},
 };
 
 interface FullCalendarEvent {
@@ -130,6 +138,31 @@ function money(value: number | null | undefined, currency = "USD") {
 		currency,
 		maximumFractionDigits: 0,
 	}).format(value ?? 0);
+}
+
+function formatDateLabel(date: string) {
+	return format(new Date(`${date}T00:00:00`), "EEE, MMM d, yyyy");
+}
+
+function formatTime(iso: string | null | undefined) {
+	if (!iso) return "—";
+	return format(new Date(iso), "hh:mm a");
+}
+
+function formatMinutes(value: number | null | undefined) {
+	if (value == null) return "—";
+	const hours = Math.floor(value / 60);
+	const minutes = value % 60;
+	if (hours === 0) return `${minutes}m`;
+	return `${hours}h ${minutes}m`;
+}
+
+function titleCase(value: string | null | undefined) {
+	if (!value) return "—";
+	return value
+		.split("_")
+		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+		.join(" ");
 }
 
 function buildInvoiceEditTarget(item: AggregatedCalendarItem): Invoice {
@@ -203,7 +236,7 @@ function AgendaRows({ items, onOpen }: { items: AggregatedCalendarItem[]; onOpen
 					className="grid border-b last:border-b-0 md:grid-cols-[150px_1fr]"
 				>
 					<div className="border-b bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200 md:border-b-0 md:border-r">
-						{format(new Date(`${date}T00:00:00`), "EEE, MMM d")}
+						{formatDateLabel(date)}
 					</div>
 					<div className="divide-y">
 						{dayItems.map((item) => {
@@ -260,6 +293,10 @@ function agendaSubtitle(item: AggregatedCalendarItem) {
 		const meta = item.meta as MilestoneMeta;
 		return `${meta.projectTitle ?? "Project"} / ${meta.progressPercentage}% complete`;
 	}
+	if (item.type === "attendance") {
+		const meta = item.meta as AttendanceMeta;
+		return `${formatTime(meta.clockIn)} - ${formatTime(meta.clockOut)} / ${formatMinutes(meta.actualWorkedMinutes ?? meta.totalWorkedMinutes)} / ${meta.workedTasks.length} tasks`;
+	}
 	const meta = item.meta as EventMeta;
 	return meta.creatorName ? `Created by ${meta.creatorName}` : "Calendar meeting";
 }
@@ -313,6 +350,130 @@ function MilestoneSheet({ item, onOpenChange }: { item: AggregatedCalendarItem |
 	);
 }
 
+function AttendanceSheet({ item, onOpenChange }: { item: AggregatedCalendarItem | null; onOpenChange: (open: boolean) => void }) {
+	const router = useRouter();
+
+	if (!item) return null;
+
+	const meta = item.meta as AttendanceMeta;
+	const workedMinutes = meta.actualWorkedMinutes ?? meta.totalWorkedMinutes;
+
+	return (
+		<Sheet
+			open={Boolean(item)}
+			onOpenChange={onOpenChange}
+		>
+			<SheetContent className="overflow-y-auto sm:max-w-xl">
+				<SheetHeader>
+					<SheetTitle className="flex items-center gap-2">
+						<CalendarCheck className="size-4 text-green-600" />
+						Attendance Details
+					</SheetTitle>
+					<SheetDescription>{formatDateLabel(item.date)}</SheetDescription>
+				</SheetHeader>
+
+				<div className="mt-6 space-y-5 text-sm">
+					<div className="grid gap-3 sm:grid-cols-2">
+						<div className="rounded-md border p-4">
+							<div className="text-xs font-medium uppercase text-muted-foreground">Clock In</div>
+							<div className="mt-1 font-semibold tabular-nums">{formatTime(meta.clockIn)}</div>
+						</div>
+						<div className="rounded-md border p-4">
+							<div className="text-xs font-medium uppercase text-muted-foreground">Clock Out</div>
+							<div className="mt-1 font-semibold tabular-nums">{meta.isClockedIn ? "Still clocked in" : formatTime(meta.clockOut)}</div>
+						</div>
+						<div className="rounded-md border p-4">
+							<div className="text-xs font-medium uppercase text-muted-foreground">Worked</div>
+							<div className="mt-1 font-semibold tabular-nums">{formatMinutes(workedMinutes)}</div>
+						</div>
+						<div className="rounded-md border p-4">
+							<div className="text-xs font-medium uppercase text-muted-foreground">Status</div>
+							<div className="mt-2 flex flex-wrap gap-2">
+								<Badge
+									variant="outline"
+									className={cn("capitalize", TYPE_THEME.attendance.softClass)}
+								>
+									{titleCase(item.status)}
+								</Badge>
+								{meta.lateMinutes ? <Badge variant="secondary">{meta.lateMinutes}m late</Badge> : null}
+								{meta.usedGraceDay ? <Badge variant="outline">Grace used</Badge> : null}
+							</div>
+						</div>
+					</div>
+
+					<div className="grid gap-3 sm:grid-cols-3">
+						<div className="rounded-md border p-3">
+							<div className="text-xs text-muted-foreground">Expected</div>
+							<div className="mt-1 font-medium tabular-nums">{formatMinutes(meta.expectedWorkedMinutes)}</div>
+						</div>
+						<div className="rounded-md border p-3">
+							<div className="text-xs text-muted-foreground">Stopped</div>
+							<div className="mt-1 font-medium tabular-nums">{formatMinutes(meta.stoppedMinutes)}</div>
+						</div>
+						<div className="rounded-md border p-3">
+							<div className="text-xs text-muted-foreground">Idle / Deducted</div>
+							<div className="mt-1 font-medium tabular-nums">
+								{formatMinutes(meta.idleMinutes)} / {formatMinutes(meta.deductionMinutes)}
+							</div>
+						</div>
+					</div>
+
+					<div className="space-y-3">
+						<div className="flex items-center justify-between gap-3">
+							<h3 className="text-sm font-semibold">Tasks Worked On</h3>
+							<Badge variant="outline">{meta.workedTasks.length}</Badge>
+						</div>
+						{meta.workedTasks.length > 0 ? (
+							<div className="space-y-2">
+								{meta.workedTasks.map((task) => (
+									<button
+										key={`${task.projectId}-${task.taskId}`}
+										type="button"
+										className="grid w-full gap-2 rounded-md border p-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-900/70"
+										onClick={() => {
+											if (task.projectId) router.push(`/dashboard/projects/${task.projectId}`);
+										}}
+									>
+										<span className="flex min-w-0 items-start justify-between gap-3">
+											<span className="min-w-0">
+												<span className="block truncate font-medium">{task.title}</span>
+												<span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+													<BriefcaseBusiness className="size-3 shrink-0" />
+													<span className="truncate">{task.projectTitle ?? "Project"}</span>
+												</span>
+											</span>
+											<Badge variant="outline" className="shrink-0">
+												{formatMinutes(task.durationMinutes)}
+											</Badge>
+										</span>
+										<span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+											<span className="inline-flex items-center gap-1">
+												<Timer className="size-3" />
+												{task.entriesCount} {task.entriesCount === 1 ? "entry" : "entries"}
+											</span>
+											{task.status ? <span>{titleCase(task.status)}</span> : null}
+											{task.lastStartTime ? <span>Last start {formatTime(task.lastStartTime)}</span> : null}
+										</span>
+									</button>
+								))}
+							</div>
+						) : (
+							<div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">No task time entries were logged for this day.</div>
+						)}
+					</div>
+
+					{meta.notes ? (
+						<div className="rounded-md border p-4">
+							<div className="text-xs font-medium uppercase text-muted-foreground">Notes</div>
+							<p className="mt-2 leading-6">{meta.notes}</p>
+						</div>
+					) : null}
+				</div>
+			</SheetContent>
+		</Sheet>
+	);
+}
+
 export function MasterCalendarWidget() {
 	const router = useRouter();
 	const calendarRef = useRef<FullCalendar>(null);
@@ -323,6 +484,7 @@ export function MasterCalendarWidget() {
 	const [invoiceTarget, setInvoiceTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [taskTarget, setTaskTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [milestoneTarget, setMilestoneTarget] = useState<AggregatedCalendarItem | null>(null);
+	const [attendanceTarget, setAttendanceTarget] = useState<AggregatedCalendarItem | null>(null);
 
 	const startDate = format(startOfMonth(currentDate), "yyyy-MM-dd");
 	const endDate = format(endOfMonth(currentDate), "yyyy-MM-dd");
@@ -350,6 +512,10 @@ export function MasterCalendarWidget() {
 			setTaskTarget(item);
 			return;
 		}
+		if (item.type === "attendance") {
+			setAttendanceTarget(item);
+			return;
+		}
 		if (item.type === "subscription") {
 			router.push("/dashboard/finance/subscriptions");
 			return;
@@ -359,9 +525,13 @@ export function MasterCalendarWidget() {
 
 	const renderEventContent = useCallback((eventInfo: EventContentArg) => {
 		const type = eventInfo.event.extendedProps.type as AggregatedItemType;
-		const Icon = TYPE_THEME[type].icon;
+		const theme = TYPE_THEME[type];
+		const Icon = theme.icon;
 		return (
-			<div className="flex min-w-0 items-center gap-1.5 px-1 py-0.5">
+			<div
+				className="flex min-w-0 items-center gap-1.5 px-1 py-0.5"
+				title={eventInfo.event.title}
+			>
 				<Icon className="size-3 shrink-0 text-white" />
 				<span className="truncate text-[11px] font-semibold leading-4 text-white">{eventInfo.event.title}</span>
 			</div>
@@ -462,6 +632,16 @@ export function MasterCalendarWidget() {
 					border-color: transparent !important;
 					color: #fff !important;
 				}
+				.fc .fc-event.calendar-event-subscription {
+					background-color: #0f766e !important;
+					border-color: transparent !important;
+					color: #fff !important;
+				}
+				.fc .fc-event.calendar-event-attendance {
+					background-color: #16a34a !important;
+					border-color: transparent !important;
+					color: #fff !important;
+				}
 				.fc .fc-event[class*="calendar-event-"] .fc-event-main {
 					color: #fff !important;
 				}
@@ -519,6 +699,34 @@ export function MasterCalendarWidget() {
 				}
 				.dark .fc-list-event td {
 					border-color: #1f2937 !important;
+				}
+				.fc-popover {
+					border-radius: 8px !important;
+					border-color: var(--fc-border-color) !important;
+					overflow: hidden;
+					box-shadow: 0 18px 45px rgba(15, 23, 42, .18) !important;
+				}
+				.fc-daygrid-day-frame {
+					min-height: 108px;
+				}
+				@media (max-width: 640px) {
+					.fc .fc-toolbar {
+						align-items: stretch;
+						gap: 8px;
+					}
+					.fc .fc-toolbar.fc-header-toolbar {
+						flex-direction: column;
+					}
+					.fc .fc-toolbar-chunk {
+						display: flex;
+						justify-content: center;
+					}
+					.fc-toolbar-title {
+						font-size: 16px !important;
+					}
+					.fc-daygrid-day-frame {
+						min-height: 82px;
+					}
 				}
 			`}</style>
 
@@ -632,7 +840,50 @@ export function MasterCalendarWidget() {
 						if (!open) setTaskTarget(null);
 					}}
 				/>
+			) : taskTarget ? (
+				<Sheet
+					open={Boolean(taskTarget)}
+					onOpenChange={(open) => {
+						if (!open) setTaskTarget(null);
+					}}
+				>
+					<SheetContent className="sm:max-w-md">
+						<SheetHeader>
+							<SheetTitle className="flex items-center gap-2">
+								<CheckSquare className="size-4 text-violet-600" />
+								{taskTarget.title}
+							</SheetTitle>
+							<SheetDescription>{agendaSubtitle(taskTarget)}</SheetDescription>
+						</SheetHeader>
+						<div className="mt-6 space-y-4 text-sm">
+							{taskQuery.isLoading ? (
+								<div className="flex items-center gap-2 rounded-md border p-4 text-muted-foreground">
+									<Loader2 className="size-4 animate-spin" />
+									Loading task details...
+								</div>
+							) : (
+								<div className="rounded-md border p-4 text-muted-foreground">Task details are not available from the calendar feed right now.</div>
+							)}
+							{taskProjectId > 0 ? (
+								<Button
+									type="button"
+									className="w-full gap-2"
+									onClick={() => router.push(`/dashboard/projects/${taskProjectId}`)}
+								>
+									<ExternalLink className="size-4" />
+									Open Project
+								</Button>
+							) : null}
+						</div>
+					</SheetContent>
+				</Sheet>
 			) : null}
+			<AttendanceSheet
+				item={attendanceTarget}
+				onOpenChange={(open) => {
+					if (!open) setAttendanceTarget(null);
+				}}
+			/>
 			<MilestoneSheet
 				item={milestoneTarget}
 				onOpenChange={(open) => {
