@@ -369,10 +369,17 @@ function AttendanceSheet({ item, onOpenChange }: { item: AggregatedCalendarItem 
 						<CalendarCheck className="size-4 text-green-600" />
 						Attendance Details
 					</SheetTitle>
-					<SheetDescription>{formatDateLabel(item.date)}</SheetDescription>
+					<SheetDescription>
+						{[meta.userName, formatDateLabel(item.date)].filter(Boolean).join(" / ")}
+					</SheetDescription>
 				</SheetHeader>
 
-				<div className="mt-6 space-y-5 text-sm">
+				<div className="mt-6 space-y-5 text-sm px-5">
+					<div className="rounded-md border p-4">
+						<div className="text-xs font-medium uppercase text-muted-foreground">Employee</div>
+						<div className="mt-1 font-semibold">{meta.userName ?? `User #${meta.userId}`}</div>
+					</div>
+
 					<div className="grid gap-3 sm:grid-cols-2">
 						<div className="rounded-md border p-4">
 							<div className="text-xs font-medium uppercase text-muted-foreground">Clock In</div>
@@ -431,7 +438,7 @@ function AttendanceSheet({ item, onOpenChange }: { item: AggregatedCalendarItem 
 										type="button"
 										className="grid w-full gap-2 rounded-md border p-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-900/70"
 										onClick={() => {
-											if (task.projectId) router.push(`/dashboard/projects/${task.projectId}`);
+											if (task.source === "project" && task.projectId) router.push(`/dashboard/projects/${task.projectId}`);
 										}}
 									>
 										<span className="flex min-w-0 items-start justify-between gap-3">
@@ -442,9 +449,10 @@ function AttendanceSheet({ item, onOpenChange }: { item: AggregatedCalendarItem 
 													<span className="truncate">{task.projectTitle ?? "Project"}</span>
 												</span>
 											</span>
-											<Badge variant="outline" className="shrink-0">
-												{formatMinutes(task.durationMinutes)}
-											</Badge>
+											<span className="flex shrink-0 flex-col items-end gap-1">
+												<Badge variant="outline">{task.source === "personal" ? "Personal" : "Project"}</Badge>
+												<Badge variant="outline">{formatMinutes(task.durationMinutes)}</Badge>
+											</span>
 										</span>
 										<span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
 											<span className="inline-flex items-center gap-1">

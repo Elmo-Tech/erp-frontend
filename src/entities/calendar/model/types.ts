@@ -100,6 +100,7 @@ export interface SubscriptionMeta {
 }
 
 export interface AttendanceWorkedTask {
+	source: "project" | "personal";
 	taskId: number;
 	projectId: number | null;
 	title: string;

@@ -14,61 +14,59 @@ interface ProtectedDashboardRouteProps {
 export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermission }: ProtectedDashboardRouteProps) {
 	const router = useRouter();
 	const { isAuthenticated, role, hasPermission, tokenExpiresAt, logout } = useAuthStore();
-	// نبدأ بـ true عشان ننتظر الـ hydration من localStorage
-	const [isChecking, setIsChecking] = useState(true);
+	const [hasHydrated, setHasHydrated] = useState(() => useAuthStore.persist?.hasHydrated?.() ?? false);
 
 	useEffect(() => {
-		// ننتظر الـ Zustand persist hydration من localStorage
-		// useAuthStore.persist.hasHydrated() بيرجع true لما يخلص
-		const unsubscribe = useAuthStore.persist.onHydrate(() => {
-			// لو الـ hydration بدأت، مش محتاجين نعمل حاجة هنا
-		});
+		if (hasHydrated) return;
+		const persist = useAuthStore.persist;
 
-		const checkAuth = () => {
-			if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date()) {
-				logout();
-				router.push("/login");
-				return;
-			}
-
-			if (!isAuthenticated) {
-				router.push("/login");
-				return;
-			}
-
-			if (allowedRoles && role && !allowedRoles.includes(role)) {
-				router.push("/unauthorized");
-				return;
-			}
-
-			if (requiredPermission && !hasPermission(requiredPermission)) {
-				router.push("/unauthorized");
-				return;
-			}
-
-			setIsChecking(false);
-		};
-
-		// لو الـ hydration خلصت بالفعل، نعمل الـ check فوراً
-		if (useAuthStore.persist.hasHydrated()) {
-			checkAuth();
-		} else {
-			// ننتظر الـ hydration تخلص
-			const finishUnsubscribe = useAuthStore.persist.onFinishHydration(() => {
-				checkAuth();
-			});
-			return () => {
-				unsubscribe();
-				finishUnsubscribe();
-			};
+		if (!persist) {
+			return;
 		}
 
-		return () => {
-			unsubscribe();
-		};
-	}, [allowedRoles, hasPermission, isAuthenticated, logout, requiredPermission, role, router, tokenExpiresAt]);
+		if (persist.hasHydrated()) {
+			queueMicrotask(() => setHasHydrated(true));
+			return;
+		}
 
-	if (isChecking) {
+		const unsubscribe = persist.onFinishHydration(() => {
+			setHasHydrated(true);
+		});
+
+		return unsubscribe;
+	}, [hasHydrated]);
+
+	useEffect(() => {
+		if (!hasHydrated) return;
+
+		if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date()) {
+			logout();
+			router.replace("/login");
+			return;
+		}
+
+		if (!isAuthenticated && !hasAuthCookie()) {
+			router.replace("/login");
+			return;
+		}
+
+		if (allowedRoles && role && !allowedRoles.includes(role)) {
+			router.replace("/unauthorized");
+			return;
+		}
+
+		if (requiredPermission && !hasPermission(requiredPermission)) {
+			router.replace("/unauthorized");
+			return;
+		}
+	}, [allowedRoles, hasHydrated, hasPermission, isAuthenticated, logout, requiredPermission, role, router, tokenExpiresAt]);
+
+	const isExpired = Boolean(tokenExpiresAt && new Date(tokenExpiresAt) < new Date());
+	const isRoleDenied = Boolean(allowedRoles && role && !allowedRoles.includes(role));
+	const isPermissionDenied = Boolean(requiredPermission && !hasPermission(requiredPermission));
+	const canRender = hasHydrated && isAuthenticated && !isExpired && !isRoleDenied && !isPermissionDenied;
+
+	if (!canRender) {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
 				<Loader2 className="size-8 animate-spin text-primary" />
@@ -77,4 +75,9 @@ export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermis
 	}
 
 	return <>{children}</>;
+}
+
+function hasAuthCookie() {
+	if (typeof document === "undefined") return false;
+	return document.cookie.split(";").some((cookie) => cookie.trim().startsWith("auth_token="));
 }
