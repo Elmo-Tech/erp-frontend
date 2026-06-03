@@ -18,6 +18,7 @@ export const SYSTEM_PERMISSIONS = [
 	"manage_users",
 	"manage_roles",
 	"manage_dictionaries",
+	"use_ai_agent",
 
 	// ── HR & Finance ─────────────────────────────────────────────────────────
 	"manage_hr",

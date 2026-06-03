@@ -21,6 +21,7 @@ import {
     CalendarOff,
     ArrowLeftRight,
     UserCog,
+    Bot,
 } from "lucide-react";
 
 export const SidebarConfig = [
@@ -43,6 +44,12 @@ export const SidebarConfig = [
                 href: "/dashboard/reports",
                 icon: FileText,
                 permission: "view_reports",
+            },
+            {
+                title: "AI Agent",
+                href: "/dashboard/agent",
+                icon: Bot,
+                permission: "use_ai_agent",
             },
             {
                 title: "Morning SOP",
