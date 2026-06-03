@@ -5,7 +5,6 @@ import { authApi } from "../api/auth.api";
 import type { ApiError, LoginRequest, LoginResponse } from "./types";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { AxiosError } from "axios";
-import Cookies from "js-cookie";
 
 export function useLogin() {
 	const setAuth = useAuthStore((state) => state.setAuth);
@@ -14,11 +13,6 @@ export function useLogin() {
 		mutationFn: (data: LoginRequest) => authApi.login(data),
 		onSuccess: (response) => {
 			const { tokenDetails, profile, role, permissions } = response.data;
-			const token = tokenDetails.token;
-
-			if (!token) {
-				throw new Error("Backend login response did not include an auth token");
-			}
 
 			setAuth({
 				user: {
@@ -33,10 +27,6 @@ export function useLogin() {
 				permissions,
 			});
 
-			Cookies.set("auth_token", token, {
-				expires: new Date(Date.now() + tokenDetails.expiresIn * 60 * 1000),
-				path: "/",
-			});
 			window.location.href = "/dashboard/my-workspace";
 		},
 		onError: (error: AxiosError<ApiError>) => {

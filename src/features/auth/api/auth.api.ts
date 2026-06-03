@@ -1,5 +1,4 @@
 import api, { clearClientAuthState } from "@/shared/api/base";
-import Cookies from "js-cookie";
 import type { LoginRequest, LoginResponse } from "../model/types";
 
 export const authApi = {
@@ -12,7 +11,6 @@ export const authApi = {
 		try {
 			await api.post("/auth/logout");
 		} finally {
-			Cookies.remove("auth_token", { path: "/" });
 			clearClientAuthState();
 		}
 	},

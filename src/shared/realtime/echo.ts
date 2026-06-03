@@ -3,18 +3,22 @@ import Pusher from "pusher-js";
 import Cookies from "js-cookie";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const CSRF_COOKIE = "csrf_token";
+
+interface BroadcastAuthorizationData {
+	auth: string;
+	channel_data?: string;
+	shared_secret?: string;
+}
 
 function broadcastingAuthEndpoint() {
 	return new URL("/api/broadcasting/auth", new URL(API_BASE_URL).origin).toString();
 }
 
-function authHeaders(): Record<string, string> {
-	const token = Cookies.get("auth_token");
-	if (!token) {
-		return {};
-	}
+function csrfHeaders(): Record<string, string> {
+	const token = Cookies.get(CSRF_COOKIE);
 
-	return { Authorization: `Bearer ${token}` };
+	return token ? { "X-CSRF-TOKEN": token } : {};
 }
 
 if (typeof window !== "undefined") {
@@ -42,8 +46,30 @@ export function getEcho(): Echo<"reverb"> | null {
 		enabledTransports: ["ws", "wss"],
 		authEndpoint: broadcastingAuthEndpoint(),
 		auth: {
-			headers: authHeaders(),
+			headers: csrfHeaders(),
 		},
+		authorizer: (channel: { name: string }) => ({
+			authorize: (socketId: string, callback: (error: Error | null, data: BroadcastAuthorizationData | null) => void) => {
+				fetch(broadcastingAuthEndpoint(), {
+					method: "POST",
+					credentials: "include",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						...csrfHeaders(),
+					},
+					body: JSON.stringify({
+						socket_id: socketId,
+						channel_name: channel.name,
+					}),
+				})
+					.then(async (response) => {
+						const data = (await response.json()) as BroadcastAuthorizationData;
+						callback(response.ok ? null : new Error("Broadcast authentication failed"), data);
+					})
+					.catch((error) => callback(error instanceof Error ? error : new Error("Broadcast authentication failed"), null));
+			},
+		}),
 	});
 
 	return echoInstance;
@@ -61,6 +87,6 @@ export function updateEchoAuth() {
 
 	echoInstance.connector.options.authEndpoint = broadcastingAuthEndpoint();
 	echoInstance.connector.options.auth = {
-		headers: authHeaders(),
+		headers: csrfHeaders(),
 	};
 }

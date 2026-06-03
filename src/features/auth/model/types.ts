@@ -8,7 +8,6 @@ export interface LoginResponse {
 	message: string;
 	data: {
 		tokenDetails: {
-			token?: string;
 			expiresIn: number;
 		};
 		profile: {

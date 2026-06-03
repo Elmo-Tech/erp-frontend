@@ -6,6 +6,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/a
 const LOGIN_ROUTE = "/login";
 const AUTH_STORAGE_KEY = "auth-storage";
 const REFRESH_WINDOW_MS = 5 * 60 * 1000;
+const CSRF_COOKIE = "csrf_token";
 
 interface PersistedAuthStorage {
 	state?: {
@@ -16,7 +17,6 @@ interface PersistedAuthStorage {
 interface RefreshResponse {
 	data: {
 		tokenDetails: {
-			token?: string;
 			expiresIn: number;
 		};
 		profile: {
@@ -81,6 +81,7 @@ export function clearClientAuthState() {
 
 	localStorage.removeItem(AUTH_STORAGE_KEY);
 	Cookies.remove("auth_token", { path: "/" });
+	Cookies.remove(CSRF_COOKIE, { path: "/" });
 }
 
 export function redirectToLogin() {
@@ -89,10 +90,6 @@ export function redirectToLogin() {
 	}
 
 	window.location.assign(LOGIN_ROUTE);
-}
-
-function cookieExpiryDate(expiresInMinutes: number) {
-	return new Date(Date.now() + expiresInMinutes * 60 * 1000);
 }
 
 function refreshAuthToken() {
@@ -104,8 +101,7 @@ function refreshAuthToken() {
 		return refreshPromise;
 	}
 
-	const currentToken = Cookies.get("auth_token");
-	if (!currentToken) {
+	if (!Cookies.get(CSRF_COOKIE)) {
 		return Promise.resolve(null);
 	}
 
@@ -114,25 +110,16 @@ function refreshAuthToken() {
 			`${API_BASE_URL}/auth/refresh`,
 			{},
 			{
+				withCredentials: true,
 				headers: {
 					Accept: "application/json",
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${currentToken}`,
+					...csrfHeader(),
 				},
 			},
 		)
 		.then((response) => {
 			const { tokenDetails, profile, role, permissions } = response.data.data;
-			const token = tokenDetails.token;
-
-			if (!token) {
-				throw new Error("Refresh response did not include an auth token");
-			}
-
-			Cookies.set("auth_token", token, {
-				expires: cookieExpiryDate(tokenDetails.expiresIn),
-				path: "/",
-			});
 
 			useAuthStore.getState().refreshAuth({
 				user: {
@@ -147,7 +134,7 @@ function refreshAuthToken() {
 				permissions,
 			});
 
-			return token;
+			return "cookie-session";
 		})
 		.catch(() => {
 			clearClientAuthState();
@@ -162,6 +149,7 @@ function refreshAuthToken() {
 
 export const api = axios.create({
 	baseURL: API_BASE_URL,
+	withCredentials: true,
 	headers: {
 		"Content-Type": "application/json",
 		Accept: "application/json",
@@ -185,10 +173,9 @@ export const handleApiRequest = async (config: InternalAxiosRequestConfig) => {
 
 	if (config.headers) {
 		config.headers["Accept-Language"] = "en";
-
-		const token = Cookies.get("auth_token");
-		if (token) {
-			config.headers.Authorization = `Bearer ${token}`;
+		const csrf = csrfHeader();
+		for (const [key, value] of Object.entries(csrf)) {
+			config.headers[key] = value;
 		}
 	}
 
@@ -208,7 +195,6 @@ export const handleApiResponseError = async (error: AxiosError) => {
 		const token = await refreshAuthToken();
 
 		if (token) {
-			originalRequest.headers.Authorization = `Bearer ${token}`;
 			return api(originalRequest);
 		}
 	}
@@ -225,3 +211,9 @@ api.interceptors.request.use(handleApiRequest, handleApiRequestError);
 api.interceptors.response.use(handleApiResponse, handleApiResponseError);
 
 export default api;
+
+function csrfHeader(): Record<string, string> {
+	const csrfToken = Cookies.get(CSRF_COOKIE);
+
+	return csrfToken ? { "X-CSRF-TOKEN": csrfToken } : {};
+}
