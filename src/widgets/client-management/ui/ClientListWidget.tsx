@@ -8,11 +8,13 @@ import { Button } from "@/shared/ui/button";
 import { Can } from "@/shared/ui/Can";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { SearchInput } from "@/shared/ui/filters/SearchInput";
+import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
+import { Input } from "@/shared/ui/input";
 import { Pagination } from "@/shared/ui/data-display/Pagination";
 import { clientApi } from "@/entities/client/api/client.api";
 import { ClientCard } from "@/entities/client/ui/ClientCard";
 import { clientKeys } from "@/entities/client/model/query-keys";
-import type { ClientIndexRow, ClientFilters } from "@/entities/client/model/types";
+import { ClientStatus, ClientStatusLabels, type ClientIndexRow, type ClientFilters } from "@/entities/client/model/types";
 import { AddClientModal } from "@/features/clients/ui/AddClientModal";
 import { DeleteClientDialog } from "@/features/clients/ui/DeleteClientDialog";
 import { EditClientModal } from "@/features/clients/ui/EditClientModal";
@@ -21,6 +23,11 @@ const DEFAULT_FILTERS: ClientFilters = {
 	page: 1,
 	perPage: 15,
 };
+
+const STATUS_OPTIONS = Object.values(ClientStatus).map((status) => ({
+	value: status,
+	label: ClientStatusLabels[status],
+}));
 
 export function ClientListWidget() {
 	const router = useRouter();
@@ -85,13 +92,31 @@ export function ClientListWidget() {
 				</Can>
 			</div>
 
-			<div className="flex flex-col gap-3 border-y py-3 md:flex-row md:items-center md:justify-between">
+			<div className="grid gap-3 border-y py-3 lg:grid-cols-[minmax(220px,1fr)_180px_180px_180px_auto] lg:items-center">
 				<SearchInput
 					value={filters.search}
 					onChange={handleSearch}
 					placeholder="Search clients"
-					className="w-full md:max-w-sm"
+					className="w-full"
 					autoSearch={false}
+				/>
+				<FilterSelect
+					value={filters.status}
+					onChange={(status) => setFilters((current) => ({ ...current, status: status as ClientStatus | undefined, page: 1 }))}
+					options={STATUS_OPTIONS}
+					placeholder="Status"
+					allLabel="All statuses"
+					className="w-full"
+				/>
+				<Input
+					value={filters.company ?? ""}
+					onChange={(event) => setFilters((current) => ({ ...current, company: event.target.value || undefined, page: 1 }))}
+					placeholder="Company"
+				/>
+				<Input
+					value={filters.email ?? ""}
+					onChange={(event) => setFilters((current) => ({ ...current, email: event.target.value || undefined, page: 1 }))}
+					placeholder="Email"
 				/>
 
 				<p className="text-xs tabular-nums text-muted-foreground">

@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Can, usePermissionGate } from "@/shared/ui/Can";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
+import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
+import { Input } from "@/shared/ui/input";
 import { InvoiceFormModal } from "@/features/finance/ui/InvoiceFormModal";
 import { DeleteInvoiceDialog } from "@/features/finance/ui/DeleteInvoiceDialog";
 import { useInvoices } from "@/features/finance/model/use-finance-actions";
-import type { Invoice, InvoiceStatus } from "@/entities/finance/model/types";
+import { clientApi } from "@/entities/client/api/client.api";
+import { clientKeys } from "@/entities/client/model/query-keys";
+import { projectApi } from "@/entities/project/api/project.api";
+import { projectKeys } from "@/entities/project/model/query-keys";
+import type { FinanceFilters, Invoice, InvoiceStatus } from "@/entities/finance/model/types";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { formatDate } from "@/shared/lib/dateUtils";
 
@@ -107,9 +114,12 @@ function buildColumns(onEdit: (invoice: Invoice) => void, onDelete: (invoice: In
 
 export function InvoicesWidget() {
 	const { can } = usePermissionGate();
-	const { data, isLoading, error } = useInvoices();
+	const [filters, setFilters] = useState<FinanceFilters>({});
+	const { data, isLoading, error } = useInvoices(filters);
 	const invoices = data?.data ?? [];
 	const canManageInvoices = can("manage_invoices");
+	const clientsQuery = useQuery({ queryKey: clientKeys.list({ perPage: 100 }), queryFn: () => clientApi.getClients({ perPage: 100 }), staleTime: 5 * 60 * 1000 });
+	const projectsQuery = useQuery({ queryKey: projectKeys.list({ perPage: 100 }), queryFn: () => projectApi.getProjects({ perPage: 100 }), staleTime: 5 * 60 * 1000 });
 
 	const [formOpen, setFormOpen] = useState(false);
 	const [editTarget, setEditTarget] = useState<Invoice | null>(null);
@@ -131,6 +141,8 @@ export function InvoicesWidget() {
 	};
 
 	const columns = buildColumns(handleEdit, setDeleteTarget);
+	const clientOptions = useMemo(() => (clientsQuery.data?.clients ?? []).map((client) => ({ value: String(client.id), label: client.display_name })), [clientsQuery.data?.clients]);
+	const projectOptions = useMemo(() => (projectsQuery.data?.projects ?? []).map((project) => ({ value: String(project.projectId), label: project.title })), [projectsQuery.data?.projects]);
 
 	return (
 		<section className="flex flex-col gap-6">
@@ -149,6 +161,14 @@ export function InvoicesWidget() {
 						New Invoice
 					</Button>
 				</Can>
+			</div>
+
+			<div className="grid gap-3 border-y py-3 md:grid-cols-2 xl:grid-cols-5">
+				<FilterSelect value={filters.status} onChange={(status) => setFilters((current) => ({ ...current, status }))} options={Object.keys(STATUS_VARIANT).map((status) => ({ value: status, label: status }))} allLabel="All statuses" className="w-full" />
+				<FilterSelect value={filters.clientId ? String(filters.clientId) : undefined} onChange={(clientId) => setFilters((current) => ({ ...current, clientId: clientId ? Number(clientId) : undefined }))} options={clientOptions} allLabel="All clients" className="w-full" disabled={clientsQuery.isLoading} />
+				<FilterSelect value={filters.projectId ? String(filters.projectId) : undefined} onChange={(projectId) => setFilters((current) => ({ ...current, projectId: projectId ? Number(projectId) : undefined }))} options={projectOptions} allLabel="All projects" className="w-full" disabled={projectsQuery.isLoading} />
+				<Input type="date" value={filters.from ?? ""} onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value || undefined }))} aria-label="Invoice due from" />
+				<Input type="date" value={filters.to ?? ""} onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value || undefined }))} aria-label="Invoice due to" />
 			</div>
 
 			<DataTable<Invoice>

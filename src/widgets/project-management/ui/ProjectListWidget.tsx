@@ -19,6 +19,7 @@ import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
 import { Pagination } from "@/shared/ui/data-display/Pagination";
 import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
 import { SearchInput } from "@/shared/ui/filters/SearchInput";
+import { Input } from "@/shared/ui/input";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 const DEFAULT_FILTERS: ProjectFilters = {
@@ -161,6 +162,22 @@ export function ProjectListWidget() {
 						icon={UserRound}
 						className="w-full md:w-56"
 						disabled={clientsQuery.isLoading}
+					/>
+
+					<Input
+						type="date"
+						value={filters.deadlineFrom ?? ""}
+						onChange={(event) => updateFilters({ deadlineFrom: event.target.value || undefined })}
+						className="w-full md:w-40"
+						aria-label="Deadline from"
+					/>
+
+					<Input
+						type="date"
+						value={filters.deadlineTo ?? ""}
+						onChange={(event) => updateFilters({ deadlineTo: event.target.value || undefined })}
+						className="w-full md:w-40"
+						aria-label="Deadline to"
 					/>
 
 					<p className="text-xs tabular-nums text-muted-foreground md:min-w-24 md:text-right">{pagination ? `${pagination.total} projects` : "Loading projects"}</p>

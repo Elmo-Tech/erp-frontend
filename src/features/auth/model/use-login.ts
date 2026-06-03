@@ -33,7 +33,10 @@ export function useLogin() {
 				permissions,
 			});
 
-			Cookies.set("auth_token", token, { expires: 7, path: "/" });
+			Cookies.set("auth_token", token, {
+				expires: new Date(Date.now() + tokenDetails.expiresIn * 60 * 1000),
+				path: "/",
+			});
 			window.location.href = "/dashboard/my-workspace";
 		},
 		onError: (error: AxiosError<ApiError>) => {

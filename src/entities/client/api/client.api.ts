@@ -24,6 +24,10 @@ function buildClientParams(filters?: ClientFilters) {
 		params.append("filter[company]", filters.company);
 	}
 
+	if (filters?.email) {
+		params.append("filter[email]", filters.email);
+	}
+
 	if (typeof filters?.hasPortalAccess === "boolean") {
 		params.append("filter[hasPortalAccess]", String(filters.hasPortalAccess));
 	}

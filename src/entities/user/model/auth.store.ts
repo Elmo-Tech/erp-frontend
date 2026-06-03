@@ -36,6 +36,7 @@ export interface AuthState {
 
 	// ── Actions ──────────────────────────────────────────────────────────────
 	setAuth: (data: { user: User; expiresIn: number; role: string; permissions: Permission[] }) => void;
+	refreshAuth: (data: { user?: User; expiresIn: number; role?: string; permissions?: Permission[] }) => void;
 	logout: () => void;
 	updateUser: (user: Partial<User>) => void;
 
@@ -65,6 +66,18 @@ export const useAuthStore = create<AuthState>()(
 			setAuth: ({ user, expiresIn, role, permissions }) => {
 				const expiresAt = new Date(Date.now() + expiresIn * 60 * 1000).toISOString();
 				set({ user, token: null, tokenExpiresAt: expiresAt, role, permissions, isAuthenticated: true });
+			},
+
+			refreshAuth: ({ user, expiresIn, role, permissions }) => {
+				const expiresAt = new Date(Date.now() + expiresIn * 60 * 1000).toISOString();
+				set((state) => ({
+					user: user ?? state.user,
+					token: null,
+					tokenExpiresAt: expiresAt,
+					role: role ?? state.role,
+					permissions: permissions ?? state.permissions,
+					isAuthenticated: true,
+				}));
 			},
 
 			logout: () => {

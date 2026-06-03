@@ -38,14 +38,15 @@ export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermis
 
 	useEffect(() => {
 		if (!hasHydrated) return;
+		const hasCookie = hasAuthCookie();
 
-		if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date()) {
+		if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date() && !hasCookie) {
 			logout();
 			router.replace("/login");
 			return;
 		}
 
-		if (!isAuthenticated && !hasAuthCookie()) {
+		if (!isAuthenticated && !hasCookie) {
 			router.replace("/login");
 			return;
 		}
@@ -61,10 +62,10 @@ export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermis
 		}
 	}, [allowedRoles, hasHydrated, hasPermission, isAuthenticated, logout, requiredPermission, role, router, tokenExpiresAt]);
 
-	const isExpired = Boolean(tokenExpiresAt && new Date(tokenExpiresAt) < new Date());
+	const isExpiredWithoutCookie = Boolean(tokenExpiresAt && new Date(tokenExpiresAt) < new Date() && !hasAuthCookie());
 	const isRoleDenied = Boolean(allowedRoles && role && !allowedRoles.includes(role));
 	const isPermissionDenied = Boolean(requiredPermission && !hasPermission(requiredPermission));
-	const canRender = hasHydrated && isAuthenticated && !isExpired && !isRoleDenied && !isPermissionDenied;
+	const canRender = hasHydrated && isAuthenticated && !isExpiredWithoutCookie && !isRoleDenied && !isPermissionDenied;
 
 	if (!canRender) {
 		return (

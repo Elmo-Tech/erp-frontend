@@ -19,9 +19,12 @@ import { PlusIcon, LayoutGrid, List } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
+import { SearchInput } from "@/shared/ui/filters/SearchInput";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/toggle-group";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { useGetLeads } from "@/features/leads/api/leads.api";
+import type { LeadFilters } from "@/features/leads/api/leads.api";
 import { CreateLeadModal } from "@/features/leads/ui/CreateLeadModal";
 import { LeadsKanbanBoard } from "@/widgets/leads-management";
 import { STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
@@ -124,7 +127,8 @@ type ViewMode = "board" | "table";
 
 export default function LeadsPipelinePage() {
 	const router = useRouter();
-	const leadsQuery = useGetLeads();
+	const [filters, setFilters] = useState<LeadFilters>({});
+	const leadsQuery = useGetLeads(filters);
 	const leads = leadsQuery.data ?? [];
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [viewMode, setViewMode] = useState<ViewMode>("board");
@@ -171,6 +175,48 @@ export default function LeadsPipelinePage() {
 						Add Lead
 					</Button>
 				</div>
+			</div>
+
+			<div className="grid gap-3 border-y py-3 md:grid-cols-2 xl:grid-cols-5">
+				<SearchInput
+					value={filters.search}
+					onChange={(search) => setFilters((current) => ({ ...current, search: search || undefined }))}
+					placeholder="Search leads"
+					className="w-full"
+					autoSearch={false}
+				/>
+				<FilterSelect
+					value={filters.stage}
+					onChange={(stage) => setFilters((current) => ({ ...current, stage: stage as PipelineStage | undefined }))}
+					options={Object.entries(STAGE_LABELS).map(([value, label]) => ({ value, label }))}
+					allLabel="All stages"
+					className="w-full"
+				/>
+				<FilterSelect
+					value={filters.status}
+					onChange={(status) => setFilters((current) => ({ ...current, status }))}
+					options={[
+						{ value: "active", label: "Active" },
+						{ value: "won", label: "Won" },
+						{ value: "lost", label: "Lost" },
+					]}
+					allLabel="All statuses"
+					className="w-full"
+				/>
+				<SearchInput
+					value={filters.source}
+					onChange={(source) => setFilters((current) => ({ ...current, source: source || undefined }))}
+					placeholder="Source"
+					className="w-full"
+					autoSearch={false}
+				/>
+				<SearchInput
+					value={filters.assigneeId ? String(filters.assigneeId) : ""}
+					onChange={(assigneeId) => setFilters((current) => ({ ...current, assigneeId: assigneeId ? Number(assigneeId) : undefined }))}
+					placeholder="Assignee ID"
+					className="w-full"
+					autoSearch={false}
+				/>
 			</div>
 
 			{/* ── Content area ─────────────────────────────────────────────── */}

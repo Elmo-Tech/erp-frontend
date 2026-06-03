@@ -177,3 +177,11 @@ export interface CreateSubscriptionPayload {
 }
 
 export type UpdateSubscriptionPayload = Partial<CreateSubscriptionPayload>;
+
+export interface FinanceFilters {
+	clientId?: number;
+	projectId?: number;
+	status?: string;
+	from?: string;
+	to?: string;
+}

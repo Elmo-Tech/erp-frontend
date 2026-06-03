@@ -139,6 +139,7 @@ export interface ClientFilters {
 	search?: string;
 	status?: ClientStatus;
 	company?: string;
+	email?: string;
 	hasPortalAccess?: boolean;
 	page?: number;
 	perPage?: number;

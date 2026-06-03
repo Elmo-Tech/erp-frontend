@@ -78,10 +78,18 @@ export interface ConvertLeadResponse {
 	};
 }
 
+export interface LeadFilters {
+	search?: string;
+	stage?: PipelineStage;
+	status?: string;
+	source?: string;
+	assigneeId?: number;
+}
+
 export const leadKeys = {
 	all: ["leads"] as const,
 	lists: () => [...leadKeys.all, "list"] as const,
-	list: () => [...leadKeys.lists()] as const,
+	list: (filters?: LeadFilters) => [...leadKeys.lists(), filters] as const,
 	details: () => [...leadKeys.all, "detail"] as const,
 	detail: (leadId: number) => [...leadKeys.details(), leadId] as const,
 	proposals: (leadId: number) => [...leadKeys.detail(leadId), "proposals"] as const,
@@ -388,16 +396,28 @@ export interface GetLeadsResponse {
  *
  * Returns all leads so the Zustand store can be seeded on mount.
  */
-export async function getLeads(): Promise<GetLeadsResponse> {
-	const response = await api.get<GetLeadsResponse>("/leads");
+function buildLeadParams(filters?: LeadFilters): URLSearchParams {
+	const params = new URLSearchParams();
+	if (filters?.search) params.append("search", filters.search);
+	if (filters?.stage) params.append("stage", filters.stage);
+	if (filters?.status) params.append("status", filters.status);
+	if (filters?.source) params.append("source", filters.source);
+	if (filters?.assigneeId) params.append("assigneeId", String(filters.assigneeId));
+	return params;
+}
+
+export async function getLeads(filters?: LeadFilters): Promise<GetLeadsResponse> {
+	const params = buildLeadParams(filters);
+	const query = params.toString();
+	const response = await api.get<GetLeadsResponse>(query ? `/leads?${query}` : "/leads");
 	return response.data;
 }
 
-export function useGetLeads() {
+export function useGetLeads(filters?: LeadFilters) {
 	return useQuery({
-		queryKey: leadKeys.list(),
+		queryKey: leadKeys.list(filters),
 		queryFn: async () => {
-			const response = await getLeads();
+			const response = await getLeads(filters);
 			return response.data.map(mapLeadResourceToLead).filter((lead): lead is Lead => lead !== null);
 		},
 		staleTime: 2 * 60 * 1000,

@@ -121,6 +121,8 @@ export interface ProjectFilters {
 	search?: string;
 	status?: ProjectStatus;
 	clientId?: number;
+	deadlineFrom?: string;
+	deadlineTo?: string;
 	page?: number;
 	perPage?: number;
 }

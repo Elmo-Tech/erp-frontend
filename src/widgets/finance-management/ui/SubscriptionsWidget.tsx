@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CreditCard, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Can } from "@/shared/ui/Can";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
+import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
+import { Input } from "@/shared/ui/input";
 import { SubscriptionFormModal } from "@/features/finance/ui/SubscriptionFormModal";
 import { DeleteSubscriptionDialog } from "@/features/finance/ui/DeleteSubscriptionDialog";
 import { useSubscriptions } from "@/features/finance/model/use-finance-actions";
-import type { Subscription } from "@/entities/finance/model/types";
+import { clientApi } from "@/entities/client/api/client.api";
+import { clientKeys } from "@/entities/client/model/query-keys";
+import { projectApi } from "@/entities/project/api/project.api";
+import { projectKeys } from "@/entities/project/model/query-keys";
+import type { FinanceFilters, Subscription } from "@/entities/finance/model/types";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { formatDate } from "@/shared/lib/dateUtils";
 
@@ -104,8 +111,11 @@ function buildColumns(onEdit: (sub: Subscription) => void, onDelete: (sub: Subsc
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function SubscriptionsWidget() {
-	const { data, isLoading, error } = useSubscriptions();
+	const [filters, setFilters] = useState<FinanceFilters>({});
+	const { data, isLoading, error } = useSubscriptions(filters);
 	const subscriptions = data?.data ?? [];
+	const clientsQuery = useQuery({ queryKey: clientKeys.list({ perPage: 100 }), queryFn: () => clientApi.getClients({ perPage: 100 }), staleTime: 5 * 60 * 1000 });
+	const projectsQuery = useQuery({ queryKey: projectKeys.list({ perPage: 100 }), queryFn: () => projectApi.getProjects({ perPage: 100 }), staleTime: 5 * 60 * 1000 });
 
 	const [formOpen, setFormOpen] = useState(false);
 	const [editTarget, setEditTarget] = useState<Subscription | null>(null);
@@ -127,6 +137,8 @@ export function SubscriptionsWidget() {
 	};
 
 	const columns = buildColumns(handleEdit, setDeleteTarget);
+	const clientOptions = useMemo(() => (clientsQuery.data?.clients ?? []).map((client) => ({ value: String(client.id), label: client.display_name })), [clientsQuery.data?.clients]);
+	const projectOptions = useMemo(() => (projectsQuery.data?.projects ?? []).map((project) => ({ value: String(project.projectId), label: project.title })), [projectsQuery.data?.projects]);
 
 	return (
 		<section className="flex flex-col gap-6">
@@ -145,6 +157,14 @@ export function SubscriptionsWidget() {
 						Add Subscription
 					</Button>
 				</Can>
+			</div>
+
+			<div className="grid gap-3 border-y py-3 md:grid-cols-2 xl:grid-cols-5">
+				<FilterSelect value={filters.status} onChange={(status) => setFilters((current) => ({ ...current, status }))} options={[{ value: "active", label: "Active" }, { value: "cancelled", label: "Cancelled" }]} allLabel="All statuses" className="w-full" />
+				<FilterSelect value={filters.clientId ? String(filters.clientId) : undefined} onChange={(clientId) => setFilters((current) => ({ ...current, clientId: clientId ? Number(clientId) : undefined }))} options={clientOptions} allLabel="All clients" className="w-full" disabled={clientsQuery.isLoading} />
+				<FilterSelect value={filters.projectId ? String(filters.projectId) : undefined} onChange={(projectId) => setFilters((current) => ({ ...current, projectId: projectId ? Number(projectId) : undefined }))} options={projectOptions} allLabel="All projects" className="w-full" disabled={projectsQuery.isLoading} />
+				<Input type="date" value={filters.from ?? ""} onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value || undefined }))} aria-label="Subscription due from" />
+				<Input type="date" value={filters.to ?? ""} onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value || undefined }))} aria-label="Subscription due to" />
 			</div>
 
 			<DataTable<Subscription>

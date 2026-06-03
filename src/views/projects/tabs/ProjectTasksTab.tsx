@@ -26,15 +26,18 @@ import { Button } from "@/shared/ui/button";
 import { Can } from "@/shared/ui/Can";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
+import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
+import { SearchInput } from "@/shared/ui/filters/SearchInput";
+import { Input } from "@/shared/ui/input";
 import { MilestoneSwimlane } from "@/features/projects/ui/MilestoneSwimlane";
 import { ProjectTaskCard } from "@/features/projects/ui/ProjectTaskCard";
 import { TaskExecutionSheet } from "@/features/projects/ui/TaskExecutionSheet";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { optionalNumberInput } from "@/shared/lib/zod-number";
-import { useMilestones, useProjectTasks, useProjectMembers, useCreateMilestone, useCreateTask } from "@/features/projects/api/execution.api";
-import type { ProjectTask } from "@/features/projects/api/execution.api";
+import { ExecutionTaskStatus, ExecutionTaskStatusLabels, useMilestones, useProjectTasks, useProjectMembers, useCreateMilestone, useCreateTask } from "@/features/projects/api/execution.api";
+import type { ProjectTask, ProjectTaskFilters } from "@/features/projects/api/execution.api";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useTaskPermissions } from "@/entities/user/model/permissions";
 
@@ -109,9 +112,10 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 	const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 	const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 	const [dismissedInitialTask, setDismissedInitialTask] = useState(false);
+	const [taskFilters, setTaskFilters] = useState<ProjectTaskFilters>({});
 
 	const milestonesQuery = useMilestones(projectId);
-	const tasksQuery = useProjectTasks(projectId);
+	const tasksQuery = useProjectTasks(projectId, taskFilters);
 	const membersQuery = useProjectMembers(projectId);
 	const createMilestone = useCreateMilestone();
 	const createTask = useCreateTask();
@@ -234,6 +238,11 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 			label: m.user!.name,
 		}));
 
+	const taskStatusOptions = Object.values(ExecutionTaskStatus).map((status) => ({
+		value: status,
+		label: ExecutionTaskStatusLabels[status],
+	}));
+
 	// ── Live task derivation ─────────────────────────────────────────────────
 	// `selectedTask` is a frozen snapshot captured at click time. After a cache
 	// invalidation + refetch, `allTasks` contains the fresh data but the sheet
@@ -295,6 +304,56 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 						)}
 					</div>
 				)}
+			</div>
+
+			<div className="mb-4 grid gap-3 border-y py-3 md:grid-cols-2 xl:grid-cols-7">
+				<SearchInput
+					value={taskFilters.search}
+					onChange={(search) => setTaskFilters((current) => ({ ...current, search: search || undefined }))}
+					placeholder="Search tasks"
+					className="w-full"
+					autoSearch={false}
+				/>
+				<FilterSelect
+					value={taskFilters.status}
+					onChange={(status) => setTaskFilters((current) => ({ ...current, status }))}
+					options={taskStatusOptions}
+					allLabel="All statuses"
+					className="w-full"
+				/>
+				<FilterSelect
+					value={taskFilters.milestoneId ? String(taskFilters.milestoneId) : undefined}
+					onChange={(milestoneId) => setTaskFilters((current) => ({ ...current, milestoneId: milestoneId ? Number(milestoneId) : undefined, isInBacklog: undefined }))}
+					options={milestoneOptions}
+					allLabel="All milestones"
+					className="w-full"
+				/>
+				<FilterSelect
+					value={taskFilters.assigneeId ? String(taskFilters.assigneeId) : undefined}
+					onChange={(assigneeId) => setTaskFilters((current) => ({ ...current, assigneeId: assigneeId ? Number(assigneeId) : undefined }))}
+					options={assigneeOptions}
+					allLabel="All assignees"
+					className="w-full"
+				/>
+				<Input
+					type="date"
+					value={taskFilters.dueFrom ?? ""}
+					onChange={(event) => setTaskFilters((current) => ({ ...current, dueFrom: event.target.value || undefined }))}
+					aria-label="Task due from"
+				/>
+				<Input
+					type="date"
+					value={taskFilters.dueTo ?? ""}
+					onChange={(event) => setTaskFilters((current) => ({ ...current, dueTo: event.target.value || undefined }))}
+					aria-label="Task due to"
+				/>
+				<Button
+					variant={taskFilters.isInBacklog ? "default" : "outline"}
+					size="sm"
+					onClick={() => setTaskFilters((current) => ({ ...current, isInBacklog: current.isInBacklog ? undefined : true, milestoneId: undefined }))}
+				>
+					Backlog
+				</Button>
 			</div>
 
 			{/* ── Empty state ──────────────────────────────────────────────────── */}

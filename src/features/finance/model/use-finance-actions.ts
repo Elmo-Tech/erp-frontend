@@ -12,14 +12,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { financeKeys } from "@/entities/finance/model/query-keys";
 import * as financeApi from "@/entities/finance/api/finance.api";
-import type { CreateInvoicePayload, CreateSubscriptionPayload, UpdateInvoicePayload, UpdateSubscriptionPayload } from "@/entities/finance/model/types";
+import type { CreateInvoicePayload, CreateSubscriptionPayload, FinanceFilters, UpdateInvoicePayload, UpdateSubscriptionPayload } from "@/entities/finance/model/types";
 
 // ═════════════════════════════════════════════════════════════════════════════
 // INVOICES
 // ═════════════════════════════════════════════════════════════════════════════
 
 /** Returns PaginatedResponse<Invoice> — widgets extract .data for the array */
-export function useInvoices(params?: { clientId?: number }) {
+export function useInvoices(params?: FinanceFilters) {
 	return useQuery({
 		queryKey: financeKeys.invoiceList(params),
 		queryFn: () => financeApi.fetchInvoices(params),
@@ -75,10 +75,10 @@ export function useDeleteInvoice() {
 // ═════════════════════════════════════════════════════════════════════════════
 
 /** Returns PaginatedResponse<Subscription> — widgets extract .data for the array */
-export function useSubscriptions() {
+export function useSubscriptions(params?: FinanceFilters) {
 	return useQuery({
-		queryKey: financeKeys.subscriptionList(),
-		queryFn: financeApi.fetchSubscriptions,
+		queryKey: financeKeys.subscriptionList(params),
+		queryFn: () => financeApi.fetchSubscriptions(params),
 		staleTime: 5 * 60 * 1000,
 	});
 }

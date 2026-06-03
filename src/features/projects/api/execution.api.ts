@@ -142,6 +142,8 @@ export interface ProjectTaskFilters {
 	milestoneId?: number;
 	assigneeId?: number;
 	isInBacklog?: boolean;
+	dueFrom?: string;
+	dueTo?: string;
 	search?: string;
 }
 
@@ -192,6 +194,8 @@ function buildTaskParams(filters?: ProjectTaskFilters): URLSearchParams {
 	if (filters?.milestoneId) params.append("filter[milestoneId]", String(filters.milestoneId));
 	if (filters?.assigneeId) params.append("filter[assigneeId]", String(filters.assigneeId));
 	if (typeof filters?.isInBacklog === "boolean") params.append("filter[isInBacklog]", String(filters.isInBacklog));
+	if (filters?.dueFrom) params.append("filter[dueFrom]", filters.dueFrom);
+	if (filters?.dueTo) params.append("filter[dueTo]", filters.dueTo);
 	if (filters?.search) params.append("filter[search]", filters.search);
 	return params;
 }

@@ -14,7 +14,7 @@
  */
 
 import api from "@/shared/api/base";
-import type { ApiEnvelope, CreateInvoicePayload, CreateSubscriptionPayload, Invoice, Subscription, UpdateInvoicePayload, UpdateSubscriptionPayload } from "@/entities/finance/model/types";
+import type { ApiEnvelope, CreateInvoicePayload, CreateSubscriptionPayload, FinanceFilters, Invoice, Subscription, UpdateInvoicePayload, UpdateSubscriptionPayload } from "@/entities/finance/model/types";
 
 // Paginated response shape (matches entities/hr/model/types.ts)
 interface PaginatedResponse<T> {
@@ -32,9 +32,22 @@ interface PaginatedResponse<T> {
 // Finance Invoices
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function fetchInvoices(params?: { clientId?: number }): Promise<PaginatedResponse<Invoice>> {
+function buildFinanceParams(filters?: FinanceFilters): Record<string, string | number> | undefined {
+	if (!filters) return undefined;
+
+	const params: Record<string, string | number> = {};
+	if (filters.clientId) params.clientId = filters.clientId;
+	if (filters.projectId) params.projectId = filters.projectId;
+	if (filters.status) params.status = filters.status;
+	if (filters.from) params.from = filters.from;
+	if (filters.to) params.to = filters.to;
+
+	return Object.keys(params).length > 0 ? params : undefined;
+}
+
+export async function fetchInvoices(params?: FinanceFilters): Promise<PaginatedResponse<Invoice>> {
 	const res = await api.get<ApiEnvelope<PaginatedResponse<Invoice>>>("/finance/invoices", {
-		params: params?.clientId ? { client_id: params.clientId } : undefined,
+		params: buildFinanceParams(params),
 	});
 	return res.data.data;
 }
@@ -62,8 +75,10 @@ export async function deleteInvoice(id: number): Promise<void> {
 // SaaS Subscriptions
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function fetchSubscriptions(): Promise<PaginatedResponse<Subscription>> {
-	const res = await api.get<ApiEnvelope<PaginatedResponse<Subscription>>>("/finance/subscriptions");
+export async function fetchSubscriptions(params?: FinanceFilters): Promise<PaginatedResponse<Subscription>> {
+	const res = await api.get<ApiEnvelope<PaginatedResponse<Subscription>>>("/finance/subscriptions", {
+		params: buildFinanceParams(params),
+	});
 	return res.data.data;
 }
 

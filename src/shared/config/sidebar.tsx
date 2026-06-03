@@ -39,6 +39,12 @@ export const SidebarConfig = [
                 permission: "view_global_stats",
             },
             {
+                title: "Reports",
+                href: "/dashboard/reports",
+                icon: FileText,
+                permission: "view_reports",
+            },
+            {
                 title: "Morning SOP",
                 href: "/dashboard/sop",
                 icon: Sunrise,

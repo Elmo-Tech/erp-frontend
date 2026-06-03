@@ -24,6 +24,14 @@ function buildProjectParams(filters?: ProjectFilters) {
 		params.append("filter[clientId]", String(filters.clientId));
 	}
 
+	if (filters?.deadlineFrom) {
+		params.append("filter[deadlineFrom]", filters.deadlineFrom);
+	}
+
+	if (filters?.deadlineTo) {
+		params.append("filter[deadlineTo]", filters.deadlineTo);
+	}
+
 	if (filters?.page) {
 		params.append("page", String(filters.page));
 	}
