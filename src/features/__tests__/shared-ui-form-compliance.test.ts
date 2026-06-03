@@ -5,14 +5,13 @@ import { describe, expect, it } from "vitest";
 
 const formFiles = [
 	"src/features/auth/ui/LoginForm.tsx",
-	"src/features/contracts/ui/SignContractDialog.tsx",
+	"src/features/calendar/ui/EventFormModal.tsx",
 	"src/features/profile/ui/ChangePasswordForm.tsx",
 	"src/features/profile/ui/UpdateProfileForm.tsx",
 	"src/features/roles/ui/CreateRoleForm.tsx",
 	"src/features/sop/ui/SOPBuilderForm.tsx",
 	"src/features/sop/ui/SOPCheckinFlow.tsx",
-	"src/features/users/ui/CreateUserForm.tsx",
-	"src/features/users/ui/UpdateUserForm.tsx",
+	"src/features/users/ui/UserFormModal.tsx",
 ];
 
 describe("feature form shared UI compliance", () => {

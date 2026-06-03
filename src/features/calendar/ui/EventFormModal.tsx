@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Form, FormItem, FormLabel, FormMessage } from "@/shared/ui/form";
-import { Input } from "@/shared/ui/input";
+import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
@@ -113,40 +112,20 @@ export function EventFormModal({ open, onClose, editTarget }: EventFormModalProp
 						disabled={isPending}
 					/>
 
-					{/* datetime-local inputs — FormInput doesn't support this type,
-					    so we use Controller + raw <input> with the same visual style */}
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-						<Controller
+						<FormInput
 							control={form.control}
 							name="startTime"
-							render={({ field, fieldState }) => (
-								<FormItem className="flex flex-col">
-									<FormLabel>Start Time</FormLabel>
-									<Input
-										type="datetime-local"
-										disabled={isPending}
-										{...field}
-										value={field.value ?? ""}
-									/>
-									{fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
-								</FormItem>
-							)}
+							label="Start Time"
+							type="datetime-local"
+							disabled={isPending}
 						/>
-						<Controller
+						<FormInput
 							control={form.control}
 							name="endTime"
-							render={({ field, fieldState }) => (
-								<FormItem className="flex flex-col">
-									<FormLabel>End Time</FormLabel>
-									<Input
-										type="datetime-local"
-										disabled={isPending}
-										{...field}
-										value={field.value ?? ""}
-									/>
-									{fieldState.error && <FormMessage>{fieldState.error.message}</FormMessage>}
-								</FormItem>
-							)}
+							label="End Time"
+							type="datetime-local"
+							disabled={isPending}
 						/>
 					</div>
 

@@ -17,7 +17,7 @@ interface FormInputProps<TFieldValues extends FieldValues, TTransformedValues = 
 	label?: string;
 	placeholder?: string;
 	description?: string;
-	type?: "text" | "email" | "password" | "number" | "tel" | "url" | "date" | "time";
+	type?: "text" | "email" | "password" | "number" | "tel" | "url" | "date" | "time" | "datetime-local";
 	disabled?: boolean;
 	readOnly?: boolean;
 	autoComplete?: string;
