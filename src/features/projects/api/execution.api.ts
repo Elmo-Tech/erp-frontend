@@ -85,6 +85,7 @@ export interface ProjectTask {
 	status: string;
 	statusLabel: string | null;
 	estimatedHours: number | null;
+	startDate?: string | null;
 	dueDate?: string | null;
 	assigneeId: number | null;
 	isInBacklog: boolean;
@@ -147,6 +148,73 @@ export interface ProjectTaskFilters {
 	search?: string;
 }
 
+export interface ProjectTimelineFilters {
+	startDate: string;
+	endDate: string;
+	projectIds?: number[];
+	userIds?: number[];
+	status?: string;
+	overloadOnly?: boolean;
+}
+
+export interface ProjectTimelineUser {
+	userId: number;
+	name: string;
+	avatar?: string | null;
+	dailyCapacityHoursByDate: Record<string, number>;
+}
+
+export interface ProjectTimelineItem {
+	taskId: number;
+	projectId: number;
+	projectTitle: string | null;
+	title: string;
+	assigneeId: number | null;
+	startDate: string | null;
+	dueDate: string | null;
+	estimatedHours: number | null;
+	status: string | null;
+	allocatedHoursByDate: Record<string, number>;
+}
+
+export interface ProjectTimelineConflict {
+	userId: number;
+	date: string;
+	capacityHours: number;
+	allocatedHours: number;
+	overloadHours: number;
+	taskIds: number[];
+}
+
+export interface ProjectTimelineSuggestion {
+	type: "reschedule" | "reassign";
+	risk: "low" | "medium" | "high";
+	taskId: number;
+	reason: string;
+	current: {
+		startDate: string | null;
+		dueDate: string | null;
+		assigneeId: number | null;
+	};
+	suggested: {
+		startDate: string | null;
+		dueDate: string | null;
+		assigneeId: number | null;
+		assigneeName?: string | null;
+	};
+}
+
+export interface ProjectTimelineResponse {
+	range: {
+		startDate: string;
+		endDate: string;
+	};
+	users: ProjectTimelineUser[];
+	items: ProjectTimelineItem[];
+	conflicts: ProjectTimelineConflict[];
+	suggestions: ProjectTimelineSuggestion[];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Query key extensions for execution sub-resources
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,6 +225,7 @@ export const executionKeys = {
 	changeRequests: (projectId: number) => [...projectKeys.detail(projectId), "change-requests"] as const,
 	activeTimeEntry: () => ["project-execution", "time-entries", "active"] as const,
 	myActiveTasks: () => ["project-execution", "tasks", "my-active"] as const,
+	timeline: (filters: ProjectTimelineFilters) => ["project-execution", "timeline", filters] as const,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -226,6 +295,30 @@ export function useMyActiveProjectTasks() {
 		queryFn: getMyActiveProjectTasks,
 		staleTime: 60 * 1000,
 		refetchInterval: 60 * 1000,
+	});
+}
+
+function buildTimelineParams(filters: ProjectTimelineFilters): URLSearchParams {
+	const params = new URLSearchParams();
+	params.append("startDate", filters.startDate);
+	params.append("endDate", filters.endDate);
+	for (const projectId of filters.projectIds ?? []) params.append("projectIds[]", String(projectId));
+	for (const userId of filters.userIds ?? []) params.append("userIds[]", String(userId));
+	return params;
+}
+
+export async function getProjectTimeline(filters: ProjectTimelineFilters): Promise<ProjectTimelineResponse> {
+	const params = buildTimelineParams(filters);
+	const response = await api.get<ApiEnvelope<ProjectTimelineResponse>>(`/projects/timeline?${params.toString()}`);
+	return response.data.data;
+}
+
+export function useProjectTimeline(filters: ProjectTimelineFilters) {
+	return useQuery({
+		queryKey: executionKeys.timeline(filters),
+		queryFn: () => getProjectTimeline(filters),
+		enabled: Boolean(filters.startDate && filters.endDate),
+		staleTime: 60 * 1000,
 	});
 }
 
@@ -571,6 +664,8 @@ export interface CreateTaskPayload {
 	// REMOVED: parentId - subtasks are no longer supported
 	description?: string;
 	estimatedHours?: number | null;
+	startDate?: string | null;
+	dueDate?: string | null;
 	assigneeId?: number | null;
 }
 

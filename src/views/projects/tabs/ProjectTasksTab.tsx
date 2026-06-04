@@ -56,6 +56,8 @@ const addTaskSchema = z.object({
 	milestoneId: z.string().optional(),
 	assigneeId: z.string().optional(),
 	estimatedHours: optionalNumberInput().optional().pipe(z.number().min(0).optional()),
+	startDate: z.string().optional(),
+	dueDate: z.string().optional(),
 });
 type AddTaskFormData = z.infer<typeof addTaskSchema>;
 
@@ -148,7 +150,7 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 
 	const taskForm = useForm<AddTaskFormData>({
 		resolver: zodResolver(addTaskSchema),
-		defaultValues: { title: "", description: "", milestoneId: "", assigneeId: "", estimatedHours: undefined },
+		defaultValues: { title: "", description: "", milestoneId: "", assigneeId: "", estimatedHours: undefined, startDate: "", dueDate: "" },
 	});
 
 	const handleOpenMilestoneDialog = useCallback(() => {
@@ -157,7 +159,7 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 	}, [milestoneForm]);
 
 	const handleOpenTaskDialog = useCallback(() => {
-		taskForm.reset({ title: "", description: "", milestoneId: "", assigneeId: "", estimatedHours: undefined });
+		taskForm.reset({ title: "", description: "", milestoneId: "", assigneeId: "", estimatedHours: undefined, startDate: "", dueDate: "" });
 		setTaskDialogOpen(true);
 	}, [taskForm]);
 
@@ -182,6 +184,8 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 					milestoneId: data.milestoneId ? Number(data.milestoneId) : null,
 					assigneeId: data.assigneeId ? Number(data.assigneeId) : null,
 					estimatedHours: data.estimatedHours ?? null,
+					startDate: data.startDate || null,
+					dueDate: data.dueDate || null,
 				},
 			});
 			toast.success("Task created.");
@@ -523,16 +527,29 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 								/>
 							</div>
 
-							{/* Estimated hours */}
-							<FormInput
-								control={taskForm.control}
-								name="estimatedHours"
-								label="Estimated hours (optional)"
-								type="number"
-								placeholder="0"
-								min={0}
-								step={0.5}
-							/>
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+								<FormInput
+									control={taskForm.control}
+									name="estimatedHours"
+									label="Estimated hours"
+									type="number"
+									placeholder="0"
+									min={0}
+									step={0.5}
+								/>
+								<FormInput
+									control={taskForm.control}
+									name="startDate"
+									label="Start date"
+									type="date"
+								/>
+								<FormInput
+									control={taskForm.control}
+									name="dueDate"
+									label="Due date"
+									type="date"
+								/>
+							</div>
 						</div>
 					</Form>
 				</FormDialog>
