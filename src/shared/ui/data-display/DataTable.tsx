@@ -28,6 +28,8 @@ interface DataTableProps<T> {
 	pagination?: PaginationInfo;
 	onPageChange?: (page: number) => void;
 	onRowClick?: (item: T) => void;
+	rowActions?: (item: T) => ReactNode;
+	filters?: ReactNode;
 	emptyState?: {
 		icon?: LucideIcon;
 		title: string;
@@ -38,7 +40,7 @@ interface DataTableProps<T> {
 	className?: string;
 }
 
-export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, isLoading = false, error, pagination, onPageChange, onRowClick, emptyState, headerActions, className }: DataTableProps<T>) {
+export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, isLoading = false, error, pagination, onPageChange, onRowClick, rowActions, filters, emptyState, headerActions, className }: DataTableProps<T>) {
 	// Loading state
 	if (isLoading) {
 		return (
@@ -49,6 +51,7 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 					</CardHeader>
 				)}
 				<CardContent>
+					{filters && <div className="mb-4">{filters}</div>}
 					<LoadingState
 						variant="table"
 						rows={5}
@@ -83,6 +86,7 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 					</CardHeader>
 				)}
 				<CardContent>
+					{filters && <div className="mb-4">{filters}</div>}
 					<EmptyState
 						icon={emptyState?.icon}
 						title={emptyState?.title || "No data found"}
@@ -106,7 +110,8 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 				</CardHeader>
 			)}
 			<CardContent>
-				<div className="rounded-md border">
+				{filters && <div className="mb-4">{filters}</div>}
+				<div className="overflow-x-auto rounded-md border">
 					<Table>
 						<TableHeader>
 							<TableRow>
@@ -118,6 +123,7 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 										{col.header}
 									</TableHead>
 								))}
+								{rowActions && <TableHead className="w-0 text-right">Actions</TableHead>}
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -125,7 +131,16 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 								<TableRow
 									key={keyExtractor(item)}
 									className={cn(onRowClick && "cursor-pointer hover:bg-muted/50")}
+									role={onRowClick ? "button" : undefined}
+									tabIndex={onRowClick ? 0 : undefined}
 									onClick={() => onRowClick?.(item)}
+									onKeyDown={(event) => {
+										if (!onRowClick) return;
+										if (event.key === "Enter" || event.key === " ") {
+											event.preventDefault();
+											onRowClick(item);
+										}
+									}}
 								>
 									{columns.map((col) => (
 										<TableCell
@@ -135,6 +150,15 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 											{col.render(item)}
 										</TableCell>
 									))}
+									{rowActions && (
+										<TableCell
+											className="w-0 whitespace-nowrap text-right"
+											onClick={(event) => event.stopPropagation()}
+											onKeyDown={(event) => event.stopPropagation()}
+										>
+											{rowActions(item)}
+										</TableCell>
+									)}
 								</TableRow>
 							))}
 						</TableBody>

@@ -1,10 +1,11 @@
 "use client";
 
 import { format } from "date-fns";
-import { CalendarClock, CheckCircle2, LogIn, LogOut, ListTodo, Star, Timer, Trophy } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarClock, CheckCircle2, ExternalLink, LogIn, LogOut, ListTodo, Star, Timer, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/entities/user/model/auth.store";
-import { useGetTodayMeetings } from "@/entities/meetings";
+import { MEETING_TYPE_LABELS, useGetTodayMeetings, type PolyMeeting } from "@/entities/meetings";
 import { useCheckInMutation, useCheckOutMutation, useMyPoints, useTodayAttendance } from "@/features/hr/model/use-hr-actions";
 import { PersonalTasksWidget } from "@/features/personal-tasks/ui/PersonalTasksWidget";
 import { ExecutionTaskStatusLabels, type ExecutionTaskStatusValue, useMyActiveProjectTasks } from "@/features/projects/api/execution.api";
@@ -27,6 +28,14 @@ function formatDate(value: string | null | undefined) {
 function normalizeStatus(status: string | null | undefined) {
 	if (!status) return "Open";
 	return ExecutionTaskStatusLabels[status as ExecutionTaskStatusValue] ?? status.replaceAll("_", " ");
+}
+
+function meetingHref(meeting: PolyMeeting): string | null {
+	if (!meeting.modelId) return null;
+	if (meeting.modelType === "project") return `/dashboard/projects/${meeting.modelId}`;
+	if (meeting.modelType === "client") return `/dashboard/clients/${meeting.modelId}/overview`;
+	if (meeting.modelType === "lead") return `/dashboard/leads/${meeting.modelId}`;
+	return null;
 }
 
 function AttendanceControl() {
@@ -110,6 +119,7 @@ function AttendanceControl() {
 }
 
 function DailySchedule() {
+	const router = useRouter();
 	const meetingsQuery = useGetTodayMeetings();
 	const meetings = meetingsQuery.data ?? [];
 	const currentUserId = useAuthStore((s) => s.user?.userId);
@@ -140,18 +150,40 @@ function DailySchedule() {
 					<div className="grid gap-3 lg:grid-cols-2">
 						<div className="space-y-2">
 							<p className="text-xs font-semibold uppercase text-muted-foreground">Meetings</p>
-							{meetings.length ? meetings.map((meeting) => (
-							<div
-								key={meeting.id}
-								className="flex min-w-0 items-center justify-between gap-3 rounded-md border px-3 py-2"
-							>
-								<div className="min-w-0">
-									<p className="truncate text-sm font-medium">{meeting.title}</p>
-									<p className="truncate text-xs text-muted-foreground">{meeting.modelType}</p>
-								</div>
-								<span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatTime(meeting.scheduledAt)}</span>
-							</div>
-							)) : <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">No meetings today.</div>}
+							{meetings.length ? meetings.map((meeting) => {
+								const href = meetingHref(meeting);
+								const detail = meeting.locationDetails || meeting.description;
+
+								return (
+									<div
+										key={meeting.id}
+										className="flex min-w-0 items-center justify-between gap-3 rounded-md border px-3 py-2"
+									>
+										<div className="min-w-0">
+											<p className="truncate text-sm font-medium">{meeting.title}</p>
+											<p className="truncate text-xs text-muted-foreground">
+												{MEETING_TYPE_LABELS[meeting.meetingType] ?? meeting.meetingType} / {meeting.subjectName ?? meeting.modelType}
+											</p>
+											{detail ? <p className="mt-0.5 truncate text-xs text-muted-foreground">{detail}</p> : null}
+										</div>
+										<div className="flex shrink-0 items-center gap-2">
+											<span className="text-xs tabular-nums text-muted-foreground">{formatTime(meeting.scheduledAt)}</span>
+											{href ? (
+												<Button
+													type="button"
+													size="icon"
+													variant="ghost"
+													className="size-7"
+													onClick={() => router.push(href)}
+													aria-label={`Open ${meeting.modelType}`}
+												>
+													<ExternalLink className="size-3.5" />
+												</Button>
+											) : null}
+										</div>
+									</div>
+								);
+							}) : <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">No meetings today.</div>}
 						</div>
 						<div className="space-y-2">
 							<p className="text-xs font-semibold uppercase text-muted-foreground">Urgent Tasks</p>

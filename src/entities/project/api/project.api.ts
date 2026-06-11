@@ -9,6 +9,48 @@ interface ApiEnvelope<T> {
 	data: T;
 }
 
+export interface RawProjectResource extends Omit<Project, "currency" | "contract" | "createdByUser" | "quotation" | "tasks"> {
+	autoApprovalJobId?: string | null;
+}
+
+export interface RawProjectListResponse {
+	projects: RawProjectResource[];
+	pagination: ProjectListResponse["pagination"];
+}
+
+export function mapProjectResource(resource: RawProjectResource): Project {
+	return {
+		projectId: resource.projectId,
+		clientId: resource.clientId,
+		quotationId: resource.quotationId,
+		title: resource.title,
+		description: resource.description,
+		status: resource.status,
+		previousStatus: resource.previousStatus,
+		budget: resource.budget,
+		canViewBudget: resource.canViewBudget,
+		deadline: resource.deadline,
+		uiApprovedAt: resource.uiApprovedAt,
+		progress: resource.progress,
+		totalTimeSpent: resource.totalTimeSpent,
+		isPinned: resource.isPinned,
+		client: resource.client,
+		members: resource.members,
+		files: resource.files,
+		createdAt: resource.createdAt,
+		updatedAt: resource.updatedAt,
+		createdBy: resource.createdBy,
+		updatedBy: resource.updatedBy,
+	};
+}
+
+export function mapProjectListResponse(response: RawProjectListResponse): ProjectListResponse {
+	return {
+		projects: response.projects.map(mapProjectResource),
+		pagination: response.pagination,
+	};
+}
+
 function buildProjectParams(filters?: ProjectFilters) {
 	const params = new URLSearchParams();
 
@@ -47,9 +89,9 @@ export const projectApi = {
 	async getProjects(filters?: ProjectFilters): Promise<ProjectListResponse> {
 		const params = buildProjectParams(filters);
 		const query = params.toString();
-		const response = await api.get<ApiEnvelope<ProjectListResponse>>(query ? `/projects?${query}` : "/projects");
+		const response = await api.get<ApiEnvelope<RawProjectListResponse>>(query ? `/projects?${query}` : "/projects");
 
-		return response.data.data;
+		return mapProjectListResponse(response.data.data);
 	},
 
 	async getClientProjects(clientId: number): Promise<ClientProjectListResponse> {
@@ -59,9 +101,9 @@ export const projectApi = {
 	},
 
 	async getProjectById(id: number): Promise<Project> {
-		const response = await api.get<ApiEnvelope<Project>>(`/projects/${id}`);
+		const response = await api.get<ApiEnvelope<RawProjectResource>>(`/projects/${id}`);
 
-		return response.data.data;
+		return mapProjectResource(response.data.data);
 	},
 
 	async getProjectMembers(id: number): Promise<ProjectMemberListResponse> {
@@ -71,21 +113,21 @@ export const projectApi = {
 	},
 
 	async createProject(payload: CreateProjectPayload): Promise<Project> {
-		const response = await api.post<ApiEnvelope<Project>>("/projects", payload);
+		const response = await api.post<ApiEnvelope<RawProjectResource>>("/projects", payload);
 
-		return response.data.data;
+		return mapProjectResource(response.data.data);
 	},
 
 	async createDirectProject(payload: CreateDirectProjectPayload): Promise<Project> {
-		const response = await api.post<ApiEnvelope<Project>>("/projects/direct", payload);
+		const response = await api.post<ApiEnvelope<RawProjectResource>>("/projects/direct", payload);
 
-		return response.data.data;
+		return mapProjectResource(response.data.data);
 	},
 
 	async updateProject(id: number, payload: UpdateProjectPayload): Promise<Project> {
-		const response = await api.put<ApiEnvelope<Project>>(`/projects/${id}`, payload);
+		const response = await api.put<ApiEnvelope<RawProjectResource>>(`/projects/${id}`, payload);
 
-		return response.data.data;
+		return mapProjectResource(response.data.data);
 	},
 
 	async deleteProject(id: number): Promise<void> {
@@ -93,21 +135,21 @@ export const projectApi = {
 	},
 
 	async convertQuotation(payload: ConvertQuotationPayload): Promise<Project> {
-		const response = await api.post<ApiEnvelope<Project>>("/projects/convert", payload);
+		const response = await api.post<ApiEnvelope<RawProjectResource>>("/projects/convert", payload);
 
-		return response.data.data;
+		return mapProjectResource(response.data.data);
 	},
 
 	async approveUI(id: number): Promise<Project> {
-		const response = await api.post<ApiEnvelope<Project>>(`/projects/${id}/approve-ui`);
+		const response = await api.post<ApiEnvelope<RawProjectResource>>(`/projects/${id}/approve-ui`);
 
-		return response.data.data;
+		return mapProjectResource(response.data.data);
 	},
 
 	async getPinnedProjects(): Promise<Project[]> {
-		const response = await api.get<ApiEnvelope<Project[]>>("/projects/pinned");
+		const response = await api.get<ApiEnvelope<RawProjectResource[]>>("/projects/pinned");
 
-		return response.data.data;
+		return response.data.data.map(mapProjectResource);
 	},
 
 	async pinProject(id: number): Promise<void> {

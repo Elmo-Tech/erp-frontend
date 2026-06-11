@@ -57,6 +57,7 @@ const leadClassificationSchema = z.object({
 	budget_currency: formText,
 	expected_budget: z.union([z.number().min(0, "Budget must be ≥ 0"), z.literal("")]).optional(),
 	source: formText,
+	sales_name: formText.optional(),
 	account_manager_id: formText.optional(),
 	notes: formText,
 });
@@ -95,7 +96,15 @@ const individualLeadSchema = leadClassificationSchema.extend({
 	contactEmail: optionalEmail,
 });
 
-const createLeadSchema = z.discriminatedUnion("type", [companyLeadSchema, individualLeadSchema]);
+const createLeadSchema = z.discriminatedUnion("type", [companyLeadSchema, individualLeadSchema]).superRefine((data, ctx) => {
+	if (data.source.trim().toLowerCase() === "sales" && !data.sales_name?.trim()) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["sales_name"],
+			message: "Sales name is required when lead source is Sales.",
+		});
+	}
+});
 
 type CreateLeadFormInput = z.input<typeof createLeadSchema>;
 type CreateLeadFormOutput = z.output<typeof createLeadSchema>;
@@ -116,6 +125,7 @@ const DEFAULT_VALUES: CreateLeadFormInput = {
 	budget_currency: "USD",
 	expected_budget: "",
 	source: "",
+	sales_name: "",
 	account_manager_id: "",
 	notes: "",
 };
@@ -159,6 +169,8 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 	const currencyDict = useSettingsDictionary("currencies", open);
 
 	const leadType = useWatch({ control: form.control, name: "type" }) as "company" | "individual";
+	const leadSource = useWatch({ control: form.control, name: "source" });
+	const isSalesSource = leadSource?.trim().toLowerCase() === "sales";
 	const isSubmitting = form.formState.isSubmitting || createLeadMutation.isPending;
 
 	const handleOpenChange = (isOpen: boolean) => {
@@ -204,6 +216,8 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 				primary_phone,
 				expected_budget: data.expected_budget !== undefined && data.expected_budget !== "" ? Number(data.expected_budget) : null,
 				source: data.source?.trim() || null,
+				sales_name: data.source?.trim().toLowerCase() === "sales" ? data.sales_name?.trim() || null : null,
+				account_manager_id: data.account_manager_id ? Number(data.account_manager_id) : null,
 				notes: data.notes?.trim() || null,
 			});
 
@@ -400,6 +414,15 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 								options={leadSourcesDict.options}
 								disabled={isSubmitting || leadSourcesDict.isLoading}
 							/>
+							{isSalesSource ? (
+								<FormInput
+									control={form.control}
+									name="sales_name"
+									label="Sales Name"
+									placeholder="Salesperson name"
+									disabled={isSubmitting}
+								/>
+							) : null}
 							<FormCombobox
 								control={form.control}
 								name="account_manager_id"

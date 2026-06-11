@@ -15,21 +15,27 @@ export const createMeetingSchema = z
 		date: z.string().trim().min(1, "Date is required"),
 		time: z.string().trim().min(1, "Time is required"),
 		locationType: z.enum(LOCATION_TYPES, { message: "Please select a location type" }),
-		locationDetails: z.string().trim().min(1, "Location details are required"),
+		locationDetails: z.string().trim().optional().default(""),
 		internalAttendees: z.array(z.string()).min(1, "Select at least one internal attendee"),
 		externalAttendees: z.array(z.string()).default([]),
 		description: z.string().optional(),
 	})
 	.superRefine((data, ctx) => {
-		if (data.locationType === "online") {
+		if (data.locationType === "online" && data.locationDetails.trim() !== "") {
 			const parsed = z.string().url().safeParse(data.locationDetails);
 			if (!parsed.success) {
 				ctx.addIssue({
 					code: "custom",
 					path: ["locationDetails"],
-					message: "Enter a valid meeting link (e.g. https://meet.google.com/…)",
+					message: "Enter a valid meeting link or leave it blank",
 				});
 			}
+		} else if (data.locationType !== "online" && data.locationDetails.trim() === "") {
+			ctx.addIssue({
+				code: "custom",
+				path: ["locationDetails"],
+				message: "Location details are required",
+			});
 		}
 	});
 

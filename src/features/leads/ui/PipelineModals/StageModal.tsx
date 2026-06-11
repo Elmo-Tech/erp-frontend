@@ -17,7 +17,7 @@
  */
 
 import { useEffect } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
 import { Button } from "@/shared/ui/button";
@@ -48,8 +48,6 @@ import { SkipTab } from "./SkipTab";
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
-
-type AnyModalValues = GenericStageModalValues | MeetingStageModalValues | ProposalStageModalValues | QuotationStageModalValues | ContractStageModalValues;
 
 type NonMeetingModalValues = GenericStageModalValues | ProposalStageModalValues | QuotationStageModalValues | ContractStageModalValues;
 
@@ -84,6 +82,7 @@ function defaultValuesForStage(stage: ModalQueueItem["stage"], isSkipOnly: boole
 			location_details: "",
 			internal_attendees: [],
 			external_attendees: [],
+			notes: "",
 		};
 	}
 
@@ -131,7 +130,8 @@ function MeetingStageModal({ item, onSubmit, onCancel, isLoading = false }: Meet
 		resolver: zodResolver(meetingStageModalSchema as any),
 	});
 
-	const currentMode = (form.watch("mode") ?? (isSkipOnly ? "skip" : "schedule")) as "schedule" | "skip";
+	const watchedMode = useWatch({ control: form.control, name: "mode" });
+	const currentMode = (watchedMode ?? (isSkipOnly ? "skip" : "schedule")) as "schedule" | "skip";
 
 	useEffect(() => {
 		form.reset(defaultValuesForStage("meeting", isSkipOnly) as MeetingStageModalValues);
@@ -264,7 +264,8 @@ function GenericStageModal({ item, onSubmit, onCancel, isLoading = false }: Stag
 		resolver: zodResolver(schemaForStage(item.stage) as any),
 	});
 
-	const currentMode = (form.watch("mode") ?? (isSkipOnly ? "skip" : "task")) as "task" | "direct_upload" | "skip";
+	const watchedMode = useWatch({ control: form.control, name: "mode" });
+	const currentMode = (watchedMode ?? (isSkipOnly ? "skip" : "task")) as "task" | "direct_upload" | "skip";
 
 	useEffect(() => {
 		form.reset(defaultValuesForStage(item.stage, isSkipOnly) as NonMeetingModalValues);

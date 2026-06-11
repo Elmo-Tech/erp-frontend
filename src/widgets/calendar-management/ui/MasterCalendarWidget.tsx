@@ -19,10 +19,11 @@ import { EventFormModal } from "@/features/calendar/ui/EventFormModal";
 import { DeleteEventDialog } from "@/features/calendar/ui/DeleteEventDialog";
 import { InvoiceFormModal } from "@/features/finance/ui/InvoiceFormModal";
 import { TaskExecutionSheet } from "@/features/projects/ui/TaskExecutionSheet";
+import { MeetingSheet } from "./MeetingSheet";
 import { useCalendarFeed } from "@/features/calendar/model/use-calendar-actions";
 import { useProjectTasks } from "@/features/projects/api/execution.api";
 import type { Invoice, InvoiceStatus } from "@/entities/finance/model/types";
-import type { AggregatedCalendarItem, AggregatedItemType, AttendanceMeta, EventMeta, InvoiceMeta, MilestoneMeta, SubscriptionMeta, TaskMeta } from "@/entities/calendar/model/types";
+import type { AggregatedCalendarItem, AggregatedItemType, AttendanceMeta, EventMeta, InvoiceMeta, MeetingMeta, MilestoneMeta, SubscriptionMeta, TaskMeta } from "@/entities/calendar/model/types";
 import { cn } from "@/shared/lib/utils";
 
 const TYPE_THEME: Record<
@@ -297,6 +298,10 @@ function agendaSubtitle(item: AggregatedCalendarItem) {
 		const meta = item.meta as AttendanceMeta;
 		return `${formatTime(meta.clockIn)} - ${formatTime(meta.clockOut)} / ${formatMinutes(meta.actualWorkedMinutes ?? meta.totalWorkedMinutes)} / ${meta.workedTasks.length} tasks`;
 	}
+	if (item.type === "meeting") {
+		const meta = item.meta as MeetingMeta;
+		return [meta.subjectName, titleCase(meta.meetingType), formatTime(item.startTime)].filter((part) => part && part !== "—").join(" / ") || "Meeting";
+	}
 	const meta = item.meta as EventMeta;
 	return meta.creatorName ? `Created by ${meta.creatorName}` : "Calendar meeting";
 }
@@ -491,6 +496,7 @@ export function MasterCalendarWidget() {
 	const [deleteTarget, setDeleteTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [invoiceTarget, setInvoiceTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [taskTarget, setTaskTarget] = useState<AggregatedCalendarItem | null>(null);
+	const [meetingTarget, setMeetingTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [milestoneTarget, setMilestoneTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [attendanceTarget, setAttendanceTarget] = useState<AggregatedCalendarItem | null>(null);
 
@@ -518,6 +524,10 @@ export function MasterCalendarWidget() {
 		}
 		if (item.type === "task") {
 			setTaskTarget(item);
+			return;
+		}
+		if (item.type === "meeting") {
+			setMeetingTarget(item);
 			return;
 		}
 		if (item.type === "attendance") {
@@ -890,6 +900,12 @@ export function MasterCalendarWidget() {
 				item={attendanceTarget}
 				onOpenChange={(open) => {
 					if (!open) setAttendanceTarget(null);
+				}}
+			/>
+			<MeetingSheet
+				item={meetingTarget}
+				onOpenChange={(open) => {
+					if (!open) setMeetingTarget(null);
 				}}
 			/>
 			<MilestoneSheet

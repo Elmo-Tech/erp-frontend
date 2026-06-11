@@ -252,8 +252,42 @@ export function useMilestones(projectId: number) {
 // Task hooks
 // ─────────────────────────────────────────────────────────────────────────────
 
+export type RawProjectTaskResource = ProjectTask & {
+	parentId?: number | null;
+	subtasks?: unknown[];
+};
+
 interface TaskListData {
-	tasks: ProjectTask[];
+	tasks: RawProjectTaskResource[];
+}
+
+export function mapProjectTaskResource(resource: RawProjectTaskResource): ProjectTask {
+	return {
+		taskId: resource.taskId,
+		projectId: resource.projectId,
+		milestoneId: resource.milestoneId,
+		title: resource.title,
+		description: resource.description,
+		status: resource.status,
+		statusLabel: resource.statusLabel,
+		estimatedHours: resource.estimatedHours,
+		startDate: resource.startDate,
+		dueDate: resource.dueDate,
+		assigneeId: resource.assigneeId,
+		isInBacklog: resource.isInBacklog,
+		totalLoggedMinutes: resource.totalLoggedMinutes,
+		assignee: resource.assignee,
+		milestone: resource.milestone,
+		project: resource.project,
+		deliverables: resource.deliverables,
+		timeEntries: resource.timeEntries,
+		createdAt: resource.createdAt,
+		updatedAt: resource.updatedAt,
+	};
+}
+
+export function mapProjectTaskListData(taskListData: TaskListData): ProjectTask[] {
+	return taskListData.tasks.map(mapProjectTaskResource);
 }
 
 function buildTaskParams(filters?: ProjectTaskFilters): URLSearchParams {
@@ -272,21 +306,24 @@ function buildTaskParams(filters?: ProjectTaskFilters): URLSearchParams {
 export function useProjectTasks(projectId: number, filters?: ProjectTaskFilters) {
 	return useQuery({
 		queryKey: executionKeys.tasks(projectId, filters),
-		queryFn: async () => {
-			const params = buildTaskParams(filters);
-			const query = params.toString();
-			const url = query ? `/projects/${projectId}/tasks?${query}` : `/projects/${projectId}/tasks`;
-			const response = await api.get<ApiEnvelope<TaskListData>>(url);
-			return response.data.data.tasks;
-		},
+		queryFn: () => getProjectTasks(projectId, filters),
 		enabled: Number.isFinite(projectId) && projectId > 0,
 		staleTime: 60 * 1000,
 	});
 }
 
+export async function getProjectTasks(projectId: number, filters?: ProjectTaskFilters): Promise<ProjectTask[]> {
+	const params = buildTaskParams(filters);
+	const query = params.toString();
+	const url = query ? `/projects/${projectId}/tasks?${query}` : `/projects/${projectId}/tasks`;
+	const response = await api.get<ApiEnvelope<TaskListData>>(url);
+
+	return mapProjectTaskListData(response.data.data);
+}
+
 export async function getMyActiveProjectTasks(): Promise<ProjectTask[]> {
 	const response = await api.get<ApiEnvelope<TaskListData>>("/projects/tasks/my-active");
-	return response.data.data.tasks;
+	return mapProjectTaskListData(response.data.data);
 }
 
 export function useMyActiveProjectTasks() {

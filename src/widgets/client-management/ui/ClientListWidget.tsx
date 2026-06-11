@@ -3,21 +3,22 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Plus } from "lucide-react";
+import { Building2, MoreHorizontal, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { Can } from "@/shared/ui/Can";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { Can, usePermissionGate } from "@/shared/ui/Can";
 import { SearchInput } from "@/shared/ui/filters/SearchInput";
 import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
 import { Input } from "@/shared/ui/input";
-import { Pagination } from "@/shared/ui/data-display/Pagination";
+import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
+import { ClientStatusBadge } from "@/shared/ui/data-display/StatusBadge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
 import { clientApi } from "@/entities/client/api/client.api";
-import { ClientCard } from "@/entities/client/ui/ClientCard";
 import { clientKeys } from "@/entities/client/model/query-keys";
 import { ClientStatus, ClientStatusLabels, type ClientIndexRow, type ClientFilters } from "@/entities/client/model/types";
 import { AddClientModal } from "@/features/clients/ui/AddClientModal";
 import { DeleteClientDialog } from "@/features/clients/ui/DeleteClientDialog";
 import { EditClientModal } from "@/features/clients/ui/EditClientModal";
+import { formatCurrency } from "@/shared/lib/formatters";
 
 const DEFAULT_FILTERS: ClientFilters = {
 	page: 1,
@@ -29,8 +30,53 @@ const STATUS_OPTIONS = Object.values(ClientStatus).map((status) => ({
 	label: ClientStatusLabels[status],
 }));
 
+const clientColumns: Column<ClientIndexRow>[] = [
+	{
+		key: "client",
+		header: "Client",
+		render: (client) => (
+			<div className="min-w-0">
+				<div className="truncate font-medium">{client.display_name}</div>
+				<div className="truncate text-xs text-muted-foreground">{client.email ?? "No email"}</div>
+			</div>
+		),
+	},
+	{
+		key: "company",
+		header: "Company",
+		render: (client) => (
+			<div className="min-w-0">
+				<div className="truncate">{client.company_name?.trim() || "Not set"}</div>
+				<div className="truncate text-xs text-muted-foreground">{client.position?.trim() || "Not set"}</div>
+			</div>
+		),
+	},
+	{
+		key: "status",
+		header: "Status",
+		render: (client) => (
+			<ClientStatusBadge
+				status={client.status}
+				size="sm"
+			/>
+		),
+	},
+	{
+		key: "projects",
+		header: "Projects",
+		render: (client) => <span className="font-mono text-xs">{client.projects_count ?? 0}</span>,
+	},
+	{
+		key: "revenue",
+		header: "Revenue",
+		className: "text-right",
+		render: (client) => <span className="text-xs tabular-nums text-muted-foreground">{formatCurrency(client.total_revenue ?? 0)}</span>,
+	},
+];
+
 export function ClientListWidget() {
 	const router = useRouter();
+	const { canAny } = usePermissionGate();
 	const [filters, setFilters] = useState<ClientFilters>(DEFAULT_FILTERS);
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [clientToEditId, setClientToEditId] = useState<number | null>(null);
@@ -44,6 +90,7 @@ export function ClientListWidget() {
 
 	const clients = clientsQuery.data?.clients ?? [];
 	const pagination = clientsQuery.data?.pagination;
+	const canCreateClient = canAny(["manage_clients", "create_clients"]);
 	const clientToEditQuery = useQuery({
 		queryKey: clientToEditId ? clientKeys.detail(clientToEditId) : clientKeys.details(),
 		queryFn: () => clientApi.getClientById(clientToEditId as number),
@@ -73,6 +120,40 @@ export function ClientListWidget() {
 		setCreateDialogOpen(true);
 	};
 
+	const filtersContent = (
+		<div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_180px_180px_180px_auto] lg:items-center">
+			<SearchInput
+				value={filters.search}
+				onChange={handleSearch}
+				placeholder="Search clients"
+				className="w-full"
+				autoSearch={false}
+			/>
+			<FilterSelect
+				value={filters.status}
+				onChange={(status) => setFilters((current) => ({ ...current, status: status as ClientStatus | undefined, page: 1 }))}
+				options={STATUS_OPTIONS}
+				placeholder="Status"
+				allLabel="All statuses"
+				className="w-full"
+			/>
+			<Input
+				value={filters.company ?? ""}
+				onChange={(event) => setFilters((current) => ({ ...current, company: event.target.value || undefined, page: 1 }))}
+				placeholder="Company"
+			/>
+			<Input
+				value={filters.email ?? ""}
+				onChange={(event) => setFilters((current) => ({ ...current, email: event.target.value || undefined, page: 1 }))}
+				placeholder="Email"
+			/>
+
+			<p className="text-xs tabular-nums text-muted-foreground">
+				{pagination ? `${pagination.total} clients` : "Loading clients"}
+			</p>
+		</div>
+	);
+
 	return (
 		<section className="flex flex-col gap-4">
 			<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -92,92 +173,31 @@ export function ClientListWidget() {
 				</Can>
 			</div>
 
-			<div className="grid gap-3 border-y py-3 lg:grid-cols-[minmax(220px,1fr)_180px_180px_180px_auto] lg:items-center">
-				<SearchInput
-					value={filters.search}
-					onChange={handleSearch}
-					placeholder="Search clients"
-					className="w-full"
-					autoSearch={false}
-				/>
-				<FilterSelect
-					value={filters.status}
-					onChange={(status) => setFilters((current) => ({ ...current, status: status as ClientStatus | undefined, page: 1 }))}
-					options={STATUS_OPTIONS}
-					placeholder="Status"
-					allLabel="All statuses"
-					className="w-full"
-				/>
-				<Input
-					value={filters.company ?? ""}
-					onChange={(event) => setFilters((current) => ({ ...current, company: event.target.value || undefined, page: 1 }))}
-					placeholder="Company"
-				/>
-				<Input
-					value={filters.email ?? ""}
-					onChange={(event) => setFilters((current) => ({ ...current, email: event.target.value || undefined, page: 1 }))}
-					placeholder="Email"
-				/>
-
-				<p className="text-xs tabular-nums text-muted-foreground">
-					{pagination ? `${pagination.total} clients` : "Loading clients"}
-				</p>
-			</div>
-
-			<div className="overflow-hidden rounded-md border bg-background">
-				<div className="hidden border-b bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground md:grid md:grid-cols-[minmax(180px,1.5fr)_minmax(160px,1fr)_minmax(120px,0.75fr)_90px_110px_40px] md:items-center md:gap-3">
-					<span>Client</span>
-					<span>Company</span>
-					<span>Status</span>
-					<span>Projects</span>
-					<span>Revenue</span>
-					<span className="sr-only">Actions</span>
-				</div>
-
-				{clientsQuery.isLoading ? (
-					<ClientRowsSkeleton />
-				) : clientsQuery.error ? (
-					<div className="flex min-h-40 flex-col items-center justify-center gap-1 px-4 text-center">
-						<div className="text-sm font-medium">Unable to load clients</div>
-						<div className="text-sm text-muted-foreground">{clientsQuery.error.message}</div>
-					</div>
-				) : clients.length === 0 ? (
-					<div className="flex min-h-48 flex-col items-center justify-center gap-3 px-4 text-center">
-						<Building2 className="size-6 text-muted-foreground" />
-						<div className="flex flex-col gap-1">
-							<div className="text-sm font-medium">No clients found</div>
-							<div className="text-sm text-muted-foreground">Create a client or adjust your search.</div>
-						</div>
-						<Can permission={["manage_clients", "create_clients"]}>
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={handleCreateClick}
-							>
-								<Plus data-icon="inline-start" />
-								Add Client
-							</Button>
-						</Can>
-					</div>
-				) : (
-					clients.map((client) => (
-						<PermissionedClientCard
-							key={client.id}
-							client={client}
-							onView={handleView}
-							onEdit={(selectedClient) => setClientToEditId(selectedClient.id)}
-							onDelete={setClientToDelete}
-						/>
-					))
+			<DataTable
+				columns={clientColumns}
+				data={clients}
+				keyExtractor={(client) => client.id}
+				isLoading={clientsQuery.isLoading}
+				error={clientsQuery.error}
+				pagination={pagination}
+				onPageChange={handlePageChange}
+				onRowClick={handleView}
+				filters={filtersContent}
+				rowActions={(client) => (
+					<ClientRowActions
+						client={client}
+						onView={handleView}
+						onEdit={(selectedClient) => setClientToEditId(selectedClient.id)}
+						onDelete={setClientToDelete}
+					/>
 				)}
-			</div>
-
-			{pagination && (
-				<Pagination
-					pagination={pagination}
-					onPageChange={handlePageChange}
-				/>
-			)}
+				emptyState={{
+					icon: Building2,
+					title: "No clients found",
+					description: "Create a client or adjust your search.",
+					action: canCreateClient ? { label: "Add Client", onClick: handleCreateClick } : undefined,
+				}}
+			/>
 
 			<AddClientModal
 				open={createDialogOpen}
@@ -210,75 +230,40 @@ export function ClientListWidget() {
 	);
 }
 
-interface PermissionedClientCardProps {
+interface ClientRowActionsProps {
 	client: ClientIndexRow;
 	onView: (client: ClientIndexRow) => void;
 	onEdit: (client: ClientIndexRow) => void;
 	onDelete: (client: ClientIndexRow) => void;
 }
 
-function PermissionedClientCard({ client, onView, onEdit, onDelete }: PermissionedClientCardProps) {
+function ClientRowActions({ client, onView, onEdit, onDelete }: ClientRowActionsProps) {
 	return (
-		<Can
-			permission={["manage_clients", "edit_clients"]}
-			fallback={
-				<Can
-					permission={["manage_clients", "delete_clients"]}
-					fallback={
-						<ClientCard
-							client={client}
-							onView={onView}
-						/>
-					}
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon-sm"
+					aria-label={`Open actions for ${client.display_name}`}
 				>
-					<ClientCard
-						client={client}
-						onView={onView}
-						onDelete={onDelete}
-					/>
+					<MoreHorizontal />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end">
+				<DropdownMenuItem onClick={() => onView(client)}>View</DropdownMenuItem>
+				<Can permission={["manage_clients", "edit_clients"]}>
+					<DropdownMenuItem onClick={() => onEdit(client)}>Edit</DropdownMenuItem>
 				</Can>
-			}
-		>
-			<Can
-				permission={["manage_clients", "delete_clients"]}
-				fallback={
-					<ClientCard
-						client={client}
-						onView={onView}
-						onEdit={onEdit}
-					/>
-				}
-			>
-				<ClientCard
-					client={client}
-					onView={onView}
-					onEdit={onEdit}
-					onDelete={onDelete}
-				/>
-			</Can>
-		</Can>
-	);
-}
-
-function ClientRowsSkeleton() {
-	return (
-		<div className="flex flex-col">
-			{Array.from({ length: 8 }).map((_, index) => (
-				<div
-					key={index}
-					className="grid min-h-14 grid-cols-1 gap-2 border-b px-3 py-2.5 last:border-b-0 md:grid-cols-[minmax(180px,1.5fr)_minmax(160px,1fr)_minmax(120px,0.75fr)_90px_110px_40px] md:items-center md:gap-3"
-				>
-					<div className="flex flex-col gap-1">
-						<Skeleton className="h-4 w-36" />
-						<Skeleton className="h-3 w-44" />
-					</div>
-					<Skeleton className="h-4 w-32" />
-					<Skeleton className="h-5 w-20" />
-					<Skeleton className="h-5 w-10" />
-					<Skeleton className="h-4 w-20" />
-					<Skeleton className="size-8" />
-				</div>
-			))}
-		</div>
+				<Can permission={["manage_clients", "delete_clients"]}>
+					<DropdownMenuItem
+						className="text-destructive focus:text-destructive"
+						onClick={() => onDelete(client)}
+					>
+						Delete
+					</DropdownMenuItem>
+				</Can>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

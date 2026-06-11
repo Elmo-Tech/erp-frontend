@@ -3,7 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
-import { createLeadProposal, leadKeys, updateLeadQuotationStatus, useCreateLeadProposal } from "../leads.api";
+import { createLeadProposal, leadKeys, updateLeadQuotationStatus, updateLeadStage, useCreateLeadProposal } from "../leads.api";
 
 vi.mock("@/shared/api/base", () => ({
 	default: {
@@ -51,5 +51,41 @@ describe("leads API", () => {
 		await expect(updateLeadQuotationStatus(7, 11, "accepted")).resolves.toEqual({ success: true, data: { id: 11, status: "accepted" } });
 
 		expect(mockedApi.patch).toHaveBeenCalledWith("/leads/7/quotations/11", { status: "accepted" });
+	});
+
+	it("sends scheduled meeting data separately from document stage results", async () => {
+		mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: 7, stage: "meeting" } } });
+
+		await updateLeadStage(7, "meeting", [
+			{
+				stage: "meeting",
+				payload: {
+					mode: "schedule",
+					meeting_type: "discovery",
+					date: "2026-05-01",
+					time: "10:30",
+					location_type: "online",
+					location_details: "",
+					internal_attendees: ["3"],
+					external_attendees: ["primary-contact"],
+					notes: "Backfilled discovery notes.",
+				},
+			},
+		]);
+
+		expect(mockedApi.post).toHaveBeenCalledWith("/leads/7/stage", {
+			new_stage: "meeting",
+			stage_results: [],
+			scheduled_meeting: {
+				meeting_type: "discovery",
+				date: "2026-05-01",
+				time: "10:30",
+				location_type: "online",
+				location_details: "",
+				internal_attendees: ["3"],
+				external_attendees: ["primary-contact"],
+				notes: "Backfilled discovery notes.",
+			},
+		});
 	});
 });

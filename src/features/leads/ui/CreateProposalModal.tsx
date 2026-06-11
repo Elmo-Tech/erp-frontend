@@ -27,7 +27,8 @@ import { useCreateLeadProposal } from "@/features/leads/api/leads.api";
 
 // ─── Extract the direct_upload branch for this standalone form ────────────────
 
-type ProposalDirectUploadMode = z.infer<typeof proposalDirectUploadBranchSchema>;
+type ProposalDirectUploadInput = z.input<typeof proposalDirectUploadBranchSchema>;
+type ProposalDirectUploadMode = z.output<typeof proposalDirectUploadBranchSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -41,8 +42,8 @@ interface CreateProposalModalProps {
 
 export function CreateProposalModal({ leadId, open, onOpenChange, onCreated }: CreateProposalModalProps) {
 	const createProposal = useCreateLeadProposal(leadId);
-	const form = useForm<ProposalDirectUploadMode>({
-		resolver: zodResolver(proposalDirectUploadBranchSchema as any),
+	const form = useForm<ProposalDirectUploadInput, unknown, ProposalDirectUploadMode>({
+		resolver: zodResolver(proposalDirectUploadBranchSchema),
 		defaultValues: {
 			mode: "direct_upload",
 			proposal_source: "upload_new",

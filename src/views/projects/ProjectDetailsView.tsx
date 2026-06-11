@@ -35,6 +35,7 @@ import { ProjectTeamTab } from "./tabs/ProjectTeamTab";
 import { ProjectFilesTab } from "./tabs/ProjectFilesTab";
 import { ProjectChangeRequestsTab } from "./tabs/ProjectChangeRequestsTab";
 import { ProjectActivityTab } from "./tabs/ProjectActivityTab";
+import { ProjectNotesTab } from "./tabs/ProjectNotesTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -148,6 +149,7 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 					<TabsTrigger value="overview">Overview</TabsTrigger>
 					<TabsTrigger value="tasks">Tasks</TabsTrigger>
 					<TabsTrigger value="meetings">Meetings</TabsTrigger>
+					<TabsTrigger value="notes">Notes</TabsTrigger>
 					<TabsTrigger value="team">Team</TabsTrigger>
 					<TabsTrigger value="files">Files</TabsTrigger>
 					<TabsTrigger value="change-requests">Change Requests</TabsTrigger>
@@ -170,6 +172,10 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 						projectId={projectId}
 						clientId={project.clientId}
 					/>
+				</TabsContent>
+
+				<TabsContent value="notes">
+					<ProjectNotesTab projectId={projectId} />
 				</TabsContent>
 
 				<TabsContent value="team">

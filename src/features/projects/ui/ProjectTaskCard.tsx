@@ -23,7 +23,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { cn } from "@/shared/lib/utils";
-import { formatDuration, getElapsedSeconds } from "@/shared/lib/dateUtils";
+import { formatDuration } from "@/shared/lib/dateUtils";
 import { TaskStatusColors, TaskStatusLabels, TaskStatus } from "@/shared/lib/statusHelpers";
 import { useToggleTaskTimer } from "../api/execution.api";
 import type { ProjectTask } from "../api/execution.api";
@@ -43,24 +43,25 @@ export interface ProjectTaskCardProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function useLiveTimer(startTime: string | null | undefined, isRunning: boolean) {
-	const [elapsed, setElapsed] = useState(() => (isRunning ? getElapsedSeconds(startTime) : 0));
+	const [nowMs, setNowMs] = useState(() => Date.now());
 
 	useEffect(() => {
 		if (!isRunning || !startTime) {
-			setElapsed(0);
 			return;
 		}
-		// Sync immediately on mount / when startTime changes
-		setElapsed(getElapsedSeconds(startTime));
 
 		const id = setInterval(() => {
-			setElapsed(getElapsedSeconds(startTime));
+			setNowMs(Date.now());
 		}, 1000);
 
 		return () => clearInterval(id);
 	}, [isRunning, startTime]);
 
-	return elapsed;
+	if (!isRunning || !startTime) {
+		return 0;
+	}
+
+	return Math.max(0, Math.floor((nowMs - new Date(startTime).getTime()) / 1000));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

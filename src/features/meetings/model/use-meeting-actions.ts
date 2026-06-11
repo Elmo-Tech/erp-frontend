@@ -6,11 +6,6 @@ import { meetingsApi } from "@/entities/meetings/api/meetings.api";
 import { polyMeetingKeys } from "@/entities/meetings/model/query-keys";
 import type { CreateMeetingPayload } from "@/entities/meetings/model/types";
 
-/**
- * BUG FIX: was importing from the legacy singular `entities/meeting` module
- * which used a non-polymorphic endpoint and did not pass model_type / model_id.
- * Now uses the canonical polymorphic `entities/meetings` API.
- */
 export function useScheduleMeeting(clientId: number) {
 	const queryClient = useQueryClient();
 

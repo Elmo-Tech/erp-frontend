@@ -87,7 +87,7 @@ function HistoryEntry({ entry }: { entry: ProjectHistoryEntry }) {
 				</div>
 
 				{/* Optional reason */}
-				{entry.reason && <p className="mt-1.5 text-xs italic text-muted-foreground">"{entry.reason}"</p>}
+				{entry.reason && <p className="mt-1.5 text-xs italic text-muted-foreground">&quot;{entry.reason}&quot;</p>}
 			</div>
 		</div>
 	);

@@ -1,36 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { FolderKanban, Plus, UserRound } from "lucide-react";
+import { FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 import { clientApi } from "@/entities/client/api/client.api";
 import { clientKeys } from "@/entities/client/model/query-keys";
 import { projectApi } from "@/entities/project/api/project.api";
 import { projectKeys } from "@/entities/project/model/query-keys";
-import { ProjectStatus, ProjectStatusLabels, type Project, type ProjectFilters } from "@/entities/project/model/types";
+import type { Project, ProjectFilters } from "@/entities/project/model/types";
 import { useProjectPermissions } from "@/entities/user/model/permissions";
 import { useDeleteProject, usePinProject, useUnpinProject } from "@/features/projects/model/use-project-actions";
 import { CreateProjectForm } from "@/features/projects/ui/CreateProjectForm";
-import { ProjectCard } from "@/entities/project/ui/ProjectCard";
-import { Button } from "@/shared/ui/button";
-import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
-import { Pagination } from "@/shared/ui/data-display/Pagination";
-import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
-import { SearchInput } from "@/shared/ui/filters/SearchInput";
-import { Input } from "@/shared/ui/input";
-import { Skeleton } from "@/shared/ui/skeleton";
+import { DataTable } from "@/shared/ui/data-display/DataTable";
+import { ProjectDeleteDialog } from "./ProjectDeleteDialog";
+import { ProjectListHeader } from "./ProjectListHeader";
+import { ProjectListFilters } from "./ProjectListFilters";
+import { ProjectRowActions } from "./ProjectRowActions";
+import { buildProjectColumns } from "./project-list-columns";
 
 const DEFAULT_FILTERS: ProjectFilters = {
 	page: 1,
 	perPage: 15,
 };
-
-const STATUS_FILTER_OPTIONS = Object.values(ProjectStatus).map((status) => ({
-	value: status,
-	label: ProjectStatusLabels[status],
-}));
 
 export function ProjectListWidget() {
 	const router = useRouter();
@@ -87,7 +80,7 @@ export function ProjectListWidget() {
 		setCreateDialogOpen(true);
 	};
 
-	const handleTogglePin = async (project: Project) => {
+	const handleTogglePin = useCallback(async (project: Project) => {
 		try {
 			if (project.isPinned) {
 				await unpinProject.mutateAsync(project.projectId);
@@ -99,7 +92,7 @@ export function ProjectListWidget() {
 		} catch {
 			toast.error("Failed to update pinned project");
 		}
-	};
+	}, [pinProject, unpinProject]);
 
 	const handleConfirmDelete = async () => {
 		if (!projectToDelete) {
@@ -115,182 +108,67 @@ export function ProjectListWidget() {
 		}
 	};
 
+	const projectColumns = useMemo(() => buildProjectColumns(canViewProjectBudget, handleTogglePin), [canViewProjectBudget, handleTogglePin]);
+
+	const tableFilters = (
+		<ProjectListFilters
+			filters={filters}
+			clientOptions={clientFilterOptions}
+			isClientOptionsLoading={clientsQuery.isLoading}
+			pagination={pagination}
+			onChange={updateFilters}
+		/>
+	);
+
 	return (
 		<section className="flex flex-col gap-4">
-			<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-				<div className="min-w-0">
-					<h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
-					<p className="text-sm text-muted-foreground">Track client work, budgets, deadlines, and delivery status.</p>
-				</div>
+			<ProjectListHeader
+				canCreateProjects={canCreateProjects}
+				onCreateProject={handleCreateClick}
+			/>
 
-				{canCreateProjects && (
-					<Button
-						size="sm"
-						onClick={handleCreateClick}
-					>
-						<Plus data-icon="inline-start" />
-						New project
-					</Button>
+			<DataTable
+				columns={projectColumns}
+				data={projects}
+				keyExtractor={(project) => project.projectId}
+				isLoading={projectsQuery.isLoading}
+				error={projectsQuery.error}
+				pagination={pagination}
+				onPageChange={(page) => updateFilters({ page })}
+				onRowClick={handleView}
+				filters={tableFilters}
+				rowActions={(project) => (
+					<ProjectRowActions
+						project={project}
+						canDelete={canDeleteProjects}
+						onView={handleView}
+						onTogglePin={handleTogglePin}
+						onDelete={setProjectToDelete}
+					/>
 				)}
-			</div>
-
-			<div className="flex flex-col gap-3 border-y py-3 xl:flex-row xl:items-center xl:justify-between">
-				<SearchInput
-					value={filters.search}
-					onChange={(search) => updateFilters({ search: search || undefined })}
-					placeholder="Search projects"
-					className="w-full xl:max-w-sm"
-					autoSearch={false}
-				/>
-
-				<div className="flex flex-col gap-2 md:flex-row md:items-center">
-					<FilterSelect
-						value={filters.status}
-						onChange={(status) => updateFilters({ status: status as ProjectStatus | undefined })}
-						options={STATUS_FILTER_OPTIONS}
-						placeholder="Status"
-						allLabel="All statuses"
-						className="w-full md:w-44"
-					/>
-
-					<FilterSelect
-						value={filters.clientId ? String(filters.clientId) : undefined}
-						onChange={(clientId) => updateFilters({ clientId: clientId ? Number(clientId) : undefined })}
-						options={clientFilterOptions}
-						placeholder="Client"
-						allLabel="All clients"
-						icon={UserRound}
-						className="w-full md:w-56"
-						disabled={clientsQuery.isLoading}
-					/>
-
-					<Input
-						type="date"
-						value={filters.deadlineFrom ?? ""}
-						onChange={(event) => updateFilters({ deadlineFrom: event.target.value || undefined })}
-						className="w-full md:w-40"
-						aria-label="Deadline from"
-					/>
-
-					<Input
-						type="date"
-						value={filters.deadlineTo ?? ""}
-						onChange={(event) => updateFilters({ deadlineTo: event.target.value || undefined })}
-						className="w-full md:w-40"
-						aria-label="Deadline to"
-					/>
-
-					<p className="text-xs tabular-nums text-muted-foreground md:min-w-24 md:text-right">{pagination ? `${pagination.total} projects` : "Loading projects"}</p>
-				</div>
-			</div>
-
-			<div className="overflow-hidden rounded-md border bg-background">
-				<div className="hidden border-b bg-muted/30 px-3 py-2 text-xs font-medium text-muted-foreground md:grid md:grid-cols-[32px_minmax(180px,1.5fr)_minmax(150px,1fr)_120px_120px_100px_40px] md:items-center md:gap-3">
-					<span className="sr-only">Pinned</span>
-					<span>Project</span>
-					<span>Client</span>
-					<span>Status</span>
-					<span>{canViewProjectBudget ? "Budget" : <span className="sr-only">Budget</span>}</span>
-					<span>Deadline</span>
-					<span className="sr-only">Actions</span>
-				</div>
-
-				{projectsQuery.isLoading ? (
-					<ProjectRowsSkeleton />
-				) : projectsQuery.error ? (
-					<div className="flex min-h-40 flex-col items-center justify-center gap-1 px-4 text-center">
-						<div className="text-sm font-medium">Unable to load projects</div>
-						<div className="text-sm text-muted-foreground">{projectsQuery.error.message}</div>
-					</div>
-				) : projects.length === 0 ? (
-					<div className="flex min-h-48 flex-col items-center justify-center gap-3 px-4 text-center">
-						<FolderKanban className="size-6 text-muted-foreground" />
-						<div className="flex flex-col gap-1">
-							<div className="text-sm font-medium">No projects found</div>
-							<div className="text-sm text-muted-foreground">Create a project or adjust the filters.</div>
-						</div>
-						{canCreateProjects && (
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={handleCreateClick}
-							>
-								<Plus data-icon="inline-start" />
-								New project
-							</Button>
-						)}
-					</div>
-				) : (
-					projects.map((project) => (
-						<ProjectCard
-							key={project.projectId}
-							project={project}
-							canViewBudget={canViewProjectBudget}
-							onView={handleView}
-							onDelete={canDeleteProjects ? setProjectToDelete : undefined}
-							onTogglePin={handleTogglePin}
-						/>
-					))
-				)}
-			</div>
-
-			{pagination && (
-				<Pagination
-					pagination={pagination}
-					onPageChange={(page) => updateFilters({ page })}
-				/>
-			)}
+				emptyState={{
+					icon: FolderKanban,
+					title: "No projects found",
+					description: "Create a project or adjust the filters.",
+					action: canCreateProjects ? { label: "New project", onClick: handleCreateClick } : undefined,
+				}}
+			/>
 
 			<CreateProjectForm
 				open={createDialogOpen}
 				onOpenChange={setCreateDialogOpen}
 			/>
 
-			<ConfirmDialog
-				open={Boolean(projectToDelete)}
+			<ProjectDeleteDialog
+				project={projectToDelete}
+				isLoading={deleteProject.isPending}
 				onOpenChange={(open) => {
 					if (!open) {
 						setProjectToDelete(null);
 					}
 				}}
-				title="Delete project"
-				description={
-					<span>
-						Delete <span className="font-medium text-foreground">{projectToDelete?.title}</span>? This action cannot be undone.
-					</span>
-				}
-				confirmLabel="Delete"
-				variant="destructive"
 				onConfirm={handleConfirmDelete}
-				isLoading={deleteProject.isPending}
 			/>
 		</section>
-	);
-}
-
-function ProjectRowsSkeleton() {
-	return (
-		<div className="flex flex-col">
-			{Array.from({ length: 8 }).map((_, index) => (
-				<div
-					key={index}
-					className="grid min-h-14 grid-cols-1 gap-2 border-b px-3 py-2.5 last:border-b-0 md:grid-cols-[32px_minmax(180px,1.5fr)_minmax(150px,1fr)_120px_120px_100px_40px] md:items-center md:gap-3"
-				>
-					<Skeleton className="hidden size-8 md:block" />
-					<div className="flex flex-col gap-1">
-						<Skeleton className="h-4 w-44" />
-						<Skeleton className="h-3 w-56" />
-					</div>
-					<div className="flex flex-col gap-1">
-						<Skeleton className="h-4 w-32" />
-						<Skeleton className="h-3 w-40" />
-					</div>
-					<Skeleton className="h-5 w-24" />
-					<Skeleton className="h-4 w-20" />
-					<Skeleton className="h-4 w-20" />
-					<Skeleton className="size-8" />
-				</div>
-			))}
-		</div>
 	);
 }

@@ -137,9 +137,10 @@ export const meetingScheduleSchema = z
 		location_details: z.string().optional(),
 		internal_attendees: z.array(z.string()).min(1, "Select at least one internal attendee"),
 		external_attendees: z.array(z.string()).default([]),
+		notes: z.string().optional(),
 	})
 	.superRefine((data, ctx) => {
-		if (data.location_type === "online") {
+		if (data.location_type === "online" && (data.location_details ?? "").trim() !== "") {
 			const parsed = z
 				.string()
 				.url()
@@ -148,10 +149,10 @@ export const meetingScheduleSchema = z
 				ctx.addIssue({
 					code: z.ZodIssueCode.custom,
 					path: ["location_details"],
-					message: "Enter a valid meeting link (e.g. https://meet.google.com/…)",
+					message: "Enter a valid meeting link or leave it blank",
 				});
 			}
-		} else if (!data.location_details?.trim()) {
+		} else if (data.location_type !== "online" && !data.location_details?.trim()) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				path: ["location_details"],

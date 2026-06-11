@@ -76,6 +76,7 @@ export interface PolyMeeting {
 	id: number;
 	modelType: MeetingModelType;
 	modelId: number;
+	subjectName?: string | null;
 	meetingType: MeetingType;
 	status: MeetingStatus;
 	title: string;

@@ -1,5 +1,5 @@
 import type { PipelineStage, SkipReason } from "./pipelineConstants";
-import type { QuotationDirectUploadValues, ContractDirectUploadValues, ProposalDirectUploadValues, MeetingScheduleValues } from "../ui/PipelineModals/stageModal.schema";
+import type { QuotationDirectUploadValues, ContractDirectUploadValues, ProposalDirectUploadValues } from "../ui/PipelineModals/stageModal.schema";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Lead entity
@@ -83,6 +83,7 @@ export interface MeetingSchedulePayload {
 	location_details?: string;
 	internal_attendees: string[];
 	external_attendees: string[];
+	notes?: string;
 }
 
 /** Generic direct-upload (fallback) */

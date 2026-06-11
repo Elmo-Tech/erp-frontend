@@ -68,6 +68,29 @@ export interface EventMeta {
 	creatorName: string | null;
 }
 
+/** Meta fields for type === "meeting" */
+export interface MeetingMeta {
+	description: string | null;
+	notes: string | null;
+	eventType: CalendarEventType;
+	creatorId: number | null;
+	creatorName: string | null;
+	meetingType: string | null;
+	location: string | null;
+	locationDetails: string | null;
+	internalAttendees: Array<string | number>;
+	externalAttendees: string[];
+	subjectType: string | null;
+	subjectId: number | null;
+	subjectName: string | null;
+	clientId: number | null;
+	clientName: string | null;
+	projectId: number | null;
+	projectTitle: string | null;
+	leadId: number | null;
+	leadTitle: string | null;
+}
+
 /** Meta fields for type === "task" */
 export interface TaskMeta {
 	projectId: number;
@@ -150,7 +173,7 @@ export interface AggregatedCalendarItem {
 	startTime: string | null; // ISO-8601 (events only)
 	endTime: string | null; // ISO-8601 (events only)
 	status: string | null;
-	meta: EventMeta | TaskMeta | InvoiceMeta | MilestoneMeta | SubscriptionMeta | AttendanceMeta;
+	meta: EventMeta | MeetingMeta | TaskMeta | InvoiceMeta | MilestoneMeta | SubscriptionMeta | AttendanceMeta;
 }
 
 export interface AggregatedCalendarResponse {

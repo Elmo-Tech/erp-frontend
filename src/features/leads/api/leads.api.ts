@@ -58,6 +58,17 @@ export interface StageResultPayload {
 	addons?: Array<{ name: string; price: number }> | null;
 }
 
+export interface ScheduledMeetingPayload {
+	meeting_type: string;
+	date: string;
+	time: string;
+	location_type: string;
+	location_details?: string | null;
+	internal_attendees: string[];
+	external_attendees: string[];
+	notes?: string | null;
+}
+
 export interface UpdateLeadStageResponse {
 	success: boolean;
 	message: string;
@@ -97,6 +108,23 @@ export const leadKeys = {
 	contracts: (leadId: number) => [...leadKeys.detail(leadId), "contracts"] as const,
 };
 
+export interface RawLeadResource {
+	id: number;
+	title: string;
+	stage: string;
+	status: string;
+	company: string | null;
+	email: string | null;
+	phone: string | null;
+	expected_budget: number | null;
+	source: string | null;
+	assignedTo: number | null;
+	hasCompletedMeeting?: boolean;
+	hasAcceptedProposalOrQuotation?: boolean;
+	createdAt: string;
+	updatedAt: string;
+}
+
 const BACKEND_TO_FRONTEND_STAGE: Record<string, PipelineStage> = {
 	new_lead: "new",
 	meeting: "meeting",
@@ -108,7 +136,7 @@ const BACKEND_TO_FRONTEND_STAGE: Record<string, PipelineStage> = {
 	closed_won: "closed_won",
 };
 
-export function mapLeadResourceToLead(item: GetLeadsResponse["data"][number] | GetLeadResponse["data"]): Lead | null {
+export function mapLeadResourceToLead(item: RawLeadResource): Lead | null {
 	const stage = BACKEND_TO_FRONTEND_STAGE[item.stage];
 	if (!stage || !PIPELINE_STAGES.includes(stage)) return null;
 
@@ -138,6 +166,8 @@ export interface CreateLeadPayload {
 	primary_phone?: string | null;
 	expected_budget?: number | null;
 	source?: string | null;
+	sales_name?: string | null;
+	account_manager_id?: number | null;
 	notes?: string | null;
 }
 
@@ -268,6 +298,28 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 	};
 }
 
+function isScheduledMeetingResult(result: StageModalResult): boolean {
+	return result.stage === "meeting" && result.payload.mode === "schedule";
+}
+
+function mapScheduledMeetingPayload(result: StageModalResult): ScheduledMeetingPayload | null {
+	if (!isScheduledMeetingResult(result)) return null;
+
+	const payload = result.payload;
+	if (payload.mode !== "schedule") return null;
+
+	return {
+		meeting_type: payload.meeting_type,
+		date: payload.date,
+		time: payload.time,
+		location_type: payload.location_type,
+		location_details: payload.location_details ?? "",
+		internal_attendees: payload.internal_attendees,
+		external_attendees: payload.external_attendees,
+		notes: payload.notes ?? null,
+	};
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // API function
 // ─────────────────────────────────────────────────────────────────────────────
@@ -294,9 +346,13 @@ export async function updateLeadStage(leadId: number, newStage: PipelineStage, s
 		closed_won: "won",
 	};
 
+	const scheduledMeeting = stageResults.map(mapScheduledMeetingPayload).find((meeting): meeting is ScheduledMeetingPayload => meeting !== null);
+	const documentStageResults = stageResults.filter((result) => !isScheduledMeetingResult(result));
+
 	const payload = {
 		new_stage: stageValueMap[newStage] ?? newStage,
-		stage_results: stageResults.map(mapStageResultToPayload),
+		stage_results: documentStageResults.map(mapStageResultToPayload),
+		...(scheduledMeeting ? { scheduled_meeting: scheduledMeeting } : {}),
 	};
 
 	const response = await api.post<UpdateLeadStageResponse>(`/leads/${leadId}/stage`, payload);
@@ -371,22 +427,7 @@ export function useCreateLead() {
 export interface GetLeadsResponse {
 	success: boolean;
 	message: string;
-	data: Array<{
-		id: number;
-		title: string;
-		stage: string;
-		status: string;
-		company: string | null;
-		email: string | null;
-		phone: string | null;
-		expected_budget: number | null;
-		source: string | null;
-		assignedTo: number | null;
-		hasCompletedMeeting?: boolean;
-		hasAcceptedProposalOrQuotation?: boolean;
-		createdAt: string;
-		updatedAt: string;
-	}>;
+	data: RawLeadResource[];
 }
 
 /**
@@ -429,30 +470,16 @@ export function useGetLeads(filters?: LeadFilters) {
 export interface GetLeadResponse {
 	success: boolean;
 	message: string;
-	data: {
-		id: number;
-		title: string;
-		stage: string;
-		status: string;
-		company: string | null;
-		email: string | null;
-		phone: string | null;
+	data: RawLeadResource & {
 		contact_name: string | null;
-		expected_budget: number | null;
-		source: string | null;
 		notes: string | null;
 		expected_close_date: string | null;
-		assignedTo: number | null;
-		hasCompletedMeeting?: boolean;
-		hasAcceptedProposalOrQuotation?: boolean;
 		assignee: {
 			id: number;
 			name: string;
 			email: string;
 			avatar: string | null;
 		} | null;
-		createdAt: string;
-		updatedAt: string;
 	};
 }
 

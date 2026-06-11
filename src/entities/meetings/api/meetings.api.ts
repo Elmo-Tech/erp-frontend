@@ -34,7 +34,7 @@ interface RawMeetingResource {
 	meetingId: number;
 	subjectId: number;
 	subjectType: string;
-	subjectName?: string;
+	subjectName?: string | null;
 	meetingType?: string | null;
 	status: string;
 	statusLabel?: string;
@@ -51,6 +51,8 @@ interface RawMeetingResource {
 		email: string;
 		avatar?: string;
 	} | null;
+	internalAttendees?: Array<string | number> | null;
+	externalAttendees?: string[] | null;
 	scheduledAt: string;
 	completedAt?: string | null;
 	createdAt: string;
@@ -70,7 +72,7 @@ function toPolyMeeting(raw: RawMeetingResource, modelType: MeetingModelType, mod
 		id: raw.meetingId,
 		modelType,
 		modelId,
-		// Backend has no meeting_type column — default to "discovery" as a safe fallback
+		subjectName: raw.subjectName ?? null,
 		meetingType: (raw.meetingType ?? "discovery") as PolyMeeting["meetingType"],
 		status: raw.status as PolyMeeting["status"],
 		title: raw.title,
@@ -78,9 +80,8 @@ function toPolyMeeting(raw: RawMeetingResource, modelType: MeetingModelType, mod
 		scheduledAt: raw.scheduledAt,
 		completionNote: raw.outcomeSummary ?? null,
 		assignedTo: raw.assignedTo ?? null,
-		// Backend stores attendees on the subject, not the meeting — default to empty
-		internalAttendees: [],
-		externalAttendees: [],
+		internalAttendees: (raw.internalAttendees ?? []).map(String),
+		externalAttendees: raw.externalAttendees ?? [],
 		locationType: locationMap[raw.location ?? ""] ?? "online",
 		locationDetails: raw.locationDetails ?? null,
 		createdAt: raw.createdAt,

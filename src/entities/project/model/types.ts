@@ -75,7 +75,7 @@ export interface Project {
 	description: string | null;
 	status: ProjectStatus;
 	previousStatus: ProjectStatus | null;
-	budget: number;
+	budget: number | null;
 	currency?: string | null;
 	estimatedHours?: number | null;
 	deadline: string | null;

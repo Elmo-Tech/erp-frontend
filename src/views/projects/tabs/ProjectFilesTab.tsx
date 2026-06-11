@@ -71,14 +71,6 @@ function formatBytes(bytes: number | null | undefined): string {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getFileIcon(mimeType: string | null | undefined) {
-	if (!mimeType) return FileText;
-	if (mimeType.startsWith("image/")) return FileText;
-	if (mimeType === "application/pdf") return FileText;
-	if (mimeType.includes("word") || mimeType.includes("document")) return FileText;
-	return FileText;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // File row
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,14 +81,13 @@ interface FileRowProps {
 }
 
 function FileRow({ file, onDelete }: FileRowProps) {
-	const Icon = file.type === "link" ? Link2 : getFileIcon(file.mimeType);
 	const categoryColor = CATEGORY_COLORS[file.category] ?? CATEGORY_COLORS.general;
 
 	return (
 		<div className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0 hover:bg-muted/30 transition-colors">
 			{/* Icon */}
 			<div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/50">
-				<Icon className="size-4 text-muted-foreground" />
+				{file.type === "link" ? <Link2 className="size-4 text-muted-foreground" /> : <FileText className="size-4 text-muted-foreground" />}
 			</div>
 
 			{/* Name + meta */}

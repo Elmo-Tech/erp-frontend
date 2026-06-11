@@ -15,6 +15,7 @@
 
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
@@ -26,6 +27,8 @@ import { createLeadQuotation } from "@/features/leads/api/leads.api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+type QuotationDirectUploadInput = z.input<typeof quotationDirectUploadSchema>;
+
 interface CreateQuotationModalProps {
 	leadId: number;
 	open: boolean;
@@ -34,8 +37,8 @@ interface CreateQuotationModalProps {
 }
 
 export function CreateQuotationModal({ leadId, open, onOpenChange, onCreated }: CreateQuotationModalProps) {
-	const form = useForm<QuotationDirectUploadValues>({
-		resolver: zodResolver(quotationDirectUploadSchema as any),
+	const form = useForm<QuotationDirectUploadInput, unknown, QuotationDirectUploadValues>({
+		resolver: zodResolver(quotationDirectUploadSchema),
 		defaultValues: {
 			upload_file: undefined,
 			base_price: undefined,

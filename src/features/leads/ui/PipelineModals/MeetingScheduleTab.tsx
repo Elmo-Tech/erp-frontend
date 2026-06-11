@@ -26,6 +26,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { Video } from "lucide-react";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
+import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { FormTagSelector, type FormTagOption } from "@/shared/ui/forms/FormTagSelector";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
 import { MEETING_TYPES, MEETING_TYPE_LABELS, LOCATION_TYPES, LOCATION_TYPE_LABELS } from "@/entities/meetings/model/types";
@@ -122,10 +123,18 @@ export function MeetingScheduleTab() {
 					name="location_details"
 					label={isOnline ? "Meeting Link" : "Location Details"}
 					type={isOnline ? "url" : "text"}
-					placeholder={isOnline ? "https://meet.google.com/…" : "Building, address, room, or notes"}
+					placeholder={isOnline ? "Optional meeting link" : "Building, address, room, or notes"}
 					endAdornment={isOnline ? <Video className="size-4 text-muted-foreground" /> : undefined}
 				/>
 			</div>
+
+			<FormTextarea
+				control={control}
+				name="notes"
+				label="Notes"
+				placeholder="Meeting context, decisions, or follow-up notes"
+				rows={3}
+			/>
 
 			{/* ── Row 4: Internal Attendees ─────────────────────────────────── */}
 			<FormTagSelector

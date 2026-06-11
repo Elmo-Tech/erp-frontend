@@ -37,6 +37,7 @@ describe("meetingsApi", () => {
 			model_id: 7,
 			meeting_type: "discovery-call",
 			title: "Discovery Call",
+			description: "Client asked for pricing notes.",
 			scheduled_at: "2026-05-14T10:00:00.000Z",
 			location_type: "online",
 			location_details: "https://meet.example.com/demo",
@@ -46,6 +47,7 @@ describe("meetingsApi", () => {
 
 		expect(mockedApi.post).toHaveBeenCalledWith("/meetings", expect.objectContaining({
 			meetingType: "discovery-call",
+			description: "Client asked for pricing notes.",
 			internalAttendees: [11, 12],
 			externalAttendees: ["primary-contact"],
 		}));

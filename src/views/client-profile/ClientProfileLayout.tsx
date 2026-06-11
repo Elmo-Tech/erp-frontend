@@ -27,6 +27,7 @@ const PROFILE_TABS = [
 	{ label: "Overview", href: "overview" },
 	{ label: "Projects", href: "projects" },
 	{ label: "Meetings", href: "meetings" },
+	{ label: "Notes", href: "notes" },
 	{ label: "Ledger", href: "ledger" },
 	{ label: "Activity Log", href: "activity" },
 ];
