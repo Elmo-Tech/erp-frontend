@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
-import { getActiveProjectTimeEntry, getMyActiveProjectTasks, getProjectTasks, getProjectTimeline } from "../execution.api";
+import { getActiveProjectTimeEntry, getMyActiveProjectTasks, getProjectChangeRequests, getProjectFiles, getProjectTasks, getProjectTimeline } from "../execution.api";
 
 vi.mock("@/shared/api/base", () => ({
 	default: {
@@ -103,6 +103,96 @@ describe("execution workspace API", () => {
 		await expect(getMyActiveProjectTasks()).resolves.toEqual([]);
 
 		expect(mockedApi.get).toHaveBeenCalledWith("/projects/tasks/my-active");
+	});
+
+	it("maps project files through the lightweight list contract", async () => {
+		mockedApi.get.mockResolvedValueOnce({
+			data: {
+				data: {
+					files: [
+						{
+							fileId: 22,
+							projectId: 2,
+							name: "Launch Brief",
+							type: "link",
+							fileUrl: "https://example.test/launch-brief",
+							mimeType: "",
+							size: 0,
+							description: "Kickoff document",
+							category: "document",
+							createdAt: "2026-06-01T10:00:00.000Z",
+							isClientVisible: true,
+							isDownloadable: false,
+							visibleToRoles: ["manager"],
+							createdBy: 1,
+						},
+					],
+				},
+			},
+		});
+
+		const files = await getProjectFiles(2);
+
+		expect(mockedApi.get).toHaveBeenCalledWith("/projects/2/files");
+		expect(files).toEqual([
+			{
+				fileId: 22,
+				projectId: 2,
+				name: "Launch Brief",
+				type: "link",
+				fileUrl: "https://example.test/launch-brief",
+				mimeType: "",
+				size: 0,
+				description: "Kickoff document",
+				category: "document",
+				createdAt: "2026-06-01T10:00:00.000Z",
+			},
+		]);
+		expect("isClientVisible" in files[0]).toBe(false);
+		expect("visibleToRoles" in files[0]).toBe(false);
+	});
+
+	it("maps change requests through the backend enum contract", async () => {
+		mockedApi.get.mockResolvedValueOnce({
+			data: {
+				data: {
+					changeRequests: [
+						{
+							changeRequestId: 15,
+							projectId: 2,
+							title: "Extra onboarding workshop",
+							description: "Add a second workshop for client admins.",
+							price: 750,
+							status: "sent_to_client",
+							statusLabel: "Sent to Client",
+							createdAt: "2026-06-03T10:00:00.000Z",
+							updatedAt: "2026-06-04T10:00:00.000Z",
+							internalCost: 300,
+							approvedBy: 7,
+						},
+					],
+				},
+			},
+		});
+
+		const changeRequests = await getProjectChangeRequests(2);
+
+		expect(mockedApi.get).toHaveBeenCalledWith("/projects/2/change-requests");
+		expect(changeRequests).toEqual([
+			{
+				changeRequestId: 15,
+				projectId: 2,
+				title: "Extra onboarding workshop",
+				description: "Add a second workshop for client admins.",
+				price: 750,
+				status: "sent_to_client",
+				statusLabel: "Sent to Client",
+				createdAt: "2026-06-03T10:00:00.000Z",
+				updatedAt: "2026-06-04T10:00:00.000Z",
+			},
+		]);
+		expect("internalCost" in changeRequests[0]).toBe(false);
+		expect("approvedBy" in changeRequests[0]).toBe(false);
 	});
 
 	it("fetches team timeline with date and multi-select filters", async () => {

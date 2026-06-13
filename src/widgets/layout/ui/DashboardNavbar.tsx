@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Activity, ExternalLink, ListTodo, Loader2, LogIn, LogOut, Menu, Moon, Play, Search, Settings, Square, Sun, Timer, User } from "lucide-react";
+import { Activity, ExternalLink, ListTodo, Loader2, LogIn, LogOut, Menu, Moon, Play, Search, Square, Sun, Timer, User } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { authApi } from "@/features/auth/api/auth.api";
 import { useAuthStore } from "@/entities/user/model/auth.store";

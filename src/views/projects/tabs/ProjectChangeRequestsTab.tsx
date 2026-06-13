@@ -37,7 +37,7 @@ import { formatCurrency } from "@/shared/lib/formatters";
 import { formatDateDisplay } from "@/shared/lib/dateUtils";
 import { requiredNumberInput } from "@/shared/lib/zod-number";
 import { useChangeRequests, useCreateChangeRequest, useUpdateChangeRequestStatus, useDeleteChangeRequest } from "@/features/projects/api/execution.api";
-import type { ChangeRequest } from "@/features/projects/api/execution.api";
+import type { ChangeRequest, ChangeRequestStatusValue } from "@/features/projects/api/execution.api";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Change Request status options — mirrors backend ChangeRequestStatus enum
@@ -45,12 +45,10 @@ import type { ChangeRequest } from "@/features/projects/api/execution.api";
 
 const CHANGE_REQUEST_STATUS_OPTIONS = [
 	{ value: "draft", label: "Draft" },
-	{ value: "pending_approval", label: "Pending Approval" },
+	{ value: "sent_to_client", label: "Sent to Client" },
 	{ value: "approved", label: "Approved" },
 	{ value: "rejected", label: "Rejected" },
-	{ value: "in_progress", label: "In Progress" },
-	{ value: "completed", label: "Completed" },
-];
+] satisfies { value: ChangeRequestStatusValue; label: string }[];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Zod schema — mirrors StoreChangeRequestRequest validation rules
@@ -98,7 +96,7 @@ export function ProjectChangeRequestsTab({ projectId, currency = "USD" }: Projec
 	}, [form]);
 
 	const handleStatusChange = useCallback(
-		async (cr: ChangeRequest, status: string) => {
+		async (cr: ChangeRequest, status: ChangeRequestStatusValue) => {
 			try {
 				await updateStatusMutation.mutateAsync({ projectId, changeRequestId: cr.changeRequestId, status });
 				toast.success("Status updated.");
@@ -294,9 +292,9 @@ export function ProjectChangeRequestsTab({ projectId, currency = "USD" }: Projec
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface StatusSelectorProps {
-	currentStatus: string;
-	options: { value: string; label: string }[];
-	onChange: (value: string) => void;
+	currentStatus: ChangeRequestStatusValue;
+	options: { value: ChangeRequestStatusValue; label: string }[];
+	onChange: (value: ChangeRequestStatusValue) => void;
 	disabled?: boolean;
 }
 
@@ -304,7 +302,7 @@ function StatusSelector({ currentStatus, options, onChange, disabled }: StatusSe
 	return (
 		<select
 			value={currentStatus}
-			onChange={(e) => onChange(e.target.value)}
+			onChange={(e) => onChange(e.target.value as ChangeRequestStatusValue)}
 			disabled={disabled}
 			className="h-7 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 			aria-label="Update status"

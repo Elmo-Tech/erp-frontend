@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Form } from "@/shared/ui/form";
@@ -25,9 +25,9 @@ const defaultValues: ChangePasswordFormValues = {
 
 export function ChangePasswordForm({ isLoading = false, onSubmit }: ChangePasswordFormProps) {
 	const form = useForm<ChangePasswordFormValues>({ defaultValues });
-	const currentPassword = form.watch("current_password");
-	const newPassword = form.watch("new_password");
-	const confirmation = form.watch("new_password_confirmation");
+	const currentPassword = useWatch({ control: form.control, name: "current_password" });
+	const newPassword = useWatch({ control: form.control, name: "new_password" });
+	const confirmation = useWatch({ control: form.control, name: "new_password_confirmation" });
 
 	return (
 		<Form {...form}>

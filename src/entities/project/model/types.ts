@@ -61,9 +61,6 @@ export interface ProjectFile {
 	size?: number | null;
 	description?: string | null;
 	category: string;
-	isClientVisible: boolean;
-	isDownloadable: boolean;
-	visibleToRoles?: string[];
 	createdAt: string;
 }
 

@@ -3,8 +3,7 @@
 /**
  * ProjectTeamTab
  *
- * Renders a responsive grid of team member cards.
- * Each card shows: Avatar · Name · Email · Role badge · Remove button (guarded).
+ * Renders project members through the shared DataTable.
  *
  * Role values come from the backend ProjectRole enum:
  *   manager | tech_lead | developer | qa | designer
@@ -16,18 +15,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Users, UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
-import { Skeleton } from "@/shared/ui/skeleton";
-import { EmptyState } from "@/shared/ui/data-display/EmptyState";
-import { Alert, AlertDescription } from "@/shared/ui/alert";
+import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { Button } from "@/shared/ui/button";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
-import { Can, usePermissionGate } from "@/shared/ui/Can";
+import { usePermissionGate } from "@/shared/ui/Can";
 import { cn } from "@/shared/lib/utils";
 import { useProjectMembers, useAddProjectMember, useRemoveProjectMember } from "@/features/projects/api/execution.api";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
@@ -101,82 +97,55 @@ function getInitials(name: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Member card
+// Table columns
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MemberCard({ member, onRemove, isRemoving }: { member: ProjectMemberResource; onRemove?: () => void; isRemoving?: boolean }) {
-	const user = member.user;
-	const name = user?.name ?? `User #${member.userId}`;
-	const email = user?.email ?? "";
-	const roleConfig = getRoleConfig(member.role);
+const projectTeamColumns: Column<ProjectMemberResource>[] = [
+	{
+		key: "member",
+		header: "Member",
+		render: (member) => {
+			const user = member.user;
+			const name = user?.name ?? `User #${member.userId}`;
 
-	return (
-		<Card className="gap-0 py-0 transition-shadow hover:shadow-md">
-			<CardContent className="flex items-center gap-4 px-4 py-4">
-				<Avatar className="size-10 shrink-0">
-					{user?.avatar && (
-						<AvatarImage
-							src={user.avatar}
-							alt={name}
-						/>
-					)}
-					<AvatarFallback className="text-sm font-medium">{getInitials(name)}</AvatarFallback>
-				</Avatar>
-
-				<div className="min-w-0 flex-1">
-					<div className="flex items-center gap-2">
-						<p className="truncate text-sm font-semibold">{name}</p>
-						<Badge
-							variant="outline"
-							className={cn("shrink-0 rounded-sm border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide", roleConfig.className)}
-						>
-							{roleConfig.label}
-						</Badge>
-					</div>
-					{email && <p className="mt-0.5 truncate text-xs text-muted-foreground">{email}</p>}
+			return (
+				<div className="flex min-w-0 items-center gap-3">
+					<Avatar className="size-8 shrink-0">
+						{user?.avatar && (
+							<AvatarImage
+								src={user.avatar}
+								alt={name}
+							/>
+						)}
+						<AvatarFallback className="text-xs font-medium">{getInitials(name)}</AvatarFallback>
+					</Avatar>
+					<span className="truncate font-medium">{name}</span>
 				</div>
+			);
+		},
+	},
+	{
+		key: "email",
+		header: "Email",
+		render: (member) => <span className="text-sm text-muted-foreground">{member.user?.email ?? "—"}</span>,
+	},
+	{
+		key: "role",
+		header: "Role",
+		render: (member) => {
+			const roleConfig = getRoleConfig(member.role);
 
-				<Can permission={["remove_project_members", "manage_project_members"]}>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						className="shrink-0 text-muted-foreground hover:text-destructive"
-						onClick={onRemove}
-						disabled={isRemoving}
-						aria-label={`Remove ${name} from project`}
-					>
-						<Trash2 className="size-4" />
-					</Button>
-				</Can>
-			</CardContent>
-		</Card>
-	);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Loading skeleton
-// ─────────────────────────────────────────────────────────────────────────────
-
-function TeamSkeleton() {
-	return (
-		<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-			{Array.from({ length: 6 }).map((_, i) => (
-				<Card
-					key={i}
-					className="gap-0 py-0"
+			return (
+				<Badge
+					variant="outline"
+					className={cn("rounded-sm border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide", roleConfig.className)}
 				>
-					<CardContent className="flex items-center gap-4 px-4 py-4">
-						<Skeleton className="size-10 shrink-0 rounded-full" />
-						<div className="flex flex-1 flex-col gap-2">
-							<Skeleton className="h-4 w-32" />
-							<Skeleton className="h-3 w-48" />
-						</div>
-					</CardContent>
-				</Card>
-			))}
-		</div>
-	);
-}
+					{roleConfig.label}
+				</Badge>
+			);
+		},
+	},
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -198,6 +167,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 	const removeMember = useRemoveProjectMember();
 	const usersQuery = useGetInternalUsers(dialogOpen);
 	const canAddProjectMembers = canAny(["add_project_members", "manage_project_members"]);
+	const canRemoveProjectMembers = canAny(["remove_project_members", "manage_project_members"]);
 
 	const form = useForm<AddMemberFormData>({
 		resolver: zodResolver(addMemberSchema),
@@ -244,60 +214,58 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 		}
 	});
 
-	if (membersQuery.isLoading) {
-		return <TeamSkeleton />;
-	}
-
-	if (membersQuery.error) {
-		return (
-			<Alert variant="destructive">
-				<AlertDescription>{membersQuery.error.message ?? "Failed to load team members."}</AlertDescription>
-			</Alert>
-		);
-	}
-
 	const members = membersQuery.data ?? [];
 
 	return (
 		<>
-			{/* ── Tab action header ──────────────────────────────────────────── */}
-			<div className="mb-4 flex items-center justify-between gap-3">
-				<p className="text-sm text-muted-foreground">
-					{members.length} {members.length === 1 ? "member" : "members"}
-				</p>
-				<Can permission={["add_project_members", "manage_project_members"]}>
-					<Button
-						size="sm"
-						onClick={handleOpenDialog}
-					>
-						<UserPlus className="size-4" />
-						Add Member
-					</Button>
-				</Can>
-			</div>
+			<DataTable
+				title="Team Members"
+				titleBadge={membersQuery.data ? String(members.length) : undefined}
+				columns={projectTeamColumns}
+				data={members}
+				keyExtractor={(member) => member.memberId}
+				isLoading={membersQuery.isLoading}
+				error={membersQuery.error}
+				emptyState={{
+					icon: Users,
+					title: "No team members yet",
+					description: "Assign team members to this project to track who is working on it.",
+					action: canAddProjectMembers ? { label: "Add Member", onClick: handleOpenDialog } : undefined,
+				}}
+				headerActions={
+					canAddProjectMembers ? (
+						<Button
+							size="sm"
+							onClick={handleOpenDialog}
+						>
+							<UserPlus className="size-4" />
+							Add Member
+						</Button>
+					) : null
+				}
+				rowActions={
+					canRemoveProjectMembers
+						? (member) => {
+								const name = member.user?.name ?? `User #${member.userId}`;
 
-			{members.length === 0 ? (
-				<EmptyState
-					icon={Users}
-					title="No team members yet"
-					description="Assign team members to this project to track who is working on it."
-					action={canAddProjectMembers ? { label: "Add Member", onClick: handleOpenDialog } : undefined}
-				/>
-			) : (
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-					{members.map((member) => (
-						<MemberCard
-							key={member.memberId}
-							member={member}
-							onRemove={() => handleRemoveMember(member)}
-							isRemoving={removeMember.isPending}
-						/>
-					))}
-				</div>
-			)}
+								return (
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										className="text-muted-foreground hover:text-destructive"
+										onClick={() => void handleRemoveMember(member)}
+										disabled={removeMember.isPending}
+										aria-label={`Remove ${name} from project`}
+									>
+										<Trash2 className="size-4" />
+									</Button>
+								);
+							}
+						: undefined
+				}
+			/>
 
-			{/* ── Add Member dialog ──────────────────────────────────────────── */}
-			<Can permission={["add_project_members", "manage_project_members"]}>
+			{canAddProjectMembers && (
 				<FormDialog
 					open={dialogOpen}
 					onOpenChange={setDialogOpen}
@@ -331,7 +299,7 @@ export function ProjectTeamTab({ projectId }: ProjectTeamTabProps) {
 						</div>
 					</Form>
 				</FormDialog>
-			</Can>
+			)}
 		</>
 	);
 }

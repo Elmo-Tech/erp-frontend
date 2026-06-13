@@ -15,7 +15,7 @@ import { useRef, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { FolderOpen, Upload, Download, Trash2, FileText, Link2, AlertCircle } from "lucide-react";
+import { FolderOpen, Upload, Download, Trash2, FileText, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Form } from "@/shared/ui/form";
@@ -23,10 +23,9 @@ import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
-import { Skeleton } from "@/shared/ui/skeleton";
-import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { Badge } from "@/shared/ui/badge";
 import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
+import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { formatDateDisplay } from "@/shared/lib/dateUtils";
 import { useProjectFiles, useUploadProjectFile, useDeleteProjectFile } from "@/features/projects/api/execution.api";
 import type { ProjectFile } from "@/entities/project/model/types";
@@ -72,75 +71,52 @@ function formatBytes(bytes: number | null | undefined): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// File row
+// Table columns
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface FileRowProps {
-	file: ProjectFile;
-	onDelete: (file: ProjectFile) => void;
-}
-
-function FileRow({ file, onDelete }: FileRowProps) {
-	const categoryColor = CATEGORY_COLORS[file.category] ?? CATEGORY_COLORS.general;
-
-	return (
-		<div className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0 hover:bg-muted/30 transition-colors">
-			{/* Icon */}
-			<div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/50">
-				{file.type === "link" ? <Link2 className="size-4 text-muted-foreground" /> : <FileText className="size-4 text-muted-foreground" />}
-			</div>
-
-			{/* Name + meta */}
-			<div className="min-w-0 flex-1">
-				<div className="flex items-center gap-2">
-					<p className="truncate text-sm font-medium">{file.name}</p>
-					<Badge
-						variant="outline"
-						className={`shrink-0 rounded-sm border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide ${categoryColor}`}
-					>
-						{file.category}
-					</Badge>
+const projectFileColumns: Column<ProjectFile>[] = [
+	{
+		key: "name",
+		header: "Name",
+		render: (file) => (
+			<div className="flex min-w-0 items-center gap-3">
+				<div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/50">
+					{file.type === "link" ? <Link2 className="size-4 text-muted-foreground" /> : <FileText className="size-4 text-muted-foreground" />}
 				</div>
-				<p className="mt-0.5 text-xs text-muted-foreground">
-					{formatBytes(file.size)} · {formatDateDisplay(file.createdAt)}
-					{file.description && ` · ${file.description}`}
-				</p>
+				<div className="min-w-0">
+					<p className="truncate font-medium">{file.name}</p>
+					{file.description && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{file.description}</p>}
+				</div>
 			</div>
+		),
+	},
+	{
+		key: "category",
+		header: "Category",
+		render: (file) => {
+			const categoryColor = CATEGORY_COLORS[file.category] ?? CATEGORY_COLORS.general;
 
-			{/* Actions */}
-			<div className="flex shrink-0 items-center gap-1">
-				{file.fileUrl && (
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon-sm"
-						asChild
-						aria-label={`Download ${file.name}`}
-					>
-						<a
-							href={file.fileUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							download
-						>
-							<Download className="size-4" />
-						</a>
-					</Button>
-				)}
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon-sm"
-					className="text-muted-foreground hover:text-destructive"
-					aria-label={`Delete ${file.name}`}
-					onClick={() => onDelete(file)}
+			return (
+				<Badge
+					variant="outline"
+					className={`rounded-sm border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide ${categoryColor}`}
 				>
-					<Trash2 className="size-4" />
-				</Button>
-			</div>
-		</div>
-	);
-}
+					{file.category}
+				</Badge>
+			);
+		},
+	},
+	{
+		key: "size",
+		header: "Size",
+		render: (file) => <span className="text-sm tabular-nums text-muted-foreground">{formatBytes(file.size)}</span>,
+	},
+	{
+		key: "createdAt",
+		header: "Created",
+		render: (file) => <span className="text-sm text-muted-foreground">{formatDateDisplay(file.createdAt)}</span>,
+	},
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -247,74 +223,63 @@ export function ProjectFilesTab({ projectId }: ProjectFilesTabProps) {
 
 	return (
 		<>
-			{/* ── Tab action header ──────────────────────────────────────────── */}
-			<div className="mb-4 flex items-center justify-between gap-3">
-				<p className="text-sm text-muted-foreground">{filesQuery.isLoading ? "Loading…" : `${files.length} ${files.length === 1 ? "file" : "files"}`}</p>
-				<Button
-					size="sm"
-					onClick={handleUploadClick}
-					disabled={uploadFile.isPending}
-				>
-					<Upload className="size-4" />
-					Upload File
-				</Button>
-			</div>
-
-			{/* ── Error ─────────────────────────────────────────────────────── */}
-			{filesQuery.error && (
-				<Alert variant="destructive">
-					<AlertCircle className="size-4" />
-					<AlertDescription>{filesQuery.error.message ?? "Failed to load files."}</AlertDescription>
-				</Alert>
-			)}
-
-			{/* ── Loading skeleton ───────────────────────────────────────────── */}
-			{filesQuery.isLoading && (
-				<div className="overflow-hidden rounded-md border">
-					{Array.from({ length: 3 }).map((_, i) => (
-						<div
-							key={i}
-							className="flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
-						>
-							<Skeleton className="size-9 shrink-0 rounded-md" />
-							<div className="flex flex-1 flex-col gap-1.5">
-								<Skeleton className="h-4 w-48" />
-								<Skeleton className="h-3 w-32" />
-							</div>
-						</div>
-					))}
-				</div>
-			)}
-
-			{/* ── Empty state ────────────────────────────────────────────────── */}
-			{!filesQuery.isLoading && !filesQuery.error && files.length === 0 && (
-				<div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-md border border-dashed text-center">
-					<FolderOpen className="size-8 text-muted-foreground/50" />
-					<div className="text-sm font-medium text-muted-foreground">No files yet</div>
-					<p className="max-w-xs text-xs text-muted-foreground/70">Upload project files, deliverables, and design assets to keep everything in one place.</p>
+			<DataTable
+				title="Project Files"
+				titleBadge={filesQuery.data ? String(files.length) : undefined}
+				columns={projectFileColumns}
+				data={files}
+				keyExtractor={(file) => file.fileId}
+				isLoading={filesQuery.isLoading}
+				error={filesQuery.error}
+				emptyState={{
+					icon: FolderOpen,
+					title: "No files yet",
+					description: "Upload project files, deliverables, and design assets to keep everything in one place.",
+					action: { label: "Upload File", onClick: handleUploadClick },
+				}}
+				headerActions={
 					<Button
 						size="sm"
-						variant="outline"
 						onClick={handleUploadClick}
+						disabled={uploadFile.isPending}
 					>
 						<Upload className="size-4" />
 						Upload File
 					</Button>
-				</div>
-			)}
-
-			{/* ── File list ──────────────────────────────────────────────────── */}
-			{!filesQuery.isLoading && files.length > 0 && (
-				<div className="overflow-hidden rounded-md border bg-background">
-					{files.map((file) => (
-						<FileRow
-							key={file.fileId}
-							file={file}
-							onDelete={setFileToDelete}
-						/>
-					))}
-				</div>
-			)}
+				}
+				rowActions={(file) => (
+					<div className="flex items-center justify-end gap-1">
+						{file.fileUrl && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								asChild
+							>
+								<a
+									href={file.fileUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									download
+									aria-label={`Download ${file.name}`}
+								>
+									<Download className="size-4" />
+								</a>
+							</Button>
+						)}
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-sm"
+							className="text-muted-foreground hover:text-destructive"
+							aria-label={`Delete ${file.name}`}
+							onClick={() => setFileToDelete(file)}
+						>
+							<Trash2 className="size-4" />
+						</Button>
+					</div>
+				)}
+			/>
 
 			{/* ── Hidden native file input ───────────────────────────────────── */}
 			<input

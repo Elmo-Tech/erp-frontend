@@ -15,10 +15,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Badge } from "@/shared/ui/badge";
 import { Separator } from "@/shared/ui/separator";
 import { ScrollArea } from "@/shared/ui/scroll-area";
-import { Building2, Mail, Phone, DollarSign, Calendar } from "lucide-react";
+import { Building2, Mail, Phone, Calendar } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { PIPELINE_STAGES, STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
-import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
+import { STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
 import type { Lead } from "@/features/leads/model/types";
 import { STAGE_COLORS, InfoRow, PipelineProgress, ActivityTimeline } from "@/features/leads/ui/LeadInfoRow";
 

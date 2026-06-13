@@ -3,17 +3,15 @@
 /**
  * TaskExecutionSheet — Task Control Center
  *
- * Wide tabbed sheet with 3 tabs:
+ * Wide tabbed sheet with 2 tabs:
  *   Tab 1 — Execution & Details: description, deliverables (subtasks removed)
  *   Tab 2 — Time Logs: time entries list + manual log dialog
- *   Tab 3 — Notes & Files: placeholder UI
  *
  * Header: title · status select · timer button
  */
 
-import { useState, useCallback, useRef } from "react";
-import { Clock, CheckCircle2, Circle, AlertCircle, Play, Square, Plus, Timer, FileText, StickyNote, Upload, Paperclip, X, MessageSquarePlus, Pencil, Trash2 } from "lucide-react";
-// REMOVED: GitBranch - subtasks are no longer supported
+import { useState, useCallback, useMemo, useRef } from "react";
+import { Clock, CheckCircle2, Circle, AlertCircle, Play, Square, Plus, Timer, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +20,6 @@ import { z } from "zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/shared/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/shared/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { Textarea } from "@/shared/ui/textarea";
@@ -36,7 +33,6 @@ import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { cn } from "@/shared/lib/utils";
-import { formatDateTimeDisplay } from "@/shared/lib/dateUtils";
 
 import {
 	useToggleDeliverable,
@@ -53,9 +49,11 @@ import {
 	ExecutionTaskStatus,
 	ExecutionTaskStatusLabels,
 	ExecutionTaskStatusColors,
-	EXECUTION_TASK_STATUS_OPTIONS,
 } from "../api/execution.api";
 import type { ProjectTask, TaskDeliverable, ProjectTimeEntry } from "../api/execution.api";
+import { formatTaskMinutes } from "../model/task-execution-formatters";
+import { getAllowedTaskStatusOptions, getPrimaryTaskAction } from "../model/task-execution-rules";
+import { TaskTimeLogsPanel } from "./TaskTimeLogsPanel";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useTaskPermissions } from "@/entities/user/model/permissions";
 
@@ -70,18 +68,12 @@ export interface TaskExecutionSheetProps {
 	onOpenChange: (open: boolean) => void;
 }
 
+const TIME_ENTRY_WRITE_PERMISSIONS = ["start_timer", "log_time", "manage_time_entries"];
+const TIME_ENTRY_MANAGE_PERMISSIONS = ["manage_time_entries", "manage_all_projects"];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-function formatMinutes(totalMinutes: number): string {
-	if (totalMinutes === 0) return "0m";
-	const h = Math.floor(totalMinutes / 60);
-	const m = totalMinutes % 60;
-	if (h === 0) return `${m}m`;
-	if (m === 0) return `${h}h`;
-	return `${h}h ${m}m`;
-}
 
 function getStatusColor(status: string): string {
 	return ExecutionTaskStatusColors[status as keyof typeof ExecutionTaskStatusColors] ?? "bg-gray-100 text-gray-700 border-gray-200";
@@ -264,75 +256,6 @@ function QuickAddForm({ placeholder, onSubmit, isPending, disabled }: QuickAddFo
 	);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Time entry row
-// ─────────────────────────────────────────────────────────────────────────────
-
-function TimeEntryRow({ entry, canManage, onEdit, onDelete }: { entry: ProjectTimeEntry; canManage: boolean; onEdit: (entry: ProjectTimeEntry) => void; onDelete: (entry: ProjectTimeEntry) => void }) {
-	const userName = entry.user?.name ?? `User #${entry.userId}`;
-	const duration = entry.durationMinutes != null ? formatMinutes(entry.durationMinutes) : entry.isRunning ? "Running…" : "—";
-
-	return (
-		<div className="grid grid-cols-[1fr_auto] items-start gap-3 border-b px-4 py-3 last:border-b-0 text-sm">
-			<div className="min-w-0">
-				<p className="font-medium truncate">{userName}</p>
-				<p className="text-xs text-muted-foreground mt-0.5">
-					{entry.startTime ? formatDateTimeDisplay(entry.startTime) : "—"}
-					{entry.endTime ? ` → ${formatDateTimeDisplay(entry.endTime)}` : ""}
-				</p>
-				{entry.note && <p className="text-xs text-muted-foreground/70 mt-0.5 italic">&quot;{entry.note}&quot;</p>}
-			</div>
-			<div className="flex items-center gap-2 shrink-0">
-				{entry.isManual && (
-					<Badge
-						variant="outline"
-						className="text-[10px] px-1.5 py-0 rounded-sm border-dashed"
-					>
-						Manual
-					</Badge>
-				)}
-				{entry.isRunning && (
-					<Badge
-						variant="outline"
-						className="text-[10px] px-1.5 py-0 rounded-sm bg-rose-50 text-rose-600 border-rose-200 animate-pulse"
-					>
-						Live
-					</Badge>
-				)}
-				<span className="tabular-nums text-xs font-medium">{duration}</span>
-				{canManage && !entry.isRunning && (
-					<div className="flex items-center gap-1">
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className="h-7 w-7"
-							onClick={() => onEdit(entry)}
-						>
-							<Pencil className="size-3.5" />
-							<span className="sr-only">Edit time entry</span>
-						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className="h-7 w-7 text-destructive hover:text-destructive"
-							onClick={() => onDelete(entry)}
-						>
-							<Trash2 className="size-3.5" />
-							<span className="sr-only">Delete time entry</span>
-						</Button>
-					</div>
-				)}
-			</div>
-		</div>
-	);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Manual time log schema
-// ─────────────────────────────────────────────────────────────────────────────
-
 const manualTimeSchema = z
 	.object({
 		date: z.string().min(1, "Date is required"),
@@ -364,19 +287,10 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 	const [reopenReason, setReopenReason] = useState("");
 
-	// ── Local notes state (optimistic, pre-API) ───────────────────────────────
-	const [notes, setNotes] = useState<string[]>([]);
-	const [noteInput, setNoteInput] = useState("");
-
-	// ── Local files state (pre-API) ───────────────────────────────────────────
-	const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-	const fileInputRef = useRef<HTMLInputElement>(null);
-
 	// ── Mutations ─────────────────────────────────────────────────────────────
 	const completeTask = useCompleteTask();
 	const toggleTimer = useToggleTaskTimer();
 	const createDeliverable = useCreateDeliverable();
-	// REMOVED: createSubtask - subtasks are no longer supported
 	const updateStatus = useUpdateTaskStatus();
 	const logManualTime = useLogManualTime();
 	const updateTimeEntry = useUpdateTimeEntry();
@@ -392,13 +306,27 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	// manage_all_projects replaces the old isGlobalAdmin bypass.
 	// Users with this permission skip project-membership workflow ceilings.
 	const canManageAllProjects = useAuthStore((s) => s.hasPermission("manage_all_projects"));
-	const canManageTimeEntries = useAuthStore((s) => s.hasAnyPermission(["manage_time_entries", "manage_all_projects"]));
+	const canWriteTimeEntries = useAuthStore((s) => s.hasAnyPermission(TIME_ENTRY_WRITE_PERMISSIONS));
+	const canManageTimeEntries = useAuthStore((s) => s.hasAnyPermission(TIME_ENTRY_MANAGE_PERMISSIONS));
 
 	// projectRole is the user's MEMBERSHIP role within this specific project
 	// (manager, tech_lead, developer, qa, designer).
 	const projectRole = canManageAllProjects
 		? null // bypass: no workflow ceiling applies
 		: (membersQuery.data?.find((m) => m.userId === currentUserId)?.role ?? null);
+
+	const taskExecutionAccess = useMemo(
+		() => ({
+			canManageAllProjects,
+			canManageTasks,
+			canEditTasks,
+			canWorkOnTasks,
+			canManageDeliverables,
+			projectRole,
+			currentUserId,
+		}),
+		[canManageAllProjects, canManageTasks, canEditTasks, canWorkOnTasks, canManageDeliverables, projectRole, currentUserId],
+	);
 
 	// ── ABAC: Assignee check ──────────────────────────────────────────────────
 	// isAssignee is true when the current user is the task's explicit assignee.
@@ -408,35 +336,7 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const canToggleDeliverables = isAssignee || isManagerLevel;
 	const canManageDeliverableRecords = isManagerLevel || canManageDeliverables;
 
-	// ── CRITICAL: "COMPLETED" STATUS GUARD ────────────────────────────────────
-	// ONLY users with these permissions can mark tasks as "done":
-	//   1. manage_all_projects (global admin)
-	//   2. manage_deliverables (deliverable managers)
-	//   3. manage_tasks (task managers)
-	//   4. Project manager or tech_lead role
-	//
-	// Regular assignees (developers, QA without special permissions) CANNOT
-	// select "done" from the status dropdown. Their ceiling is "in_review".
-	const canMarkAsCompleted = canManageAllProjects || canManageDeliverables || canManageTasks || projectRole === "manager" || projectRole === "tech_lead";
-
-	// ── Status options filtered by permissions ────────────────────────────────
-	// Filter out "done" status if the user cannot mark tasks as completed.
-	const allowedStatusOptions = (() => {
-		// Start with all status options
-		let options = [...EXECUTION_TASK_STATUS_OPTIONS];
-
-		// If user cannot mark as completed, remove "done" from the list
-		if (!canMarkAsCompleted) {
-			options = options.filter((o) => o.value !== ExecutionTaskStatus.DONE);
-		}
-
-		// If user has no update permissions at all, return empty (read-only)
-		if (!canManageAllProjects && !canManageTasks && !canEditTasks && !canWorkOnTasks) {
-			return [];
-		}
-
-		return options;
-	})();
+	const allowedStatusOptions = useMemo(() => getAllowedTaskStatusOptions(taskExecutionAccess), [taskExecutionAccess]);
 
 	// ── Manual time form ──────────────────────────────────────────────────────
 	const manualTimeForm = useForm<ManualTimeFormData>({
@@ -450,21 +350,15 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	});
 
 	// ── Stable callbacks — all declared before any conditional return ─────────
-	// NOTE: handleCompleteTask removed — replaced by role-aware handlePrimaryAction
-	// which is defined after derived state (below). The footer renders based on
-	// primaryAction, so no direct completeTask call lives here.
-
 	const handleTimerToggle = useCallback(
 		(e: React.MouseEvent) => {
 			e.preventDefault();
 			e.stopPropagation();
-			if (!task) return;
+			if (!task || !canWriteTimeEntries) return;
 			toggleTimer.mutate({ projectId, taskId: task.taskId }, { onError: () => toast.error("Failed to toggle timer.") });
 		},
-		[toggleTimer, projectId, task],
+		[toggleTimer, projectId, task, canWriteTimeEntries],
 	);
-
-	// REMOVED: handleSubtaskTimerToggle - subtasks are no longer supported
 
 	const handleStatusChange = useCallback(
 		(newStatus: string) => {
@@ -530,9 +424,6 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 		[createDeliverable, projectId, task],
 	);
 
-	// REMOVED: handleAddSubtask - subtasks are no longer supported
-	// REMOVED: handleSubtaskTimerToggle - subtasks are no longer supported
-
 	const handleManualTimeSubmit = manualTimeForm.handleSubmit(async (data) => {
 		if (!task) return;
 		try {
@@ -596,9 +487,19 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 		[deleteTimeEntry, projectId, task],
 	);
 
+	const handleOpenManualTimeDialog = useCallback(() => {
+		manualTimeForm.reset({
+			date: new Date().toISOString().slice(0, 10),
+			startTime: "09:00",
+			endTime: "10:00",
+			note: "",
+		});
+		setEditingTimeEntry(null);
+		setManualTimeOpen(true);
+	}, [manualTimeForm]);
+
 	// ── Derived state ─────────────────────────────────────────────────────────
 	const deliverables = task?.deliverables ?? [];
-	// REMOVED: subtasks - subtasks are no longer supported
 	const timeEntries = task?.timeEntries ?? [];
 	const totalDeliverables = deliverables.length;
 	const completedDeliverables = deliverables.filter((d) => d.isCompleted).length;
@@ -609,60 +510,23 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const isTimerRunning = runningEntry !== null;
 
 	const currentStatusColor = getStatusColor(task?.status ?? "");
-	const totalLogged = formatMinutes(task?.totalLoggedMinutes ?? 0);
+	const totalLogged = formatTaskMinutes(task?.totalLoggedMinutes ?? 0);
 	const canManageTimeEntry = useCallback(
 		(entry: ProjectTimeEntry) => entry.userId === currentUserId || canManageTimeEntries || isManagerLevel,
 		[currentUserId, canManageTimeEntries, isManagerLevel],
 	);
 
-	// ── PBAC: Primary footer action ──────────────────────────────────────────
-	// Derives the footer CTA based on permissions, not global roles.
-	//
-	// Logic:
-	//   - edit_tasks permission (managers, tech leads, QA)
-	//     → "Mark as Done" via the /complete endpoint.
-	//   - work_on_tasks permission without edit_tasks (developers)
-	//     → "Submit for Review" which transitions to in_review.
-	//   - Neither permission → no footer action (read-only observer).
-	//
-	// The project-membership role (developer) is still used as a secondary
-	// signal to hide the button once the developer has already submitted
-	// (in_review / qa / done), since there is nothing left for them to do.
-	const primaryAction = (() => {
-		if (!task || isDone) return null; // footer shows "Task completed" banner instead
-
-		if (canEditTasks || canManageAllProjects || canManageTasks) {
-			// Full completion access — "Mark as Done"
-			return {
-				label: "Mark as Done",
-				targetStatus: ExecutionTaskStatus.DONE,
-				useCompleteEndpoint: true,
-				requiresAllDeliverables: true,
-			} as const;
-		}
-
-		if (canWorkOnTasks) {
-			// Work-only access — ceiling is in_review.
-			// Hide the button once the task is already submitted.
-			// SECURITY: Also hide if the current user is NOT the assignee.
-			// Only the explicitly assigned user may submit their own task.
-			const isAssignee = task.assigneeId === currentUserId;
-			if (!isAssignee) return null; // not the assignee — read-only
-
-			const alreadySubmitted = [ExecutionTaskStatus.IN_REVIEW, ExecutionTaskStatus.QA, ExecutionTaskStatus.DONE].includes(task.status as typeof ExecutionTaskStatus.IN_REVIEW | typeof ExecutionTaskStatus.QA | typeof ExecutionTaskStatus.DONE);
-
-			if (alreadySubmitted) return null; // awaiting QA — nothing to do
-
-			return {
-				label: "Submit for Review",
-				targetStatus: ExecutionTaskStatus.IN_REVIEW,
-				useCompleteEndpoint: false,
-				requiresAllDeliverables: false,
-			} as const;
-		}
-
-		return null; // read-only observer
-	})();
+	const primaryAction = useMemo(
+		() =>
+			task
+				? getPrimaryTaskAction({
+						...taskExecutionAccess,
+						taskStatus: task.status,
+						taskAssigneeId: task.assigneeId,
+					})
+				: null,
+		[task, taskExecutionAccess],
+	);
 
 	// ── Primary action handler ────────────────────────────────────────────────
 	const handlePrimaryAction = useCallback(() => {
@@ -738,8 +602,7 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 								</SelectContent>
 							</Select>
 
-							{/* Timer button — hidden when done */}
-							{!isDone && (
+							{!isDone && canWriteTimeEntries && (
 								<Button
 									type="button"
 									size="sm"
@@ -808,10 +671,6 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 							<Timer className="size-3.5" />
 							Time Logs
 						</TabsTrigger>
-						<TabsTrigger value="notes">
-							<StickyNote className="size-3.5" />
-							Notes &amp; Files
-						</TabsTrigger>
 					</TabsList>
 
 					{/* ── TAB 1: Execution & Details ─────────────────────────────── */}
@@ -869,8 +728,6 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 										/>
 									)}
 								</div>
-
-								{/* REMOVED: Subtasks section - subtasks are no longer supported */}
 							</div>
 						</ScrollArea>
 					</TabsContent>
@@ -880,212 +737,18 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 						value="timelogs"
 						className="flex-1 overflow-hidden"
 					>
-						<ScrollArea className="h-full">
-							<div className="px-6 py-4">
-								<div className="mb-4 flex items-center justify-between">
-									<div>
-										<h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Time Entries</h4>
-										<p className="mt-0.5 text-xs text-muted-foreground">
-											Total logged: <span className="font-medium text-foreground">{totalLogged}</span>
-										</p>
-									</div>
-									{!isDone && (
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => {
-												manualTimeForm.reset({
-													date: new Date().toISOString().slice(0, 10),
-													startTime: "09:00",
-												endTime: "10:00",
-												note: "",
-											});
-											setEditingTimeEntry(null);
-											setManualTimeOpen(true);
-										}}
-										>
-											<Plus className="size-3.5" />
-											Log Time
-										</Button>
-									)}
-								</div>
-
-								{timeEntries.length > 0 ? (
-									<div className="overflow-hidden rounded-md border bg-background">
-										{timeEntries.map((entry) => (
-											<TimeEntryRow
-												key={entry.entryId}
-												entry={entry}
-												canManage={canManageTimeEntry(entry)}
-												onEdit={handleEditTimeEntry}
-												onDelete={handleDeleteTimeEntry}
-											/>
-										))}
-									</div>
-								) : (
-									<div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-md border border-dashed text-center">
-										<Timer className="size-6 text-muted-foreground/40" />
-										<p className="text-sm font-medium text-muted-foreground">No time logged yet</p>
-										<p className="text-xs text-muted-foreground/70">Start the timer or log time manually.</p>
-									</div>
-								)}
-							</div>
-						</ScrollArea>
+						<TaskTimeLogsPanel
+							timeEntries={timeEntries}
+							totalLogged={totalLogged}
+							isDone={isDone}
+							canWriteTimeEntries={canWriteTimeEntries}
+							canManageTimeEntry={canManageTimeEntry}
+							onLogTime={handleOpenManualTimeDialog}
+							onEditTimeEntry={handleEditTimeEntry}
+							onDeleteTimeEntry={handleDeleteTimeEntry}
+						/>
 					</TabsContent>
 
-					{/* ── TAB 3: Notes & Files ───────────────────────────────────── */}
-					<TabsContent
-						value="notes"
-						className="flex-1 overflow-hidden"
-					>
-						<ScrollArea className="h-full">
-							<div className="flex flex-col gap-5 px-6 py-4">
-								{/* ── Notes ──────────────────────────────────────────────── */}
-								<div>
-									<h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</h4>
-
-									{/* Existing notes list */}
-									{notes.length > 0 && (
-										<div className="mb-3 flex flex-col gap-2">
-											{notes.map((note, idx) => (
-												<div
-													key={idx}
-													className="group relative rounded-md border bg-muted/30 px-3 py-2.5 text-sm leading-relaxed"
-												>
-													<p className="whitespace-pre-wrap text-foreground">{note}</p>
-													<button
-														type="button"
-														onClick={() => setNotes((prev) => prev.filter((_, i) => i !== idx))}
-														className="absolute right-2 top-2 hidden rounded p-0.5 text-muted-foreground hover:text-destructive group-hover:flex"
-														aria-label="Remove note"
-													>
-														<X className="size-3" />
-													</button>
-												</div>
-											))}
-										</div>
-									)}
-
-									{/* Add note form */}
-									<div className="flex flex-col gap-2">
-										<Textarea
-											value={noteInput}
-											onChange={(e) => setNoteInput(e.target.value)}
-											placeholder="Add a note about this task…"
-											className="min-h-24 resize-none text-sm"
-											onKeyDown={(e) => {
-												// Ctrl/Cmd + Enter to submit
-												if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-													e.preventDefault();
-													const trimmed = noteInput.trim();
-													if (trimmed) {
-														setNotes((prev) => [...prev, trimmed]);
-														setNoteInput("");
-													}
-												}
-											}}
-										/>
-										<div className="flex items-center justify-between">
-											<p className="text-xs text-muted-foreground/60">
-												<kbd className="rounded border px-1 py-0.5 font-mono text-[10px]">⌘ Enter</kbd> to save
-											</p>
-											<Button
-												size="sm"
-												variant="outline"
-												disabled={!noteInput.trim()}
-												onClick={() => {
-													const trimmed = noteInput.trim();
-													if (!trimmed) return;
-													setNotes((prev) => [...prev, trimmed]);
-													setNoteInput("");
-												}}
-											>
-												<MessageSquarePlus className="size-3.5" />
-												Add Note
-											</Button>
-										</div>
-									</div>
-								</div>
-
-								<Separator />
-
-								{/* ── Files ──────────────────────────────────────────────── */}
-								<div>
-									<div className="mb-3 flex items-center justify-between">
-										<h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Files</h4>
-										<Button
-											size="sm"
-											variant="outline"
-											onClick={() => fileInputRef.current?.click()}
-										>
-											<Upload className="size-3.5" />
-											Upload
-										</Button>
-									</div>
-
-									{/* Hidden file input */}
-									<input
-										ref={fileInputRef}
-										type="file"
-										multiple
-										className="hidden"
-										onChange={(e) => {
-											const selected = Array.from(e.target.files ?? []);
-											if (selected.length === 0) return;
-											setAttachedFiles((prev) => {
-												// Deduplicate by name+size
-												const existing = new Set(prev.map((f) => `${f.name}-${f.size}`));
-												const fresh = selected.filter((f) => !existing.has(`${f.name}-${f.size}`));
-												return [...prev, ...fresh];
-											});
-											// Reset input so the same file can be re-selected
-											e.target.value = "";
-										}}
-									/>
-
-									{attachedFiles.length > 0 ? (
-										<div className="flex flex-col divide-y rounded-md border">
-											{attachedFiles.map((file, idx) => (
-												<div
-													key={`${file.name}-${idx}`}
-													className="flex items-center justify-between gap-3 px-3 py-2.5"
-												>
-													<div className="flex min-w-0 items-center gap-2">
-														<Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
-														<span className="truncate text-sm">{file.name}</span>
-														<span className="shrink-0 text-xs text-muted-foreground/60">{file.size < 1024 * 1024 ? `${(file.size / 1024).toFixed(1)} KB` : `${(file.size / (1024 * 1024)).toFixed(1)} MB`}</span>
-													</div>
-													<button
-														type="button"
-														onClick={() => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))}
-														className="shrink-0 rounded p-0.5 text-muted-foreground hover:text-destructive"
-														aria-label={`Remove ${file.name}`}
-													>
-														<X className="size-3.5" />
-													</button>
-												</div>
-											))}
-										</div>
-									) : (
-										<div
-											className="flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed text-center transition-colors hover:bg-muted/30"
-											onClick={() => fileInputRef.current?.click()}
-											role="button"
-											tabIndex={0}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
-											}}
-											aria-label="Click to upload files"
-										>
-											<FileText className="size-6 text-muted-foreground/40" />
-											<p className="text-sm font-medium text-muted-foreground">Click to attach files</p>
-											<p className="text-xs text-muted-foreground/70">Any file type supported</p>
-										</div>
-									)}
-								</div>
-							</div>
-						</ScrollArea>
-					</TabsContent>
 				</Tabs>
 
 				{/* ── Footer ────────────────────────────────────────────────────── */}

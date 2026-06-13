@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
@@ -52,9 +52,8 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 		defaultValues: INVOICE_DEFAULT_VALUES,
 	});
 
-	// Watch clientId so we can filter projects
-	const selectedClientId = form.watch("clientId");
-	const invoiceType = form.watch("invoiceType");
+	const selectedClientId = useWatch({ control: form.control, name: "clientId" });
+	const invoiceType = useWatch({ control: form.control, name: "invoiceType" });
 
 	// Fetch clients for the combobox
 	const clientsQuery = useClientsQuery(open ? undefined : undefined);

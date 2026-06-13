@@ -17,10 +17,10 @@
 
 import { useMemo } from "react";
 import { format } from "date-fns";
-import { CalendarClock, MapPin, Users } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
+import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { useGetMeetings } from "@/entities/meetings/api/meetings.api";
 import { PolyMeetingForm } from "@/features/meetings/ui/PolyMeetingForm";
 import { MEETING_STATUS_LABELS, MEETING_TYPE_LABELS, LOCATION_TYPE_LABELS, type PolyMeeting, type MeetingStatus } from "@/entities/meetings/model/types";
@@ -31,9 +31,10 @@ import { MEETING_STATUS_LABELS, MEETING_TYPE_LABELS, LOCATION_TYPE_LABELS, type 
 
 const STATUS_CLASS: Record<MeetingStatus, string> = {
 	scheduled: "bg-blue-50 text-blue-700 border-blue-200",
-	held: "bg-emerald-50 text-emerald-700 border-emerald-200",
+	in_progress: "bg-amber-50 text-amber-700 border-amber-200",
+	completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
 	cancelled: "bg-red-50 text-red-700 border-red-200",
-	no_show: "bg-amber-50 text-amber-700 border-amber-200",
+	no_show: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,61 +48,121 @@ interface ProjectMeetingsTabProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Merged meeting card (read-only — status updates handled by MeetingsList)
+// Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MeetingCard({ meeting }: { meeting: PolyMeeting }) {
-	const statusClass = STATUS_CLASS[meeting.status] ?? "";
+function getMeetingTypeLabel(meeting: PolyMeeting): string {
+	return MEETING_TYPE_LABELS[meeting.meetingType] ?? meeting.meetingType;
+}
 
-	return (
-		<div className="rounded-xl border bg-card p-4 space-y-3 hover:shadow-sm transition-shadow">
-			{/* Header */}
-			<div className="flex items-start justify-between gap-2">
-				<div className="flex-1 min-w-0">
-					<p className="font-semibold text-sm truncate">{meeting.title}</p>
-					<p className="text-xs text-muted-foreground mt-0.5">
-						{MEETING_TYPE_LABELS[meeting.meetingType]}
-						{meeting.modelType === "client" && <span className="ml-2 rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-muted-foreground">Client meeting</span>}
-					</p>
+function getMeetingStatusLabel(meeting: PolyMeeting): string {
+	return MEETING_STATUS_LABELS[meeting.status] ?? meeting.status;
+}
+
+function getLocationLabel(meeting: PolyMeeting): string {
+	const locationLabel = LOCATION_TYPE_LABELS[meeting.locationType] ?? meeting.locationType;
+
+	if (!meeting.locationDetails) {
+		return locationLabel;
+	}
+
+	return `${locationLabel} — ${meeting.locationDetails}`;
+}
+
+function getAttendeesLabel(meeting: PolyMeeting): string {
+	const internalCount = meeting.internalAttendees.length;
+	const externalCount = meeting.externalAttendees.length;
+	const total = internalCount + externalCount;
+
+	if (total === 0) {
+		return "No attendees";
+	}
+
+	return `${total} attendee${total === 1 ? "" : "s"}`;
+}
+
+function getMeetingNote(meeting: PolyMeeting): string | null {
+	return meeting.completionNote || meeting.description || null;
+}
+
+function getScopeConfig(meeting: PolyMeeting): { label: string; className: string } {
+	if (meeting.modelType === "project") {
+		return {
+			label: "Project",
+			className: "bg-blue-50 text-blue-700 border-blue-200",
+		};
+	}
+
+	return {
+		label: "Client",
+		className: "bg-slate-100 text-slate-700 border-slate-200",
+	};
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Table columns
+// ─────────────────────────────────────────────────────────────────────────────
+
+const projectMeetingColumns: Column<PolyMeeting>[] = [
+	{
+		key: "meeting",
+		header: "Meeting",
+		render: (meeting) => {
+			const note = getMeetingNote(meeting);
+
+			return (
+				<div className="min-w-64 max-w-md">
+					<p className="truncate font-medium">{meeting.title}</p>
+					<p className="mt-0.5 text-xs text-muted-foreground">{getMeetingTypeLabel(meeting)}</p>
+					{note && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{note}</p>}
 				</div>
+			);
+		},
+	},
+	{
+		key: "scope",
+		header: "Scope",
+		render: (meeting) => {
+			const scopeConfig = getScopeConfig(meeting);
+
+			return (
 				<Badge
 					variant="outline"
-					className={cn("text-xs shrink-0", statusClass)}
+					className={cn("rounded-sm border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide", scopeConfig.className)}
 				>
-					{MEETING_STATUS_LABELS[meeting.status]}
+					{scopeConfig.label}
 				</Badge>
-			</div>
-
-			{/* Details */}
-			<div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
-				<span className="flex items-center gap-1.5">
-					<CalendarClock className="size-3.5 shrink-0" />
-					{format(new Date(meeting.scheduledAt), "MMM d, yyyy 'at' h:mm a")}
-				</span>
-				<span className="flex items-center gap-1.5">
-					<MapPin className="size-3.5 shrink-0" />
-					{LOCATION_TYPE_LABELS[meeting.locationType]}
-					{meeting.locationDetails && ` — ${meeting.locationDetails}`}
-				</span>
-				{meeting.internalAttendees.length > 0 && (
-					<span className="flex items-center gap-1.5">
-						<Users className="size-3.5 shrink-0" />
-						{meeting.internalAttendees.length} attendee
-						{meeting.internalAttendees.length !== 1 ? "s" : ""}
-					</span>
-				)}
-			</div>
-
-			{/* Completion note */}
-			{meeting.completionNote && (
-				<div className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-					<span className="font-medium text-foreground">Note: </span>
-					{meeting.completionNote}
-				</div>
-			)}
-		</div>
-	);
-}
+			);
+		},
+	},
+	{
+		key: "scheduled",
+		header: "Scheduled",
+		render: (meeting) => <span className="text-sm text-muted-foreground">{format(new Date(meeting.scheduledAt), "MMM d, yyyy 'at' h:mm a")}</span>,
+	},
+	{
+		key: "location",
+		header: "Location",
+		render: (meeting) => <span className="max-w-56 truncate text-sm text-muted-foreground">{getLocationLabel(meeting)}</span>,
+	},
+	{
+		key: "attendees",
+		header: "Attendees",
+		render: (meeting) => <span className="text-sm text-muted-foreground">{getAttendeesLabel(meeting)}</span>,
+	},
+	{
+		key: "status",
+		header: "Status",
+		render: (meeting) => (
+			<Badge
+				variant="outline"
+				className={cn("rounded-sm border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide", STATUS_CLASS[meeting.status])}
+			>
+				{getMeetingStatusLabel(meeting)}
+			</Badge>
+		),
+	},
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
@@ -116,6 +177,7 @@ export function ProjectMeetingsTab({ projectId, clientId }: ProjectMeetingsTabPr
 
 	const isLoading = projectMeetingsQuery.isLoading || clientMeetingsQuery.isLoading;
 	const isError = projectMeetingsQuery.isError || clientMeetingsQuery.isError;
+	const error = projectMeetingsQuery.error ?? clientMeetingsQuery.error ?? null;
 
 	// 3. Merge + de-duplicate + sort by scheduledAt desc
 	const mergedMeetings = useMemo<PolyMeeting[]>(() => {
@@ -134,41 +196,25 @@ export function ProjectMeetingsTab({ projectId, clientId }: ProjectMeetingsTabPr
 
 	return (
 		<div className="flex flex-col gap-4">
-			{/* Schedule a new meeting under the project */}
 			<PolyMeetingForm
 				modelType="project"
 				modelId={projectId}
 			/>
 
-			{/* Loading */}
-			{isLoading && (
-				<div className="space-y-3">
-					{[1, 2].map((i) => (
-						<Skeleton
-							key={i}
-							className="h-24 w-full rounded-xl"
-						/>
-					))}
-				</div>
-			)}
-
-			{/* Error */}
-			{!isLoading && isError && <div className="flex items-center justify-center h-24 rounded-xl border bg-muted/20 text-muted-foreground text-sm">Failed to load meetings.</div>}
-
-			{/* Empty */}
-			{!isLoading && !isError && mergedMeetings.length === 0 && <div className="flex items-center justify-center h-24 rounded-xl border border-dashed bg-muted/10 text-muted-foreground text-sm">No meetings yet. Schedule one above.</div>}
-
-			{/* Merged list */}
-			{!isLoading && !isError && mergedMeetings.length > 0 && (
-				<div className="space-y-3">
-					{mergedMeetings.map((meeting) => (
-						<MeetingCard
-							key={`${meeting.modelType}-${meeting.id}`}
-							meeting={meeting}
-						/>
-					))}
-				</div>
-			)}
+			<DataTable
+				title="Project Meetings"
+				titleBadge={!isLoading && !isError ? String(mergedMeetings.length) : undefined}
+				columns={projectMeetingColumns}
+				data={mergedMeetings}
+				keyExtractor={(meeting) => `${meeting.modelType}-${meeting.id}`}
+				isLoading={isLoading}
+				error={isError ? error || new Error("Failed to load meetings.") : null}
+				emptyState={{
+					icon: CalendarClock,
+					title: "No meetings yet",
+					description: "Schedule project and client meetings to keep delivery history visible.",
+				}}
+			/>
 		</div>
 	);
 }

@@ -1,5 +1,3 @@
-import api from "@/shared/api/base";
-
 export const enumConfigApi = {};
 
 export const enumConfigKeys = {

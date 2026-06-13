@@ -121,13 +121,16 @@ export interface Milestone {
 	updatedAt: string;
 }
 
+export const CHANGE_REQUEST_STATUSES = ["draft", "sent_to_client", "approved", "rejected"] as const;
+export type ChangeRequestStatusValue = (typeof CHANGE_REQUEST_STATUSES)[number];
+
 export interface ChangeRequest {
 	changeRequestId: number;
 	projectId: number;
 	title: string;
 	description: string | null;
 	price: number;
-	status: string | null;
+	status: ChangeRequestStatusValue | null;
 	statusLabel: string | null;
 	createdAt: string;
 	updatedAt: string;
@@ -503,16 +506,41 @@ export function useToggleDeliverable() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface ChangeRequestListData {
-	changeRequests: ChangeRequest[];
+	changeRequests: RawChangeRequestResource[];
+}
+
+export type RawChangeRequestResource = ChangeRequest & {
+	internalCost?: unknown;
+	approvedBy?: unknown;
+};
+
+export function mapChangeRequestResource(resource: RawChangeRequestResource): ChangeRequest {
+	return {
+		changeRequestId: resource.changeRequestId,
+		projectId: resource.projectId,
+		title: resource.title,
+		description: resource.description,
+		price: resource.price,
+		status: resource.status,
+		statusLabel: resource.statusLabel,
+		createdAt: resource.createdAt,
+		updatedAt: resource.updatedAt,
+	};
+}
+
+export function mapChangeRequestListData(changeRequestListData: ChangeRequestListData): ChangeRequest[] {
+	return changeRequestListData.changeRequests.map(mapChangeRequestResource);
+}
+
+export async function getProjectChangeRequests(projectId: number): Promise<ChangeRequest[]> {
+	const response = await api.get<ApiEnvelope<ChangeRequestListData>>(`/projects/${projectId}/change-requests`);
+	return mapChangeRequestListData(response.data.data);
 }
 
 export function useChangeRequests(projectId: number) {
 	return useQuery({
 		queryKey: executionKeys.changeRequests(projectId),
-		queryFn: async () => {
-			const response = await api.get<ApiEnvelope<ChangeRequestListData>>(`/projects/${projectId}/change-requests`);
-			return response.data.data.changeRequests;
-		},
+		queryFn: () => getProjectChangeRequests(projectId),
 		enabled: Number.isFinite(projectId) && projectId > 0,
 		staleTime: 2 * 60 * 1000,
 	});
@@ -554,7 +582,7 @@ export function useCreateChangeRequest() {
 interface UpdateChangeRequestStatusVars {
 	projectId: number;
 	changeRequestId: number;
-	status: string;
+	status: ChangeRequestStatusValue;
 }
 
 export function useUpdateChangeRequestStatus() {
@@ -960,20 +988,50 @@ export const fileKeys = {
 	files: (projectId: number) => [...projectKeys.detail(projectId), "files"] as const,
 };
 
+export type RawProjectFileResource = ProjectFile & {
+	isClientVisible?: boolean;
+	isDownloadable?: boolean;
+	visibleToRoles?: string[];
+	createdBy?: number | null;
+	updatedAt?: string;
+};
+
 interface ProjectFileListData {
-	files: ProjectFile[];
+	files: RawProjectFileResource[];
+}
+
+export function mapProjectFileResource(resource: RawProjectFileResource): ProjectFile {
+	return {
+		fileId: resource.fileId,
+		projectId: resource.projectId,
+		name: resource.name,
+		type: resource.type,
+		fileUrl: resource.fileUrl,
+		mimeType: resource.mimeType,
+		size: resource.size,
+		description: resource.description,
+		category: resource.category,
+		createdAt: resource.createdAt,
+	};
+}
+
+export function mapProjectFileListData(fileListData: ProjectFileListData): ProjectFile[] {
+	return fileListData.files.map(mapProjectFileResource);
 }
 
 export function useProjectFiles(projectId: number) {
 	return useQuery({
 		queryKey: fileKeys.files(projectId),
-		queryFn: async () => {
-			const response = await api.get<ApiEnvelope<ProjectFileListData>>(`/projects/${projectId}/files`);
-			return response.data.data.files;
-		},
+		queryFn: () => getProjectFiles(projectId),
 		enabled: Number.isFinite(projectId) && projectId > 0,
 		staleTime: 2 * 60 * 1000,
 	});
+}
+
+export async function getProjectFiles(projectId: number): Promise<ProjectFile[]> {
+	const response = await api.get<ApiEnvelope<ProjectFileListData>>(`/projects/${projectId}/files`);
+
+	return mapProjectFileListData(response.data.data);
 }
 
 export function useUploadProjectFile() {

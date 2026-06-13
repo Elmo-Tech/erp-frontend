@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { ProjectStatus, type Project } from "@/entities/project/model/types";
@@ -45,9 +45,8 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 		},
 	];
 
-	// Watch budget and deadline to determine if reason is required
-	const watchedBudget = form.watch("budget");
-	const watchedDeadline = form.watch("deadline");
+	const watchedBudget = useWatch({ control: form.control, name: "budget" });
+	const watchedDeadline = useWatch({ control: form.control, name: "deadline" });
 
 	const requiresReason = useMemo(() => {
 		const budgetChanged = watchedBudget !== Number(project.budget || 0);
