@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { ProjectStatus, type Project } from "@/entities/project/model/types";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
-import { createDirectProjectSchema, toUpdateProjectPayload, type CreateDirectProjectFormData } from "../model/project.schema";
+import { createDirectProjectSchema, toChangedUpdateProjectPayload, type CreateDirectProjectFormData } from "../model/project.schema";
 import { useUpdateProject } from "../model/use-project-actions";
 import { ProjectFormFields } from "./ProjectFormFields";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
@@ -81,7 +81,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 		try {
 			await updateProject.mutateAsync({
 				id: project.projectId,
-				payload: toUpdateProjectPayload(data),
+				payload: toChangedUpdateProjectPayload(data, project),
 			});
 			toast.success("Project updated");
 			onOpenChange(false);

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ProjectStatus } from "@/entities/project/model/types";
-import type { CreateDirectProjectPayload, UpdateProjectPayload } from "@/entities/project/model/types";
+import type { CreateDirectProjectPayload, Project, UpdateProjectPayload } from "@/entities/project/model/types";
 import { requiredNumberInput } from "@/shared/lib/zod-number";
 
 export const createDirectProjectSchema = z.object({
@@ -31,13 +31,37 @@ export function toCreateDirectProjectPayload(data: CreateDirectProjectFormData):
 	};
 }
 
-export function toUpdateProjectPayload(data: CreateDirectProjectFormData): UpdateProjectPayload {
-	return {
-		title: data.title.trim(),
-		description: cleanOptional(data.description),
-		budget: data.budget,
-		deadline: cleanOptional(data.deadline),
-		status: data.status,
-		reason: cleanOptional(data.reason),
-	};
+export function toChangedUpdateProjectPayload(data: CreateDirectProjectFormData, project: Pick<Project, "title" | "description" | "budget" | "deadline" | "status">): UpdateProjectPayload {
+	const payload: UpdateProjectPayload = {};
+	const title = data.title.trim();
+	const description = data.description?.trim() ?? "";
+	const deadline = cleanOptional(data.deadline);
+	const currentDeadline = project.deadline ?? "";
+	const reason = cleanOptional(data.reason);
+
+	if (title !== project.title.trim()) {
+		payload.title = title;
+	}
+
+	if (description !== (project.description?.trim() ?? "")) {
+		payload.description = description;
+	}
+
+	if (data.budget !== Number(project.budget ?? 0)) {
+		payload.budget = data.budget;
+	}
+
+	if ((deadline ?? "") !== currentDeadline) {
+		payload.deadline = deadline;
+	}
+
+	if (data.status !== project.status) {
+		payload.status = data.status;
+	}
+
+	if (reason && (payload.budget !== undefined || payload.deadline !== undefined)) {
+		payload.reason = reason;
+	}
+
+	return payload;
 }

@@ -7,6 +7,7 @@ import { optionalNumberInput, requiredNumberInput } from "@/shared/lib/zod-numbe
 
 export const CURRENCIES = ["USD", "EUR", "GBP", "SAR", "AED", "EGP"] as const;
 export type Currency = (typeof CURRENCIES)[number];
+const currencyCodeSchema = z.string().trim().min(1, "Please select a currency").max(10, "Currency code is too long");
 
 export const COMMISSION_TYPES = ["percentage", "fixed"] as const;
 export type CommissionType = (typeof COMMISSION_TYPES)[number];
@@ -176,7 +177,7 @@ export const quotationDirectUploadSchema = z.object({
 	commission_type: z.enum(COMMISSION_TYPES, {
 		message: "Please select a commission type",
 	}),
-	currency: z.enum(CURRENCIES, { message: "Please select a currency" }),
+	currency: currencyCodeSchema,
 	final_total: requiredNumberInput("Final total is required").pipe(z.number().min(0, "Must be ≥ 0")),
 	payment_stages: z.array(paymentStageSchema),
 	notes: z.string().optional(),
@@ -190,7 +191,7 @@ export type QuotationDirectUploadValues = z.infer<typeof quotationDirectUploadSc
 
 const contractStandardFinancialsSchema = z.object({
 	contract_model: z.literal("standard"),
-	currency: z.enum(CURRENCIES, { message: "Please select a currency" }),
+	currency: currencyCodeSchema,
 	total_amount: requiredNumberInput("Total amount is required").pipe(z.number().min(0, "Must be ≥ 0")),
 	payment_stages: z.array(paymentStageSchema).default([]),
 });
@@ -201,7 +202,7 @@ const contractStandardFinancialsSchema = z.object({
 
 const contractSaasFinancialsSchema = z.object({
 	contract_model: z.literal("saas_subscription"),
-	currency: z.enum(CURRENCIES, { message: "Please select a currency" }),
+	currency: currencyCodeSchema,
 	setup_fee: requiredNumberInput("Required").pipe(z.number().min(0, "Must be ≥ 0")),
 	recurring_fee: requiredNumberInput("Required").pipe(z.number().min(0, "Must be ≥ 0")),
 	billing_cycle: z.enum(BILLING_CYCLES, {
@@ -324,16 +325,16 @@ export const contractStageModalSchema = z.discriminatedUnion("mode", [
 			z.object({
 				contract_model: z.enum(CONTRACT_MODELS, { message: "Please select a contract model" }),
 				// Optional fields that exist in one branch or the other — validated at runtime
-				currency: z.enum(CURRENCIES, { message: "Please select a currency" }).optional(),
+				currency: currencyCodeSchema.optional(),
 				total_amount: optionalNumberInput().pipe(z.number().min(0).optional()),
-payment_stages: z.array(paymentStageSchema),
+				payment_stages: z.array(paymentStageSchema),
 				setup_fee: optionalNumberInput().pipe(z.number().min(0).optional()),
 				recurring_fee: optionalNumberInput().pipe(z.number().min(0).optional()),
 				billing_cycle: z.enum(BILLING_CYCLES).optional(),
 				subscription_start_date: z.string().optional(),
-apply_promo: z.boolean(),
+				apply_promo: z.boolean(),
 				promo_discount: optionalNumberInput().pipe(z.number().min(0).max(100).optional()),
-addons: z.array(saasAddonSchema),
+				addons: z.array(saasAddonSchema),
 			}),
 		),
 	z.object({ mode: z.literal("skip") }).merge(skipTabSchema),

@@ -18,12 +18,13 @@ import { FormFileInput } from "@/shared/ui/forms/FormFileInput";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
+import { useSettingsDictionary } from "@/shared/api/settings.api";
 import { CURRENCIES, COMMISSION_TYPES, type QuotationDirectUploadValues } from "./stageModal.schema";
 import { PaymentStagesFieldArray } from "./PaymentStagesFieldArray";
 
 // ─── option lists ────────────────────────────────────────────────────────────
 
-const CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: c }));
+const DEFAULT_CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: c }));
 
 const COMMISSION_TYPE_OPTIONS = COMMISSION_TYPES.map((t) => ({
 	value: t,
@@ -34,6 +35,8 @@ const COMMISSION_TYPE_OPTIONS = COMMISSION_TYPES.map((t) => ({
 
 export function QuotationDirectUploadTab() {
 	const { control } = useFormContext<QuotationDirectUploadValues>();
+	const currencyDict = useSettingsDictionary("currencies");
+	const currencyOptions = currencyDict.options.length > 0 ? currencyDict.options : DEFAULT_CURRENCY_OPTIONS;
 
 	// Live-watch values needed for the payment stages footer
 	const finalTotal = useWatch({ control, name: "final_total" }) as number | undefined;
@@ -76,8 +79,9 @@ export function QuotationDirectUploadTab() {
 						control={control}
 						name="currency"
 						label="Currency"
-						placeholder="Select currency…"
-						options={CURRENCY_OPTIONS}
+						placeholder={currencyDict.isLoading ? "Loading currencies…" : "Select currency…"}
+						options={currencyOptions}
+						disabled={currencyDict.isLoading && currencyOptions.length === 0}
 					/>
 					<FormInput
 						control={control}

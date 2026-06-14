@@ -6,7 +6,7 @@ import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect, type SelectOption } from "@/shared/ui/forms/FormSelect";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
-import { useSettingsDictionary } from "@/shared/api/settings.api";
+import { ProjectStatus, ProjectStatusLabels } from "@/entities/project/model/types";
 import type { CreateDirectProjectFormData } from "../model/project.schema";
 
 interface ProjectFormFieldsProps {
@@ -15,10 +15,12 @@ interface ProjectFormFieldsProps {
 	lockClient?: boolean;
 }
 
-export function ProjectFormFields({ form, clientOptions, lockClient = false }: ProjectFormFieldsProps) {
-	// BUG FIX: was hardcoded from ProjectStatus enum — now dynamic from settings API
-	const statusDict = useSettingsDictionary("project-statuses");
+const STATUS_OPTIONS = Object.values(ProjectStatus).map((status) => ({
+	value: status,
+	label: ProjectStatusLabels[status],
+}));
 
+export function ProjectFormFields({ form, clientOptions, lockClient = false }: ProjectFormFieldsProps) {
 	return (
 		<Form {...form}>
 			<div className="flex flex-col gap-4">
@@ -70,9 +72,8 @@ export function ProjectFormFields({ form, clientOptions, lockClient = false }: P
 					control={form.control}
 					name="status"
 					label="Status"
-					placeholder={statusDict.isLoading ? "Loading statuses…" : "Select status…"}
-					options={statusDict.options}
-					disabled={statusDict.isLoading}
+					placeholder="Select status…"
+					options={STATUS_OPTIONS}
 				/>
 			</div>
 		</Form>

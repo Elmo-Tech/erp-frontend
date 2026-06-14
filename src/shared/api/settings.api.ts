@@ -60,9 +60,9 @@ export function useSettingsDictionary(entity: string, enabled = true) {
 	});
 
 	const options = (query.data ?? [])
-		.filter((item) => item.isActive)
+		.filter((item) => item.isActive && typeof item.slug === "string" && item.slug.trim().length > 0)
 		.map((item) => ({
-			value: item.slug,
+			value: item.slug.trim(),
 			label: item.name,
 		}));
 
