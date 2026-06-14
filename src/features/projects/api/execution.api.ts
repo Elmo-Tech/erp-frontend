@@ -734,6 +734,12 @@ export interface CreateTaskPayload {
 	assigneeId?: number | null;
 }
 
+export type UpdateTaskPayload = Partial<Omit<CreateTaskPayload, "description">> & {
+	description?: string | null;
+	status?: ExecutionTaskStatusValue;
+	reason?: string | null;
+};
+
 interface CreateTaskVars {
 	projectId: number;
 	payload: CreateTaskPayload;
@@ -751,6 +757,54 @@ export function useCreateTask() {
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+		},
+	});
+}
+
+interface UpdateTaskVars {
+	projectId: number;
+	taskId: number;
+	payload: UpdateTaskPayload;
+}
+
+export async function updateProjectTask(projectId: number, taskId: number, payload: UpdateTaskPayload): Promise<ProjectTask> {
+	const response = await api.patch<ApiEnvelope<RawProjectTaskResource>>(`/projects/${projectId}/tasks/${taskId}`, payload);
+	return mapProjectTaskResource(response.data.data);
+}
+
+export function useUpdateProjectTask() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectTask, Error, UpdateTaskVars>({
+		mutationFn: ({ projectId, taskId, payload }) => updateProjectTask(projectId, taskId, payload),
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
+		},
+	});
+}
+
+interface DeleteTaskVars {
+	projectId: number;
+	taskId: number;
+}
+
+export async function deleteProjectTask(projectId: number, taskId: number): Promise<void> {
+	await api.delete(`/projects/${projectId}/tasks/${taskId}`);
+}
+
+export function useDeleteProjectTask() {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, DeleteTaskVars>({
+		mutationFn: ({ projectId, taskId }) => deleteProjectTask(projectId, taskId),
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
 		},
 	});
 }

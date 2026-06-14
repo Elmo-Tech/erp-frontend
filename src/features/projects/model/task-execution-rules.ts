@@ -1,6 +1,6 @@
 import { EXECUTION_TASK_STATUS_OPTIONS, ExecutionTaskStatus, type ExecutionTaskStatusValue } from "../api/execution.api";
 
-interface TaskExecutionAccess {
+export interface TaskExecutionAccess {
 	canManageAllProjects: boolean;
 	canManageTasks: boolean;
 	canEditTasks: boolean;
@@ -10,7 +10,7 @@ interface TaskExecutionAccess {
 	currentUserId?: number | null;
 }
 
-interface TaskExecutionAction {
+export interface TaskExecutionAction {
 	label: "Mark as Done" | "Submit for Review";
 	targetStatus: ExecutionTaskStatusValue;
 	useCompleteEndpoint: boolean;

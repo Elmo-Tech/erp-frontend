@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
-import { getActiveProjectTimeEntry, getMyActiveProjectTasks, getProjectChangeRequests, getProjectFiles, getProjectTasks, getProjectTimeline } from "../execution.api";
+import { deleteProjectTask, getActiveProjectTimeEntry, getMyActiveProjectTasks, getProjectChangeRequests, getProjectFiles, getProjectTasks, getProjectTimeline, updateProjectTask } from "../execution.api";
 
 vi.mock("@/shared/api/base", () => ({
 	default: {
 		get: vi.fn(),
+		patch: vi.fn(),
+		delete: vi.fn(),
 	},
 }));
 
 const mockedApi = api as unknown as {
 	get: Mock;
+	patch: Mock;
+	delete: Mock;
 };
 
 describe("execution workspace API", () => {
@@ -95,6 +99,62 @@ describe("execution workspace API", () => {
 		await expect(getActiveProjectTimeEntry()).resolves.toBeNull();
 
 		expect(mockedApi.get).toHaveBeenCalledWith("/projects/time-entries/active");
+	});
+
+	it("updates a project task through the canonical task endpoint", async () => {
+		mockedApi.patch.mockResolvedValueOnce({
+			data: {
+				data: {
+					taskId: 10,
+					projectId: 2,
+					milestoneId: 3,
+					title: "Updated login task",
+					description: "New scope",
+					status: "to_do",
+					statusLabel: "To Do",
+					estimatedHours: 5,
+					startDate: "2026-06-10",
+					dueDate: "2026-06-12",
+					assigneeId: 7,
+					isInBacklog: false,
+					totalLoggedMinutes: 0,
+					assignee: null,
+					milestone: null,
+					deliverables: [],
+					timeEntries: [],
+					createdAt: "2026-06-01T10:00:00.000Z",
+					updatedAt: "2026-06-02T10:00:00.000Z",
+				},
+			},
+		});
+
+		await updateProjectTask(2, 10, {
+			title: "Updated login task",
+			description: "New scope",
+			milestoneId: 3,
+			assigneeId: 7,
+			estimatedHours: 5,
+			startDate: "2026-06-10",
+			dueDate: "2026-06-12",
+		});
+
+		expect(mockedApi.patch).toHaveBeenCalledWith("/projects/2/tasks/10", {
+			title: "Updated login task",
+			description: "New scope",
+			milestoneId: 3,
+			assigneeId: 7,
+			estimatedHours: 5,
+			startDate: "2026-06-10",
+			dueDate: "2026-06-12",
+		});
+	});
+
+	it("deletes a project task through the canonical task endpoint", async () => {
+		mockedApi.delete.mockResolvedValueOnce({ data: { success: true, data: null } });
+
+		await deleteProjectTask(2, 10);
+
+		expect(mockedApi.delete).toHaveBeenCalledWith("/projects/2/tasks/10");
 	});
 
 	it("fetches active project tasks assigned to the current user", async () => {
