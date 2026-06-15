@@ -5,6 +5,7 @@ import { Check, Loader2, Play, Plus, Square, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActivePersonalTimeEntry, useCompletePersonalTask, useCreatePersonalTask, useDeletePersonalTask, usePersonalTasks, useTogglePersonalTaskTimer, type PersonalTask } from "@/features/personal-tasks/api/personal-tasks.api";
 import { elapsedSecondsSince, formatElapsedTime } from "@/features/time-tracking/model/timer-format";
+import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -24,7 +25,11 @@ function statusLabel(task: PersonalTask) {
 	return "To Do";
 }
 
-export function PersonalTasksWidget() {
+interface PersonalTasksWidgetProps {
+	className?: string;
+}
+
+export function PersonalTasksWidget({ className }: PersonalTasksWidgetProps) {
 	const [title, setTitle] = useState("");
 	const tasksQuery = usePersonalTasks();
 	const activeQuery = useActivePersonalTimeEntry();
@@ -79,7 +84,7 @@ export function PersonalTasksWidget() {
 	const doneTasks = tasks.filter((task) => task.status === "done").slice(0, 4);
 
 	return (
-		<Card className="lg:col-span-2">
+		<Card className={cn("lg:col-span-2", className)}>
 			<CardHeader className="pb-3">
 				<CardTitle className="flex items-center gap-2 text-base">
 					<Plus className="size-4 text-muted-foreground" />
@@ -114,7 +119,7 @@ export function PersonalTasksWidget() {
 						<Skeleton className="h-14 w-full" />
 					</div>
 				) : openTasks.length || doneTasks.length ? (
-					<div className="divide-y rounded-md border">
+					<div className="max-h-[520px] divide-y overflow-y-auto rounded-md border">
 						{[...openTasks, ...doneTasks].map((task) => {
 							const running = activeTaskId === task.taskId;
 							return (

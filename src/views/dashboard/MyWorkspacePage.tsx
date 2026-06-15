@@ -2,13 +2,14 @@
 
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
-import { CalendarClock, CheckCircle2, ExternalLink, LogIn, LogOut, ListTodo, Star, Timer, Trophy } from "lucide-react";
+import { CalendarClock, ExternalLink, LogIn, LogOut, Star, Timer, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { MEETING_TYPE_LABELS, useGetTodayMeetings, type PolyMeeting } from "@/entities/meetings";
 import { useCheckInMutation, useCheckOutMutation, useMyPoints, useTodayAttendance } from "@/features/hr/model/use-hr-actions";
-import { PersonalTasksWidget } from "@/features/personal-tasks/ui/PersonalTasksWidget";
-import { ExecutionTaskStatusLabels, type ExecutionTaskStatusValue, useMyActiveProjectTasks } from "@/features/projects/api/execution.api";
+import { PersonalTasksSummaryCard } from "@/features/personal-tasks/ui/PersonalTasksSummaryCard";
+import { useMyActiveProjectTasks } from "@/features/projects/api/execution.api";
+import { MyActiveProjectTasksCard } from "@/views/dashboard/MyActiveProjectTasksCard";
 import { useDashboardOverview } from "@/widgets/dashboard-management/model/dashboard.api";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -23,11 +24,6 @@ function formatTime(value: string | null | undefined) {
 function formatDate(value: string | null | undefined) {
 	if (!value) return "No due date";
 	return format(new Date(value), "dd MMM");
-}
-
-function normalizeStatus(status: string | null | undefined) {
-	if (!status) return "Open";
-	return ExecutionTaskStatusLabels[status as ExecutionTaskStatusValue] ?? status.replaceAll("_", " ");
 }
 
 function meetingHref(meeting: PolyMeeting): string | null {
@@ -237,64 +233,10 @@ function QuickStats() {
 				</CardHeader>
 				<CardContent>
 					<p className="text-3xl font-semibold tabular-nums">{dashboardQuery.isLoading ? "--" : completed}</p>
-					<p className="text-xs text-muted-foreground">Current dashboard summary</p>
+					<p className="text-xs text-muted-foreground">Project + personal tasks</p>
 				</CardContent>
 			</Card>
 		</div>
-	);
-}
-
-function ActiveTasks() {
-	const currentUserId = useAuthStore((s) => s.user?.userId);
-	const tasksQuery = useMyActiveProjectTasks();
-	const tasks = (tasksQuery.data ?? []).filter((task) => task.assigneeId === currentUserId);
-
-	return (
-		<Card className="lg:col-span-2">
-			<CardHeader className="pb-3">
-				<CardTitle className="flex items-center gap-2 text-base">
-					<ListTodo className="size-4 text-muted-foreground" />
-					My Active Tasks
-				</CardTitle>
-			</CardHeader>
-			<CardContent>
-				{tasksQuery.isLoading ? (
-					<div className="space-y-2">
-						<Skeleton className="h-14 w-full" />
-						<Skeleton className="h-14 w-full" />
-						<Skeleton className="h-14 w-full" />
-					</div>
-				) : tasks.length ? (
-					<div className="divide-y rounded-md border">
-						{tasks.map((task) => (
-							<div
-								key={task.taskId}
-								className="flex min-w-0 flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-							>
-								<div className="min-w-0">
-									<p className="truncate text-sm font-medium">{task.title}</p>
-									<p className="truncate text-xs text-muted-foreground">{task.project?.title ?? "Project"}</p>
-								</div>
-								<div className="flex shrink-0 items-center gap-2">
-									<Badge
-										variant="outline"
-										className="capitalize"
-									>
-										{normalizeStatus(task.status)}
-									</Badge>
-									<span className="text-xs tabular-nums text-muted-foreground">{formatDate(task.dueDate)}</span>
-								</div>
-							</div>
-						))}
-					</div>
-				) : (
-					<div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-md border border-dashed text-center">
-						<CheckCircle2 className="size-5 text-muted-foreground" />
-						<p className="text-sm text-muted-foreground">No active assigned tasks.</p>
-					</div>
-				)}
-			</CardContent>
-		</Card>
 	);
 }
 
@@ -310,8 +252,8 @@ export default function MyWorkspacePage() {
 				<AttendanceControl />
 				<QuickStats />
 				<DailySchedule />
-				<PersonalTasksWidget />
-				<ActiveTasks />
+				<PersonalTasksSummaryCard />
+				<MyActiveProjectTasksCard />
 			</div>
 		</section>
 	);

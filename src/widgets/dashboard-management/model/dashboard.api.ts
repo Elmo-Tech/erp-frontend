@@ -72,6 +72,7 @@ export interface PermissionDashboardOverview {
 		};
 		items: Array<{
 			task_id: number;
+			source?: "project" | "personal";
 			title: string;
 			status: string;
 			priority?: string | null;
