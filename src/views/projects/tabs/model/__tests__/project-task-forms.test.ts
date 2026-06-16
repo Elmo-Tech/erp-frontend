@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildEditTaskFormDefaults, mapAddMilestoneFormToPayload, mapAddTaskFormToPayload, mapEditTaskFormToPayload } from "../project-task-forms";
 import { ExecutionTaskStatus, type ProjectTask } from "@/features/projects/api/execution.api";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 
 function makeTask(overrides: Partial<ProjectTask> = {}): ProjectTask {
 	return {
@@ -14,6 +15,7 @@ function makeTask(overrides: Partial<ProjectTask> = {}): ProjectTask {
 		estimatedHours: null,
 		startDate: null,
 		dueDate: null,
+		priority: TaskPriority.MEDIUM,
 		assigneeId: null,
 		isInBacklog: false,
 		totalLoggedMinutes: 0,
@@ -42,6 +44,7 @@ describe("project task forms model", () => {
 				estimatedHours: undefined,
 				startDate: "",
 				dueDate: "",
+				priority: "high",
 			}),
 		).toEqual({
 			title: "Build Login",
@@ -51,6 +54,7 @@ describe("project task forms model", () => {
 			estimatedHours: null,
 			startDate: null,
 			dueDate: null,
+			priority: "high",
 		});
 	});
 
@@ -64,6 +68,7 @@ describe("project task forms model", () => {
 				estimatedHours: 2.5,
 				startDate: "2026-06-01",
 				dueDate: "2026-06-05",
+				priority: "urgent",
 			}),
 		).toEqual({
 			title: "Build Login",
@@ -73,6 +78,7 @@ describe("project task forms model", () => {
 			estimatedHours: 2.5,
 			startDate: "2026-06-01",
 			dueDate: "2026-06-05",
+			priority: "urgent",
 		});
 	});
 
@@ -86,6 +92,7 @@ describe("project task forms model", () => {
 					estimatedHours: 3.5,
 					startDate: "2026-06-01",
 					dueDate: "2026-06-05",
+					priority: TaskPriority.HIGH,
 				}),
 			),
 		).toEqual({
@@ -96,6 +103,7 @@ describe("project task forms model", () => {
 			estimatedHours: 3.5,
 			startDate: "2026-06-01",
 			dueDate: "2026-06-05",
+			priority: "high",
 		});
 	});
 
@@ -109,6 +117,7 @@ describe("project task forms model", () => {
 				estimatedHours: undefined,
 				startDate: "",
 				dueDate: "2026-06-05",
+				priority: "low",
 			}),
 		).toEqual({
 			title: "Updated Login",
@@ -118,6 +127,7 @@ describe("project task forms model", () => {
 			estimatedHours: null,
 			startDate: null,
 			dueDate: "2026-06-05",
+			priority: "low",
 		});
 	});
 });

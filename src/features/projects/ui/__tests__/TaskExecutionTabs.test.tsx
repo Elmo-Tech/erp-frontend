@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TaskExecutionTabs } from "../TaskExecutionTabs";
 import type { ProjectTask } from "../../api/execution.api";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 
 const mutationStub = {
 	mutate: vi.fn(),
@@ -28,6 +29,7 @@ const task: ProjectTask = {
 	description: "Ship the login workflow with QA-ready deliverables.",
 	status: "in_progress",
 	statusLabel: "In Progress",
+	priority: TaskPriority.MEDIUM,
 	estimatedHours: 2,
 	startDate: "2026-06-10",
 	dueDate: "2026-06-12",

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { TaskExecutionSheet } from "../TaskExecutionSheet";
 import type { ProjectTask } from "../../api/execution.api";
 import { useAuthStore } from "@/entities/user/model/auth.store";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 
 const mutationStub = {
 	mutate: vi.fn(),
@@ -37,6 +38,7 @@ const task: ProjectTask = {
 	description: "Ship the first usable execution surface.",
 	status: "to_do",
 	statusLabel: "To Do",
+	priority: TaskPriority.MEDIUM,
 	estimatedHours: 4,
 	startDate: "2026-06-10",
 	dueDate: "2026-06-12",

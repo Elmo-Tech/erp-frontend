@@ -12,6 +12,7 @@ interface ApiEnvelope<T> {
 }
 
 export type PersonalTaskStatus = "todo" | "in_progress" | "done";
+export type PersonalTaskPriority = "low" | "medium" | "high" | "urgent";
 
 export interface PersonalTimeEntry {
 	entryId: number;
@@ -37,6 +38,7 @@ export interface PersonalTask {
 	title: string;
 	description: string | null;
 	status: PersonalTaskStatus;
+	priority: PersonalTaskPriority;
 	dueDate: string | null;
 	estimatedMinutes: number | null;
 	totalLoggedMinutes: number;
@@ -50,6 +52,7 @@ export interface CreatePersonalTaskPayload {
 	title: string;
 	description?: string | null;
 	status?: PersonalTaskStatus;
+	priority?: PersonalTaskPriority;
 	dueDate?: string | null;
 	estimatedMinutes?: number | null;
 }

@@ -123,6 +123,7 @@ export interface TeamPulseItem {
 	clockIn: string | null;
 	activeTaskId: number | null;
 	activeTaskTitle: string | null;
+	activeTaskSource?: "project" | "personal" | null;
 	activeProjectId: number | null;
 	activeProjectTitle: string | null;
 	activeTimeEntryId: number | null;

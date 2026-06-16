@@ -3,6 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 import { useTaskManualTimeDialog } from "../use-task-manual-time-dialog";
 import type { ProjectTask, ProjectTimeEntry } from "../../api/execution.api";
 
@@ -33,6 +34,7 @@ const task: ProjectTask = {
 	description: null,
 	status: "in_progress",
 	statusLabel: "In Progress",
+	priority: TaskPriority.MEDIUM,
 	estimatedHours: 2,
 	startDate: null,
 	dueDate: null,

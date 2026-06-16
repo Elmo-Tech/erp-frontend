@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 import { ExecutionTaskStatus, type ProjectTask } from "../../api/execution.api";
 import { buildTaskCardView, formatTaskLoggedTime, getTaskAssigneeInitials } from "../task-card-view";
 
@@ -11,6 +12,7 @@ function makeTask(overrides: Partial<ProjectTask> = {}): ProjectTask {
 		description: null,
 		status: ExecutionTaskStatus.TO_DO,
 		statusLabel: "To Do",
+		priority: TaskPriority.MEDIUM,
 		estimatedHours: 2,
 		startDate: null,
 		dueDate: null,

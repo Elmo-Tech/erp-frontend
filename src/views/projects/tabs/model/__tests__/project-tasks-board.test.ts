@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ExecutionTaskStatus, type ProjectTask } from "@/features/projects/api/execution.api";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 import { groupProjectTasksByMilestone, resolveProjectTaskForSheet, toggleCollapsedSection } from "../project-tasks-board";
 
 function makeTask(overrides: Partial<ProjectTask> = {}): ProjectTask {
@@ -11,6 +12,7 @@ function makeTask(overrides: Partial<ProjectTask> = {}): ProjectTask {
 		description: null,
 		status: ExecutionTaskStatus.TO_DO,
 		statusLabel: "To Do",
+		priority: TaskPriority.MEDIUM,
 		estimatedHours: 2,
 		startDate: null,
 		dueDate: null,

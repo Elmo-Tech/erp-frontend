@@ -18,7 +18,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/base";
 import { projectKeys } from "@/entities/project/model/query-keys";
 import { hrKeys } from "@/entities/hr/model/query-keys";
-import type { TaskPriority, MilestoneStatus } from "@/shared/lib/statusHelpers";
+import { TaskPriority, type MilestoneStatus } from "@/shared/lib/statusHelpers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API envelope
@@ -84,6 +84,7 @@ export interface ProjectTask {
 	description: string | null;
 	status: string;
 	statusLabel: string | null;
+	priority: TaskPriority;
 	estimatedHours: number | null;
 	startDate?: string | null;
 	dueDate?: string | null;
@@ -273,6 +274,7 @@ export function mapProjectTaskResource(resource: RawProjectTaskResource): Projec
 		description: resource.description,
 		status: resource.status,
 		statusLabel: resource.statusLabel,
+		priority: resource.priority ?? TaskPriority.MEDIUM,
 		estimatedHours: resource.estimatedHours,
 		startDate: resource.startDate,
 		dueDate: resource.dueDate,
@@ -728,6 +730,7 @@ export interface CreateTaskPayload {
 	milestoneId?: number | null;
 	// REMOVED: parentId - subtasks are no longer supported
 	description?: string;
+	priority?: TaskPriority;
 	estimatedHours?: number | null;
 	startDate?: string | null;
 	dueDate?: string | null;

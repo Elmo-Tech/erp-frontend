@@ -31,10 +31,20 @@ describe("personalTasksApi", () => {
 		mockedApi.post.mockResolvedValueOnce({ data: { data: { taskId: 2, title: "Pray" } } });
 		mockedApi.post.mockResolvedValueOnce({ data: { data: { taskId: 2, status: "done" } } });
 
-		await personalTasksApi.create({ title: "Pray", estimatedMinutes: 10 });
+		await personalTasksApi.create({
+			title: "Pray",
+			description: "Daily routine",
+			dueDate: "2026-06-20",
+			priority: "high",
+		});
 		await personalTasksApi.complete(2);
 
-		expect(mockedApi.post).toHaveBeenNthCalledWith(1, "/personal-tasks", { title: "Pray", estimatedMinutes: 10 });
+		expect(mockedApi.post).toHaveBeenNthCalledWith(1, "/personal-tasks", {
+			title: "Pray",
+			description: "Daily routine",
+			dueDate: "2026-06-20",
+			priority: "high",
+		});
 		expect(mockedApi.post).toHaveBeenNthCalledWith(2, "/personal-tasks/2/complete");
 	});
 

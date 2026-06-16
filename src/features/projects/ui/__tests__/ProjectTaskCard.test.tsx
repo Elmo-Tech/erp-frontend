@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 import { ExecutionTaskStatus, type ProjectTask } from "../../api/execution.api";
 import { ProjectTaskCard } from "../ProjectTaskCard";
 
@@ -14,6 +15,7 @@ function makeTask(overrides: Partial<ProjectTask> = {}): ProjectTask {
 		description: null,
 		status: ExecutionTaskStatus.TO_DO,
 		statusLabel: "To Do",
+		priority: TaskPriority.MEDIUM,
 		estimatedHours: 2,
 		startDate: null,
 		dueDate: null,

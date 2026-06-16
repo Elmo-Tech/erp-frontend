@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { optionalNumberInput } from "@/shared/lib/zod-number";
 import type { CreateMilestonePayload, CreateTaskPayload, ProjectTask, UpdateTaskPayload } from "@/features/projects/api/execution.api";
+import type { TaskPriority } from "@/shared/lib/statusHelpers";
+
+const taskPriorities = ["low", "medium", "high", "urgent"] as const;
 
 export const addMilestoneSchema = z.object({
 	title: z.string().trim().min(1, "Title is required").max(255),
@@ -10,6 +13,7 @@ export type AddMilestoneFormData = z.infer<typeof addMilestoneSchema>;
 export const addTaskSchema = z.object({
 	title: z.string().trim().min(1, "Title is required").max(255),
 	description: z.string().optional(),
+	priority: z.enum(taskPriorities),
 	milestoneId: z.string().optional(),
 	assigneeId: z.string().optional(),
 	estimatedHours: optionalNumberInput().optional().pipe(z.number().min(0).optional()),
@@ -26,6 +30,7 @@ export const addMilestoneFormDefaults: AddMilestoneFormData = {
 export const addTaskFormDefaults: AddTaskFormData = {
 	title: "",
 	description: "",
+	priority: "medium",
 	milestoneId: "",
 	assigneeId: "",
 	estimatedHours: undefined,
@@ -41,6 +46,7 @@ export function mapAddTaskFormToPayload(data: AddTaskFormData): CreateTaskPayloa
 	return {
 		title: data.title,
 		description: data.description?.trim() || undefined,
+		priority: data.priority as TaskPriority,
 		milestoneId: data.milestoneId ? Number(data.milestoneId) : null,
 		assigneeId: data.assigneeId ? Number(data.assigneeId) : null,
 		estimatedHours: data.estimatedHours ?? null,
@@ -53,6 +59,7 @@ export function buildEditTaskFormDefaults(task: ProjectTask): EditTaskFormData {
 	return {
 		title: task.title,
 		description: task.description ?? "",
+		priority: task.priority ?? "medium",
 		milestoneId: task.milestoneId ? String(task.milestoneId) : "",
 		assigneeId: task.assigneeId ? String(task.assigneeId) : "",
 		estimatedHours: task.estimatedHours ?? undefined,
@@ -65,6 +72,7 @@ export function mapEditTaskFormToPayload(data: EditTaskFormData): UpdateTaskPayl
 	return {
 		title: data.title,
 		description: data.description?.trim() || null,
+		priority: data.priority as TaskPriority,
 		milestoneId: data.milestoneId ? Number(data.milestoneId) : null,
 		assigneeId: data.assigneeId ? Number(data.assigneeId) : null,
 		estimatedHours: data.estimatedHours ?? null,

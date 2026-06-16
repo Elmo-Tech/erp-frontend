@@ -3,7 +3,9 @@
 import type { UseFormReturn } from "react-hook-form";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
+import { TaskPriority, TaskPriorityLabels } from "@/shared/lib/statusHelpers";
 import type { AddTaskFormData } from "../model/project-task-forms";
 import type { ProjectTaskFilterOption } from "../model/project-tasks-filters";
 
@@ -87,7 +89,18 @@ function TaskAssignmentFields({
 
 function TaskScheduleFields({ form }: { form: UseFormReturn<AddTaskFormData> }) {
 	return (
-		<div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+		<div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+			<FormSelect
+				control={form.control}
+				name="priority"
+				label="Priority"
+				options={[
+					{ value: TaskPriority.LOW, label: TaskPriorityLabels[TaskPriority.LOW] },
+					{ value: TaskPriority.MEDIUM, label: TaskPriorityLabels[TaskPriority.MEDIUM] },
+					{ value: TaskPriority.HIGH, label: TaskPriorityLabels[TaskPriority.HIGH] },
+					{ value: TaskPriority.URGENT, label: TaskPriorityLabels[TaskPriority.URGENT] },
+				]}
+			/>
 			<FormInput
 				control={form.control}
 				name="estimatedHours"

@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 import { ExecutionTaskStatus, type ProjectTask } from "../../api/execution.api";
 import { useTaskStatusActions } from "../use-task-status-actions";
 
@@ -54,6 +55,7 @@ function makeTask(overrides: Partial<ProjectTask> = {}): ProjectTask {
 		description: null,
 		status: ExecutionTaskStatus.TO_DO,
 		statusLabel: "To Do",
+		priority: TaskPriority.MEDIUM,
 		estimatedHours: 2,
 		startDate: null,
 		dueDate: null,

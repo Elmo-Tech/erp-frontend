@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
+import { TaskPriority } from "@/shared/lib/statusHelpers";
 import { deleteProjectTask, getActiveProjectTimeEntry, getMyActiveProjectTasks, getProjectChangeRequests, getProjectFiles, getProjectTasks, getProjectTimeline, updateProjectTask } from "../execution.api";
 
 vi.mock("@/shared/api/base", () => ({
@@ -35,6 +36,7 @@ describe("execution workspace API", () => {
 							description: null,
 							status: "to_do",
 							statusLabel: "To Do",
+							priority: "urgent",
 							estimatedHours: 4,
 							startDate: "2026-06-10",
 							dueDate: "2026-06-12",
@@ -61,10 +63,11 @@ describe("execution workspace API", () => {
 			isInBacklog: true,
 			dueFrom: "2026-06-01",
 			dueTo: "2026-06-30",
+			priority: TaskPriority.URGENT,
 			search: "dashboard",
 		});
 
-		expect(mockedApi.get).toHaveBeenCalledWith("/projects/2/tasks?filter%5Bstatus%5D=to_do&filter%5BmilestoneId%5D=3&filter%5BassigneeId%5D=7&filter%5BisInBacklog%5D=true&filter%5BdueFrom%5D=2026-06-01&filter%5BdueTo%5D=2026-06-30&filter%5Bsearch%5D=dashboard");
+		expect(mockedApi.get).toHaveBeenCalledWith("/projects/2/tasks?filter%5Bstatus%5D=to_do&filter%5Bpriority%5D=urgent&filter%5BmilestoneId%5D=3&filter%5BassigneeId%5D=7&filter%5BisInBacklog%5D=true&filter%5BdueFrom%5D=2026-06-01&filter%5BdueTo%5D=2026-06-30&filter%5Bsearch%5D=dashboard");
 		expect(tasks).toEqual([
 			{
 				taskId: 10,
@@ -74,6 +77,7 @@ describe("execution workspace API", () => {
 				description: null,
 				status: "to_do",
 				statusLabel: "To Do",
+				priority: "urgent",
 				estimatedHours: 4,
 				startDate: "2026-06-10",
 				dueDate: "2026-06-12",
