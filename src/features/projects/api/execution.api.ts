@@ -18,7 +18,88 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/base";
 import { projectKeys } from "@/entities/project/model/query-keys";
 import { hrKeys } from "@/entities/hr/model/query-keys";
-import { TaskPriority, type MilestoneStatus } from "@/shared/lib/statusHelpers";
+import type { ProjectFile } from "@/entities/project/model/types";
+import type { TaskPriority } from "@/shared/lib/statusHelpers";
+import {
+	mapChangeRequestListData,
+	mapChangeRequestResource,
+	type ChangeRequest,
+	type ChangeRequestListData,
+	type ChangeRequestStatusValue,
+	type CreateChangeRequestPayload,
+	type RawChangeRequestResource,
+} from "../model/project-change-request-contract";
+import {
+	mapProjectFileListData,
+	mapProjectFileResource,
+	type ProjectFileListData,
+	type RawProjectFileResource,
+} from "../model/project-file-contract";
+import {
+	mapTaskDeliverableResource,
+	type RawTaskDeliverableResource,
+	type TaskDeliverable,
+} from "../model/project-deliverable-contract";
+import {
+	mapProjectMemberListData,
+	mapProjectMemberResource,
+	type AddMemberPayload,
+	type ProjectMemberListData,
+	type ProjectMemberResource,
+	type RawProjectMemberResource,
+} from "../model/project-member-contract";
+import {
+	buildProjectTaskQuery,
+	mapProjectTaskListData,
+	mapProjectTaskResource,
+	type ExecutionTaskStatusValue,
+	type Milestone,
+	type ProjectTask,
+	type ProjectTaskFilters,
+	type RawProjectTaskResource,
+	type TaskListData,
+} from "../model/project-task-contract";
+import {
+	mapNullableProjectTimeEntryResource,
+	mapProjectTimeEntryResource,
+	type LogManualTimePayload,
+	type ProjectTimeEntry,
+	type RawProjectTimeEntryResource,
+} from "../model/project-time-entry-contract";
+
+export { CHANGE_REQUEST_STATUSES, mapChangeRequestListData, mapChangeRequestResource } from "../model/project-change-request-contract";
+export type {
+	ChangeRequest,
+	ChangeRequestListData,
+	ChangeRequestStatusValue,
+	CreateChangeRequestPayload,
+	RawChangeRequestResource,
+} from "../model/project-change-request-contract";
+export { mapProjectFileListData, mapProjectFileResource } from "../model/project-file-contract";
+export type { ProjectFileListData, RawProjectFileResource } from "../model/project-file-contract";
+export { mapTaskDeliverableList, mapTaskDeliverableResource } from "../model/project-deliverable-contract";
+export type { RawTaskDeliverableResource, TaskDeliverable } from "../model/project-deliverable-contract";
+export { mapProjectMemberListData, mapProjectMemberResource } from "../model/project-member-contract";
+export type { AddMemberPayload, ProjectMemberListData, ProjectMemberResource, RawProjectMemberResource } from "../model/project-member-contract";
+export {
+	EXECUTION_TASK_STATUS_OPTIONS,
+	ExecutionTaskStatus,
+	ExecutionTaskStatusColors,
+	ExecutionTaskStatusLabels,
+	mapProjectTaskListData,
+	mapProjectTaskResource,
+} from "../model/project-task-contract";
+export type {
+	ExecutionTaskStatusValue,
+	Milestone,
+	ProjectTask,
+	ProjectTaskFilters,
+	RawProjectTaskResource,
+	TaskAssignee,
+	TaskListData,
+} from "../model/project-task-contract";
+export { mapNullableProjectTimeEntryResource, mapProjectTimeEntryList, mapProjectTimeEntryResource } from "../model/project-time-entry-contract";
+export type { LogManualTimePayload, ProjectTimeEntry, ProjectTimeEntryUser, RawProjectTimeEntryResource } from "../model/project-time-entry-contract";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API envelope
@@ -28,128 +109,6 @@ interface ApiEnvelope<T> {
 	data: T;
 	success: boolean;
 	message: string;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TypeScript interfaces — mirror backend Resources exactly
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface TaskAssignee {
-	userId: number;
-	name: string;
-	avatar?: string | null;
-}
-
-export interface TaskDeliverable {
-	deliverableId: number;
-	taskId: number;
-	title: string;
-	isCompleted: boolean;
-	createdAt: string;
-	updatedAt: string;
-}
-
-export interface ProjectTimeEntry {
-	entryId: number;
-	taskId: number;
-	projectId?: number | null;
-	userId: number;
-	startTime: string | null;
-	endTime: string | null;
-	durationMinutes: number | null;
-	isManual: boolean;
-	isRunning: boolean;
-	note: string | null;
-	user?: TaskAssignee | null;
-	task?: {
-		taskId: number;
-		projectId: number;
-		title: string;
-		status: string | null;
-	} | null;
-	project?: {
-		projectId: number;
-		title: string;
-	} | null;
-	createdAt: string;
-	updatedAt: string;
-}
-
-export interface ProjectTask {
-	taskId: number;
-	projectId: number;
-	milestoneId: number | null;
-	// REMOVED: parentId - subtasks are no longer supported
-	title: string;
-	description: string | null;
-	status: string;
-	statusLabel: string | null;
-	priority: TaskPriority;
-	estimatedHours: number | null;
-	startDate?: string | null;
-	dueDate?: string | null;
-	assigneeId: number | null;
-	isInBacklog: boolean;
-	totalLoggedMinutes: number;
-	assignee?: TaskAssignee | null;
-	milestone?: {
-		milestoneId: number;
-		title: string;
-		status: MilestoneStatus | null;
-	} | null;
-	project?: {
-		projectId: number;
-		title: string;
-	} | null;
-	// REMOVED: subtasks - subtasks are no longer supported
-	deliverables?: TaskDeliverable[];
-	timeEntries?: ProjectTimeEntry[];
-	createdAt: string;
-	updatedAt: string;
-}
-
-export interface Milestone {
-	milestoneId: number;
-	projectId: number;
-	title: string;
-	status: MilestoneStatus | null;
-	statusLabel: string | null;
-	progressPercentage: number | null;
-	paymentStageId: number | null;
-	invoiceId: number | null;
-	tasks?: ProjectTask[];
-	createdAt: string;
-	updatedAt: string;
-}
-
-export const CHANGE_REQUEST_STATUSES = ["draft", "sent_to_client", "approved", "rejected"] as const;
-export type ChangeRequestStatusValue = (typeof CHANGE_REQUEST_STATUSES)[number];
-
-export interface ChangeRequest {
-	changeRequestId: number;
-	projectId: number;
-	title: string;
-	description: string | null;
-	price: number;
-	status: ChangeRequestStatusValue | null;
-	statusLabel: string | null;
-	createdAt: string;
-	updatedAt: string;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Task filter shape
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface ProjectTaskFilters {
-	status?: string;
-	priority?: TaskPriority;
-	milestoneId?: number;
-	assigneeId?: number;
-	isInBacklog?: boolean;
-	dueFrom?: string;
-	dueTo?: string;
-	search?: string;
 }
 
 export interface ProjectTimelineFilters {
@@ -256,58 +215,6 @@ export function useMilestones(projectId: number) {
 // Task hooks
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type RawProjectTaskResource = ProjectTask & {
-	parentId?: number | null;
-	subtasks?: unknown[];
-};
-
-interface TaskListData {
-	tasks: RawProjectTaskResource[];
-}
-
-export function mapProjectTaskResource(resource: RawProjectTaskResource): ProjectTask {
-	return {
-		taskId: resource.taskId,
-		projectId: resource.projectId,
-		milestoneId: resource.milestoneId,
-		title: resource.title,
-		description: resource.description,
-		status: resource.status,
-		statusLabel: resource.statusLabel,
-		priority: resource.priority ?? TaskPriority.MEDIUM,
-		estimatedHours: resource.estimatedHours,
-		startDate: resource.startDate,
-		dueDate: resource.dueDate,
-		assigneeId: resource.assigneeId,
-		isInBacklog: resource.isInBacklog,
-		totalLoggedMinutes: resource.totalLoggedMinutes,
-		assignee: resource.assignee,
-		milestone: resource.milestone,
-		project: resource.project,
-		deliverables: resource.deliverables,
-		timeEntries: resource.timeEntries,
-		createdAt: resource.createdAt,
-		updatedAt: resource.updatedAt,
-	};
-}
-
-export function mapProjectTaskListData(taskListData: TaskListData): ProjectTask[] {
-	return taskListData.tasks.map(mapProjectTaskResource);
-}
-
-function buildTaskParams(filters?: ProjectTaskFilters): URLSearchParams {
-	const params = new URLSearchParams();
-	if (filters?.status) params.append("filter[status]", filters.status);
-	if (filters?.priority) params.append("filter[priority]", filters.priority);
-	if (filters?.milestoneId) params.append("filter[milestoneId]", String(filters.milestoneId));
-	if (filters?.assigneeId) params.append("filter[assigneeId]", String(filters.assigneeId));
-	if (typeof filters?.isInBacklog === "boolean") params.append("filter[isInBacklog]", String(filters.isInBacklog));
-	if (filters?.dueFrom) params.append("filter[dueFrom]", filters.dueFrom);
-	if (filters?.dueTo) params.append("filter[dueTo]", filters.dueTo);
-	if (filters?.search) params.append("filter[search]", filters.search);
-	return params;
-}
-
 export function useProjectTasks(projectId: number, filters?: ProjectTaskFilters) {
 	return useQuery({
 		queryKey: executionKeys.tasks(projectId, filters),
@@ -318,8 +225,7 @@ export function useProjectTasks(projectId: number, filters?: ProjectTaskFilters)
 }
 
 export async function getProjectTasks(projectId: number, filters?: ProjectTaskFilters): Promise<ProjectTask[]> {
-	const params = buildTaskParams(filters);
-	const query = params.toString();
+	const query = buildProjectTaskQuery(filters);
 	const url = query ? `/projects/${projectId}/tasks?${query}` : `/projects/${projectId}/tasks`;
 	const response = await api.get<ApiEnvelope<TaskListData>>(url);
 
@@ -365,49 +271,6 @@ export function useProjectTimeline(filters: ProjectTimelineFilters) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Execution Task Status — mirrors backend ExecutionTaskStatus enum exactly
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const ExecutionTaskStatus = {
-	BACKLOG: "backlog",
-	TO_DO: "to_do",
-	IN_PROGRESS: "in_progress",
-	IN_REVIEW: "in_review",
-	QA: "qa",
-	DONE: "done",
-} as const;
-
-export type ExecutionTaskStatusValue = (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus];
-
-export const ExecutionTaskStatusLabels: Record<ExecutionTaskStatusValue, string> = {
-	backlog: "Backlog",
-	to_do: "To Do",
-	in_progress: "In Progress",
-	in_review: "In Review",
-	qa: "QA",
-	done: "Done",
-};
-
-export const ExecutionTaskStatusColors: Record<ExecutionTaskStatusValue, string> = {
-	backlog: "bg-gray-100 text-gray-700 border-gray-200",
-	to_do: "bg-slate-100 text-slate-700 border-slate-200",
-	in_progress: "bg-blue-100 text-blue-700 border-blue-200",
-	in_review: "bg-yellow-100 text-yellow-700 border-yellow-200",
-	qa: "bg-purple-100 text-purple-700 border-purple-200",
-	done: "bg-emerald-100 text-emerald-700 border-emerald-200",
-};
-
-// All statuses except done — used for the status selector
-export const EXECUTION_TASK_STATUS_OPTIONS = [
-	{ value: ExecutionTaskStatus.BACKLOG, label: "Backlog" },
-	{ value: ExecutionTaskStatus.TO_DO, label: "To Do" },
-	{ value: ExecutionTaskStatus.IN_PROGRESS, label: "In Progress" },
-	{ value: ExecutionTaskStatus.IN_REVIEW, label: "In Review" },
-	{ value: ExecutionTaskStatus.QA, label: "QA" },
-	{ value: ExecutionTaskStatus.DONE, label: "Done" },
-] as const;
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Timer toggle hook — fixed invalidation
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -417,8 +280,8 @@ interface ToggleTimerVars {
 }
 
 export async function getActiveProjectTimeEntry(): Promise<ProjectTimeEntry | null> {
-	const response = await api.get<ApiEnvelope<ProjectTimeEntry | null>>("/projects/time-entries/active");
-	return response.data.data;
+	const response = await api.get<ApiEnvelope<RawProjectTimeEntryResource | null>>("/projects/time-entries/active");
+	return mapNullableProjectTimeEntryResource(response.data.data);
 }
 
 export function useActiveProjectTimeEntry() {
@@ -435,8 +298,8 @@ export function useToggleTaskTimer() {
 
 	return useMutation<ProjectTimeEntry, Error, ToggleTimerVars>({
 		mutationFn: async ({ projectId, taskId }) => {
-			const response = await api.post<ApiEnvelope<ProjectTimeEntry>>(`/projects/${projectId}/tasks/${taskId}/time-entries/toggle`);
-			return response.data.data;
+			const response = await api.post<ApiEnvelope<RawProjectTimeEntryResource>>(`/projects/${projectId}/tasks/${taskId}/time-entries/toggle`);
+			return mapProjectTimeEntryResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			// Invalidate tasks (carries timeEntries + totalLoggedMinutes) and milestones (progress)
@@ -492,8 +355,8 @@ export function useToggleDeliverable() {
 
 	return useMutation<TaskDeliverable, Error, ToggleDeliverableVars>({
 		mutationFn: async ({ projectId, taskId, deliverableId }) => {
-			const response = await api.patch<ApiEnvelope<TaskDeliverable>>(`/projects/${projectId}/tasks/${taskId}/deliverables/${deliverableId}/toggle`);
-			return response.data.data;
+			const response = await api.patch<ApiEnvelope<RawTaskDeliverableResource>>(`/projects/${projectId}/tasks/${taskId}/deliverables/${deliverableId}/toggle`);
+			return mapTaskDeliverableResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
@@ -505,35 +368,6 @@ export function useToggleDeliverable() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Change Request hooks
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface ChangeRequestListData {
-	changeRequests: RawChangeRequestResource[];
-}
-
-export type RawChangeRequestResource = ChangeRequest & {
-	internalCost?: unknown;
-	approvedBy?: unknown;
-};
-
-export function mapChangeRequestResource(resource: RawChangeRequestResource): ChangeRequest {
-	return {
-		changeRequestId: resource.changeRequestId,
-		projectId: resource.projectId,
-		title: resource.title,
-		description: resource.description,
-		price: resource.price,
-		status: resource.status,
-		statusLabel: resource.statusLabel,
-		createdAt: resource.createdAt,
-		updatedAt: resource.updatedAt,
-	};
-}
-
-export function mapChangeRequestListData(changeRequestListData: ChangeRequestListData): ChangeRequest[] {
-	return changeRequestListData.changeRequests.map(mapChangeRequestResource);
-}
-
 export async function getProjectChangeRequests(projectId: number): Promise<ChangeRequest[]> {
 	const response = await api.get<ApiEnvelope<ChangeRequestListData>>(`/projects/${projectId}/change-requests`);
 	return mapChangeRequestListData(response.data.data);
@@ -548,16 +382,6 @@ export function useChangeRequests(projectId: number) {
 	});
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Create Change Request mutation
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface CreateChangeRequestPayload {
-	title: string;
-	description: string;
-	price: number;
-}
-
 interface CreateChangeRequestVars {
 	projectId: number;
 	payload: CreateChangeRequestPayload;
@@ -568,8 +392,8 @@ export function useCreateChangeRequest() {
 
 	return useMutation<ChangeRequest, Error, CreateChangeRequestVars>({
 		mutationFn: async ({ projectId, payload }) => {
-			const response = await api.post<ApiEnvelope<ChangeRequest>>(`/projects/${projectId}/change-requests`, payload);
-			return response.data.data;
+			const response = await api.post<ApiEnvelope<RawChangeRequestResource>>(`/projects/${projectId}/change-requests`, payload);
+			return mapChangeRequestResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.changeRequests(projectId) });
@@ -592,8 +416,8 @@ export function useUpdateChangeRequestStatus() {
 
 	return useMutation<ChangeRequest, Error, UpdateChangeRequestStatusVars>({
 		mutationFn: async ({ projectId, changeRequestId, status }) => {
-			const response = await api.patch<ApiEnvelope<ChangeRequest>>(`/projects/${projectId}/change-requests/${changeRequestId}`, { status });
-			return response.data.data;
+			const response = await api.patch<ApiEnvelope<RawChangeRequestResource>>(`/projects/${projectId}/change-requests/${changeRequestId}`, { status });
+			return mapChangeRequestResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.changeRequests(projectId) });
@@ -672,26 +496,12 @@ export function useProjectMembers(projectId: number) {
 	return useQuery({
 		queryKey: projectKeys.members(projectId),
 		queryFn: async () => {
-			const response = await api.get<ApiEnvelope<{ members: ProjectMemberResource[] }>>(`/projects/${projectId}/members`);
-			return response.data.data.members;
+			const response = await api.get<ApiEnvelope<ProjectMemberListData>>(`/projects/${projectId}/members`);
+			return mapProjectMemberListData(response.data.data);
 		},
 		enabled: Number.isFinite(projectId) && projectId > 0,
 		staleTime: 5 * 60 * 1000,
 	});
-}
-
-export interface ProjectMemberResource {
-	memberId: number;
-	projectId: number;
-	userId: number;
-	role: string;
-	user?: {
-		userId: number;
-		name: string;
-		email: string;
-		avatar?: string | null;
-	} | null;
-	createdAt: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -827,8 +637,8 @@ export function useCreateDeliverable() {
 
 	return useMutation<TaskDeliverable, Error, CreateDeliverableVars>({
 		mutationFn: async ({ projectId, taskId, title }) => {
-			const response = await api.post<ApiEnvelope<TaskDeliverable>>(`/projects/${projectId}/tasks/${taskId}/deliverables`, { title });
-			return response.data.data;
+			const response = await api.post<ApiEnvelope<RawTaskDeliverableResource>>(`/projects/${projectId}/tasks/${taskId}/deliverables`, { title });
+			return mapTaskDeliverableResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
@@ -854,8 +664,8 @@ export function useUpdateDeliverable() {
 
 	return useMutation<TaskDeliverable, Error, UpdateDeliverableVars>({
 		mutationFn: async ({ projectId, taskId, deliverableId, title }) => {
-			const response = await api.patch<ApiEnvelope<TaskDeliverable>>(`/projects/${projectId}/tasks/${taskId}/deliverables/${deliverableId}`, { title });
-			return response.data.data;
+			const response = await api.patch<ApiEnvelope<RawTaskDeliverableResource>>(`/projects/${projectId}/tasks/${taskId}/deliverables/${deliverableId}`, { title });
+			return mapTaskDeliverableResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
@@ -915,16 +725,6 @@ export function useUpdateTaskStatus() {
 	});
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Log Manual Time Entry mutation
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface LogManualTimePayload {
-	startTime: string; // ISO datetime string
-	endTime: string; // ISO datetime string
-	note?: string;
-}
-
 interface LogManualTimeVars {
 	projectId: number;
 	taskId: number;
@@ -936,8 +736,8 @@ export function useLogManualTime() {
 
 	return useMutation<ProjectTimeEntry, Error, LogManualTimeVars>({
 		mutationFn: async ({ projectId, taskId, payload }) => {
-			const response = await api.post<ApiEnvelope<ProjectTimeEntry>>(`/projects/${projectId}/tasks/${taskId}/time-entries`, payload);
-			return response.data.data;
+			const response = await api.post<ApiEnvelope<RawProjectTimeEntryResource>>(`/projects/${projectId}/tasks/${taskId}/time-entries`, payload);
+			return mapProjectTimeEntryResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
@@ -957,8 +757,8 @@ export function useUpdateTimeEntry() {
 
 	return useMutation<ProjectTimeEntry, Error, UpdateTimeEntryVars>({
 		mutationFn: async ({ projectId, taskId, entryId, payload }) => {
-			const response = await api.patch<ApiEnvelope<ProjectTimeEntry>>(`/projects/${projectId}/tasks/${taskId}/time-entries/${entryId}`, payload);
-			return response.data.data;
+			const response = await api.patch<ApiEnvelope<RawProjectTimeEntryResource>>(`/projects/${projectId}/tasks/${taskId}/time-entries/${entryId}`, payload);
+			return mapProjectTimeEntryResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
@@ -985,15 +785,6 @@ export function useDeleteTimeEntry() {
 	});
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Add Project Member mutation
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface AddMemberPayload {
-	userId: number;
-	role: string;
-}
-
 interface AddMemberVars {
 	projectId: number;
 	payload: AddMemberPayload;
@@ -1004,8 +795,8 @@ export function useAddProjectMember() {
 
 	return useMutation<ProjectMemberResource, Error, AddMemberVars>({
 		mutationFn: async ({ projectId, payload }) => {
-			const response = await api.post<ApiEnvelope<ProjectMemberResource>>(`/projects/${projectId}/members`, payload);
-			return response.data.data;
+			const response = await api.post<ApiEnvelope<RawProjectMemberResource>>(`/projects/${projectId}/members`, payload);
+			return mapProjectMemberResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
@@ -1037,44 +828,9 @@ export function useRemoveProjectMember() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Project Files hooks
-// ─────────────────────────────────────────────────────────────────────────────
-
-import type { ProjectFile } from "@/entities/project/model/types";
-
 export const fileKeys = {
 	files: (projectId: number) => [...projectKeys.detail(projectId), "files"] as const,
 };
-
-export type RawProjectFileResource = ProjectFile & {
-	isClientVisible?: boolean;
-	isDownloadable?: boolean;
-	visibleToRoles?: string[];
-	createdBy?: number | null;
-	updatedAt?: string;
-};
-
-interface ProjectFileListData {
-	files: RawProjectFileResource[];
-}
-
-export function mapProjectFileResource(resource: RawProjectFileResource): ProjectFile {
-	return {
-		fileId: resource.fileId,
-		projectId: resource.projectId,
-		name: resource.name,
-		type: resource.type,
-		fileUrl: resource.fileUrl,
-		mimeType: resource.mimeType,
-		size: resource.size,
-		description: resource.description,
-		category: resource.category,
-		createdAt: resource.createdAt,
-	};
-}
-
-export function mapProjectFileListData(fileListData: ProjectFileListData): ProjectFile[] {
-	return fileListData.files.map(mapProjectFileResource);
-}
 
 export function useProjectFiles(projectId: number) {
 	return useQuery({
@@ -1096,8 +852,8 @@ export function useUploadProjectFile() {
 
 	return useMutation<ProjectFile, Error, { projectId: number; formData: FormData }>({
 		mutationFn: async ({ projectId, formData }) => {
-			const response = await api.post<ApiEnvelope<ProjectFile>>(`/projects/${projectId}/files`, formData, { headers: { "Content-Type": "multipart/form-data" } });
-			return response.data.data;
+			const response = await api.post<ApiEnvelope<RawProjectFileResource>>(`/projects/${projectId}/files`, formData, { headers: { "Content-Type": "multipart/form-data" } });
+			return mapProjectFileResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			queryClient.invalidateQueries({ queryKey: fileKeys.files(projectId) });
