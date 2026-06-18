@@ -27,6 +27,14 @@ describe("personalTasksApi", () => {
 		expect(mockedApi.get).toHaveBeenCalledWith("/personal-tasks");
 	});
 
+	it("fetches another user's personal tasks for admin views", async () => {
+		mockedApi.get.mockResolvedValueOnce({ data: { data: { tasks: [{ taskId: 3, title: "Employee task" }] } } });
+
+		await expect(personalTasksApi.list({ userId: 42 })).resolves.toEqual([{ taskId: 3, title: "Employee task" }]);
+
+		expect(mockedApi.get).toHaveBeenCalledWith("/personal-tasks?user_id=42");
+	});
+
 	it("creates and completes personal tasks", async () => {
 		mockedApi.post.mockResolvedValueOnce({ data: { data: { taskId: 2, title: "Pray" } } });
 		mockedApi.post.mockResolvedValueOnce({ data: { data: { taskId: 2, status: "done" } } });
@@ -57,5 +65,23 @@ describe("personalTasksApi", () => {
 
 		expect(mockedApi.get).toHaveBeenCalledWith("/personal-tasks/time-entries/active");
 		expect(mockedApi.post).toHaveBeenCalledWith("/personal-tasks/3/time-entries/toggle");
+	});
+
+	it("updates a personal time entry", async () => {
+		mockedApi.patch.mockResolvedValueOnce({ data: { data: { entryId: 9, durationMinutes: 90 } } });
+
+		await expect(
+			personalTasksApi.updateTimeEntry(3, 9, {
+				startTime: "2026-06-18T09:30:00.000Z",
+				endTime: "2026-06-18T11:00:00.000Z",
+				note: "Admin correction",
+			}),
+		).resolves.toEqual({ entryId: 9, durationMinutes: 90 });
+
+		expect(mockedApi.patch).toHaveBeenCalledWith("/personal-tasks/3/time-entries/9", {
+			startTime: "2026-06-18T09:30:00.000Z",
+			endTime: "2026-06-18T11:00:00.000Z",
+			note: "Admin correction",
+		});
 	});
 });

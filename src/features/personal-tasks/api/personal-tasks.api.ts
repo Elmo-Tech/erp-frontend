@@ -69,6 +69,10 @@ interface PersonalTaskListData {
 	tasks: PersonalTask[];
 }
 
+interface PersonalTaskListParams {
+	userId?: number;
+}
+
 export const personalTaskKeys = {
 	all: ["personal-tasks"] as const,
 	list: () => [...personalTaskKeys.all, "list"] as const,
@@ -76,8 +80,9 @@ export const personalTaskKeys = {
 };
 
 export const personalTasksApi = {
-	async list(): Promise<PersonalTask[]> {
-		const response = await api.get<ApiEnvelope<PersonalTaskListData>>("/personal-tasks");
+	async list(params?: PersonalTaskListParams): Promise<PersonalTask[]> {
+		const query = params?.userId ? `?user_id=${params.userId}` : "";
+		const response = await api.get<ApiEnvelope<PersonalTaskListData>>(`/personal-tasks${query}`);
 		return response.data.data.tasks;
 	},
 
@@ -114,11 +119,15 @@ export const personalTasksApi = {
 		const response = await api.post<ApiEnvelope<PersonalTimeEntry>>(`/personal-tasks/${taskId}/time-entries`, payload);
 		return response.data.data;
 	},
+
+	async updateTimeEntry(taskId: number, entryId: number, payload: LogPersonalTimePayload): Promise<PersonalTimeEntry> {
+		const response = await api.patch<ApiEnvelope<PersonalTimeEntry>>(`/personal-tasks/${taskId}/time-entries/${entryId}`, payload);
+		return response.data.data;
+	},
 };
 
 function invalidatePersonalTaskQueries(queryClient: ReturnType<typeof useQueryClient>) {
-	queryClient.invalidateQueries({ queryKey: personalTaskKeys.list() });
-	queryClient.invalidateQueries({ queryKey: personalTaskKeys.activeTimeEntry() });
+	queryClient.invalidateQueries({ queryKey: personalTaskKeys.all });
 	queryClient.invalidateQueries({ queryKey: executionKeys.activeTimeEntry() });
 	queryClient.invalidateQueries({ queryKey: hrKeys.attendance() });
 	queryClient.invalidateQueries({ queryKey: hrKeys.teamPulse() });
@@ -127,9 +136,18 @@ function invalidatePersonalTaskQueries(queryClient: ReturnType<typeof useQueryCl
 export function usePersonalTasks() {
 	return useQuery({
 		queryKey: personalTaskKeys.list(),
-		queryFn: personalTasksApi.list,
+		queryFn: () => personalTasksApi.list(),
 		staleTime: 60 * 1000,
 		refetchInterval: 60 * 1000,
+	});
+}
+
+export function useEmployeePersonalTasks(userId: number, enabled = true) {
+	return useQuery({
+		queryKey: [...personalTaskKeys.all, "employee", userId] as const,
+		queryFn: () => personalTasksApi.list({ userId }),
+		enabled,
+		staleTime: 60 * 1000,
 	});
 }
 
@@ -187,5 +205,14 @@ export function useTogglePersonalTaskTimer() {
 			invalidatePersonalTaskQueries(queryClient);
 			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
 		},
+	});
+}
+
+export function useUpdatePersonalTimeEntry() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ taskId, entryId, payload }: { taskId: number; entryId: number; payload: LogPersonalTimePayload }) => personalTasksApi.updateTimeEntry(taskId, entryId, payload),
+		onSuccess: () => invalidatePersonalTaskQueries(queryClient),
 	});
 }

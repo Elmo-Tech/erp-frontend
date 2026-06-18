@@ -16,17 +16,30 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Clock, Star, AlertTriangle, DollarSign, CheckCircle2, XCircle, TrendingUp, TrendingDown, CalendarDays } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+import { ArrowLeft, Printer, Clock, Star, AlertTriangle, DollarSign, CheckCircle2, XCircle, TrendingUp, TrendingDown, CalendarDays, Pencil } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Form } from "@/shared/ui/form";
+import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
+import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormSelect } from "@/shared/ui/forms/FormSelect";
+import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { Separator } from "@/shared/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { useEmployeeReport } from "@/features/hr/model/use-hr-actions";
+import { hrAdminKeys } from "@/entities/hr/model/query-keys";
+import { useEmployeePersonalTasks, useUpdatePersonalTask, useUpdatePersonalTimeEntry, type PersonalTask, type PersonalTimeEntry, type PersonalTaskStatus } from "@/features/personal-tasks/api/personal-tasks.api";
 import type { AttendanceStatus, ReportAttendanceDay, ReportDeliverableDay, ReportPointEntry } from "@/entities/hr/model/types";
 import { cn } from "@/shared/lib/utils";
+import { TaskPriority, TaskPriorityLabels } from "@/shared/lib/statusHelpers";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -76,6 +89,20 @@ function fmtHours(h: number): string {
 	const hrs = Math.floor(h);
 	const mins = Math.round((h - hrs) * 60);
 	return mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`;
+}
+
+function fmtMinutes(minutes: number | null | undefined): string {
+	if (minutes == null) return "—";
+	const hrs = Math.floor(minutes / 60);
+	const mins = minutes % 60;
+	return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+}
+
+function toDateTimeLocal(value: string | null | undefined): string {
+	if (!value) return "";
+	const date = new Date(value);
+	const pad = (part: number) => String(part).padStart(2, "0");
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -167,6 +194,18 @@ const attendanceColumns: Column<ReportAttendanceDay>[] = [
 		header: "Worked",
 		className: "text-right",
 		render: (d) => <span className="text-xs tabular-nums font-medium">{d.workedHours > 0 ? fmtHours(d.workedHours) : "—"}</span>,
+	},
+	{
+		key: "expected",
+		header: "Expected",
+		className: "text-right",
+		render: (d) => <span className="text-xs tabular-nums text-muted-foreground">{fmtMinutes(d.expectedWorkedMinutes)}</span>,
+	},
+	{
+		key: "stopped",
+		header: "Stopped",
+		className: "text-right",
+		render: (d) => <span className="text-xs tabular-nums text-muted-foreground">{fmtMinutes(d.stoppedMinutes)}</span>,
 	},
 	{
 		key: "late",
@@ -263,6 +302,253 @@ function FinancialRow({ label, value, sign, highlight, muted }: FinancialRowProp
 			</div>
 			<span className={cn("tabular-nums text-sm", isPositive && "text-green-600 font-semibold", isNegative && "text-destructive font-semibold", isTotal && "text-lg font-bold")}>{fmt(value)}</span>
 		</div>
+	);
+}
+
+const adminTaskSchema = z.object({
+	title: z.string().trim().min(1, "Title is required").max(255),
+	description: z.string().optional(),
+	status: z.enum(["todo", "in_progress", "done"]),
+	priority: z.enum(["low", "medium", "high", "urgent"]),
+	dueDate: z.string().optional(),
+	estimatedMinutes: z.string().optional(),
+});
+
+const timeEntrySchema = z.object({
+	startTime: z.string().min(1, "Start time is required"),
+	endTime: z.string().min(1, "End time is required"),
+	note: z.string().optional(),
+});
+
+type AdminTaskFormData = z.infer<typeof adminTaskSchema>;
+type TimeEntryFormData = z.infer<typeof timeEntrySchema>;
+
+const PERSONAL_TASK_STATUS_LABELS: Record<PersonalTaskStatus, string> = {
+	todo: "To Do",
+	in_progress: "In Progress",
+	done: "Done",
+};
+
+function AdminPersonalTasksCard({ userId, month, year }: { userId: number; month: number; year: number }) {
+	const queryClient = useQueryClient();
+	const tasksQuery = useEmployeePersonalTasks(userId);
+	const updateTask = useUpdatePersonalTask();
+	const updateEntry = useUpdatePersonalTimeEntry();
+	const [editingTask, setEditingTask] = useState<PersonalTask | null>(null);
+	const [editingEntry, setEditingEntry] = useState<{ task: PersonalTask; entry: PersonalTimeEntry } | null>(null);
+
+	const taskForm = useForm<AdminTaskFormData>({
+		resolver: zodResolver(adminTaskSchema),
+		defaultValues: {
+			title: "",
+			description: "",
+			status: "todo",
+			priority: "medium",
+			dueDate: "",
+			estimatedMinutes: "",
+		},
+	});
+	const entryForm = useForm<TimeEntryFormData>({
+		resolver: zodResolver(timeEntrySchema),
+		defaultValues: {
+			startTime: "",
+			endTime: "",
+			note: "",
+		},
+	});
+
+	const openTaskEditor = (task: PersonalTask) => {
+		setEditingTask(task);
+		taskForm.reset({
+			title: task.title,
+			description: task.description ?? "",
+			status: task.status,
+			priority: task.priority,
+			dueDate: task.dueDate ?? "",
+			estimatedMinutes: task.estimatedMinutes ? String(task.estimatedMinutes) : "",
+		});
+	};
+
+	const openEntryEditor = (task: PersonalTask, entry: PersonalTimeEntry) => {
+		setEditingEntry({ task, entry });
+		entryForm.reset({
+			startTime: toDateTimeLocal(entry.startTime),
+			endTime: toDateTimeLocal(entry.endTime),
+			note: entry.note ?? "",
+		});
+	};
+
+	const refreshReport = () => {
+		queryClient.invalidateQueries({ queryKey: hrAdminKeys.employeeReport(userId, month, year) });
+	};
+
+	const submitTask = taskForm.handleSubmit((data) => {
+		if (!editingTask) return;
+
+		updateTask.mutate(
+			{
+				taskId: editingTask.taskId,
+				payload: {
+					title: data.title,
+					description: data.description?.trim() || null,
+					status: data.status,
+					priority: data.priority,
+					dueDate: data.dueDate || null,
+					estimatedMinutes: data.estimatedMinutes ? Number(data.estimatedMinutes) : null,
+				},
+			},
+			{
+				onSuccess: () => {
+					setEditingTask(null);
+					refreshReport();
+					toast.success("Personal task updated");
+				},
+				onError: () => toast.error("Failed to update personal task"),
+			},
+		);
+	});
+
+	const submitEntry = entryForm.handleSubmit((data) => {
+		if (!editingEntry) return;
+
+		updateEntry.mutate(
+			{
+				taskId: editingEntry.task.taskId,
+				entryId: editingEntry.entry.entryId,
+				payload: {
+					startTime: new Date(data.startTime).toISOString(),
+					endTime: new Date(data.endTime).toISOString(),
+					note: data.note?.trim() || null,
+				},
+			},
+			{
+				onSuccess: () => {
+					setEditingEntry(null);
+					refreshReport();
+					toast.success("Time log updated");
+				},
+				onError: () => toast.error("Failed to update time log"),
+			},
+		);
+	});
+
+	const tasks = tasksQuery.data ?? [];
+
+	return (
+		<Card className="print-avoid-break">
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<Clock className="h-4 w-4 text-cyan-600" />
+					Personal Tasks &amp; Time Logs
+					<Badge variant="outline" className="ml-auto text-xs">
+						{tasks.length} tasks
+					</Badge>
+				</CardTitle>
+			</CardHeader>
+			<CardContent>
+				{tasksQuery.isLoading ? (
+					<p className="py-6 text-center text-sm text-muted-foreground">Loading personal tasks...</p>
+				) : tasksQuery.error ? (
+					<p className="py-6 text-center text-sm text-destructive">Failed to load personal tasks.</p>
+				) : tasks.length === 0 ? (
+					<p className="py-6 text-center text-sm text-muted-foreground">No personal tasks for this employee.</p>
+				) : (
+					<div className="divide-y rounded-md border">
+						{tasks.map((task) => (
+							<div key={task.taskId} className="space-y-3 p-3">
+								<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+									<div className="min-w-0">
+										<p className="truncate text-sm font-medium">{task.title}</p>
+										<div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+											<Badge variant={task.status === "done" ? "secondary" : "outline"}>{PERSONAL_TASK_STATUS_LABELS[task.status]}</Badge>
+											<Badge variant="outline">{TaskPriorityLabels[task.priority]}</Badge>
+											<span>{task.dueDate ?? "No due date"}</span>
+											<span>{fmtMinutes(task.totalLoggedMinutes)} logged</span>
+										</div>
+									</div>
+									<Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => openTaskEditor(task)}>
+										<Pencil className="h-3.5 w-3.5" />
+										Edit Task
+									</Button>
+								</div>
+
+								{task.timeEntries?.length ? (
+									<div className="space-y-2">
+										{task.timeEntries.map((entry) => (
+											<div key={entry.entryId} className="flex flex-col gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between">
+												<div className="min-w-0">
+													<p className="font-medium tabular-nums">
+														{toDateTimeLocal(entry.startTime).replace("T", " ")} - {entry.endTime ? toDateTimeLocal(entry.endTime).replace("T", " ") : "Running"}
+													</p>
+													<p className="truncate text-muted-foreground">
+														{fmtMinutes(entry.durationMinutes)}
+														{entry.note ? ` · ${entry.note}` : ""}
+													</p>
+												</div>
+												<Button type="button" variant="ghost" size="sm" className="gap-2" disabled={!entry.endTime} onClick={() => openEntryEditor(task, entry)}>
+													<Pencil className="h-3.5 w-3.5" />
+													Edit Log
+												</Button>
+											</div>
+										))}
+									</div>
+								) : (
+									<p className="text-xs text-muted-foreground">No time logs for this task.</p>
+								)}
+							</div>
+						))}
+					</div>
+				)}
+			</CardContent>
+
+			<FormDialog open={Boolean(editingTask)} onOpenChange={(open) => !open && setEditingTask(null)} title="Edit Personal Task" submitLabel="Save Task" isLoading={updateTask.isPending} onSubmit={submitTask} size="md">
+				<Form {...taskForm}>
+					<div className="flex flex-col gap-4">
+						<FormInput control={taskForm.control} name="title" label="Task title" />
+						<FormTextarea control={taskForm.control} name="description" label="Description" rows={3} />
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+							<FormSelect
+								control={taskForm.control}
+								name="status"
+								label="Status"
+								options={[
+									{ value: "todo", label: "To Do" },
+									{ value: "in_progress", label: "In Progress" },
+									{ value: "done", label: "Done" },
+								]}
+							/>
+							<FormSelect
+								control={taskForm.control}
+								name="priority"
+								label="Priority"
+								options={[
+									{ value: TaskPriority.LOW, label: TaskPriorityLabels[TaskPriority.LOW] },
+									{ value: TaskPriority.MEDIUM, label: TaskPriorityLabels[TaskPriority.MEDIUM] },
+									{ value: TaskPriority.HIGH, label: TaskPriorityLabels[TaskPriority.HIGH] },
+									{ value: TaskPriority.URGENT, label: TaskPriorityLabels[TaskPriority.URGENT] },
+								]}
+							/>
+						</div>
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+							<FormInput control={taskForm.control} name="dueDate" label="Due date" type="date" />
+							<FormInput control={taskForm.control} name="estimatedMinutes" label="Estimated minutes" type="number" min={1} />
+						</div>
+					</div>
+				</Form>
+			</FormDialog>
+
+			<FormDialog open={Boolean(editingEntry)} onOpenChange={(open) => !open && setEditingEntry(null)} title="Edit Time Log" submitLabel="Save Log" isLoading={updateEntry.isPending} onSubmit={submitEntry} size="md">
+				<Form {...entryForm}>
+					<div className="flex flex-col gap-4">
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+							<FormInput control={entryForm.control} name="startTime" label="Start time" type="datetime-local" />
+							<FormInput control={entryForm.control} name="endTime" label="End time" type="datetime-local" />
+						</div>
+						<FormTextarea control={entryForm.control} name="note" label="Note" rows={3} />
+					</div>
+				</Form>
+			</FormDialog>
+		</Card>
 	);
 }
 
@@ -546,6 +832,12 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 								)}
 							</CardContent>
 						</Card>
+
+						<AdminPersonalTasksCard
+							userId={userId}
+							month={month}
+							year={year}
+						/>
 
 						{/* ── CARD 4: Deliverables & QA ────────────────────────── */}
 						<Card className="print-avoid-break">

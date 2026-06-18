@@ -367,6 +367,9 @@ export interface ReportAttendanceDay {
 	clockIn: string | null; // "09:05"
 	clockOut: string | null; // "17:30"
 	workedHours: number; // decimal hours, e.g. 8.25
+	actualWorkedMinutes: number;
+	expectedWorkedMinutes: number;
+	stoppedMinutes: number;
 	lateMinutes: number;
 	status: AttendanceStatus;
 	usedGraceDay: boolean;
