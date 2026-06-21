@@ -6,21 +6,25 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Activity, ExternalLink, ListTodo, Loader2, LogIn, LogOut, Menu, Moon, Play, Search, Square, Sun, Timer, User } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { authApi } from "@/features/auth/api/auth.api";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useActiveTimeEntryStore } from "@/features/time-tracking/model/active-time-entry.store";
 import { elapsedSecondsSince, formatElapsedTime } from "@/features/time-tracking/model/timer-format";
-import { useActivePersonalTimeEntry, usePersonalTasks, useTogglePersonalTaskTimer } from "@/features/personal-tasks/api/personal-tasks.api";
+import { useActivePersonalTimeEntry, useEmployeePersonalTasks, usePersonalTasks, useStopPersonalTimeEntry, useTogglePersonalTaskTimer, useUpdatePersonalTask, type PersonalTask } from "@/features/personal-tasks/api/personal-tasks.api";
 import { useActiveProjectTimeEntry, useMyActiveProjectTasks, useToggleTaskTimer } from "@/features/projects/api/execution.api";
 import { useCheckInMutation, useCheckOutMutation, useTeamPulse, useTodayAttendance } from "@/features/hr/model/use-hr-actions";
 import type { TeamPulseItem } from "@/entities/hr/model/types";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
 import { Button } from "@/shared/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
+import { Badge } from "@/shared/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { SystemNotificationsDropdown } from "@/widgets/system-notifications/ui/SystemNotificationsDropdown";
 import { Can } from "@/shared/ui/Can";
+import { cn } from "@/shared/lib/utils";
+import { TaskPriorityColors, TaskPriorityLabels } from "@/shared/lib/statusHelpers";
 
 export function DashboardNavbar() {
     const router = useRouter();
@@ -60,7 +64,7 @@ export function DashboardNavbar() {
             <div className="flex items-center gap-2">
                 <AttendanceStatusPill />
                 <ActiveTimerPill />
-                <Can permission={["manage_all_projects", "manage_users"]}>
+                <Can permission={["manage_all_projects", "manage_users", "manage_employees", "manage_team_timers"]}>
                     <TeamPulsePopover />
                 </Can>
 
@@ -307,6 +311,24 @@ function formatAttendanceTime(value: string | null | undefined) {
     }).format(new Date(value));
 }
 
+function formatLoggedMinutes(minutes: number) {
+    if (minutes <= 0) return "0m";
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+}
+
+function formatTaskDueDate(value: string | null | undefined) {
+    if (!value) return "No due date";
+    return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function personalTaskStatusLabel(task: PersonalTask) {
+    if (task.status === "done") return "Done";
+    if (task.status === "in_progress") return "In Progress";
+    return "To Do";
+}
+
 function AttendanceStatusPill() {
     const todayQuery = useTodayAttendance();
     const checkIn = useCheckInMutation();
@@ -356,6 +378,8 @@ function TeamPulsePopover() {
 
 function TeamPulseContent() {
     const pulseQuery = useTeamPulse();
+    const canViewEmployeePersonalTasks = useAuthStore((s) => s.hasPermission("manage_employees"));
+    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [now, setNow] = useState(() => Date.now());
 
     useEffect(() => {
@@ -363,8 +387,29 @@ function TeamPulseContent() {
         return () => window.clearInterval(id);
     }, []);
 
-    const pulse = pulseQuery.data ?? [];
+    const pulse = useMemo(() => pulseQuery.data ?? [], [pulseQuery.data]);
+    const selectedItem = useMemo(() => pulse.find((item) => item.user?.id === selectedUserId) ?? null, [pulse, selectedUserId]);
+    const selectedEmployeeTasks = useEmployeePersonalTasks(selectedItem?.user?.id ?? 0, Boolean(selectedItem?.user?.id && canViewEmployeePersonalTasks));
+    const stopPersonalTimeEntry = useStopPersonalTimeEntry();
+    const updatePersonalTask = useUpdatePersonalTask();
     const clockedInCount = pulse.filter((item) => item.status === "clocked_in").length;
+
+    const handleStopPersonalTimer = (entryId: number) => {
+        stopPersonalTimeEntry.mutate(entryId, {
+            onSuccess: () => toast.success("Personal timer stopped."),
+            onError: () => toast.error("Failed to stop personal timer."),
+        });
+    };
+
+    const handleTaskStatus = (task: PersonalTask, status: PersonalTask["status"]) => {
+        updatePersonalTask.mutate(
+            { taskId: task.taskId, payload: { status } },
+            {
+                onSuccess: () => toast.success("Personal task updated."),
+                onError: () => toast.error("Failed to update personal task."),
+            },
+        );
+    };
 
     return (
         <div>
@@ -374,7 +419,7 @@ function TeamPulseContent() {
                     {clockedInCount} clocked in / {pulse.length} team members
                 </p>
             </div>
-            <div className="max-h-80 overflow-y-auto p-2">
+            <div className="max-h-72 overflow-y-auto p-2">
                 {pulseQuery.isLoading ? (
                     <div className="flex items-center justify-center gap-2 px-4 py-8 text-sm text-muted-foreground">
                         <Loader2 className="size-4 animate-spin" />
@@ -383,29 +428,115 @@ function TeamPulseContent() {
                 ) : pulse.length ? (
                     <div className="space-y-1">
                         {pulse.map((item) => (
-                            <TeamPulseRow key={item.user?.id ?? item.attendanceId} item={item} now={now} />
+                            <TeamPulseRow
+                                key={item.user?.id ?? item.attendanceId}
+                                item={item}
+                                now={now}
+                                selected={item.user?.id === selectedUserId}
+                                onSelect={() => setSelectedUserId((current) => (current === item.user?.id ? null : item.user?.id ?? null))}
+                            />
                         ))}
                     </div>
                 ) : (
                     <div className="px-4 py-8 text-center text-sm text-muted-foreground">No team members found.</div>
                 )}
             </div>
+            {selectedItem?.user && (
+                <div className="border-t p-3">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{selectedItem.user.name}</p>
+                            <p className="truncate text-xs text-muted-foreground">{selectedItem.activeTaskTitle ? `Active: ${selectedItem.activeTaskTitle}` : "No active task"}</p>
+                        </div>
+                        {selectedItem.activeTaskSource === "personal" && selectedItem.activeTimeEntryId && (
+                            <Can permission="manage_team_timers">
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="shrink-0 gap-2"
+                                    disabled={stopPersonalTimeEntry.isPending}
+                                    onClick={() => handleStopPersonalTimer(selectedItem.activeTimeEntryId!)}
+                                >
+                                    {stopPersonalTimeEntry.isPending ? <Loader2 className="size-4 animate-spin" /> : <Square className="size-4" />}
+                                    Stop
+                                </Button>
+                            </Can>
+                        )}
+                    </div>
+
+                    {!canViewEmployeePersonalTasks ? (
+                        <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">You need employee management permission to view personal tasks.</div>
+                    ) : selectedEmployeeTasks.isLoading ? (
+                        <div className="flex items-center justify-center gap-2 rounded-md border border-dashed px-4 py-6 text-sm text-muted-foreground">
+                            <Loader2 className="size-4 animate-spin" />
+                            Loading personal tasks
+                        </div>
+                    ) : selectedEmployeeTasks.data?.length ? (
+                        <div className="max-h-64 space-y-2 overflow-y-auto">
+                            {selectedEmployeeTasks.data.map((task) => (
+                                <TeamPersonalTaskRow
+                                    key={task.taskId}
+                                    task={task}
+                                    disabled={updatePersonalTask.isPending}
+                                    onStatusChange={handleTaskStatus}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">No personal tasks for this team member.</div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
 
-function TeamPulseRow({ item, now }: { item: TeamPulseItem; now: number }) {
+function TeamPulseRow({ item, now, selected, onSelect }: { item: TeamPulseItem; now: number; selected: boolean; onSelect: () => void }) {
     const name = item.user?.name ?? "Someone";
     const elapsed = useMemo(() => formatElapsedTime(elapsedSecondsSince(item.timerStartedAt, now)), [item.timerStartedAt, now]);
     const message = item.activeTaskTitle ? `${name} is working on ${item.activeTaskTitle} (${elapsed})` : item.status === "clocked_in" ? `${name} is clocked in but idle` : `${name} is idle`;
 
     return (
-        <div className="rounded-md px-3 py-2 hover:bg-muted/50">
+        <button type="button" className={cn("w-full rounded-md px-3 py-2 text-left hover:bg-muted/50", selected && "bg-muted")} onClick={onSelect}>
             <div className="flex items-start justify-between gap-3">
                 <p className="text-sm leading-5">{message}</p>
                 <span className={item.status === "clocked_in" ? "mt-1 size-2 rounded-full bg-emerald-500" : "mt-1 size-2 rounded-full bg-slate-300"} />
             </div>
             {item.activeProjectTitle && <p className="mt-0.5 text-xs text-muted-foreground">{item.activeProjectTitle}</p>}
+        </button>
+    );
+}
+
+function TeamPersonalTaskRow({ task, disabled, onStatusChange }: { task: PersonalTask; disabled: boolean; onStatusChange: (task: PersonalTask, status: PersonalTask["status"]) => void }) {
+    const isDone = task.status === "done";
+
+    return (
+        <div className="rounded-md border px-3 py-2">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{task.title}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <Badge variant={isDone ? "secondary" : "outline"} className="text-[10px]">
+                            {personalTaskStatusLabel(task)}
+                        </Badge>
+                        <Badge variant="outline" className={cn("text-[10px]", TaskPriorityColors[task.priority])}>
+                            {TaskPriorityLabels[task.priority]}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{formatTaskDueDate(task.dueDate)}</span>
+                        <span className="text-xs tabular-nums text-muted-foreground">{formatLoggedMinutes(task.totalLoggedMinutes)}</span>
+                    </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                    {!isDone && (
+                        <Can permission="manage_employees">
+                            <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => onStatusChange(task, task.status === "todo" ? "in_progress" : "done")}>
+                                {task.status === "todo" ? "In Progress" : "Done"}
+                            </Button>
+                        </Can>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

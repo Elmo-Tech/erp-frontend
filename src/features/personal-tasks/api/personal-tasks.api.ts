@@ -124,6 +124,11 @@ export const personalTasksApi = {
 		const response = await api.patch<ApiEnvelope<PersonalTimeEntry>>(`/personal-tasks/${taskId}/time-entries/${entryId}`, payload);
 		return response.data.data;
 	},
+
+	async stopTimeEntry(entryId: number): Promise<PersonalTimeEntry> {
+		const response = await api.patch<ApiEnvelope<PersonalTimeEntry>>(`/personal-tasks/time-entries/${entryId}/stop`);
+		return response.data.data;
+	},
 };
 
 function invalidatePersonalTaskQueries(queryClient: ReturnType<typeof useQueryClient>) {
@@ -214,5 +219,17 @@ export function useUpdatePersonalTimeEntry() {
 	return useMutation({
 		mutationFn: ({ taskId, entryId, payload }: { taskId: number; entryId: number; payload: LogPersonalTimePayload }) => personalTasksApi.updateTimeEntry(taskId, entryId, payload),
 		onSuccess: () => invalidatePersonalTaskQueries(queryClient),
+	});
+}
+
+export function useStopPersonalTimeEntry() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: personalTasksApi.stopTimeEntry,
+		onSuccess: () => {
+			invalidatePersonalTaskQueries(queryClient);
+			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
+		},
 	});
 }

@@ -84,4 +84,16 @@ describe("personalTasksApi", () => {
 			note: "Admin correction",
 		});
 	});
+
+	it("stops a personal time entry for team timer management", async () => {
+		mockedApi.patch.mockResolvedValueOnce({ data: { data: { entryId: 9, isRunning: false, durationMinutes: 25 } } });
+
+		await expect(personalTasksApi.stopTimeEntry(9)).resolves.toEqual({
+			entryId: 9,
+			isRunning: false,
+			durationMinutes: 25,
+		});
+
+		expect(mockedApi.patch).toHaveBeenCalledWith("/personal-tasks/time-entries/9/stop");
+	});
 });
