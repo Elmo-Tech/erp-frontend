@@ -62,12 +62,20 @@ import {
 	type TaskListData,
 } from "../model/project-task-contract";
 import {
+	buildProjectTimelineQuery,
+	mapProjectTimelineResponse,
+	type ProjectTimelineFilters,
+	type ProjectTimelineResponse,
+	type RawProjectTimelineResponse,
+} from "../model/project-timeline-contract";
+import {
 	mapNullableProjectTimeEntryResource,
 	mapProjectTimeEntryResource,
 	type LogManualTimePayload,
 	type ProjectTimeEntry,
 	type RawProjectTimeEntryResource,
 } from "../model/project-time-entry-contract";
+import { mapProjectHistoryListData, type ProjectHistoryListData } from "../model/project-history-contract";
 
 export { CHANGE_REQUEST_STATUSES, mapChangeRequestListData, mapChangeRequestResource } from "../model/project-change-request-contract";
 export type {
@@ -100,8 +108,24 @@ export type {
 	TaskAssignee,
 	TaskListData,
 } from "../model/project-task-contract";
+export { buildProjectTimelineQuery, mapProjectTimelineResponse } from "../model/project-timeline-contract";
+export type {
+	ProjectTimelineConflict,
+	ProjectTimelineFilters,
+	ProjectTimelineItem,
+	ProjectTimelineResponse,
+	ProjectTimelineSuggestion,
+	ProjectTimelineUser,
+	RawProjectTimelineConflict,
+	RawProjectTimelineItem,
+	RawProjectTimelineResponse,
+	RawProjectTimelineSuggestion,
+	RawProjectTimelineUser,
+} from "../model/project-timeline-contract";
 export { mapNullableProjectTimeEntryResource, mapProjectTimeEntryList, mapProjectTimeEntryResource } from "../model/project-time-entry-contract";
 export type { LogManualTimePayload, ProjectTimeEntry, ProjectTimeEntryUser, RawProjectTimeEntryResource } from "../model/project-time-entry-contract";
+export { mapProjectHistoryEntry, mapProjectHistoryListData } from "../model/project-history-contract";
+export type { ProjectHistoryChangedByUser, ProjectHistoryEntry, ProjectHistoryListData, RawProjectHistoryEntry } from "../model/project-history-contract";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // API envelope
@@ -111,73 +135,6 @@ interface ApiEnvelope<T> {
 	data: T;
 	success: boolean;
 	message: string;
-}
-
-export interface ProjectTimelineFilters {
-	startDate: string;
-	endDate: string;
-	projectIds?: number[];
-	userIds?: number[];
-	status?: string;
-	overloadOnly?: boolean;
-}
-
-export interface ProjectTimelineUser {
-	userId: number;
-	name: string;
-	avatar?: string | null;
-	dailyCapacityHoursByDate: Record<string, number>;
-}
-
-export interface ProjectTimelineItem {
-	taskId: number;
-	projectId: number;
-	projectTitle: string | null;
-	title: string;
-	assigneeId: number | null;
-	startDate: string | null;
-	dueDate: string | null;
-	estimatedHours: number | null;
-	status: string | null;
-	allocatedHoursByDate: Record<string, number>;
-}
-
-export interface ProjectTimelineConflict {
-	userId: number;
-	date: string;
-	capacityHours: number;
-	allocatedHours: number;
-	overloadHours: number;
-	taskIds: number[];
-}
-
-export interface ProjectTimelineSuggestion {
-	type: "reschedule" | "reassign";
-	risk: "low" | "medium" | "high";
-	taskId: number;
-	reason: string;
-	current: {
-		startDate: string | null;
-		dueDate: string | null;
-		assigneeId: number | null;
-	};
-	suggested: {
-		startDate: string | null;
-		dueDate: string | null;
-		assigneeId: number | null;
-		assigneeName?: string | null;
-	};
-}
-
-export interface ProjectTimelineResponse {
-	range: {
-		startDate: string;
-		endDate: string;
-	};
-	users: ProjectTimelineUser[];
-	items: ProjectTimelineItem[];
-	conflicts: ProjectTimelineConflict[];
-	suggestions: ProjectTimelineSuggestion[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -272,19 +229,10 @@ export function useMyActiveProjectTasks() {
 	});
 }
 
-function buildTimelineParams(filters: ProjectTimelineFilters): URLSearchParams {
-	const params = new URLSearchParams();
-	params.append("startDate", filters.startDate);
-	params.append("endDate", filters.endDate);
-	for (const projectId of filters.projectIds ?? []) params.append("projectIds[]", String(projectId));
-	for (const userId of filters.userIds ?? []) params.append("userIds[]", String(userId));
-	return params;
-}
-
 export async function getProjectTimeline(filters: ProjectTimelineFilters): Promise<ProjectTimelineResponse> {
-	const params = buildTimelineParams(filters);
-	const response = await api.get<ApiEnvelope<ProjectTimelineResponse>>(`/projects/timeline?${params.toString()}`);
-	return response.data.data;
+	const query = buildProjectTimelineQuery(filters);
+	const response = await api.get<ApiEnvelope<RawProjectTimelineResponse>>(`/projects/timeline?${query}`);
+	return mapProjectTimelineResponse(response.data.data);
 }
 
 export function useProjectTimeline(filters: ProjectTimelineFilters) {
@@ -489,27 +437,6 @@ export function useDeleteChangeRequest() {
 // Project History (Activity) hooks
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface ProjectHistoryEntry {
-	historyId: number;
-	projectId: number;
-	fieldName: string;
-	oldValue: string;
-	newValue: string;
-	reason: string;
-	changedBy: number;
-	changedByUser?: {
-		userId: number;
-		name: string;
-		email: string;
-	} | null;
-	createdAt: string;
-	updatedAt: string;
-}
-
-interface ProjectHistoryListData {
-	histories: ProjectHistoryEntry[];
-}
-
 export const historyKeys = {
 	history: (projectId: number) => [...projectKeys.detail(projectId), "history"] as const,
 };
@@ -519,7 +446,7 @@ export function useProjectHistory(projectId: number) {
 		queryKey: historyKeys.history(projectId),
 		queryFn: async () => {
 			const response = await api.get<ApiEnvelope<ProjectHistoryListData>>(`/projects/${projectId}/history`);
-			return response.data.data.histories;
+			return mapProjectHistoryListData(response.data.data);
 		},
 		enabled: Number.isFinite(projectId) && projectId > 0,
 		staleTime: 2 * 60 * 1000,
