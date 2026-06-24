@@ -23,6 +23,9 @@ export const SYSTEM_PERMISSIONS = [
 	// ── HR & Finance ─────────────────────────────────────────────────────────
 	"manage_hr",
 	"manage_payroll",
+	"manage_points",
+	"award_points",
+	"deduct_points",
 	"view_reports",
 	"manage_invoices",
 	"manage_subscriptions",
