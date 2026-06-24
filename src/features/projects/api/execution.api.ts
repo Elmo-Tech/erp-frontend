@@ -14,7 +14,7 @@
  * All endpoints are scoped under /api/v1/projects/{project}/...
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/base";
 import { projectKeys } from "@/entities/project/model/query-keys";
 import { hrKeys } from "@/entities/hr/model/query-keys";
@@ -50,6 +50,8 @@ import {
 } from "../model/project-member-contract";
 import {
 	buildProjectTaskQuery,
+	ExecutionTaskStatus,
+	ExecutionTaskStatusLabels,
 	mapProjectTaskListData,
 	mapProjectTaskResource,
 	type ExecutionTaskStatusValue,
@@ -184,12 +186,36 @@ export interface ProjectTimelineResponse {
 
 export const executionKeys = {
 	milestones: (projectId: number) => [...projectKeys.detail(projectId), "milestones"] as const,
+	taskLists: (projectId: number) => [...projectKeys.detail(projectId), "tasks"] as const,
 	tasks: (projectId: number, filters?: ProjectTaskFilters) => [...projectKeys.detail(projectId), "tasks", filters] as const,
 	changeRequests: (projectId: number) => [...projectKeys.detail(projectId), "change-requests"] as const,
 	activeTimeEntry: () => ["project-execution", "time-entries", "active"] as const,
 	myActiveTasks: () => ["project-execution", "tasks", "my-active"] as const,
 	timeline: (filters: ProjectTimelineFilters) => ["project-execution", "timeline", filters] as const,
 };
+
+function invalidateProjectTaskLists(queryClient: QueryClient, projectId: number) {
+	queryClient.invalidateQueries({ queryKey: executionKeys.taskLists(projectId) });
+}
+
+function updateCachedProjectTask(queryClient: QueryClient, projectId: number, taskId: number, updater: (task: ProjectTask) => ProjectTask) {
+	queryClient.setQueriesData<ProjectTask[]>({ queryKey: executionKeys.taskLists(projectId) }, (tasks) => {
+		if (!tasks) return tasks;
+		return tasks.map((task) => (task.taskId === taskId ? updater(task) : task));
+	});
+
+	queryClient.setQueryData<ProjectTask[]>(executionKeys.myActiveTasks(), (tasks) => {
+		if (!tasks) return tasks;
+		return tasks.map((task) => (task.taskId === taskId ? updater(task) : task));
+	});
+}
+
+function replaceCachedProjectTask(queryClient: QueryClient, task: ProjectTask) {
+	updateCachedProjectTask(queryClient, task.projectId, task.taskId, (current) => ({
+		...current,
+		...task,
+	}));
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Milestone hooks
@@ -301,9 +327,20 @@ export function useToggleTaskTimer() {
 			const response = await api.post<ApiEnvelope<RawProjectTimeEntryResource>>(`/projects/${projectId}/tasks/${taskId}/time-entries/toggle`);
 			return mapProjectTimeEntryResource(response.data.data);
 		},
-		onSuccess: (_data, { projectId }) => {
+		onSuccess: (entry, { projectId, taskId }) => {
+			if (entry.isRunning) {
+				updateCachedProjectTask(queryClient, projectId, taskId, (task) =>
+					task.status === ExecutionTaskStatus.TO_DO || task.status === ExecutionTaskStatus.BACKLOG
+						? {
+								...task,
+								status: ExecutionTaskStatus.IN_PROGRESS,
+								statusLabel: ExecutionTaskStatusLabels[ExecutionTaskStatus.IN_PROGRESS],
+							}
+						: task,
+				);
+			}
 			// Invalidate tasks (carries timeEntries + totalLoggedMinutes) and milestones (progress)
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: executionKeys.activeTimeEntry() });
 			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
@@ -331,9 +368,10 @@ export function useCompleteTask() {
 			const response = await api.post<ApiEnvelope<ProjectTask>>(`/projects/${projectId}/tasks/${taskId}/complete`);
 			return response.data.data;
 		},
-		onSuccess: (_data, { projectId }) => {
+		onSuccess: (task, { projectId }) => {
+			replaceCachedProjectTask(queryClient, task);
 			// Refresh tasks and milestones — completion updates milestone progress
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 		},
@@ -359,7 +397,7 @@ export function useToggleDeliverable() {
 			return mapTaskDeliverableResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 		},
@@ -567,7 +605,7 @@ export function useCreateTask() {
 			return response.data.data;
 		},
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 		},
@@ -590,8 +628,9 @@ export function useUpdateProjectTask() {
 
 	return useMutation<ProjectTask, Error, UpdateTaskVars>({
 		mutationFn: ({ projectId, taskId, payload }) => updateProjectTask(projectId, taskId, payload),
-		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+		onSuccess: (task, { projectId }) => {
+			replaceCachedProjectTask(queryClient, task);
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
@@ -614,7 +653,7 @@ export function useDeleteProjectTask() {
 	return useMutation<void, Error, DeleteTaskVars>({
 		mutationFn: ({ projectId, taskId }) => deleteProjectTask(projectId, taskId),
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
@@ -641,7 +680,7 @@ export function useCreateDeliverable() {
 			return mapTaskDeliverableResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 		},
@@ -668,7 +707,7 @@ export function useUpdateDeliverable() {
 			return mapTaskDeliverableResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 		},
@@ -689,7 +728,7 @@ export function useDeleteDeliverable() {
 			await api.delete(`/projects/${projectId}/tasks/${taskId}/deliverables/${deliverableId}`);
 		},
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 		},
@@ -718,8 +757,12 @@ export function useUpdateTaskStatus() {
 			const response = await api.patch<ApiEnvelope<ProjectTask>>(`/projects/${projectId}/tasks/${taskId}`, payload);
 			return response.data.data;
 		},
-		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+		onSuccess: (task, { projectId }) => {
+			replaceCachedProjectTask(queryClient, task);
+			if (task.status === ExecutionTaskStatus.DONE) {
+				queryClient.setQueryData<ProjectTask[]>(executionKeys.myActiveTasks(), (tasks) => tasks?.filter((item) => item.taskId !== task.taskId));
+			}
+			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 		},
 	});
@@ -740,7 +783,7 @@ export function useLogManualTime() {
 			return mapProjectTimeEntryResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 		},
 	});
 }
@@ -761,7 +804,7 @@ export function useUpdateTimeEntry() {
 			return mapProjectTimeEntryResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 		},
 	});
 }
@@ -780,7 +823,7 @@ export function useDeleteTimeEntry() {
 			await api.delete(`/projects/${projectId}/tasks/${taskId}/time-entries/${entryId}`);
 		},
 		onSuccess: (_data, { projectId }) => {
-			queryClient.invalidateQueries({ queryKey: executionKeys.tasks(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
 		},
 	});
 }

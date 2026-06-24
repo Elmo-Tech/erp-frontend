@@ -25,6 +25,7 @@ import type {
 	UpdateLeaveRequestPayload,
 	CreatePayrollTransactionPayload,
 	UpdatePayrollTransactionPayload,
+	CreatePointAdjustmentPayload,
 } from "@/entities/hr/model/types";
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -40,6 +41,19 @@ export function useMyPoints() {
 		queryKey: hrKeys.points(),
 		queryFn: hrApi.fetchMyPoints,
 		staleTime: 2 * 60 * 1000,
+	});
+}
+
+export function useCreatePointAdjustment() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: CreatePointAdjustmentPayload) => hrApi.postPointAdjustment(payload),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: hrKeys.points() });
+			queryClient.invalidateQueries({ queryKey: hrKeys.teamPulse() });
+			queryClient.invalidateQueries({ queryKey: hrAdminKeys.all });
+		},
 	});
 }
 

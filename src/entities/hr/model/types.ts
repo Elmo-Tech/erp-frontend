@@ -41,6 +41,7 @@ export interface PointTransaction {
 	/** Signed integer — positive = earned, negative = deducted */
 	points: number;
 	reason: string;
+	balanceAfter: number;
 	/** Short label: 'task' | 'attendance' | 'code_review' | 'project' | … */
 	model_type: string | null;
 	model_id: number | null;
@@ -257,6 +258,12 @@ export interface GeneratePayrollPayload {
 
 export interface UpdateSystemSettingPayload {
 	value: string;
+}
+
+export interface CreatePointAdjustmentPayload {
+	userId: number;
+	points: number;
+	reason: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

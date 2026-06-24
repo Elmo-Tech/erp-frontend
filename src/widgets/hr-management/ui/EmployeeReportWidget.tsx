@@ -21,7 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Printer, Clock, Star, AlertTriangle, DollarSign, CheckCircle2, XCircle, TrendingUp, TrendingDown, CalendarDays, Pencil } from "lucide-react";
+import { ArrowLeft, Printer, Clock, Star, AlertTriangle, DollarSign, CheckCircle2, XCircle, TrendingUp, TrendingDown, CalendarDays, Pencil, PlusCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -34,12 +34,13 @@ import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { Separator } from "@/shared/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
-import { useEmployeeReport } from "@/features/hr/model/use-hr-actions";
+import { useCreatePointAdjustment, useEmployeeReport } from "@/features/hr/model/use-hr-actions";
 import { hrAdminKeys } from "@/entities/hr/model/query-keys";
 import { useEmployeePersonalTasks, useUpdatePersonalTask, useUpdatePersonalTimeEntry, type PersonalTask, type PersonalTimeEntry, type PersonalTaskStatus } from "@/features/personal-tasks/api/personal-tasks.api";
 import type { AttendanceStatus, ReportAttendanceDay, ReportDeliverableDay, ReportPointEntry } from "@/entities/hr/model/types";
 import { cn } from "@/shared/lib/utils";
 import { TaskPriority, TaskPriorityLabels } from "@/shared/lib/statusHelpers";
+import { Can } from "@/shared/ui/Can";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -320,8 +321,15 @@ const timeEntrySchema = z.object({
 	note: z.string().optional(),
 });
 
+const pointAdjustmentSchema = z.object({
+	direction: z.enum(["add", "deduct"]),
+	points: z.string().trim().min(1, "Points are required").regex(/^[1-9]\d*$/, "Enter a positive whole number"),
+	reason: z.string().trim().min(3, "Reason is required").max(1000),
+});
+
 type AdminTaskFormData = z.infer<typeof adminTaskSchema>;
 type TimeEntryFormData = z.infer<typeof timeEntrySchema>;
+type PointAdjustmentFormData = z.infer<typeof pointAdjustmentSchema>;
 
 const PERSONAL_TASK_STATUS_LABELS: Record<PersonalTaskStatus, string> = {
 	todo: "To Do",
@@ -588,11 +596,22 @@ interface EmployeeReportWidgetProps {
 
 export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const now = new Date();
 	const [month, setMonth] = useState(now.getMonth() + 1);
 	const [year, setYear] = useState(now.getFullYear());
+	const [pointDialogOpen, setPointDialogOpen] = useState(false);
 
 	const { data: report, isLoading, error } = useEmployeeReport(userId, month, year);
+	const createPointAdjustment = useCreatePointAdjustment();
+	const pointForm = useForm<PointAdjustmentFormData>({
+		resolver: zodResolver(pointAdjustmentSchema),
+		defaultValues: {
+			direction: "add",
+			points: "",
+			reason: "",
+		},
+	});
 
 	// Running point total for the ledger
 	const runningTotal = useMemo(() => {
@@ -601,6 +620,36 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 	}, [report]);
 
 	const handlePrint = () => window.print();
+
+	const openPointDialog = () => {
+		pointForm.reset({
+			direction: "add",
+			points: "",
+			reason: "",
+		});
+		setPointDialogOpen(true);
+	};
+
+	const submitPointAdjustment = pointForm.handleSubmit((data) => {
+		const absolutePoints = Number(data.points);
+		const signedPoints = data.direction === "deduct" ? -absolutePoints : absolutePoints;
+
+		createPointAdjustment.mutate(
+			{
+				userId,
+				points: signedPoints,
+				reason: data.reason.trim(),
+			},
+			{
+				onSuccess: () => {
+					setPointDialogOpen(false);
+					queryClient.invalidateQueries({ queryKey: hrAdminKeys.employeeReport(userId, month, year) });
+					toast.success("Point adjustment saved");
+				},
+				onError: () => toast.error("Failed to save point adjustment"),
+			},
+		);
+	});
 
 	// ── Error state ────────────────────────────────────────────────────────────
 	if (error) {
@@ -693,6 +742,18 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 							<Printer className="h-4 w-4" />
 							Print
 						</Button>
+						<Can permission={["manage_points", "manage_user_points", "award_points", "deduct_points"]}>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="gap-2"
+								onClick={openPointDialog}
+							>
+								<PlusCircle className="h-4 w-4" />
+								Adjust Points
+							</Button>
+						</Can>
 					</div>
 				</div>
 
@@ -959,6 +1020,44 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 					</>
 				)}
 			</section>
+
+			<FormDialog
+				open={pointDialogOpen}
+				onOpenChange={setPointDialogOpen}
+				title="Adjust Points"
+				submitLabel="Save Adjustment"
+				isLoading={createPointAdjustment.isPending}
+				onSubmit={submitPointAdjustment}
+				size="md"
+			>
+				<Form {...pointForm}>
+					<div className="flex flex-col gap-4">
+						<FormSelect
+							control={pointForm.control}
+							name="direction"
+							label="Adjustment"
+							options={[
+								{ value: "add", label: "Add points" },
+								{ value: "deduct", label: "Deduct points" },
+							]}
+						/>
+						<FormInput
+							control={pointForm.control}
+							name="points"
+							label="Points"
+							type="number"
+							min={1}
+							step={1}
+						/>
+						<FormTextarea
+							control={pointForm.control}
+							name="reason"
+							label="Reason"
+							rows={3}
+						/>
+					</div>
+				</Form>
+			</FormDialog>
 		</>
 	);
 }

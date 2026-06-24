@@ -16,6 +16,7 @@ import type {
 	CreateEmployeeProfilePayload,
 	CreateLeaveRequestPayload,
 	CreatePayrollTransactionPayload,
+	CreatePointAdjustmentPayload,
 	CreateShiftPayload,
 	EmployeeProfile,
 	EmployeeReport,
@@ -42,6 +43,11 @@ import type {
 
 export async function fetchMyPoints(): Promise<PaginatedResponse<PointTransaction>> {
 	const res = await api.get<ApiEnvelope<PaginatedResponse<PointTransaction>>>("/hr/my-points");
+	return res.data.data;
+}
+
+export async function postPointAdjustment(payload: CreatePointAdjustmentPayload): Promise<PointTransaction> {
+	const res = await api.post<ApiEnvelope<PointTransaction>>("/hr/point-adjustments", payload);
 	return res.data.data;
 }
 
