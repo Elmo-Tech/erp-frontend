@@ -1,38 +1,41 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { TABLES_APP_NAME } from "@/config/simplification";
+
+const appDescription = "Operational ERP for projects, tasks, clients, attendance, and team coordination.";
 
 export const metadata: Metadata = {
 	title: {
-		default: "Elmo ERP",
-		template: "%s | Elmo ERP",
+		default: TABLES_APP_NAME,
+		template: `%s | ${TABLES_APP_NAME}`,
 	},
-	description: "Enterprise Resource Planning System - Manage projects, sales, tasks, and team productivity in one place.",
+	description: appDescription,
 	keywords: ["ERP", "CRM", "Project Management", "Task Management", "Time Tracking", "Business Software"],
-	authors: [{ name: "Elmo ERP Team" }],
-	creator: "Elmo ERP",
-	publisher: "Elmo ERP",
-	metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://elmo-erp.elmotechsoft.online"),
+	authors: [{ name: TABLES_APP_NAME }],
+	creator: TABLES_APP_NAME,
+	publisher: TABLES_APP_NAME,
+	metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://the-tables-erp.local"),
 	openGraph: {
 		type: "website",
 		locale: "en_US",
 		url: "/",
-		siteName: "Elmo ERP",
-		title: "Elmo ERP - Enterprise Resource Planning System",
-		description: "Manage projects, sales, tasks, and team productivity in one place.",
+		siteName: TABLES_APP_NAME,
+		title: `${TABLES_APP_NAME} - Enterprise Resource Planning System`,
+		description: appDescription,
 		images: [
 			{
 				url: "/logo.webp",
 				width: 512,
 				height: 512,
-				alt: "Elmo ERP Logo",
+				alt: `${TABLES_APP_NAME} Logo`,
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Elmo ERP - Enterprise Resource Planning System",
-		description: "Manage projects, sales, tasks, and team productivity in one place.",
+		title: `${TABLES_APP_NAME} - Enterprise Resource Planning System`,
+		description: appDescription,
 		images: ["/logo.webp"],
 	},
 	icons: {

@@ -1,16 +1,6 @@
 /**
- * Client Portal Project Types
- * These types represent the "Black Box" view of projects for clients.
- * Internal data (tasks, developers, wikis, etc.) is hidden.
- *
- * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 13.1, 14.1
- */
-
-import { ClientInvoice } from "./clientInvoice";
-
-/**
  * Client-facing project interface with limited visibility.
- * HIDDEN: description, tasks, developers, wikis, timeEntries, internalNotes
+ * HIDDEN: invoices, payments, budget, tasks, developers, wikis, timeEntries, internalNotes, UI approval state
  */
 export interface ClientProject {
 	projectId: number;
@@ -19,12 +9,21 @@ export interface ClientProject {
 	statusLabel: string;
 	progressPercentage: number;
 	deadline: string;
-	budget: number;
-	currency: string;
-	uiApprovedAt: string;
-	canApproveUI: boolean;
+	files?: ClientProjectFile[];
 	createdAt: string;
-	invoices?: ClientInvoice[];
+}
+
+export interface ClientProjectFile {
+	fileId: number;
+	projectId: number;
+	name: string;
+	type: "file" | "link" | string;
+	fileUrl: string | null;
+	mimeType?: string;
+	size?: number;
+	category?: string;
+	isDownloadable?: boolean;
+	createdAt?: string;
 }
 
 /**

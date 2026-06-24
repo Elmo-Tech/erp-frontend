@@ -52,13 +52,4 @@ export const clientProjectsApi = {
 		return response.data.data;
 	},
 
-	/**
-	 * Approve UI/UX deliverables for a project
-	 * Requirement 9.3: POST /api/v1/client/projects/{id}/approve-ui endpoint for UI approval
-	 * This transitions the project from ui_ux to development phase
-	 */
-	approveUI: async (id: number): Promise<ClientProject> => {
-		const response = await api.post<{ data: ClientProject }>(`/client/projects/${id}/approve-ui`);
-		return response.data.data;
-	},
 };

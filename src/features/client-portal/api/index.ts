@@ -4,4 +4,3 @@
  */
 
 export * from "./clientProjects";
-export * from "./clientInvoices";

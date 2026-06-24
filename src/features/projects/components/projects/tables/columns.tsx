@@ -3,7 +3,6 @@
 import { Column } from "@/components/shared/data-display/DataTable";
 import { ProjectStatusBadge } from "@/components/shared/StatusBadge";
 import { Project } from "../../../types/project";
-import { formatCurrency } from "@/lib/formatters";
 import { formatDateDisplay } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -16,11 +15,10 @@ interface ProjectColumnsOptions {
 	onPin?: (project: Project) => void;
 	canDeleteProjects?: boolean;
 	canEditProjects?: boolean;
-	canViewProjectBudget?: boolean;
 }
 
 export function getProjectsColumns(options: ProjectColumnsOptions = {}): Column<Project>[] {
-	const { onView, onEdit, onDelete, onPin, canDeleteProjects, canEditProjects, canViewProjectBudget } = options;
+	const { onView, onEdit, onDelete, onPin, canDeleteProjects, canEditProjects } = options;
 
 	const columns: Column<Project>[] = [
 		{
@@ -68,11 +66,6 @@ export function getProjectsColumns(options: ProjectColumnsOptions = {}): Column<
 			key: "status",
 			header: "Status",
 			render: (project) => <ProjectStatusBadge status={project.status} />,
-		},
-		{
-			key: "budget",
-			header: "Budget",
-			render: (project) => <span className="font-mono">{canViewProjectBudget ? formatCurrency(project.budget) : "****"}</span>, // Hide budget if user doesn't have permission to viewformatCurrency(project.budget)}</span>,
 		},
 		{
 			key: "deadline",

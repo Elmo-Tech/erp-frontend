@@ -7,14 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Wallet, Building2, User } from "lucide-react";
+import { ArrowLeft, Calendar, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Building2, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { useProject } from "../hooks/useProjects";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { ProjectStatusBadge } from "@/components/shared/StatusBadge";
 import { UpdateProjectForm } from "./projects";
-import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab, BudgetTab } from "./tabs";
+import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab } from "./tabs";
+import { isModuleEnabled, moduleKeys } from "@/config/simplification";
 
 interface ProjectWorkspaceProps {
 	projectId: number;
@@ -77,6 +78,8 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ projectId })
 	const membersCount = project.members?.length || 0;
 	const filesCount = project.files?.length || 0;
 	const tasksCount = project.tasks?.length || 0;
+	const canShowFinancials = canViewProjectBudget && isModuleEnabled(moduleKeys.financials);
+	const canShowUIApproval = isModuleEnabled(moduleKeys.uiApproval);
 
 	return (
 		<div className="space-y-6">
@@ -133,25 +136,7 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ projectId })
 			)}
 
 			{/* Quick Stats */}
-			<div className={`grid gap-4 ${canViewProjectBudget ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
-				{canViewProjectBudget && (
-					<Card>
-						<CardContent className="pt-6">
-							<div className="flex items-center gap-2">
-								<DollarSign className="h-4 w-4 text-muted-foreground" />
-								<span className="text-sm text-muted-foreground">Budget</span>
-							</div>
-							<p className="text-2xl font-bold">
-								{project.budget
-									? new Intl.NumberFormat("en-US", {
-											style: "currency",
-											currency: project.currency || "USD",
-										}).format(Number(project.budget))
-									: "Not set"}
-							</p>
-						</CardContent>
-					</Card>
-				)}
+			<div className={`grid gap-4 ${canShowFinancials ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
 				<Card>
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-2">
@@ -277,15 +262,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ projectId })
 							Change Requests
 						</TabsTrigger>
 					)}
-					{canViewProjectBudget && (
-						<TabsTrigger
-							value="budget"
-							className="gap-2"
-						>
-							<Wallet className="h-4 w-4" />
-							Budget
-						</TabsTrigger>
-					)}
 				</TabsList>
 
 				{/* Overview Tab */}
@@ -317,7 +293,7 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ projectId })
 											<p className="font-medium">#{project.contract.contractNumber}</p>
 										</div>
 									)}
-									{project.uiApprovedAt && (
+									{canShowUIApproval && project.uiApprovedAt && (
 										<div>
 											<p className="text-sm text-muted-foreground">UI Approved</p>
 											<p className="font-medium">{format(new Date(project.uiApprovedAt), "MMM d, yyyy")}</p>
@@ -440,12 +416,6 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ projectId })
 					</TabsContent>
 				)}
 
-				{/* Budget Tab */}
-				{canViewProjectBudget && (
-					<TabsContent value="budget">
-						<BudgetTab projectId={projectId} />
-					</TabsContent>
-				)}
 			</Tabs>
 
 			{/* Edit Project Dialog */}

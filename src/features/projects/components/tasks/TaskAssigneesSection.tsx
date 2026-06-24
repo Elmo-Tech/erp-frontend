@@ -289,12 +289,6 @@ function AssigneeCard({ assignee, onRemove, isRemoving, canRemove }: { assignee:
 							<RoleIcon className="h-3 w-3 mr-1" />
 							{AssigneeRoleLabels[assignee.role]}
 						</Badge>
-						{assignee.pointsEarned !== 0 && (
-							<span className={cn("text-xs", assignee.pointsEarned > 0 ? "text-green-600" : "text-red-600")}>
-								{assignee.pointsEarned > 0 ? "+" : ""}
-								{assignee.pointsEarned} pts
-							</span>
-						)}
 					</div>
 				</div>
 			</div>

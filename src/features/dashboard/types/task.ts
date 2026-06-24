@@ -65,7 +65,7 @@ export const TaskTypeIcons: Record<TaskType, string> = {
  * Assignee role labels
  */
 export const AssigneeRoleLabels: Record<AssigneeRole, string> = {
-	[AssigneeRole.DEVELOPER]: "Developer",
+	[AssigneeRole.DEVELOPER]: "Employee",
 	[AssigneeRole.REVIEWER]: "Reviewer",
 	[AssigneeRole.LEAD]: "Lead",
 };

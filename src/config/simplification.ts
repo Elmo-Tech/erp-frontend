@@ -20,6 +20,8 @@ export const moduleKeys = {
 	performance: "performance",
 	employeeReview: "employeeReview",
 	points: "points",
+	financials: "financials",
+	uiApproval: "uiApproval",
 	globalSearch: "globalSearch",
 } as const;
 
@@ -42,7 +44,16 @@ const enabledModules = new Set<ModuleKey>([
 	moduleKeys.clientPortal,
 ]);
 
-const disabledModules = new Set<ModuleKey>([moduleKeys.sales, moduleKeys.invoices, moduleKeys.performance, moduleKeys.employeeReview, moduleKeys.points, moduleKeys.globalSearch]);
+const disabledModules = new Set<ModuleKey>([
+	moduleKeys.sales,
+	moduleKeys.invoices,
+	moduleKeys.performance,
+	moduleKeys.employeeReview,
+	moduleKeys.points,
+	moduleKeys.financials,
+	moduleKeys.uiApproval,
+	moduleKeys.globalSearch,
+]);
 
 export const isModuleEnabled = (module: ModuleKey): boolean => enabledModules.has(module);
 

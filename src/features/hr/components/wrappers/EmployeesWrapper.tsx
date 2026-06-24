@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search, Users } from "lucide-react";
 import { useEmployees, useDeactivateEmployee, useActivateEmployee } from "../../hooks";
 import { EmployeeCard } from "../EmployeeCard";
-import { EmployeePerformanceDialog } from "../EmployeePerformanceDialog";
 import { CreateEmployeeForm, UpdateEmployeeForm } from "../employees";
 import type { Employee } from "../../types";
 import { useRoles } from "@/features/admin/hooks/useRoles";
@@ -20,7 +19,6 @@ export function EmployeesWrapper() {
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 	const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-	const [showPerformanceDialog, setShowPerformanceDialog] = useState(false);
 	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
 	const { data, isLoading } = useEmployees({
@@ -37,11 +35,6 @@ export function EmployeesWrapper() {
 	const handleEdit = (employee: Employee) => {
 		setSelectedEmployee(employee);
 		setShowUpdateDialog(true);
-	};
-
-	const handleViewPerformance = (employee: Employee) => {
-		setSelectedEmployee(employee);
-		setShowPerformanceDialog(true);
 	};
 
 	const handleToggleStatus = async (employee: Employee) => {
@@ -121,8 +114,6 @@ export function EmployeesWrapper() {
 							employee={employee}
 							onEdit={handleEdit}
 							onToggleStatus={handleToggleStatus}
-							onViewPerformance={handleViewPerformance}
-							showSalary
 						/>
 					))}
 				</div>
@@ -154,12 +145,6 @@ export function EmployeesWrapper() {
 					roles={roleOptions}
 				/>
 			)}
-
-			<EmployeePerformanceDialog
-				open={showPerformanceDialog}
-				onOpenChange={setShowPerformanceDialog}
-				employee={selectedEmployee}
-			/>
 		</div>
 	);
 }

@@ -16,12 +16,10 @@ import { TaskTestScenariosSection } from "./TaskTestScenariosSection";
 import { TaskActivitySection } from "./TaskActivitySection";
 import { TaskTimerWidget } from "./TaskTimerWidget";
 import { TaskTimeEntriesSection } from "./TaskTimeEntriesSection";
-import { TaskDeliverablesSection } from "./TaskDeliverablesSection";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Clock, AlertCircle, CheckCircle2, Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { useTaskDeliverables } from "../../hooks/useTaskDeliverables";
 
 interface TaskDetailSheetProps {
 	taskId: number | null;
@@ -77,7 +75,6 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 	const { data: task, isLoading } = useTask(taskId ?? 0, !!taskId && open);
 	const { data: activities } = useTaskActivities(taskId ?? 0, !!taskId && open);
 	const { data: testScenarios } = useTestScenarios(taskId ?? 0, !!taskId && open);
-	const { data: apiDeliverables } = useTaskDeliverables(taskId ?? 0);
 	const { canEditMainTasks, canEditWeeklyTasks, canEditSubtasks } = usePermissions();
 
 	if (!taskId) return null;
@@ -210,11 +207,9 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 							onValueChange={setActiveTab}
 							className="flex-1 flex flex-col min-h-0 overflow-hidden"
 						>
-							<TabsList className={cn("mx-6 shrink-0", task.type === TaskType.WEEKLY ? "grid grid-cols-6" : "grid grid-cols-5")}>
+							<TabsList className="mx-6 shrink-0 grid grid-cols-5">
 								<TabsTrigger value="details">Details</TabsTrigger>
 								<TabsTrigger value="assignees">Team ({task.assignees?.length || 0})</TabsTrigger>
-								{/* Only show Deliverables tab for Weekly Tasks */}
-								{task.type === TaskType.WEEKLY && <TabsTrigger value="deliverables">Deliverables ({apiDeliverables?.length || 0})</TabsTrigger>}
 								<TabsTrigger value="tests">Tests ({testScenarios?.length || 0})</TabsTrigger>
 								<TabsTrigger value="time">Time</TabsTrigger>
 								<TabsTrigger value="activity">Activity</TabsTrigger>
@@ -316,19 +311,6 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 								>
 									<TaskAssigneesSection task={task} />
 								</TabsContent>
-
-								{/* Only render Deliverables tab content for Weekly Tasks */}
-								{task.type === TaskType.WEEKLY && (
-									<TabsContent
-										value="deliverables"
-										className="p-6 pt-4 m-0"
-									>
-										<TaskDeliverablesSection
-											task={task}
-											deliverables={apiDeliverables || []}
-										/>
-									</TabsContent>
-								)}
 
 								<TabsContent
 									value="tests"

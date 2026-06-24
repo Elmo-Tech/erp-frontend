@@ -5,19 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Clock, MoreVertical, Star, Calendar, DollarSign, Edit, UserX, UserCheck, BarChart3 } from "lucide-react";
+import { Clock, MoreVertical, Calendar, Edit, UserX, UserCheck } from "lucide-react";
 import type { Employee } from "../types";
 import { cn } from "@/lib/utils";
+import { getRoleLabel } from "@/config/simplification";
 
 interface EmployeeCardProps {
 	employee: Employee;
 	onEdit?: (employee: Employee) => void;
 	onToggleStatus?: (employee: Employee) => void;
-	onViewPerformance?: (employee: Employee) => void;
-	showSalary?: boolean;
 }
 
-export function EmployeeCard({ employee, onEdit, onToggleStatus, onViewPerformance, showSalary = false }: EmployeeCardProps) {
+export function EmployeeCard({ employee, onEdit, onToggleStatus }: EmployeeCardProps) {
 	const formatTime = (time: string | null) => {
 		if (!time) return "-";
 		const hours = parseInt(time.slice(0, 2));
@@ -63,12 +62,6 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus, onViewPerforman
 										Edit
 									</DropdownMenuItem>
 								)}
-								{onViewPerformance && (
-									<DropdownMenuItem onClick={() => onViewPerformance(employee)}>
-										<BarChart3 className="h-4 w-4 mr-2" />
-										Performance
-									</DropdownMenuItem>
-								)}
 								{onToggleStatus && (
 									<DropdownMenuItem onClick={() => onToggleStatus(employee)}>
 										{employee.isActive ? (
@@ -90,7 +83,7 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus, onViewPerforman
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-3">
-				{employee.role && <Badge variant="outline">{employee.role}</Badge>}
+				{employee.role && <Badge variant="outline">{getRoleLabel(employee.role)}</Badge>}
 
 				<div className="flex flex-wrap items-center justify-between gap-3 text-sm">
 					<div className="flex items-center gap-2 text-muted-foreground">
@@ -105,25 +98,9 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus, onViewPerforman
 					</div>
 				</div>
 
-				<div className="flex items-center justify-between pt-2 border-t">
-					<div className="flex items-center gap-2">
-						<Star className="h-4 w-4 text-yellow-500" />
-						<span className="font-medium">{employee.totalPoints} pts</span>
-					</div>
-					<div className="text-sm text-muted-foreground">
-						Grace: {employee.graceDaysRemaining}/{employee.graceDaysAllowed} days
-					</div>
+				<div className="text-sm text-muted-foreground pt-2 border-t">
+					Grace: {employee.graceDaysRemaining}/{employee.graceDaysAllowed} days
 				</div>
-
-				{showSalary && employee.salary !== null && (
-					<div className="flex items-center justify-between pt-2 border-t">
-						<div className="flex items-center gap-2 text-muted-foreground">
-							<DollarSign className="h-4 w-4" />
-							<span>Salary: {employee.salary.toLocaleString()}</span>
-						</div>
-						{employee.totalDeductions !== null && employee.totalDeductions > 0 && <span className="text-sm text-red-500">-{employee.totalDeductions.toLocaleString()} deductions</span>}
-					</div>
-				)}
 
 				{employee.skills && employee.skills.length > 0 && (
 					<div className="flex flex-wrap gap-1 pt-2">

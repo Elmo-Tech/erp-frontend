@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, ArrowLeft, AlertCircle, TimerReset, Activity } from "lucide-react";
+import { Calendar, ArrowLeft, AlertCircle, TimerReset, Activity, FileText, Link2, ExternalLink, Download } from "lucide-react";
 import { useClientProject } from "../hooks/useClientProjects";
 import { ProgressBar } from "./ProgressBar";
 import { cn } from "@/lib/utils";
+import type { ClientProjectFile } from "../types/clientProject";
 
 interface ClientProjectViewProps {
 	/** Project ID to display */
@@ -44,6 +45,76 @@ const formatDate = (dateString: string): string => {
 		day: "numeric",
 		year: "numeric",
 	});
+};
+
+const formatFileSize = (bytes?: number): string => {
+	if (!bytes) return "-";
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const ClientProjectFiles: React.FC<{ files?: ClientProjectFile[] }> = ({ files = [] }) => {
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Files & Media</CardTitle>
+				<CardDescription>Shared project files and links available for this project.</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{files.length === 0 ? (
+					<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+						<FileText className="mx-auto mb-3 h-8 w-8 opacity-60" />
+						<p className="text-sm">No shared files yet.</p>
+					</div>
+				) : (
+					<div className="divide-y rounded-lg border">
+						{files.map((file) => {
+							const isLink = file.type === "link";
+							const canOpen = Boolean(file.fileUrl && (isLink || file.isDownloadable));
+
+							return (
+								<div
+									key={file.fileId}
+									className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+								>
+									<div className="flex min-w-0 items-start gap-3">
+										<div className="rounded-md bg-muted p-2">
+											{isLink ? <Link2 className="h-4 w-4 text-muted-foreground" /> : <FileText className="h-4 w-4 text-muted-foreground" />}
+										</div>
+										<div className="min-w-0">
+											<p className="truncate font-medium">{file.name}</p>
+											<div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+												<span>{file.category || "General"}</span>
+												<span>{isLink ? "Link" : formatFileSize(file.size)}</span>
+												{file.createdAt && <span>Added {formatDate(file.createdAt)}</span>}
+											</div>
+										</div>
+									</div>
+									{canOpen && (
+										<Button
+											variant="outline"
+											size="sm"
+											asChild
+										>
+											<a
+												href={file.fileUrl ?? undefined}
+												target="_blank"
+												rel="noopener noreferrer"
+											>
+												{isLink ? <ExternalLink className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
+												{isLink ? "Open" : "Download"}
+											</a>
+										</Button>
+									)}
+								</div>
+							);
+						})}
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
 };
 
 /**
@@ -187,6 +258,8 @@ export const ClientProjectView: React.FC<ClientProjectViewProps> = ({ projectId 
 					</div>
 				</CardContent>
 			</Card>
+
+			<ClientProjectFiles files={project.files} />
 		</div>
 	);
 };

@@ -47,23 +47,12 @@ export function ProjectFormFields({ form, showReasonField }: ProjectFormFieldsPr
 					rows={3}
 				/>
 
-				<div className="grid grid-cols-2 gap-4">
-					<FormInput
-						control={form.control}
-						name="budget"
-						label="Budget"
-						type="number"
-						placeholder="0.00"
-						min={0}
-					/>
-
-					<FormInput
-						control={form.control}
-						name="deadline"
-						label="Deadline"
-						type="date"
-					/>
-				</div>
+				<FormInput
+					control={form.control}
+					name="deadline"
+					label="Deadline"
+					type="date"
+				/>
 
 				<FormSelect
 					control={form.control}
@@ -78,7 +67,7 @@ export function ProjectFormFields({ form, showReasonField }: ProjectFormFieldsPr
 						control={form.control}
 						name="reason"
 						label="Reason for Change"
-						placeholder="Explain why budget or deadline is being changed..."
+						placeholder="Explain why the deadline is being changed..."
 						rows={2}
 					/>
 				)}

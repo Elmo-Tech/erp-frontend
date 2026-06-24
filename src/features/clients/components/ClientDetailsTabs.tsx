@@ -9,13 +9,9 @@ import { useClient } from "../hooks/useClients";
 import { UpdateClientForm } from "./clients/forms/UpdateClientForm";
 import { PortalAccessDialog } from "./PortalAccessDialog";
 import { CreateProjectForm } from "@/features/projects/components/projects/forms/CreateProjectForm";
-import { CreateInvoiceForm } from "@/features/invoices/components/invoices/forms";
-import { useInvoices, useUpdateInvoice } from "@/features/invoices/hooks/useInvoices";
-import { InvoiceStatus } from "@/features/invoices/types";
-import { ClientInfoTab, ClientProjectsTab, ClientInvoicesTab } from "./clients";
+import { ClientInfoTab, ClientProjectsTab } from "./clients";
 import { Pencil, ArrowLeft, Key, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 
 interface ClientDetailsTabsProps {
 	clientId: number;
@@ -26,21 +22,7 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 	const { data: client, isLoading } = useClient(clientId);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 	const [projectDialogOpen, setProjectDialogOpen] = useState(false);
-	const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
 	const [portalAccessDialogOpen, setPortalAccessDialogOpen] = useState(false);
-
-	const projectIds = client?.projects?.map((p) => p.projectId) || [];
-	const { data: invoicesData } = useInvoices(projectIds.length > 0 ? { projectId: projectIds[0], perPage: 100 } : undefined);
-	const updateInvoice = useUpdateInvoice();
-
-	const handleUpdateInvoiceStatus = async (invoiceId: number, status: InvoiceStatus) => {
-		try {
-			await updateInvoice.mutateAsync({ id: invoiceId, payload: { status } });
-			toast.success(`Invoice marked as ${status}`);
-		} catch {
-			toast.error("Failed to update invoice status");
-		}
-	};
 
 	if (isLoading) {
 		return (
@@ -66,7 +48,6 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 	}
 
 	const projects = client.projects || [];
-	const invoices = invoicesData?.invoices || [];
 
 	return (
 		<div className="space-y-6">
@@ -86,7 +67,6 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 				<TabsList>
 					<TabsTrigger value="info">Information</TabsTrigger>
 					<TabsTrigger value="projects">Projects ({projects.length})</TabsTrigger>
-					<TabsTrigger value="invoices">Invoices ({invoices.length})</TabsTrigger>
 				</TabsList>
 
 				<TabsContent
@@ -103,15 +83,6 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 					/>
 				</TabsContent>
 
-				<TabsContent value="invoices">
-					<ClientInvoicesTab
-						invoices={invoices}
-						hasProjects={projects.length > 0}
-						onAddInvoice={() => setInvoiceDialogOpen(true)}
-						onUpdateStatus={handleUpdateInvoiceStatus}
-						isUpdating={updateInvoice.isPending}
-					/>
-				</TabsContent>
 			</Tabs>
 
 			{/* Dialogs */}
@@ -124,12 +95,6 @@ export function ClientDetailsTabs({ clientId }: ClientDetailsTabsProps) {
 				open={projectDialogOpen}
 				onOpenChange={setProjectDialogOpen}
 				clientId={clientId}
-			/>
-			<CreateInvoiceForm
-				open={invoiceDialogOpen}
-				onOpenChange={setInvoiceDialogOpen}
-				clientId={clientId}
-				projects={projects.map((p) => ({ projectId: p.projectId, title: p.title }))}
 			/>
 			<PortalAccessDialog
 				open={portalAccessDialogOpen}

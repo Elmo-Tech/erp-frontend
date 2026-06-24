@@ -9,12 +9,13 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "../hooks/useProjects";
 import { UpdateProjectForm } from "./projects";
-import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab, BudgetTab } from "./tabs";
-import { ArrowLeft, Calendar, DollarSign, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Wallet } from "lucide-react";
+import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab } from "./tabs";
+import { ArrowLeft, Calendar, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Badge } from "@/components/ui/badge";
+import { isModuleEnabled, moduleKeys } from "@/config/simplification";
 
 interface ProjectDetailsTabsProps {
 	projectId: number;
@@ -68,6 +69,8 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 
 	const membersCount = project.members?.length || 0;
 	const filesCount = project.files?.length || 0;
+	const canShowFinancials = canViewProjectBudget && isModuleEnabled(moduleKeys.financials);
+	const canShowUIApproval = isModuleEnabled(moduleKeys.uiApproval);
 
 	return (
 		<div className="space-y-6">
@@ -100,18 +103,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 			</div>
 
 			{/* Quick Stats */}
-			<div className={`grid gap-4 ${canViewProjectBudget ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
-				{canViewProjectBudget && (
-					<Card>
-						<CardContent className="pt-6">
-							<div className="flex items-center gap-2">
-								<DollarSign className="h-4 w-4 text-muted-foreground" />
-								<span className="text-sm text-muted-foreground">Budget</span>
-							</div>
-							<p className="text-2xl font-bold">${Number(project.budget || 0).toLocaleString()}</p>
-						</CardContent>
-					</Card>
-				)}
+			<div className={`grid gap-4 ${canShowFinancials ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
 				<Card>
 					<CardContent className="pt-6">
 						<div className="flex items-center gap-2">
@@ -209,15 +201,6 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 							CRs
 						</TabsTrigger>
 					)}
-					{canViewProjectBudget && (
-						<TabsTrigger
-							value="budget"
-							className="gap-2"
-						>
-							<Wallet className="h-4 w-4" />
-							Budget
-						</TabsTrigger>
-					)}
 				</TabsList>
 
 				{/* Overview Tab */}
@@ -238,7 +221,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 										<p className="text-sm text-muted-foreground">Description</p>
 										<p className="font-medium">{project.description || "No description"}</p>
 									</div>
-									{project.uiApprovedAt && (
+									{canShowUIApproval && project.uiApprovedAt && (
 										<div>
 											<p className="text-sm text-muted-foreground">UI Approved</p>
 											<p className="font-medium">{format(new Date(project.uiApprovedAt), "MMM d, yyyy")}</p>
@@ -328,12 +311,6 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 					</TabsContent>
 				)}
 
-				{/* Budget Tab */}
-				{canViewProjectBudget && (
-					<TabsContent value="budget">
-						<BudgetTab projectId={projectId} />
-					</TabsContent>
-				)}
 			</Tabs>
 
 			{/* Edit Project Dialog */}

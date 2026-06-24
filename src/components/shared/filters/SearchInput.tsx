@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
@@ -18,30 +18,45 @@ interface SearchInputProps {
 }
 
 export function SearchInput({ value: controlledValue, onChange, placeholder = "Search...", className, debounceMs = 300, showClear = true, autoSearch = true }: SearchInputProps) {
-	const [internalValue, setInternalValue] = useState(controlledValue ?? "");
+	const normalizedValue = controlledValue ?? "";
+	const [inputState, setInputState] = useState({
+		controlledValue: normalizedValue,
+		internalValue: normalizedValue,
+	});
 
-	useEffect(() => {
-		setInternalValue(controlledValue ?? "");
-	}, [controlledValue]);
+	if (inputState.controlledValue !== normalizedValue) {
+		setInputState({
+			controlledValue: normalizedValue,
+			internalValue: normalizedValue,
+		});
+	}
+
+	const internalValue = inputState.controlledValue === normalizedValue ? inputState.internalValue : normalizedValue;
 
 	const debouncedOnChange = useDebouncedCallback(onChange, debounceMs);
 
 	const handleChange = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {
 			const newValue = e.target.value;
-			setInternalValue(newValue);
+			setInputState({
+				controlledValue: normalizedValue,
+				internalValue: newValue,
+			});
 
 			if (autoSearch) {
 				debouncedOnChange(newValue);
 			}
 		},
-		[autoSearch, debouncedOnChange]
+		[autoSearch, debouncedOnChange, normalizedValue]
 	);
 
 	const handleClear = useCallback(() => {
-		setInternalValue("");
+		setInputState({
+			controlledValue: normalizedValue,
+			internalValue: "",
+		});
 		onChange("");
-	}, [onChange]);
+	}, [normalizedValue, onChange]);
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLInputElement>) => {

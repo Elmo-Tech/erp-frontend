@@ -343,7 +343,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							label="Category"
 							placeholder="Select category..."
 							options={taskCategoryOptions}
-							description="Determines which developers can see this task"
+							description="Determines which employees can see this task"
 						/>
 					</div>
 

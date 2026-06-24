@@ -7,11 +7,5 @@
 
 export * from "./ProgressBar";
 export * from "./ClientProjectCard";
-export * from "./ClientInvoiceCard";
-export * from "./ApproveUIButton";
 export * from "./ClientDashboard";
 export * from "./ClientProjectView";
-export * from "./ClientInvoiceList";
-
-// Column definitions
-export * from "./columns";

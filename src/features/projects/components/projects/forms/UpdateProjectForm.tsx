@@ -67,7 +67,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 				payload: {
 					title: data.title,
 					description: data.description,
-					budget: data.budget,
+					budget: project.budget,
 					deadline: data.deadline || undefined,
 					status: data.status,
 					reason: data.reason || undefined,
@@ -81,7 +81,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 		}
 	};
 
-	const showReasonField = form.watch("budget") !== project.budget || form.watch("deadline") !== (project.deadline || "");
+	const showReasonField = form.watch("deadline") !== (project.deadline || "");
 
 	return (
 		<FormDialog
