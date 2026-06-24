@@ -9,6 +9,7 @@ import { useUserSpecializations } from "../../../hooks/useEnums";
 import { createUserSchema, CreateUserFormData } from "../../../schemas/userSchema";
 import { UserFormFields } from "./UserFormFields";
 import { toast } from "sonner";
+import { getRoleLabel } from "@/config/simplification";
 
 interface CreateUserFormProps {
 	open: boolean;
@@ -71,7 +72,7 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 	const roleOptions =
 		rolesData?.roles?.map((role) => ({
 			value: role.name,
-			label: role.name,
+			label: getRoleLabel(role.name),
 		})) || [];
 
 	const specializationOptions = [

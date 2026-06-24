@@ -1,7 +1,6 @@
-"use client";
-
-import { SalesDashboard } from "@/features/sales/components/SalesDashboard";
+import { redirect } from "next/navigation";
+import { getDisabledRouteRedirect } from "@/config/simplification";
 
 export default function SalesPage() {
-	return <SalesDashboard />;
+	redirect(getDisabledRouteRedirect("/dashboard/sales"));
 }

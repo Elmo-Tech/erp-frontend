@@ -10,6 +10,7 @@ import { User } from "../../../types";
 import { updateUserSchema, UpdateUserFormData } from "../../../schemas/userSchema";
 import { UserFormFields } from "./UserFormFields";
 import { toast } from "sonner";
+import { getRoleLabel } from "@/config/simplification";
 
 interface UpdateUserFormProps {
 	open: boolean;
@@ -78,7 +79,7 @@ export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUs
 	const roleOptions =
 		rolesData?.roles?.map((role) => ({
 			value: role.name,
-			label: role.name,
+			label: getRoleLabel(role.name),
 		})) || [];
 
 	const specializationOptions = [

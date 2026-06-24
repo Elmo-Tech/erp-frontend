@@ -13,6 +13,7 @@ import type { Employee } from "../../types";
 import { useRoles } from "@/features/admin/hooks/useRoles";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getRoleLabel } from "@/config/simplification";
 
 export function EmployeesWrapper() {
 	const [search, setSearch] = useState("");
@@ -31,7 +32,7 @@ export function EmployeesWrapper() {
 	const deactivateEmployee = useDeactivateEmployee();
 	const activateEmployee = useActivateEmployee();
 
-	const roleOptions = rolesData?.roles?.map((role) => ({ value: role.name, label: role.name })) || [];
+	const roleOptions = rolesData?.roles?.map((role) => ({ value: role.name, label: getRoleLabel(role.name) })) || [];
 
 	const handleEdit = (employee: Employee) => {
 		setSelectedEmployee(employee);

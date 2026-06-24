@@ -6,15 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, DollarSign, ArrowLeft, Receipt, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { Calendar, ArrowLeft, AlertCircle, TimerReset, Activity } from "lucide-react";
 import { useClientProject } from "../hooks/useClientProjects";
-import { usePayInvoice } from "../hooks/useClientInvoices";
 import { ProgressBar } from "./ProgressBar";
-import { ApproveUIButton } from "./ApproveUIButton";
-import { ClientInvoiceCard } from "./ClientInvoiceCard";
-import { ClientInvoice } from "../types/clientInvoice";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 interface ClientProjectViewProps {
 	/** Project ID to display */
@@ -52,18 +47,6 @@ const formatDate = (dateString: string): string => {
 };
 
 /**
- * Format currency amount
- */
-const formatCurrency = (amount: number, currency: string): string => {
-	return new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency: currency || "USD",
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(amount);
-};
-
-/**
  * Loading skeleton for project view
  */
 const ProjectViewSkeleton: React.FC = () => (
@@ -90,31 +73,12 @@ const ProjectViewSkeleton: React.FC = () => (
 
 /**
  * ClientProjectView component for displaying detailed project information.
- * Shows project details, progress bar, approve UI button, and invoices list.
+ * Shows project details and progress for the simplified client portal.
  *
- * Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6 - Display project details with progress and invoices
+ * Requirements: 14.1, 14.2, 14.3 - Display project details with progress.
  */
 export const ClientProjectView: React.FC<ClientProjectViewProps> = ({ projectId }) => {
-	const { data: project, isLoading, error, refetch } = useClientProject(projectId);
-	const payInvoiceMutation = usePayInvoice();
-
-	const handlePayInvoice = async (invoice: ClientInvoice) => {
-		try {
-			await payInvoiceMutation.mutateAsync(invoice.invoiceId);
-			toast.success("Payment successful!", {
-				description: `Invoice ${invoice.invoiceNumber} has been marked as paid.`,
-			});
-			refetch();
-		} catch (error) {
-			toast.error("Payment failed", {
-				description: error instanceof Error ? error.message : "Please try again later.",
-			});
-		}
-	};
-
-	const handleApprovalSuccess = () => {
-		refetch();
-	};
+	const { data: project, isLoading, error } = useClientProject(projectId);
 
 	if (isLoading) {
 		return <ProjectViewSkeleton />;
@@ -173,13 +137,6 @@ export const ClientProjectView: React.FC<ClientProjectViewProps> = ({ projectId 
 						<p className="text-sm text-muted-foreground">Created on {formatDate(project.createdAt)}</p>
 					</div>
 				</div>
-				{/* Approve UI Button */}
-				<ApproveUIButton
-					projectId={project.projectId}
-					canApproveUI={project.canApproveUI}
-					projectTitle={project.title}
-					onApprovalSuccess={handleApprovalSuccess}
-				/>
 			</div>
 
 			{/* Project Details Card */}
@@ -200,42 +157,22 @@ export const ClientProjectView: React.FC<ClientProjectViewProps> = ({ projectId 
 							</div>
 						</div>
 
-						{/* Budget */}
+						{/* Timeline */}
 						<div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-							<DollarSign className="h-8 w-8 text-muted-foreground" />
+							<TimerReset className="h-8 w-8 text-muted-foreground" />
 							<div>
-								<p className="text-sm text-muted-foreground">Budget</p>
-								<p className="font-semibold">{formatCurrency(project.budget, project.currency)}</p>
+								<p className="text-sm text-muted-foreground">Started</p>
+								<p className="font-semibold">{formatDate(project.createdAt)}</p>
 							</div>
 						</div>
 
-						{/* UI Approval Status */}
+						{/* Project Status */}
 						<div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
-							{project.uiApprovedAt ? (
-								<>
-									<CheckCircle className="h-8 w-8 text-green-500" />
-									<div>
-										<p className="text-sm text-muted-foreground">UI Approved</p>
-										<p className="font-semibold text-green-600">{formatDate(project.uiApprovedAt)}</p>
-									</div>
-								</>
-							) : project.canApproveUI ? (
-								<>
-									<Clock className="h-8 w-8 text-purple-500" />
-									<div>
-										<p className="text-sm text-muted-foreground">UI Status</p>
-										<p className="font-semibold text-purple-600">Awaiting Approval</p>
-									</div>
-								</>
-							) : (
-								<>
-									<Clock className="h-8 w-8 text-muted-foreground" />
-									<div>
-										<p className="text-sm text-muted-foreground">UI Status</p>
-										<p className="font-semibold">Not Applicable</p>
-									</div>
-								</>
-							)}
+							<Activity className="h-8 w-8 text-muted-foreground" />
+							<div>
+								<p className="text-sm text-muted-foreground">Status</p>
+								<p className="font-semibold">{project.statusLabel}</p>
+							</div>
 						</div>
 					</div>
 
@@ -248,46 +185,6 @@ export const ClientProjectView: React.FC<ClientProjectViewProps> = ({ projectId 
 							label="Project Progress"
 						/>
 					</div>
-				</CardContent>
-			</Card>
-
-			{/* Invoices Section */}
-			<Card>
-				<CardHeader className="flex flex-row items-center justify-between">
-					<div>
-						<CardTitle className="flex items-center gap-2">
-							<Receipt className="h-5 w-5" />
-							Project Invoices
-						</CardTitle>
-						<CardDescription>Billing history for this project</CardDescription>
-					</div>
-					<Link href="/client/invoices">
-						<Button
-							variant="outline"
-							size="sm"
-						>
-							View All Invoices
-						</Button>
-					</Link>
-				</CardHeader>
-				<CardContent>
-					{!project.invoices || project.invoices.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-8 text-center">
-							<Receipt className="h-10 w-10 text-muted-foreground mb-3" />
-							<p className="text-muted-foreground">No invoices for this project yet.</p>
-						</div>
-					) : (
-						<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-							{project.invoices.map((invoice) => (
-								<ClientInvoiceCard
-									key={invoice.invoiceId}
-									invoice={invoice}
-									onPayClick={handlePayInvoice}
-									isPaymentLoading={payInvoiceMutation.isPending}
-								/>
-							))}
-						</div>
-					)}
 				</CardContent>
 			</Card>
 		</div>

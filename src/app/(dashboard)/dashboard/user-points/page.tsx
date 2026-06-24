@@ -1,5 +1,6 @@
-import { UserPointsWrapper } from "@/features/admin/components/wrappers/UserPointsWrapper";
+import { redirect } from "next/navigation";
+import { getDisabledRouteRedirect } from "@/config/simplification";
 
 export default function UserPointsPage() {
-	return <UserPointsWrapper />;
+	redirect(getDisabledRouteRedirect("/dashboard/user-points"));
 }

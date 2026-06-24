@@ -5,6 +5,7 @@ import { Column } from "@/components/shared/data-display/DataTable";
 import { User } from "../../../types";
 import { formatDateDisplay } from "@/lib/dateUtils";
 import { UserActions } from "./actions";
+import { getRoleLabel } from "@/config/simplification";
 
 interface UsersColumnsOptions {
 	onEdit?: (user: User) => void;
@@ -34,7 +35,7 @@ export function getUsersColumns({ onEdit, onDelete, onToggleStatus }: UsersColum
 							key={role}
 							variant="secondary"
 						>
-							{role}
+							{getRoleLabel(role)}
 						</Badge>
 					))}
 				</div>

@@ -26,6 +26,7 @@ import { getUsersColumns } from "./users/tables";
 import { CreateUserForm } from "./users/forms/CreateUserForm";
 import { UpdateUserForm } from "./users/forms/UpdateUserForm";
 import { DeleteUserDialog } from "./users/dialogs/DeleteUserDialog";
+import { getRoleLabel } from "@/config/simplification";
 
 /**
  * UserManagement Component
@@ -100,7 +101,7 @@ export function UserManagement() {
 	const roleOptions: FilterOption[] = [
 		...(rolesData?.roles?.map((role) => ({
 			value: role.name,
-			label: role.name,
+			label: getRoleLabel(role.name),
 		})) || []),
 	];
 

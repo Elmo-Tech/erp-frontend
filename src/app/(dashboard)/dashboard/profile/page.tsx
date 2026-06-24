@@ -2,6 +2,7 @@
 
 import { useAuthStore } from "@/store/authStore";
 import { AvatarUpload, ProfileForm, SecuritySettings } from "@/features/profile";
+import { getRoleLabel } from "@/config/simplification";
 
 export default function ProfilePage() {
 	const { user, role } = useAuthStore();
@@ -18,7 +19,7 @@ export default function ProfilePage() {
 				currentAvatar={user?.avatar}
 				userName={user?.name || ""}
 				userEmail={user?.email || ""}
-				userRole={role || "guest"}
+				userRole={getRoleLabel(role)}
 			/>
 
 			{/* Profile Info Section */}

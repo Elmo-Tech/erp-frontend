@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, User, Settings, Menu, Timer, Search } from "lucide-react";
+import { LogOut, User, Settings, Menu, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -11,16 +11,15 @@ import { useLogout } from "@/features/auth/hooks/useLogout";
 import { NavbarTimer } from "@/components/NavbarTimer";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { ActiveTimersSheet } from "@/features/admin/components/ActiveTimersSheet";
-import { GlobalSearchDialog, useGlobalSearchShortcut } from "@/features/sales/components";
-import { useActiveTimers } from "@/features/sales/hooks";
+import { useActiveTimers } from "@/features/sales/hooks/useTimeEntries";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { getRoleLabel } from "@/config/simplification";
 
 export function Navbar() {
 	const { user, role } = useAuthStore();
 	const { toggleMobileOpen } = useSidebarStore();
 	const { mutate: logout, isPending: isLoggingOut } = useLogout();
-	const { open: searchOpen, setOpen: setSearchOpen } = useGlobalSearchShortcut();
 
 	// Only fetch active timers for admin/super-admin
 	const isAdmin = role === "admin" || role === "super-admin";
@@ -64,35 +63,7 @@ export function Navbar() {
 					<Menu className="h-5 w-5" />
 					<span className="sr-only">Toggle menu</span>
 				</Button>
-
-				{/* Global Search Button */}
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => setSearchOpen(true)}
-					className="hidden md:flex items-center gap-2 text-muted-foreground w-64 justify-start"
-				>
-					<Search className="h-4 w-4" />
-					<span>Search...</span>
-					<kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-						<span className="text-xs">⌘</span>K
-					</kbd>
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={() => setSearchOpen(true)}
-					className="md:hidden h-9 w-9"
-				>
-					<Search className="h-5 w-5" />
-				</Button>
 			</div>
-
-			{/* Global Search Dialog */}
-			<GlobalSearchDialog
-				open={searchOpen}
-				onOpenChange={setSearchOpen}
-			/>
 
 			{/* Right side */}
 			<div className="flex items-center gap-3">
@@ -143,7 +114,7 @@ export function Navbar() {
 							</Avatar>
 							<div className="hidden flex-col items-start text-left md:flex">
 								<span className="text-sm font-medium">{user?.name || "User"}</span>
-								<span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getRoleBadgeColor(role)}`}>{role || "guest"}</span>
+								<span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getRoleBadgeColor(role)}`}>{getRoleLabel(role)}</span>
 							</div>
 						</Button>
 					</DropdownMenuTrigger>

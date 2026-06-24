@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, DollarSign, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight } from "lucide-react";
 import { ClientProject } from "../types/clientProject";
 import { ProgressBar } from "./ProgressBar";
 import { cn } from "@/lib/utils";
@@ -47,18 +47,6 @@ const formatDate = (dateString: string): string => {
 };
 
 /**
- * Format currency amount
- */
-const formatCurrency = (amount: number, currency: string): string => {
-	return new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency: currency || "USD",
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(amount);
-};
-
-/**
  * ClientProjectCard component for displaying project summary in client portal.
  * Shows project title, status, progress bar, and deadline with link to details.
  *
@@ -90,10 +78,6 @@ export const ClientProjectCard: React.FC<ClientProjectCardProps> = ({ project, c
 						<div className="flex items-center gap-1.5">
 							<Calendar className="h-4 w-4" />
 							<span className={cn(isOverdue && "text-red-600 font-medium")}>{formatDate(project.deadline)}</span>
-						</div>
-						<div className="flex items-center gap-1.5">
-							<DollarSign className="h-4 w-4" />
-							<span>{formatCurrency(project.budget, project.currency)}</span>
 						</div>
 					</div>
 

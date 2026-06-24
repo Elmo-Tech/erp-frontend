@@ -4,146 +4,27 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, TrendingUp, Clock, Shield, BookOpen, BarChart3, Building2, X, Award, ListTodo, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, Clock, Shield, BookOpen, BarChart3, Building2, X, ListTodo } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useSidebarStore } from "@/store/sidebarStore";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TABLES_APP_NAME, canShowNavigationItem, dashboardNavGroups } from "@/config/simplification";
 
-interface NavItem {
-	title: string;
-	href: string;
-	icon: React.ElementType;
-	permission?: string;
-	roles?: string[];
-}
-
-interface NavGroup {
-	title: string;
-	items: NavItem[];
-}
-
-const navGroups: NavGroup[] = [
-	{
-		title: "Overview",
-		items: [
-			{
-				title: "Dashboard",
-				href: "/dashboard",
-				icon: LayoutDashboard,
-				permission: "view_dashboard",
-			},
-		],
-	},
-	{
-		title: "Sales & CRM",
-		items: [
-			{
-				title: "Clients",
-				href: "/dashboard/clients",
-				icon: Building2,
-				permission: "view_clients",
-			},
-			{
-				title: "Sales",
-				href: "/dashboard/sales",
-				icon: TrendingUp,
-				permission: "view_leads",
-			},
-			// {
-			// 	title: "Sales Dashboard",
-			// 	href: "/dashboard/sales/manager",
-			// 	icon: BarChart3,
-			// 	permission: "view_sales_dashboard",
-			// },
-		],
-	},
-	{
-		title: "Project Management",
-		items: [
-			{
-				title: "Projects",
-				href: "/dashboard/projects",
-				icon: FolderKanban,
-				permission: "view_projects",
-			},
-			{
-				title: "My Tasks",
-				href: "/dashboard/my-tasks",
-				icon: ListTodo,
-			},
-			{
-				title: "Wiki",
-				href: "/dashboard/wiki",
-				icon: BookOpen,
-				permission: "view_wiki",
-			},
-		],
-	},
-	{
-		title: "HR & Time",
-		items: [
-			{
-				title: "Employees",
-				href: "/dashboard/employees",
-				icon: Users,
-				permission: "manage_employees",
-			},
-			{
-				title: "Attendance",
-				href: "/dashboard/my-attendance",
-				icon: Clock,
-				permission: "view_attendance",
-			},
-			{
-				title: "Performance",
-				href: "/dashboard/performance",
-				icon: Award,
-			},
-		],
-	},
-	{
-		title: "Administration",
-		items: [
-			{
-				title: "Reports",
-				href: "/dashboard/admin",
-				icon: BarChart3,
-				permission: "view_admin_stats",
-			},
-			{
-				title: "Employee Review",
-				href: "/dashboard/employee-review",
-				icon: UserCheck,
-				permission: "view_admin_stats",
-			},
-			{
-				title: "Attendance Management",
-				href: "/dashboard/attendance",
-				icon: Clock,
-				permission: "view_all_attendance",
-			},
-			{
-				title: "Points Management",
-				href: "/dashboard/user-points",
-				icon: Award,
-				permission: "manage_user_points",
-			},
-			{
-				title: "Roles & Permissions",
-				href: "/dashboard/roles",
-				icon: Shield,
-				permission: "manage_roles",
-			},
-			{
-				title: "Settings",
-				href: "/dashboard/settings",
-				icon: Settings,
-			},
-		],
-	},
-];
+const navIcons: Record<string, React.ElementType> = {
+	dashboard: LayoutDashboard,
+	clients: Building2,
+	projects: FolderKanban,
+	"my-tasks": ListTodo,
+	wiki: BookOpen,
+	employees: Users,
+	"my-attendance": Clock,
+	"attendance-management": Clock,
+	reports: BarChart3,
+	roles: Shield,
+	settings: Settings,
+};
 
 export function Sidebar() {
 	const { isCollapsed, isMobileOpen, toggleCollapsed, closeMobile } = useSidebarStore();
@@ -172,12 +53,8 @@ export function Sidebar() {
 	};
 
 	// Filter items based on permissions
-	const filterItems = (items: NavItem[]) => {
-		return items.filter((item) => {
-			if (item.permission && !hasPermission(item.permission)) return false;
-			if (item.roles && role && !item.roles.includes(role)) return false;
-			return true;
-		});
+	const filterItems = (items: (typeof dashboardNavGroups)[number]["items"]) => {
+		return items.filter((item) => canShowNavigationItem(item, { role, hasPermission }));
 	};
 
 	const showCollapsed = isCollapsed && !isMobileOpen;
@@ -204,12 +81,12 @@ export function Sidebar() {
 						>
 							<Image
 								src="/logo.webp"
-								alt="Elmo ERP"
+								alt={TABLES_APP_NAME}
 								width={32}
 								height={32}
 								className="rounded-lg"
 							/>
-							<span className="text-lg font-semibold">Elmo ERP</span>
+							<span className="text-lg font-semibold">{TABLES_APP_NAME}</span>
 						</Link>
 					)}
 					{isCollapsed && !isMobileOpen && (
@@ -219,7 +96,7 @@ export function Sidebar() {
 						>
 							<Image
 								src="/logo.webp"
-								alt="Elmo ERP"
+								alt={TABLES_APP_NAME}
 								width={32}
 								height={32}
 								className="rounded-lg"
@@ -262,7 +139,7 @@ export function Sidebar() {
 
 				{/* Navigation */}
 				<nav className="flex-1 overflow-y-auto py-4">
-					{navGroups.map((group) => {
+					{dashboardNavGroups.map((group) => {
 						const filteredItems = filterItems(group.items);
 						if (filteredItems.length === 0) return null;
 
@@ -279,7 +156,7 @@ export function Sidebar() {
 								<div className="space-y-1 px-3">
 									{filteredItems.map((item) => {
 										const isActive = isItemActive(item.href);
-										const Icon = item.icon;
+										const Icon = navIcons[item.id] ?? LayoutDashboard;
 
 										const linkContent = (
 											<Link
@@ -318,7 +195,7 @@ export function Sidebar() {
 				</nav>
 
 				{/* Footer */}
-				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2023 Elmo ERP</p>}</div>
+				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2026 {TABLES_APP_NAME}</p>}</div>
 			</aside>
 		</TooltipProvider>
 	);

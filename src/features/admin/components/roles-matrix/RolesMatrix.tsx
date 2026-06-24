@@ -24,6 +24,7 @@ import { RolesMatrixSkeleton } from "./RolesMatrixSkeleton";
 import { CreateRoleDialog } from "./CreateRoleDialog";
 import { DeleteRoleDialog } from "./DeleteRoleDialog";
 import { PermissionCheckbox } from "./PermissionCheckbox";
+import { getRoleLabel } from "@/config/simplification";
 
 interface RolesMatrixProps {
 	className?: string;
@@ -248,7 +249,7 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 									>
 										<div className="flex flex-col items-center gap-1">
 											<div className="flex items-center gap-1">
-												<span className="font-medium capitalize">{role.name}</span>
+												<span className="font-medium">{getRoleLabel(role.name)}</span>
 												{!isProtectedRole(role) && (
 													<Button
 														variant="ghost"

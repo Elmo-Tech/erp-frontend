@@ -11,23 +11,24 @@ import { useLogout } from "@/features/auth/hooks/useLogout";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LayoutDashboard, FileText, CreditCard, LogOut, User } from "lucide-react";
+import { LayoutDashboard, FileText, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TABLES_APP_NAME, canShowNavigationItem, clientPortalNavItems } from "@/config/simplification";
 
 interface ClientLayoutProps {
 	children: ReactNode;
 }
 
-const clientNavItems = [
-	{ title: "Dashboard", href: "/client", icon: LayoutDashboard },
-	{ title: "Projects", href: "/client/projects", icon: FileText },
-	{ title: "Invoices", href: "/client/invoices", icon: CreditCard },
-];
+const clientNavIcons: Record<string, React.ElementType> = {
+	"client-dashboard": LayoutDashboard,
+	"client-projects": FileText,
+};
 
 export default function ClientLayout({ children }: ClientLayoutProps) {
 	const pathname = usePathname();
-	const { user } = useAuthStore();
+	const { user, role, hasPermission } = useAuthStore();
 	const { mutate: logout, isPending: isLoggingOut } = useLogout();
+	const visibleNavItems = clientPortalNavItems.filter((item) => canShowNavigationItem(item, { role, hasPermission }));
 
 	const getInitials = (name: string) => {
 		return name
@@ -51,19 +52,19 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 						>
 							<Image
 								src="/logo.webp"
-								alt="Elmo ERP"
+								alt={TABLES_APP_NAME}
 								width={32}
 								height={32}
 								className="rounded-lg"
 							/>
-							<span className="text-lg font-semibold">Elmo ERP</span>
+							<span className="text-lg font-semibold">{TABLES_APP_NAME}</span>
 						</Link>
 
 						{/* Navigation */}
 						<nav className="hidden md:flex items-center gap-1">
-							{clientNavItems.map((item) => {
+							{visibleNavItems.map((item) => {
 								const isActive = pathname === item.href;
-								const Icon = item.icon;
+								const Icon = clientNavIcons[item.id] ?? LayoutDashboard;
 								return (
 									<Link
 										key={item.href}
@@ -129,9 +130,9 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
 					{/* Mobile Navigation */}
 					<nav className="md:hidden border-t">
 						<div className="container mx-auto flex items-center justify-around px-4 py-2">
-							{clientNavItems.map((item) => {
+							{visibleNavItems.map((item) => {
 								const isActive = pathname === item.href;
-								const Icon = item.icon;
+								const Icon = clientNavIcons[item.id] ?? LayoutDashboard;
 								return (
 									<Link
 										key={item.href}

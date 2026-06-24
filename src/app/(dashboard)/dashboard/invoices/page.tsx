@@ -1,7 +1,6 @@
-"use client";
-
-import { InvoiceManager } from "@/features/invoices/components";
+import { redirect } from "next/navigation";
+import { getDisabledRouteRedirect } from "@/config/simplification";
 
 export default function InvoicesPage() {
-	return <InvoiceManager />;
+	redirect(getDisabledRouteRedirect("/dashboard/invoices"));
 }

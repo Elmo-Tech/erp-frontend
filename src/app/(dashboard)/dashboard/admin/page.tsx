@@ -1,6 +1,6 @@
 /**
  * Admin Dashboard Page
- * Main admin dashboard showing key business metrics and analytics.
+ * Main admin reports dashboard showing operational project and attendance metrics.
  *
  * Requirements: 14.1-14.6
  */

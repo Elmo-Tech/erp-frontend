@@ -12,9 +12,9 @@ interface ClientProjectDetailPageProps {
 /**
  * Client Project Detail Page
  * Route: /client/projects/[id]
- * Uses ClientProjectView component to display project details with progress and invoices.
+ * Uses ClientProjectView component to display project details with progress.
  *
- * Requirements: 14.1 - Display project details with progress bar and invoices
+ * Requirements: 14.1 - Display project details with progress bar
  */
 export default function ClientProjectDetailPage({ params }: ClientProjectDetailPageProps) {
 	const { id } = use(params);
