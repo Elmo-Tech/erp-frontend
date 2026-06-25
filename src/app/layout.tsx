@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 		description: appDescription,
 		images: [
 			{
-				url: "/logo.webp",
+				url: "/the-tables-logo.png",
 				width: 512,
 				height: 512,
 				alt: `${TABLES_APP_NAME} Logo`,
@@ -36,12 +36,12 @@ export const metadata: Metadata = {
 		card: "summary_large_image",
 		title: `${TABLES_APP_NAME} - Enterprise Resource Planning System`,
 		description: appDescription,
-		images: ["/logo.webp"],
+		images: ["/the-tables-logo.png"],
 	},
 	icons: {
-		icon: "/logo.webp",
-		shortcut: "/logo.webp",
-		apple: "/logo.webp",
+		icon: "/the-tables-logo.svg",
+		shortcut: "/the-tables-logo.svg",
+		apple: "/the-tables-logo.png",
 	},
 	manifest: "/manifest.json",
 	robots: {

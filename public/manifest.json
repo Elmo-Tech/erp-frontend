@@ -1,16 +1,16 @@
 {
-	"name": "Elmo ERP",
-	"short_name": "Elmo ERP",
-	"description": "Enterprise Resource Planning System - Manage projects, sales, tasks, and team productivity in one place.",
+	"name": "The Tables ERP",
+	"short_name": "The Tables ERP",
+	"description": "Operational ERP for projects, tasks, clients, attendance, and team coordination.",
 	"start_url": "/",
 	"display": "standalone",
 	"background_color": "#ffffff",
 	"theme_color": "#6366f1",
 	"icons": [
 		{
-			"src": "/logo.webp",
-			"sizes": "512x512",
-			"type": "image/webp",
+			"src": "/the-tables-logo.png",
+			"sizes": "4500x4500",
+			"type": "image/png",
 			"purpose": "any maskable"
 		}
 	]

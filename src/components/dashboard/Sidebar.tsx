@@ -81,7 +81,7 @@ export function Sidebar() {
 							className="flex items-center gap-2"
 						>
 							<Image
-								src="/logo.webp"
+								src="/the-tables-logo.svg"
 								alt={TABLES_APP_NAME}
 								width={32}
 								height={32}
@@ -96,7 +96,7 @@ export function Sidebar() {
 							className="mx-auto"
 						>
 							<Image
-								src="/logo.webp"
+								src="/the-tables-logo.svg"
 								alt={TABLES_APP_NAME}
 								width={32}
 								height={32}

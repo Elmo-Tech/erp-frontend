@@ -32,7 +32,7 @@ export default function LoginPage() {
 			<div className="w-full max-w-md">
 				<div className="mb-8 flex flex-col items-center text-center">
 					<Image
-						src="/logo.webp"
+						src="/the-tables-logo.svg"
 						alt={TABLES_APP_NAME}
 						width={80}
 						height={80}
