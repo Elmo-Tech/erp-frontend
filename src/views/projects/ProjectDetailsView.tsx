@@ -36,6 +36,8 @@ import { ProjectFilesTab } from "./tabs/ProjectFilesTab";
 import { ProjectChangeRequestsTab } from "./tabs/ProjectChangeRequestsTab";
 import { ProjectActivityTab } from "./tabs/ProjectActivityTab";
 import { ProjectNotesTab } from "./tabs/ProjectNotesTab";
+import { ProjectCommercialDocumentsTab } from "./tabs/ProjectCommercialDocumentsTab";
+import { ProjectDevelopmentDataTab } from "./tabs/ProjectDevelopmentDataTab";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -151,6 +153,8 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 					<TabsTrigger value="meetings">Meetings</TabsTrigger>
 					<TabsTrigger value="notes">Notes</TabsTrigger>
 					<TabsTrigger value="team">Team</TabsTrigger>
+					<TabsTrigger value="documents">Documents</TabsTrigger>
+					<TabsTrigger value="development-data">Development Data</TabsTrigger>
 					<TabsTrigger value="files">Files</TabsTrigger>
 					<TabsTrigger value="change-requests">Change Requests</TabsTrigger>
 					<TabsTrigger value="activity">Activity</TabsTrigger>
@@ -180,6 +184,14 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 
 				<TabsContent value="team">
 					<ProjectTeamTab projectId={projectId} />
+				</TabsContent>
+
+				<TabsContent value="documents">
+					<ProjectCommercialDocumentsTab projectId={projectId} />
+				</TabsContent>
+
+				<TabsContent value="development-data">
+					<ProjectDevelopmentDataTab projectId={projectId} />
 				</TabsContent>
 
 				<TabsContent value="files">

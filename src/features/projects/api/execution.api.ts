@@ -802,6 +802,92 @@ export const fileKeys = {
 	files: (projectId: number) => [...projectKeys.detail(projectId), "files"] as const,
 };
 
+export interface ProjectWiki {
+	wikiId: number;
+	projectId: number;
+	title: string;
+	content: string;
+	isEncrypted: boolean;
+	createdAt: string;
+	updatedAt: string;
+	createdBy: number;
+	updatedBy: number;
+}
+
+interface ProjectWikiListData {
+	wikis: ProjectWiki[];
+	pagination?: {
+		total: number;
+		count: number;
+		perPage: number;
+		currentPage: number;
+		totalPages: number;
+	};
+}
+
+export interface ProjectWikiPayload {
+	title: string;
+	content: string;
+	isEncrypted?: boolean;
+}
+
+export const wikiKeys = {
+	wikis: (projectId: number) => [...projectKeys.detail(projectId), "wikis"] as const,
+};
+
+export function useProjectWikis(projectId: number) {
+	return useQuery({
+		queryKey: wikiKeys.wikis(projectId),
+		queryFn: async () => {
+			const response = await api.get<ApiEnvelope<ProjectWikiListData>>(`/projects/${projectId}/wikis?perPage=100`);
+			return response.data.data.wikis;
+		},
+		enabled: Number.isFinite(projectId) && projectId > 0,
+		staleTime: 2 * 60 * 1000,
+	});
+}
+
+export function useCreateProjectWiki() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectWiki, Error, { projectId: number; payload: ProjectWikiPayload }>({
+		mutationFn: async ({ projectId, payload }) => {
+			const response = await api.post<ApiEnvelope<ProjectWiki>>(`/projects/${projectId}/wikis`, payload);
+			return response.data.data;
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: wikiKeys.wikis(projectId) });
+		},
+	});
+}
+
+export function useUpdateProjectWiki() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectWiki, Error, { projectId: number; wikiId: number; payload: ProjectWikiPayload }>({
+		mutationFn: async ({ projectId, wikiId, payload }) => {
+			const response = await api.patch<ApiEnvelope<ProjectWiki>>(`/projects/${projectId}/wikis/${wikiId}`, payload);
+			return response.data.data;
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: wikiKeys.wikis(projectId) });
+		},
+	});
+}
+
+export function useDeleteProjectWiki() {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, { projectId: number; wikiId: number }>({
+		mutationFn: async ({ projectId, wikiId }) => {
+			await api.delete(`/projects/${projectId}/wikis/${wikiId}`);
+		},
+		onSuccess: (_data, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: wikiKeys.wikis(projectId) });
+		},
+	});
+}
+
 export function useProjectFiles(projectId: number) {
 	return useQuery({
 		queryKey: fileKeys.files(projectId),
