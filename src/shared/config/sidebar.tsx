@@ -83,7 +83,7 @@ export const SidebarConfig = [
                 title: "Task Control",
                 href: "/dashboard/task-control",
                 icon: ClipboardList,
-                permission: "view_tasks",
+                permission: "view_task_control",
             },
             {
                 title: "My Tasks",

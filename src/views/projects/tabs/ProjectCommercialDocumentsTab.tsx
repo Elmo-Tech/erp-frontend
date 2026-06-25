@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileSignature, FileText, ReceiptText, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { useDeleteProjectFile, useProjectFiles, useUploadProjectFile } from "@/features/projects/api/execution.api";
+import { useDeleteProjectFile, useProjectFiles, useProjectSalesDocuments, useUploadProjectFile } from "@/features/projects/api/execution.api";
 import type { ProjectFile } from "@/entities/project/model/types";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -25,33 +25,52 @@ import { ProjectFileUploadDialog } from "./ui/ProjectFileUploadDialog";
 
 const commercialDocumentCategories = ["proposal", "quotation", "contract"] as const;
 
-const documentColumns: Column<ProjectFile>[] = [
+interface CommercialDocumentRow {
+	documentId: string;
+	projectFile?: ProjectFile;
+	name: string;
+	category: "proposal" | "quotation" | "contract";
+	status?: string;
+	fileUrl?: string | null;
+	description?: string | null;
+	createdAt: string;
+	source: "sales" | "project_file";
+}
+
+const documentColumns: Column<CommercialDocumentRow>[] = [
 	{
 		key: "name",
 		header: "Document",
-		render: (file) => (
+		render: (document) => (
 			<div className="min-w-0">
-				<p className="truncate font-medium">{file.name}</p>
-				{file.description && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{file.description}</p>}
+				<p className="truncate font-medium">{document.name}</p>
+				<p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+					{document.source === "sales" ? "Sales stage document" : document.description || "Project file"}
+				</p>
 			</div>
 		),
 	},
 	{
 		key: "category",
 		header: "Type",
-		render: (file) => (
+		render: (document) => (
 			<Badge
 				variant="outline"
-				className={`rounded-sm border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide ${getProjectFileCategoryClass(file.category)}`}
+				className={`rounded-sm border px-1.5 py-0 text-[10px] font-medium uppercase tracking-wide ${getProjectFileCategoryClass(document.category)}`}
 			>
-				{file.category}
+				{document.category}
 			</Badge>
 		),
 	},
 	{
+		key: "status",
+		header: "Status",
+		render: (document) => <span className="text-sm capitalize text-muted-foreground">{document.status?.replaceAll("_", " ") || "Uploaded"}</span>,
+	},
+	{
 		key: "createdAt",
 		header: "Uploaded",
-		render: (file) => <span className="text-sm text-muted-foreground">{formatDateDisplay(file.createdAt)}</span>,
+		render: (document) => <span className="text-sm text-muted-foreground">{formatDateDisplay(document.createdAt)}</span>,
 	},
 ];
 
@@ -65,6 +84,7 @@ export function ProjectCommercialDocumentsTab({ projectId }: ProjectCommercialDo
 	const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 	const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
 	const filesQuery = useProjectFiles(projectId);
+	const salesDocumentsQuery = useProjectSalesDocuments(projectId);
 	const uploadFile = useUploadProjectFile();
 	const deleteFile = useDeleteProjectFile();
 
@@ -73,10 +93,32 @@ export function ProjectCommercialDocumentsTab({ projectId }: ProjectCommercialDo
 		defaultValues: { ...projectFileUploadDefaults, category: "proposal" },
 	});
 
-	const documents = useMemo(
-		() => (filesQuery.data ?? []).filter((file) => commercialDocumentCategories.includes(file.category as (typeof commercialDocumentCategories)[number])),
-		[filesQuery.data],
-	);
+	const documents = useMemo<CommercialDocumentRow[]>(() => {
+		const projectFileDocuments = (filesQuery.data ?? [])
+			.filter((file) => commercialDocumentCategories.includes(file.category as (typeof commercialDocumentCategories)[number]))
+			.map((file) => ({
+				documentId: `project_file:${file.fileId}`,
+				projectFile: file,
+				name: file.name,
+				category: file.category as CommercialDocumentRow["category"],
+				fileUrl: file.fileUrl,
+				description: file.description,
+				createdAt: file.createdAt,
+				source: "project_file" as const,
+			}));
+
+		const salesDocuments = (salesDocumentsQuery.data ?? []).map((document) => ({
+			documentId: document.documentId,
+			name: document.name,
+			category: document.category,
+			status: document.status,
+			fileUrl: document.fileUrl,
+			createdAt: document.createdAt,
+			source: "sales" as const,
+		}));
+
+		return [...salesDocuments, ...projectFileDocuments].sort((first, second) => second.createdAt.localeCompare(first.createdAt));
+	}, [filesQuery.data, salesDocumentsQuery.data]);
 
 	const summary = commercialDocumentCategories.map((category) => ({
 		category,
@@ -148,9 +190,9 @@ export function ProjectCommercialDocumentsTab({ projectId }: ProjectCommercialDo
 				titleBadge={documents.length > 0 ? String(documents.length) : undefined}
 				columns={documentColumns}
 				data={documents}
-				keyExtractor={(file) => file.fileId}
-				isLoading={filesQuery.isLoading}
-				error={filesQuery.error}
+				keyExtractor={(document) => document.documentId}
+				isLoading={filesQuery.isLoading || salesDocumentsQuery.isLoading}
+				error={filesQuery.error ?? salesDocumentsQuery.error}
 				emptyState={{
 					icon: FileSignature,
 					title: "No commercial documents yet",
@@ -164,20 +206,22 @@ export function ProjectCommercialDocumentsTab({ projectId }: ProjectCommercialDo
 						</Button>
 					</Can>
 				}
-				rowActions={(file) => (
+				rowActions={(document) => (
 					<div className="flex items-center justify-end gap-1">
-						{file.fileUrl && (
+						{document.fileUrl && (
 							<Button type="button" variant="ghost" size="sm" asChild>
-								<a href={file.fileUrl} target="_blank" rel="noopener noreferrer" download>
+								<a href={document.fileUrl} target="_blank" rel="noopener noreferrer" download>
 									Open
 								</a>
 							</Button>
 						)}
-						<Can permission={["delete_project_files", "manage_project_files"]}>
-							<Button type="button" variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => setFileToDelete(file)}>
-								Delete
-							</Button>
-						</Can>
+						{document.projectFile && (
+							<Can permission={["delete_project_files", "manage_project_files"]}>
+								<Button type="button" variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => setFileToDelete(document.projectFile ?? null)}>
+									Delete
+								</Button>
+							</Can>
+						)}
 					</div>
 				)}
 			/>

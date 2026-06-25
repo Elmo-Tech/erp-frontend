@@ -3,7 +3,7 @@ import { ProtectedDashboardRoute } from "@/widgets/layout/ui/ProtectedDashboardR
 
 export default function TaskControlRoute() {
 	return (
-		<ProtectedDashboardRoute requiredPermission="view_tasks">
+		<ProtectedDashboardRoute requiredPermission="view_task_control">
 			<TaskControlPage />
 		</ProtectedDashboardRoute>
 	);

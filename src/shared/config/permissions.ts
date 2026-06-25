@@ -104,6 +104,7 @@ export const SYSTEM_PERMISSIONS = [
 	// ── Task Management (granular) ───────────────────────────────────────────
 	"manage_tasks",
 	"view_tasks",
+	"view_task_control",
 	"create_tasks",
 	"edit_tasks",
 	"delete_tasks",

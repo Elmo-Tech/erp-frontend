@@ -148,6 +148,7 @@ export const executionKeys = {
 	changeRequests: (projectId: number) => [...projectKeys.detail(projectId), "change-requests"] as const,
 	activeTimeEntry: () => ["project-execution", "time-entries", "active"] as const,
 	myActiveTasks: () => ["project-execution", "tasks", "my-active"] as const,
+	taskControl: () => ["project-execution", "tasks", "control"] as const,
 	timeline: (filters: ProjectTimelineFilters) => ["project-execution", "timeline", filters] as const,
 };
 
@@ -226,6 +227,19 @@ export function useMyActiveProjectTasks() {
 		queryFn: getMyActiveProjectTasks,
 		staleTime: 60 * 1000,
 		refetchInterval: 60 * 1000,
+	});
+}
+
+export async function getTaskControlTasks(): Promise<ProjectTask[]> {
+	const response = await api.get<ApiEnvelope<TaskListData>>("/projects/tasks/control");
+	return mapProjectTaskListData(response.data.data);
+}
+
+export function useTaskControlTasks() {
+	return useQuery({
+		queryKey: executionKeys.taskControl(),
+		queryFn: getTaskControlTasks,
+		staleTime: 2 * 60 * 1000,
 	});
 }
 
@@ -800,7 +814,34 @@ export function useRemoveProjectMember() {
 // Project Files hooks
 export const fileKeys = {
 	files: (projectId: number) => [...projectKeys.detail(projectId), "files"] as const,
+	salesDocuments: (projectId: number) => [...projectKeys.detail(projectId), "sales-documents"] as const,
 };
+
+export interface ProjectSalesDocument {
+	documentId: string;
+	projectId: number;
+	name: string;
+	category: "proposal" | "quotation" | "contract";
+	status: string;
+	fileUrl: string | null;
+	createdAt: string;
+}
+
+interface ProjectSalesDocumentListData {
+	documents: ProjectSalesDocument[];
+}
+
+export function useProjectSalesDocuments(projectId: number) {
+	return useQuery({
+		queryKey: fileKeys.salesDocuments(projectId),
+		queryFn: async () => {
+			const response = await api.get<ApiEnvelope<ProjectSalesDocumentListData>>(`/projects/${projectId}/sales-documents`);
+			return response.data.data.documents;
+		},
+		enabled: Number.isFinite(projectId) && projectId > 0,
+		staleTime: 2 * 60 * 1000,
+	});
+}
 
 export interface ProjectWiki {
 	wikiId: number;

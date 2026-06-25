@@ -1,16 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQueries, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { AlertCircle, CheckCircle2, CircleDashed, Clock, ListTodo, Search } from "lucide-react";
-import { projectApi } from "@/entities/project/api/project.api";
-import { projectKeys } from "@/entities/project/model/query-keys";
-import type { Project } from "@/entities/project/model/types";
 import {
 	ExecutionTaskStatus,
 	ExecutionTaskStatusLabels,
-	getProjectTasks,
+	useTaskControlTasks,
 	type ExecutionTaskStatusValue,
 	type ProjectTask,
 } from "@/features/projects/api/execution.api";
@@ -42,46 +38,23 @@ function formatDueDate(value: string | null | undefined) {
 	return formatDateDisplay(value);
 }
 
-function buildTaskRows(projects: Project[], taskLists: ProjectTask[][]): EnrichedProjectTask[] {
-	const projectById = new Map(projects.map((project) => [project.projectId, project]));
-
-	return taskLists.flatMap((tasks) =>
-		tasks.map((task) => {
-			const project = projectById.get(task.projectId);
-
-			return {
-				...task,
-				projectTitle: project?.title ?? task.project?.title ?? "Project",
-				clientName: project?.client?.name ?? "No client",
-				deadline: task.dueDate ?? project?.deadline ?? null,
-			};
-		}),
-	);
+function buildTaskRows(tasks: ProjectTask[]): EnrichedProjectTask[] {
+	return tasks.map((task) => ({
+		...task,
+		projectTitle: task.project?.title ?? "Project",
+		clientName: task.project?.client?.name ?? "No client",
+		deadline: task.dueDate ?? null,
+	}));
 }
 
 export default function TaskControlPage() {
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<TaskControlStatus>("active");
 
-	const projectsQuery = useQuery({
-		queryKey: projectKeys.list({ perPage: 100 }),
-		queryFn: () => projectApi.getProjects({ perPage: 100 }),
-		staleTime: 2 * 60 * 1000,
-	});
-
-	const projects = useMemo(() => projectsQuery.data?.projects ?? [], [projectsQuery.data?.projects]);
-	const taskQueries = useQueries({
-		queries: projects.map((project) => ({
-			queryKey: [...projectKeys.detail(project.projectId), "task-control"],
-			queryFn: () => getProjectTasks(project.projectId),
-			enabled: projectsQuery.isSuccess,
-			staleTime: 2 * 60 * 1000,
-		})),
-	});
-
-	const tasks = useMemo(() => buildTaskRows(projects, taskQueries.map((query) => query.data ?? [])), [projects, taskQueries]);
-	const isLoading = projectsQuery.isLoading || taskQueries.some((query) => query.isLoading);
-	const error = projectsQuery.error ?? taskQueries.find((query) => query.error)?.error ?? null;
+	const tasksQuery = useTaskControlTasks();
+	const tasks = useMemo(() => buildTaskRows(tasksQuery.data ?? []), [tasksQuery.data]);
+	const isLoading = tasksQuery.isLoading;
+	const error = tasksQuery.error;
 
 	const filteredTasks = useMemo(() => {
 		const query = search.trim().toLowerCase();

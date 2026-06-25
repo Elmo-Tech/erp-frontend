@@ -70,6 +70,10 @@ export interface ProjectTask {
 	project?: {
 		projectId: number;
 		title: string;
+		client?: {
+			clientId: number;
+			name: string;
+		} | null;
 	} | null;
 	deliverables?: TaskDeliverable[];
 	timeEntries?: ProjectTimeEntry[];

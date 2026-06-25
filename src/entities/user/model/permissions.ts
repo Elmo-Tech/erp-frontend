@@ -26,6 +26,7 @@ export const MEETING_PERMISSIONS = {
 export const TASK_PERMISSIONS = {
 	MANAGE_TASKS: "manage_tasks",
 	VIEW_TASKS: "view_tasks",
+	VIEW_TASK_CONTROL: "view_task_control",
 	CREATE_TASKS: "create_tasks",
 	EDIT_TASKS: "edit_tasks",
 	DELETE_TASKS: "delete_tasks",
@@ -126,6 +127,7 @@ export function useTaskPermissions() {
 		() => ({
 			canManageTasks: hasPermission(TASK_PERMISSIONS.MANAGE_TASKS),
 			canViewTasks: hasPermission(TASK_PERMISSIONS.VIEW_TASKS),
+			canViewTaskControl: hasPermission(TASK_PERMISSIONS.VIEW_TASK_CONTROL),
 			canCreateTasks: hasPermission(TASK_PERMISSIONS.CREATE_TASKS),
 			canEditTasks: hasPermission(TASK_PERMISSIONS.EDIT_TASKS),
 			canDeleteTasks: hasPermission(TASK_PERMISSIONS.DELETE_TASKS),
