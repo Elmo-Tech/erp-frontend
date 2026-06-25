@@ -18,6 +18,7 @@ import { useStartTimer, useStopTimer, useActiveTimer } from "@/features/sales/ho
 import { TrackableType } from "@/features/sales/types";
 import { useTimerStore } from "@/store/timerStore";
 import { toast } from "sonner";
+import { getRoleLabel } from "@/config/simplification";
 
 import React, { useEffect } from "react";
 
@@ -256,7 +257,7 @@ function ListItem({
 						variant="outline"
 						className="hidden md:flex text-xs shrink-0"
 					>
-						{myAssignment.role}
+						{getRoleLabel(myAssignment.role)}
 					</Badge>
 				)}
 

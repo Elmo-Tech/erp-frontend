@@ -18,6 +18,7 @@ import { useStartTimer, useStopTimer } from "@/features/sales/hooks";
 import { useTimerStore } from "@/store/timerStore";
 import { TrackableType } from "@/features/sales/types";
 import { toast } from "sonner";
+import { getRoleLabel } from "@/config/simplification";
 
 interface TaskDetailDialogProps {
 	task: Task | null;
@@ -266,7 +267,7 @@ function TaskAssigneesSection({ assignees }: { assignees: Task["assignees"] }) {
 						className="gap-1"
 					>
 						{assignee.user?.name || `User ${assignee.userId}`}
-						<span className="text-muted-foreground">({assignee.role})</span>
+						<span className="text-muted-foreground">({getRoleLabel(assignee.role)})</span>
 						{assignee.isPrimary && <span className="text-amber-500">★</span>}
 					</Badge>
 				))}

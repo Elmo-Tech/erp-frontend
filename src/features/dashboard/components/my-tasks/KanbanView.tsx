@@ -22,6 +22,7 @@ import { useTimerStore } from "@/store/timerStore";
 import { useStartTimer, useStopTimer } from "@/features/sales/hooks";
 import { TrackableType } from "@/features/sales/types";
 import { toast } from "sonner";
+import { getRoleLabel } from "@/config/simplification";
 import React, { useEffect } from "react";
 
 interface KanbanViewProps {
@@ -315,7 +316,7 @@ function KanbanCard({
 								variant="secondary"
 								className="text-[10px] h-5"
 							>
-								{myAssignment.role}
+								{getRoleLabel(myAssignment.role)}
 								{myAssignment.isPrimary && " ★"}
 							</Badge>
 						) : (

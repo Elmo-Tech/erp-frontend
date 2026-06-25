@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, Clock, Shield, BookOpen, BarChart3, Building2, X, ListTodo } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, Clock, Shield, BookOpen, BarChart3, Building2, X, ListTodo, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useSidebarStore } from "@/store/sidebarStore";
@@ -24,6 +24,7 @@ const navIcons: Record<string, React.ElementType> = {
 	reports: BarChart3,
 	roles: Shield,
 	settings: Settings,
+	profile: User,
 };
 
 export function Sidebar() {

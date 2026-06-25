@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { format, isPast, isToday } from "date-fns";
 import { MarkCompleteButton } from "./MarkCompleteButton";
+import { getRoleLabel } from "@/config/simplification";
 
 // Priority indicator colors
 const PriorityIndicator: Record<TaskPriority, string> = {
@@ -387,7 +388,7 @@ function TaskCard({ task, level, isExpanded, onToggle, expandedTasks, onToggleEx
 							{myAssignment && (
 								<div className="flex items-center gap-1">
 									<User className="h-3 w-3" />
-									<span>{myAssignment.role}</span>
+									<span>{getRoleLabel(myAssignment.role)}</span>
 									{myAssignment.isPrimary && (
 										<Badge
 											variant="secondary"

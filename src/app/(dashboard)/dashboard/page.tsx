@@ -10,6 +10,7 @@ import { useMyAssignedTasks } from "@/features/dashboard/hooks/useTasks";
 import { FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview } from "@/features/dashboard/types";
+import { getRoleLabel } from "@/config/simplification";
 
 export default function DashboardPage() {
 	const { user } = useAuthStore();
@@ -288,7 +289,7 @@ function EmployeeDashboard({ data }: { data: DeveloperDashboardOverview }) {
 											<div className="space-y-1">
 												<p className="text-sm font-medium">{task.title}</p>
 												<p className="text-xs text-muted-foreground">
-													{task.project?.title} • {myAssignment?.role || "Team Member"}
+													{task.project?.title} • {myAssignment?.role ? getRoleLabel(myAssignment.role) : "Team Member"}
 												</p>
 											</div>
 											<div className="flex items-center gap-2">
