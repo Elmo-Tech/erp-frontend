@@ -98,11 +98,10 @@ export function LookupOptionsManager({ type, title, description }: LookupOptions
                     <GripVertical className="w-4 h-4 text-muted-foreground opacity-50 cursor-grab" />
                     
                     <div 
-                      className="w-4 h-4 rounded-full border shadow-sm" 
+                      className={`w-4 h-4 rounded-full border shadow-sm ${option.color?.startsWith('bg-') ? option.color.split(' ')[0] : ''}`}
                       style={{ 
                         backgroundColor: option.color && !option.color.startsWith('bg-') ? option.color : 'transparent' 
                       }}
-                      className={option.color?.startsWith('bg-') ? `w-4 h-4 rounded-full border shadow-sm ${option.color.split(' ')[0]}` : "w-4 h-4 rounded-full border shadow-sm"}
                     />
                     
                     <div>

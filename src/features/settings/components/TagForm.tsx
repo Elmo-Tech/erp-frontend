@@ -80,7 +80,7 @@ export function TagForm({ open, onOpenChange, tag }: TagFormProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="name"
               render={({ field }) => (
                 <FormItem>
@@ -94,7 +94,7 @@ export function TagForm({ open, onOpenChange, tag }: TagFormProps) {
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="color"
               render={({ field }) => (
                 <FormItem>

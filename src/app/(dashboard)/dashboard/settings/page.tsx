@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LookupOptionsManager, TagsManager } from '@/features/settings';
+import { LookupOptionsManager } from '@/features/settings/components/LookupOptionsManager';
+import { TagsManager } from '@/features/settings/components/TagsManager';
 
 export default function SettingsPage() {
   return (

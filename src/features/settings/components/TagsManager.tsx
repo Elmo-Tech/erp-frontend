@@ -87,11 +87,10 @@ export function TagsManager() {
                 >
                   <div className="flex items-center gap-3">
                     <div 
-                      className="w-4 h-4 rounded-full border shadow-sm shrink-0" 
+                      className={`w-4 h-4 rounded-full border shadow-sm shrink-0 ${tag.color?.startsWith('bg-') ? tag.color.split(' ')[0] : ''}`}
                       style={{ 
                         backgroundColor: tag.color && !tag.color.startsWith('bg-') ? tag.color : 'transparent' 
                       }}
-                      className={tag.color?.startsWith('bg-') ? `w-4 h-4 rounded-full border shadow-sm ${tag.color.split(' ')[0]}` : "w-4 h-4 rounded-full border shadow-sm"}
                     />
                     <div>
                       <div className="font-medium">{tag.name}</div>

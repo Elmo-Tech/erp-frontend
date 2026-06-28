@@ -17,7 +17,7 @@ const formSchema = z.object({
   label: z.string().min(1, "Label is required").max(100),
   value: z.string().min(1, "Value/Slug is required").max(50),
   color: z.string().max(50).optional(),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -102,7 +102,7 @@ export function LookupOptionForm({ open, onOpenChange, type, option }: LookupOpt
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="label"
               render={({ field }) => (
                 <FormItem>
@@ -116,7 +116,7 @@ export function LookupOptionForm({ open, onOpenChange, type, option }: LookupOpt
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="value"
               render={({ field }) => (
                 <FormItem>
@@ -130,7 +130,7 @@ export function LookupOptionForm({ open, onOpenChange, type, option }: LookupOpt
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="color"
               render={({ field }) => (
                 <FormItem>
@@ -144,7 +144,7 @@ export function LookupOptionForm({ open, onOpenChange, type, option }: LookupOpt
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="is_active"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
