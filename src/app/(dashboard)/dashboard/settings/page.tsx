@@ -1,24 +1,48 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LookupOptionsManager, TagsManager } from '@/features/settings';
 
 export default function SettingsPage() {
-	return (
-		<div className="space-y-6">
-			<div>
-				<h1 className="text-2xl font-bold">Settings</h1>
-				<p className="text-muted-foreground">System and account settings</p>
-			</div>
+  return (
+    <div className="flex-1 space-y-6 p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+          <p className="text-muted-foreground">
+            Manage system configuration and lookup data.
+          </p>
+        </div>
+      </div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Account Settings</CardTitle>
-					<CardDescription>Manage your account preferences</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<p className="text-muted-foreground">Account settings will be displayed here...</p>
-				</CardContent>
-			</Card>
-		</div>
-	);
+      <Tabs defaultValue="specializations" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="specializations">Specializations</TabsTrigger>
+          <TabsTrigger value="categories">Task Categories</TabsTrigger>
+          <TabsTrigger value="tags">Tags</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="specializations" className="space-y-4">
+          <LookupOptionsManager 
+            type="specialization" 
+            title="User Specializations" 
+            description="Manage the specializations assigned to users and employees. These appear in user profile forms and are used for task filtering." 
+          />
+        </TabsContent>
+        
+        <TabsContent value="categories" className="space-y-4">
+          <LookupOptionsManager 
+            type="task_category" 
+            title="Task Categories" 
+            description="Manage the categories used to classify tasks. Categories help organize and filter tasks by type of work." 
+          />
+        </TabsContent>
+        
+        <TabsContent value="tags" className="space-y-4">
+          <TagsManager />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
 }

@@ -133,7 +133,7 @@ function ClientDetailsHeader({ client, onBack, onEdit, onPortalAccess }: ClientD
 				</div>
 			</div>
 			<div className="flex items-center gap-2">
-				<Button
+				{/* <Button
 					variant="outline"
 					onClick={onPortalAccess}
 				>
@@ -148,7 +148,7 @@ function ClientDetailsHeader({ client, onBack, onEdit, onPortalAccess }: ClientD
 							Create Portal Access
 						</>
 					)}
-				</Button>
+				</Button> */}
 				<Button onClick={onEdit}>
 					<Pencil className="h-4 w-4 mr-2" />
 					Edit Client
