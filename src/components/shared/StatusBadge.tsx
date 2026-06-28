@@ -41,6 +41,7 @@ import {
 	MilestoneStatusLabels,
 	MilestoneStatusColors,
 } from "@/lib/statusHelpers";
+import { useProjectStatuses, useTaskStatuses } from "@/features/admin/hooks/useEnums";
 
 type StatusType = "lead" | "leadPriority" | "quotation" | "contract" | "project" | "task" | "taskType" | "taskPriority" | "taskCategory" | "client" | "invoice" | "milestone";
 
@@ -76,14 +77,47 @@ const SIZE_CLASSES = {
 };
 
 export function StatusBadge({ type, status, size = "md", showBorder = true, className }: StatusBadgeProps) {
+	const { data: projectStatuses } = useProjectStatuses();
+	const { data: taskStatuses } = useTaskStatuses();
+
 	const config = STATUS_CONFIG[type];
-	const label = (config.labels as Record<string, string>)[status] || status;
-	const colorClass = (config.colors as Record<string, string>)[status] || "bg-gray-100 text-gray-800";
+	let label = (config.labels as Record<string, string>)[status] || status;
+	let colorClass = (config.colors as Record<string, string>)[status] || "bg-gray-100 text-gray-800";
+	let customStyle: React.CSSProperties = {};
+
+	if (type === "project" && projectStatuses?.data) {
+		const matched = projectStatuses.data.find((s) => s.value === status);
+		if (matched) {
+			label = matched.label;
+			if (matched.color) {
+				customStyle = {
+					backgroundColor: matched.color + "15",
+					color: matched.color,
+					borderColor: matched.color + "30",
+				};
+				colorClass = "";
+			}
+		}
+	} else if (type === "task" && taskStatuses?.data) {
+		const matched = taskStatuses.data.find((s) => s.value === status);
+		if (matched) {
+			label = matched.label;
+			if (matched.color) {
+				customStyle = {
+					backgroundColor: matched.color + "15",
+					color: matched.color,
+					borderColor: matched.color + "30",
+				};
+				colorClass = "";
+			}
+		}
+	}
 
 	return (
 		<Badge
 			variant="outline"
 			className={cn(colorClass, SIZE_CLASSES[size], showBorder ? "border" : "border-transparent", "font-medium", className)}
+			style={customStyle}
 		>
 			{label}
 		</Badge>

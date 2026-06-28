@@ -39,7 +39,7 @@ export interface TagFormData {
   type?: string;
 }
 
-export type LookupType = 'specialization' | 'task_category';
+export type LookupType = 'specialization' | 'task_category' | 'project_status' | 'task_status';
 
 export interface ApiResponse<T> {
   success: boolean;

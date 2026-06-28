@@ -85,3 +85,17 @@ export interface TaskCategoriesResponse {
 export interface CompatibleTaskCategoriesResponse {
 	data: TaskCategoryOption[];
 }
+
+export interface StatusOption {
+	value: string;
+	label: string;
+	color: string | null;
+}
+
+export interface ProjectStatusesResponse {
+	data: StatusOption[];
+}
+
+export interface TaskStatusesResponse {
+	data: StatusOption[];
+}

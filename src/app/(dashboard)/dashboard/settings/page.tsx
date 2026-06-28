@@ -21,6 +21,8 @@ export default function SettingsPage() {
         <TabsList>
           <TabsTrigger value="specializations">Specializations</TabsTrigger>
           <TabsTrigger value="categories">Task Categories</TabsTrigger>
+          <TabsTrigger value="project_statuses">Project Statuses</TabsTrigger>
+          <TabsTrigger value="task_statuses">Task Statuses</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
         
@@ -37,6 +39,22 @@ export default function SettingsPage() {
             type="task_category" 
             title="Task Categories" 
             description="Manage the categories used to classify tasks. Categories help organize and filter tasks by type of work." 
+          />
+        </TabsContent>
+
+        <TabsContent value="project_statuses" className="space-y-4">
+          <LookupOptionsManager 
+            type="project_status" 
+            title="Project Statuses" 
+            description="Manage the statuses used to track project lifecycle. Core statuses cannot be deleted or renamed." 
+          />
+        </TabsContent>
+
+        <TabsContent value="task_statuses" className="space-y-4">
+          <LookupOptionsManager 
+            type="task_status" 
+            title="Task Statuses" 
+            description="Manage the statuses used to track task progress. Core statuses cannot be deleted or renamed." 
           />
         </TabsContent>
         

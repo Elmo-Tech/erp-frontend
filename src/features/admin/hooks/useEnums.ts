@@ -4,7 +4,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
-import { UserSpecializationsResponse, TaskCategoriesResponse, CompatibleTaskCategoriesResponse, UserSpecialization } from "../types/enums";
+import {
+	UserSpecializationsResponse,
+	TaskCategoriesResponse,
+	CompatibleTaskCategoriesResponse,
+	UserSpecialization,
+	ProjectStatusesResponse,
+	TaskStatusesResponse
+} from "../types/enums";
 
 /**
  * Fetch all user specializations
@@ -45,6 +52,34 @@ export function useCompatibleTaskCategories(specialization?: UserSpecialization 
 			return response.data;
 		},
 		enabled: !!specialization,
+		staleTime: 5 * 60 * 1000, // 5 minutes
+	});
+}
+
+/**
+ * Fetch all active project statuses
+ */
+export function useProjectStatuses() {
+	return useQuery({
+		queryKey: ["enums", "project-statuses"],
+		queryFn: async (): Promise<ProjectStatusesResponse> => {
+			const response = await api.get("/enums/project-statuses");
+			return response.data;
+		},
+		staleTime: 5 * 60 * 1000, // 5 minutes
+	});
+}
+
+/**
+ * Fetch all active task statuses
+ */
+export function useTaskStatuses() {
+	return useQuery({
+		queryKey: ["enums", "task-statuses"],
+		queryFn: async (): Promise<TaskStatusesResponse> => {
+			const response = await api.get("/enums/task-statuses");
+			return response.data;
+		},
 		staleTime: 5 * 60 * 1000, // 5 minutes
 	});
 }

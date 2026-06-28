@@ -29,6 +29,10 @@ export const useCreateLookupOption = () => {
         queryClient.invalidateQueries({ queryKey: ['enums', 'user-specializations'] });
       } else if (variables.type === 'task_category') {
         queryClient.invalidateQueries({ queryKey: ['enums', 'task-categories'] });
+      } else if (variables.type === 'project_status') {
+        queryClient.invalidateQueries({ queryKey: ['enums', 'project-statuses'] });
+      } else if (variables.type === 'task_status') {
+        queryClient.invalidateQueries({ queryKey: ['enums', 'task-statuses'] });
       }
     },
     onError: (error: any) => {
