@@ -59,13 +59,13 @@ export function Sidebar() {
 
             <aside
                 className={cn(
-                    "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-white/10 bg-sidebar/70 backdrop-blur-lg transition-all duration-300",
+                    "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-sidebar-border/80 bg-sidebar/85 text-sidebar-foreground shadow-xl shadow-primary/10 backdrop-blur-lg transition-all duration-300",
                     "lg:translate-x-0",
                     isCollapsed ? "lg:w-17.5" : "lg:w-64",
                     isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full",
                 )}
             >
-                <div className="flex h-16 items-center justify-between border-b px-4">
+                <div className="flex h-16 items-center justify-between border-b border-sidebar-border/80 px-4">
                     {(!isCollapsed || isMobileOpen) && (
                         <Link href="/dashboard" className="flex items-center gap-2">
                             <Image src="/logo.webp" alt="Elmo ERP" width={32} height={32} className="rounded-lg" />
@@ -88,7 +88,7 @@ export function Sidebar() {
                 </div>
 
                 {isCollapsed && (
-                    <div className="hidden lg:flex justify-center py-2 border-b">
+                    <div className="hidden justify-center border-b border-sidebar-border/80 py-2 lg:flex">
                         <Button variant="ghost" size="icon" onClick={toggleCollapsed} className="h-8 w-8">
                             <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -102,8 +102,8 @@ export function Sidebar() {
 
                         return (
                             <div key={group.title} className="mb-6">
-                                {!showCollapsed && <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.title}</h3>}
-                                {showCollapsed && <div className="h-px bg-border mx-3 mb-2" />}
+                                {!showCollapsed && <h3 className="px-4 mb-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">{group.title}</h3>}
+                                {showCollapsed && <div className="h-px bg-sidebar-border mx-3 mb-2" />}
 
                                 <div className="space-y-1 px-3">
                                     {filteredItems.map((item) => {
@@ -114,8 +114,8 @@ export function Sidebar() {
                                             <Link
                                                 href={item.href}
                                                 className={cn(
-                                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
-                                                    isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all",
+                                                    isActive ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                                                     showCollapsed && "justify-center px-2",
                                                 )}
                                             >
@@ -151,7 +151,7 @@ export function Sidebar() {
                     })}
                 </nav>
 
-                <div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2026 Elmo ERP</p>}</div>
+                <div className="border-t border-sidebar-border/80 p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-sidebar-foreground/60 text-center">© 2026 Elmo ERP</p>}</div>
             </aside>
         </TooltipProvider>
     );

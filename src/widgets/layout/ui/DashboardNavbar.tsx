@@ -50,12 +50,12 @@ export function DashboardNavbar() {
     });
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-white/10 bg-background/70 px-4 backdrop-blur-lg lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-sidebar-border/80 bg-sidebar/85 px-4 text-sidebar-foreground shadow-sm shadow-primary/10 backdrop-blur-lg lg:px-6">
             <div className="flex items-center gap-3">
                 <Button type="button" variant="ghost" size="icon" onClick={toggleMobileOpen} className="lg:hidden" aria-label="Toggle menu">
                     <Menu />
                 </Button>
-                <Button type="button" variant="outline" size="sm" className="hidden w-64 justify-start text-muted-foreground md:flex" disabled>
+                <Button type="button" variant="outline" size="sm" className="hidden w-64 justify-start border-white/15 bg-white/10 text-sidebar-foreground/70 disabled:opacity-80 md:flex" disabled>
                     <Search data-icon="inline-start" />
                     Search
                 </Button>
@@ -79,11 +79,11 @@ export function DashboardNavbar() {
                         <Button type="button" variant="ghost" className="gap-2 px-2">
                             <Avatar className="size-8">
                                 <AvatarImage src={user?.avatar} alt={user?.name} />
-                                <AvatarFallback className="bg-primary/10 text-xs text-primary">{initials}</AvatarFallback>
+                                <AvatarFallback className="bg-primary text-xs text-primary-foreground">{initials}</AvatarFallback>
                             </Avatar>
                             <div className="hidden flex-col items-start text-left md:flex">
                                 <span className="text-sm font-medium">{user?.name || "User"}</span>
-                                <span className="text-xs text-muted-foreground">{role || "guest"}</span>
+                                <span className="text-xs text-sidebar-foreground/65">{role || "guest"}</span>
                             </div>
                         </Button>
                     </DropdownMenuTrigger>
