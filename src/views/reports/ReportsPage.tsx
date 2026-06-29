@@ -16,7 +16,7 @@ import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
-import { Input } from "@/shared/ui/input";
+import { DatePicker } from "@/shared/ui/forms";
 import { Label } from "@/shared/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { formatCurrency } from "@/shared/lib/formatters";
@@ -179,20 +179,18 @@ function ReportsFilterBar({ filters, onChange, onReset }: { filters: ReportFilte
 		<div className="grid gap-3 border-y py-3 md:grid-cols-2 xl:grid-cols-[repeat(6,minmax(0,1fr))_auto] xl:items-end">
 			<div className="flex flex-col gap-1.5">
 				<Label htmlFor="reports-from">From</Label>
-				<Input
+				<DatePicker
 					id="reports-from"
-					type="date"
 					value={filters.from ?? ""}
-					onChange={(event) => onChange({ from: event.target.value || undefined })}
+					onChange={(value) => onChange({ from: value || undefined })}
 				/>
 			</div>
 			<div className="flex flex-col gap-1.5">
 				<Label htmlFor="reports-to">To</Label>
-				<Input
+				<DatePicker
 					id="reports-to"
-					type="date"
 					value={filters.to ?? ""}
-					onChange={(event) => onChange({ to: event.target.value || undefined })}
+					onChange={(value) => onChange({ to: value || undefined })}
 				/>
 			</div>
 			<FilterSelect

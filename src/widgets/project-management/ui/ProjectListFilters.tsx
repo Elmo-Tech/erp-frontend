@@ -4,7 +4,7 @@ import { UserRound } from "lucide-react";
 import { ProjectStatus, ProjectStatusLabels, type ProjectFilters, type ProjectPagination } from "@/entities/project/model/types";
 import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
 import { SearchInput } from "@/shared/ui/filters/SearchInput";
-import { Input } from "@/shared/ui/input";
+import { DatePicker } from "@/shared/ui/forms";
 
 interface FilterOption {
 	value: string;
@@ -56,20 +56,18 @@ export function ProjectListFilters({ filters, clientOptions, isClientOptionsLoad
 					disabled={isClientOptionsLoading}
 				/>
 
-				<Input
-					type="date"
+				<DatePicker
 					value={filters.deadlineFrom ?? ""}
-					onChange={(event) => onChange({ deadlineFrom: event.target.value || undefined })}
+					onChange={(value) => onChange({ deadlineFrom: value || undefined })}
 					className="w-full md:w-40"
-					aria-label="Deadline from"
+					ariaLabel="Deadline from"
 				/>
 
-				<Input
-					type="date"
+				<DatePicker
 					value={filters.deadlineTo ?? ""}
-					onChange={(event) => onChange({ deadlineTo: event.target.value || undefined })}
+					onChange={(value) => onChange({ deadlineTo: value || undefined })}
 					className="w-full md:w-40"
-					aria-label="Deadline to"
+					ariaLabel="Deadline to"
 				/>
 
 				<p className="text-xs tabular-nums text-muted-foreground md:min-w-24 md:text-right">{pagination ? `${pagination.total} projects` : "Loading projects"}</p>

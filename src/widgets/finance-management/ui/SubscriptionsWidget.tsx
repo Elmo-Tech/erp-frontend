@@ -8,7 +8,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Can } from "@/shared/ui/Can";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
-import { Input } from "@/shared/ui/input";
+import { DatePicker } from "@/shared/ui/forms";
 import { SubscriptionFormModal } from "@/features/finance/ui/SubscriptionFormModal";
 import { DeleteSubscriptionDialog } from "@/features/finance/ui/DeleteSubscriptionDialog";
 import { useSubscriptions } from "@/features/finance/model/use-finance-actions";
@@ -163,8 +163,8 @@ export function SubscriptionsWidget() {
 				<FilterSelect value={filters.status} onChange={(status) => setFilters((current) => ({ ...current, status }))} options={[{ value: "active", label: "Active" }, { value: "cancelled", label: "Cancelled" }]} allLabel="All statuses" className="w-full" />
 				<FilterSelect value={filters.clientId ? String(filters.clientId) : undefined} onChange={(clientId) => setFilters((current) => ({ ...current, clientId: clientId ? Number(clientId) : undefined }))} options={clientOptions} allLabel="All clients" className="w-full" disabled={clientsQuery.isLoading} />
 				<FilterSelect value={filters.projectId ? String(filters.projectId) : undefined} onChange={(projectId) => setFilters((current) => ({ ...current, projectId: projectId ? Number(projectId) : undefined }))} options={projectOptions} allLabel="All projects" className="w-full" disabled={projectsQuery.isLoading} />
-				<Input type="date" value={filters.from ?? ""} onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value || undefined }))} aria-label="Subscription due from" />
-				<Input type="date" value={filters.to ?? ""} onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value || undefined }))} aria-label="Subscription due to" />
+				<DatePicker value={filters.from ?? ""} onChange={(value) => setFilters((current) => ({ ...current, from: value || undefined }))} ariaLabel="Subscription due from" />
+				<DatePicker value={filters.to ?? ""} onChange={(value) => setFilters((current) => ({ ...current, to: value || undefined }))} ariaLabel="Subscription due to" />
 			</div>
 
 			<DataTable<Subscription>

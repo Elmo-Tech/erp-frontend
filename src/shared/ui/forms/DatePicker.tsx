@@ -8,11 +8,14 @@ import { CalendarIcon } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 interface DatePickerProps {
+	id?: string;
 	value?: string;
 	onChange: (value: string) => void;
 	placeholder?: string;
 	disabled?: boolean;
 	className?: string;
+	ariaLabel?: string;
+	buttonType?: "button" | "submit" | "reset";
 	dateFormat?: string;
 	minDate?: Date;
 	maxDate?: Date;
@@ -22,7 +25,7 @@ interface DatePickerProps {
  * Standalone DatePicker component for non-form usage
  * Uses Shadcn Calendar with Popover
  */
-export function DatePicker({ value, onChange, placeholder = "Pick a date", disabled = false, className, dateFormat = "PPP", minDate, maxDate }: DatePickerProps) {
+export function DatePicker({ id, value, onChange, placeholder = "Pick a date", disabled = false, className, ariaLabel, buttonType = "button", dateFormat = "PPP", minDate, maxDate }: DatePickerProps) {
 	const selectedDate = value ? parseISO(value) : undefined;
 
 	const handleSelect = (date: Date | undefined) => {
@@ -38,8 +41,11 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", disab
 		<Popover>
 			<PopoverTrigger asChild>
 				<Button
+					id={id}
+					type={buttonType}
 					variant="outline"
 					disabled={disabled}
+					aria-label={ariaLabel}
 					className={cn("w-full justify-start text-left font-normal", !value && "text-muted-foreground", className)}
 				>
 					<CalendarIcon className="mr-2 h-4 w-4" />

@@ -4,7 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { Button } from "@/shared/ui/button";
 import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
 import { SearchInput } from "@/shared/ui/filters/SearchInput";
-import { Input } from "@/shared/ui/input";
+import { DatePicker } from "@/shared/ui/forms";
 import type { ProjectTaskFilters } from "@/features/projects/api/execution.api";
 import { type ProjectTaskFilterChange, type ProjectTaskFilterOptions, updateProjectTaskFilters } from "../model/project-tasks-filters";
 
@@ -49,17 +49,15 @@ export function ProjectTaskFiltersBar({ filters, options, onFiltersChange }: Pro
 				allLabel="All assignees"
 				className="w-full"
 			/>
-			<Input
-				type="date"
+			<DatePicker
 				value={filters.dueFrom ?? ""}
-				onChange={(event) => updateFilters({ type: "dueFrom", value: event.target.value })}
-				aria-label="Task due from"
+				onChange={(value) => updateFilters({ type: "dueFrom", value })}
+				ariaLabel="Task due from"
 			/>
-			<Input
-				type="date"
+			<DatePicker
 				value={filters.dueTo ?? ""}
-				onChange={(event) => updateFilters({ type: "dueTo", value: event.target.value })}
-				aria-label="Task due to"
+				onChange={(value) => updateFilters({ type: "dueTo", value })}
+				ariaLabel="Task due to"
 			/>
 			<Button
 				variant={filters.isInBacklog ? "default" : "outline"}

@@ -11,7 +11,7 @@ import { projectKeys } from "@/entities/project/model/query-keys";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { Input } from "@/shared/ui/input";
+import { DatePicker } from "@/shared/ui/forms";
 import { Label } from "@/shared/ui/label";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/lib/utils";
@@ -105,20 +105,18 @@ export default function TeamTimelinePage() {
 				<div className="grid grid-cols-2 gap-3">
 					<div className="space-y-1.5">
 						<Label htmlFor="timeline-start">Start</Label>
-						<Input
+						<DatePicker
 							id="timeline-start"
-							type="date"
 							value={startDate}
-							onChange={(event) => setStartDate(event.target.value)}
+							onChange={setStartDate}
 						/>
 					</div>
 					<div className="space-y-1.5">
 						<Label htmlFor="timeline-end">End</Label>
-						<Input
+						<DatePicker
 							id="timeline-end"
-							type="date"
 							value={endDate}
-							onChange={(event) => setEndDate(event.target.value)}
+							onChange={setEndDate}
 						/>
 					</div>
 				</div>
