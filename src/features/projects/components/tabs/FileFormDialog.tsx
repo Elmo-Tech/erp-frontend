@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, FileIcon } from "lucide-react";
+import { useUploadProjectDriveFile } from "../../hooks/useProjectDrive";
 
 const fileSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -44,13 +45,15 @@ interface FileFormDialogProps {
 	projectId: number;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	driveFolderId?: string | null;
 }
 
-export function FileFormDialog({ projectId, open, onOpenChange }: FileFormDialogProps) {
+export function FileFormDialog({ projectId, open, onOpenChange, driveFolderId }: FileFormDialogProps) {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const queryClient = useQueryClient();
+	const uploadDriveFile = useUploadProjectDriveFile(projectId);
 
 	const form = useForm<FileFormData>({
 		resolver: zodResolver(fileSchema),
@@ -89,7 +92,9 @@ export function FileFormDialog({ projectId, open, onOpenChange }: FileFormDialog
 		try {
 			setIsSubmitting(true);
 
-			if (data.type === "file" && selectedFile) {
+			if (data.type === "file" && selectedFile && driveFolderId) {
+				await uploadDriveFile.mutateAsync(selectedFile);
+			} else if (data.type === "file" && selectedFile) {
 				// Upload file using FormData
 				const formData = new FormData();
 				formData.append("file", selectedFile);
@@ -118,7 +123,7 @@ export function FileFormDialog({ projectId, open, onOpenChange }: FileFormDialog
 				});
 			}
 
-			toast.success("File added successfully");
+			toast.success(driveFolderId && data.type === "file" ? "File uploaded to Google Drive" : "File added successfully");
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			form.reset();
 			setSelectedFile(null);
@@ -143,7 +148,7 @@ export function FileFormDialog({ projectId, open, onOpenChange }: FileFormDialog
 			open={open}
 			onOpenChange={handleOpenChange}
 			title="Add File or Link"
-			description="Add a file or external link to this project"
+			description={driveFolderId ? "Files upload to the connected Google Drive folder. Links stay in ERP." : "Add a file or external link to this project"}
 			submitLabel="Add"
 			onSubmit={form.handleSubmit(handleSubmit)}
 			isLoading={isSubmitting}

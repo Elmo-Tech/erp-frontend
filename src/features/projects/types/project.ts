@@ -58,12 +58,32 @@ export interface Project {
 	};
 	members?: ProjectMember[];
 	files?: ProjectFile[];
+	googleDriveFolderId?: string | null;
+	googleDriveFolderName?: string | null;
+	googleDriveFolderUrl?: string | null;
 	createdAt: string;
 	updatedAt: string;
 	createdBy: number | null;
 	updatedBy: number | null;
 	canViewBudget?: boolean; // Permission flag from API
 	isPinned?: boolean; // Whether the project is pinned by the current user
+}
+
+export interface ProjectDriveFolder {
+	id: string;
+	name: string;
+	url?: string | null;
+}
+
+export interface ProjectDriveFile {
+	id: string;
+	name: string;
+	mimeType?: string | null;
+	size?: number | null;
+	webViewLink?: string | null;
+	webContentLink?: string | null;
+	createdTime?: string | null;
+	modifiedTime?: string | null;
 }
 
 export interface ProjectMember {

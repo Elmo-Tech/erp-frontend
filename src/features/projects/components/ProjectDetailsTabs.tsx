@@ -286,6 +286,8 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 						<FilesTab
 							projectId={projectId}
 							files={project.files || []}
+							googleDriveFolderId={project.googleDriveFolderId}
+							googleDriveFolderName={project.googleDriveFolderName}
 						/>
 					</TabsContent>
 				)}

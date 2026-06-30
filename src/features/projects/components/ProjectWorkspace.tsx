@@ -398,6 +398,8 @@ export const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ projectId })
 						<FilesTab
 							projectId={projectId}
 							files={project.files || []}
+							googleDriveFolderId={project.googleDriveFolderId}
+							googleDriveFolderName={project.googleDriveFolderName}
 						/>
 					</TabsContent>
 				)}
