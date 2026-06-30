@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { TagFormData } from '../types';
 import { fetchTags, createTag, updateTag, deleteTag } from '../api/tagsApi';
+
+type ApiError = AxiosError<{ message?: string }>;
+
+const errorMessage = (error: ApiError, fallback: string) => error.response?.data?.message || fallback;
 
 export const useTags = () => {
   return useQuery({
@@ -19,8 +24,8 @@ export const useCreateTag = () => {
       toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: ['settings', 'tags'] });
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to create tag');
+    onError: (error: ApiError) => {
+      toast.error(errorMessage(error, 'Failed to create tag'));
     },
   });
 };
@@ -34,8 +39,8 @@ export const useUpdateTag = () => {
       toast.success(response.message);
       queryClient.invalidateQueries({ queryKey: ['settings', 'tags'] });
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to update tag');
+    onError: (error: ApiError) => {
+      toast.error(errorMessage(error, 'Failed to update tag'));
     },
   });
 };
@@ -49,8 +54,8 @@ export const useDeleteTag = () => {
       toast.success(response?.message || 'Deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['settings', 'tags'] });
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || 'Failed to delete tag');
+    onError: (error: ApiError) => {
+      toast.error(errorMessage(error, 'Failed to delete tag'));
     },
   });
 };

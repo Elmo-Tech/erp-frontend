@@ -13,6 +13,22 @@ Object.defineProperty(window, "localStorage", {
 	value: localStorageMock,
 });
 
+class ResizeObserverMock {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+}
+
+Object.defineProperty(window, "ResizeObserver", {
+	value: ResizeObserverMock,
+});
+
+Object.defineProperty(globalThis, "ResizeObserver", {
+	value: ResizeObserverMock,
+});
+
+Element.prototype.scrollIntoView = vi.fn();
+
 // Reset localStorage mock before each test
 beforeEach(() => {
 	localStorageMock.getItem.mockClear();

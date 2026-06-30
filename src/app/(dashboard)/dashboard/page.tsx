@@ -7,7 +7,7 @@ import { TaskStatusBadge, TaskPriorityBadge } from "@/components/shared/StatusBa
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardStats } from "@/features/dashboard/hooks/useDashboardStats";
 import { useMyAssignedTasks } from "@/features/dashboard/hooks/useTasks";
-import { FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink } from "lucide-react";
+import { FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink, DollarSign } from "lucide-react";
 import Link from "next/link";
 import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview } from "@/features/dashboard/types";
 import { getRoleLabel } from "@/config/simplification";
@@ -82,6 +82,15 @@ function AdminDashboard({ data }: { data: AdminDashboardOverview }) {
 			bgColor: "bg-purple-100 dark:bg-purple-900/30",
 			format: (v: number) => v.toString(),
 			isAbsolute: true,
+		},
+		{
+			title: "Monthly Sales",
+			value: data?.stats?.monthlySales ?? 0,
+			change: data?.stats?.salesChange ?? 0,
+			icon: DollarSign,
+			color: "text-emerald-600",
+			bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+			format: (v: number) => `$${v.toLocaleString()}`,
 		},
 	];
 

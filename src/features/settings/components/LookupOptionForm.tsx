@@ -102,7 +102,7 @@ export function LookupOptionForm({ open, onOpenChange, type, option }: LookupOpt
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="label"
               render={({ field }) => (
                 <FormItem>
@@ -116,7 +116,7 @@ export function LookupOptionForm({ open, onOpenChange, type, option }: LookupOpt
             />
 
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="value"
               render={({ field }) => (
                 <FormItem>
@@ -130,7 +130,7 @@ export function LookupOptionForm({ open, onOpenChange, type, option }: LookupOpt
             />
 
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="color"
               render={({ field }) => (
                 <FormItem>
@@ -144,7 +144,7 @@ export function LookupOptionForm({ open, onOpenChange, type, option }: LookupOpt
             />
 
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="is_active"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">

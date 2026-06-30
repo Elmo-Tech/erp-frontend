@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FormDialog } from "@/components/shared";
@@ -32,6 +32,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 
 	const form = useForm<ProjectFormData>({
 		resolver: zodResolver(projectSchema),
+		mode: "onChange",
 		defaultValues: {
 			title: project.title,
 			description: project.description || "",
@@ -41,6 +42,8 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 			reason: "",
 		},
 	});
+	const watchedDeadline = useWatch({ control: form.control, name: "deadline" });
+	const watchedReason = useWatch({ control: form.control, name: "reason" });
 
 	const setFormData = (projectData: Project) => {
 		form.reset({
@@ -61,6 +64,12 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 	};
 
 	const handleSubmit = async (data: ProjectFormData) => {
+		const isDeadlineChanged = data.deadline !== (project.deadline || "");
+		if (isDeadlineChanged && !data.reason?.trim()) {
+			form.setError("reason", { type: "manual", message: "Reason is required when changing deadline" });
+			return;
+		}
+
 		try {
 			await updateProject.mutateAsync({
 				id: project.projectId,
@@ -81,7 +90,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 		}
 	};
 
-	const showReasonField = form.watch("deadline") !== (project.deadline || "");
+	const showReasonField = watchedDeadline !== (project.deadline || "");
 
 	return (
 		<FormDialog
@@ -92,7 +101,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 			submitLabel="Update Project"
 			onSubmit={form.handleSubmit(handleSubmit)}
 			isLoading={updateProject.isPending}
-			isSubmitDisabled={!form.formState.isValid}
+			isSubmitDisabled={!form.formState.isValid || (showReasonField && !watchedReason?.trim())}
 		>
 			<ProjectFormFields
 				form={form}

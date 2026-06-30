@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/authStore";
+import { useLocaleStore } from "@/store/localeStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 const LOGIN_ROUTE = "/login";
@@ -64,7 +65,7 @@ export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
 
 	// Add Accept-Language header
 	if (config.headers) {
-		config.headers["Accept-Language"] = "en";
+		config.headers["Accept-Language"] = useLocaleStore.getState().locale;
 	}
 
 	return config;

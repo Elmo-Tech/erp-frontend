@@ -10,6 +10,8 @@ import { useSidebarStore } from "@/store/sidebarStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
 import { NavbarTimer } from "@/components/NavbarTimer";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+// import { LanguageToggle } from "@/components/LanguageToggle";
+import { GlobalSearchDialog } from "@/components/dashboard/GlobalSearchDialog";
 import { ActiveTimersSheet } from "@/features/admin/components/ActiveTimersSheet";
 import { useActiveTimers } from "@/features/sales/hooks/useTimeEntries";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +65,7 @@ export function Navbar() {
 					<Menu className="h-5 w-5" />
 					<span className="sr-only">Toggle menu</span>
 				</Button>
+				<GlobalSearchDialog />
 			</div>
 
 			{/* Right side */}
@@ -94,6 +97,8 @@ export function Navbar() {
 
 				{/* Theme Toggle */}
 				<ThemeToggle />
+
+				{/* <LanguageToggle /> */}
 
 				{/* Notifications */}
 				<NotificationDropdown />

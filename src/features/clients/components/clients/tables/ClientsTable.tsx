@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { DataTable } from "@/components/shared/data-display/DataTable";
 import { SearchInput } from "@/components/shared/filters/SearchInput";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
 import { useClients, useDeleteClient } from "../../../hooks/useClients";
-import { Client, ClientFilters } from "../../../types";
+import { Client, ClientFilters, ClientStatus, ClientStatusLabels } from "../../../types";
 import { getClientsColumns } from "./columns";
 import { DeleteClientDialog } from "../dialogs/DeleteClientDialog";
 import { Plus, Building2 } from "lucide-react";
@@ -35,6 +36,10 @@ export function ClientsTable({ onEdit, onAdd }: ClientsTableProps) {
 
 	const handleSearch = (search: string) => {
 		setFilters((prev) => ({ ...prev, search: search || undefined, page: 1 }));
+	};
+
+	const handleStatusChange = (status: string) => {
+		setFilters((prev) => ({ ...prev, status: status === "all" ? undefined : (status as ClientStatus), page: 1 }));
 	};
 
 	const handleView = (client: Client) => {
@@ -106,6 +111,22 @@ export function ClientsTable({ onEdit, onAdd }: ClientsTableProps) {
 							className="w-64"
 							autoSearch={false}
 						/>
+						<NativeSelect
+							aria-label="Client status"
+							value={filters.status ?? "all"}
+							onChange={(event) => handleStatusChange(event.target.value)}
+							className="w-44"
+						>
+							<NativeSelectOption value="all">All statuses</NativeSelectOption>
+							{Object.values(ClientStatus).map((status) => (
+								<NativeSelectOption
+									key={status}
+									value={status}
+								>
+									{ClientStatusLabels[status]}
+								</NativeSelectOption>
+							))}
+						</NativeSelect>
 					</FilterBar>
 				}
 			/>

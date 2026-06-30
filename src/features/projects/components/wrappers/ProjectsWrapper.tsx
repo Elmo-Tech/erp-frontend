@@ -42,7 +42,6 @@ export function ProjectsWrapper() {
 				<CreateProjectForm
 					open={showCreateDialog}
 					onOpenChange={setShowCreateDialog}
-					clientId={0}
 				/>
 			)}
 

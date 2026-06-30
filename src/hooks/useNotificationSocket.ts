@@ -57,8 +57,6 @@ export function useNotificationSocketInit() {
 		channelRef.current = channel;
 
 		channel.listen(".notification.created", (event: NotificationEvent) => {
-			console.log("[Notification] Received:", event);
-
 			const notification: Notification = {
 				notificationId: event.notificationId || crypto.randomUUID(),
 				type: event.type,
@@ -77,7 +75,7 @@ export function useNotificationSocketInit() {
 					onClick: () => {
 						// Navigate based on notification type
 						if (event.data?.task_id) {
-							window.location.href = `/dashboard/tasks?highlight=${event.data.task_id}`;
+							window.location.href = `/dashboard/my-tasks?highlight=${event.data.task_id}`;
 						}
 					},
 				},

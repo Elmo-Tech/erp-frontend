@@ -4,13 +4,16 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "next-themes";
-import { useState, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
+import { useLocaleStore } from "@/store/localeStore";
 
 interface ProvidersProps {
 	children: ReactNode;
 }
 
 export function Providers({ children }: ProvidersProps) {
+	const locale = useLocaleStore((state) => state.locale);
+	const setLocale = useLocaleStore((state) => state.setLocale);
 	const [queryClient] = useState(
 		() =>
 			new QueryClient({
@@ -24,6 +27,10 @@ export function Providers({ children }: ProvidersProps) {
 				},
 			})
 	);
+
+	useEffect(() => {
+		setLocale(locale);
+	}, [locale, setLocale]);
 
 	return (
 		<ThemeProvider
