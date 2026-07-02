@@ -54,7 +54,7 @@ export function GlobalSearchDialog() {
 					<Search className="h-4 w-4" />
 					Search
 				</span>
-				<kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px]">⌘K</kbd>
+				<kbd className="rounded border bg-muted px-1.5 py-0.5 text-[10px]">Ctrl/Cmd K</kbd>
 			</Button>
 			<Button
 				type="button"

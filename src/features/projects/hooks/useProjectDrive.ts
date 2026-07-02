@@ -46,6 +46,7 @@ export const useUploadProjectDriveFile = (projectId: number) => {
 		mutationFn: (file: File) => projectDriveApi.uploadFile(projectId, file),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: projectDriveKeys.files(projectId) });
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 		},
 	});
 };

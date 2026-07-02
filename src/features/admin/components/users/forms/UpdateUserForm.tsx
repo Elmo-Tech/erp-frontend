@@ -11,6 +11,7 @@ import { updateUserSchema, UpdateUserFormData } from "../../../schemas/userSchem
 import { UserFormFields } from "./UserFormFields";
 import { toast } from "sonner";
 import { getRoleLabel } from "@/config/simplification";
+import { Form } from "@/components/ui/form";
 
 interface UpdateUserFormProps {
 	open: boolean;
@@ -100,12 +101,14 @@ export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUs
 			isLoading={updateUser.isPending}
 			size="md"
 		>
-			<UserFormFields
-				control={form.control}
-				isEditing={true}
-				roleOptions={roleOptions}
-				specializationOptions={specializationOptions}
-			/>
+			<Form {...form}>
+				<UserFormFields
+					control={form.control}
+					isEditing={true}
+					roleOptions={roleOptions}
+					specializationOptions={specializationOptions}
+				/>
+			</Form>
 		</FormDialog>
 	);
 }

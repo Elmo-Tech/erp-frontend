@@ -14,6 +14,7 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
 	const locale = useLocaleStore((state) => state.locale);
 	const setLocale = useLocaleStore((state) => state.setLocale);
+	const dir = useLocaleStore((state) => state.dir);
 	const [queryClient] = useState(
 		() =>
 			new QueryClient({
@@ -43,7 +44,7 @@ export function Providers({ children }: ProvidersProps) {
 				{children}
 				<Toaster
 					richColors
-					position="top-right"
+					position={dir === "rtl" ? "top-left" : "top-right"}
 					closeButton
 					duration={4000}
 				/>

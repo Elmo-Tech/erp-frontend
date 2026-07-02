@@ -7,13 +7,7 @@ import { useNotificationStore, Notification } from "@/store/notificationStore";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 
-interface NotificationEvent {
-	notificationId: string;
-	type: string;
-	message: string;
-	data: Record<string, unknown>;
-	createdAt: string;
-}
+type NotificationEvent = Record<string, unknown>;
 
 let isInitialized = false;
 
@@ -22,6 +16,7 @@ export function useNotificationSocketInit() {
 	const { user } = useAuthStore();
 	const { setNotifications, addNotification, setUnreadCount, setIsLoading } = useNotificationStore();
 	const channelRef = useRef<unknown>(null);
+	const defaultChannelRef = useRef<unknown>(null);
 
 	// Fetch notifications
 	const fetchNotifications = useCallback(async () => {
@@ -53,41 +48,57 @@ export function useNotificationSocketInit() {
 
 		isInitialized = true;
 
-		const channel = echo.private(`user.${user.userId}`);
-		channelRef.current = channel;
-
-		channel.listen(".notification.created", (event: NotificationEvent) => {
-			const notification: Notification = {
-				notificationId: event.notificationId || crypto.randomUUID(),
-				type: event.type,
-				message: event.message,
-				data: event.data,
+		const normalizeNotification = (event: NotificationEvent): Notification => {
+			const data = (event.data && typeof event.data === "object" ? event.data : event) as Record<string, unknown>;
+			return {
+				notificationId: String(event.notificationId || event.id || crypto.randomUUID()),
+				type: String(data.type || event.type || "notification"),
+				message: String(data.message || event.message || "New notification"),
+				data,
 				readAt: null,
-				createdAt: event.createdAt || new Date().toISOString(),
+				createdAt: String(event.createdAt || event.created_at || new Date().toISOString()),
 			};
+		};
+
+		const handleNotification = (event: NotificationEvent) => {
+			const notification = normalizeNotification(event);
 
 			addNotification(notification);
 
-			// Show toast
-			toast.info(event.message, {
+			toast.info(notification.message, {
 				action: {
 					label: "View",
 					onClick: () => {
-						// Navigate based on notification type
-						if (event.data?.task_id) {
-							window.location.href = `/dashboard/my-tasks?highlight=${event.data.task_id}`;
+						if (typeof notification.data?.url === "string") {
+							window.location.href = notification.data.url;
+						} else if (notification.data?.task_id) {
+							window.location.href = `/dashboard/my-tasks?highlight=${notification.data.task_id}`;
+						} else if (notification.data?.project_id) {
+							window.location.href = `/dashboard/projects/${notification.data.project_id}`;
 						}
 					},
 				},
 			});
-		});
+		};
+
+		const channel = echo.private(`user.${user.userId}`);
+		channelRef.current = channel;
+		channel.listen(".notification.created", handleNotification);
+
+		const defaultChannel = echo.private(`App.Models.User.${user.userId}`) as { notification?: (callback: (event: NotificationEvent) => void) => void };
+		defaultChannelRef.current = defaultChannel;
+		defaultChannel.notification?.(handleNotification);
 
 		return () => {
 			if (channelRef.current) {
 				echo.leave(`user.${user.userId}`);
 				channelRef.current = null;
-				isInitialized = false;
 			}
+			if (defaultChannelRef.current) {
+				echo.leave(`App.Models.User.${user.userId}`);
+				defaultChannelRef.current = null;
+			}
+			isInitialized = false;
 		};
 	}, [user?.userId, fetchNotifications, addNotification]);
 

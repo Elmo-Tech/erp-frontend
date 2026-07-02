@@ -5,13 +5,14 @@ import { useNotificationStore } from "@/store/notificationStore";
 
 const mocks = vi.hoisted(() => ({
 	listen: vi.fn(),
+	notification: vi.fn(),
 	leave: vi.fn(),
 	toastInfo: vi.fn(),
 }));
 
 vi.mock("@/lib/echo", () => ({
 	getEcho: () => ({
-		private: () => ({ listen: mocks.listen }),
+		private: () => ({ listen: mocks.listen, notification: mocks.notification }),
 		leave: mocks.leave,
 	}),
 }));
@@ -47,6 +48,7 @@ describe("useNotificationSocketInit", () => {
 		render(<SocketInit />);
 
 		await waitFor(() => expect(mocks.listen).toHaveBeenCalledWith(".notification.created", expect.any(Function)));
+		expect(mocks.notification).toHaveBeenCalledWith(expect.any(Function));
 
 		const handler = mocks.listen.mock.calls[0][1];
 		act(() => {
@@ -76,5 +78,31 @@ describe("useNotificationSocketInit", () => {
 			configurable: true,
 			value: originalLocation,
 		});
+	});
+
+	it("normalizes Laravel default notification broadcasts", async () => {
+		render(<SocketInit />);
+
+		await waitFor(() => expect(mocks.notification).toHaveBeenCalledWith(expect.any(Function)));
+
+		const handler = mocks.notification.mock.calls[0][0];
+		act(() => {
+			handler({
+				id: "n2",
+				type: "App\\Notifications\\ProjectStatusChangedNotification",
+				data: {
+					type: "project_status_changed",
+					message: "Project status changed",
+					project_id: 99,
+				},
+				created_at: "2026-07-01T10:00:00.000Z",
+			});
+		});
+
+		const notification = useNotificationStore.getState().notifications[0];
+		expect(notification.notificationId).toBe("n2");
+		expect(notification.type).toBe("project_status_changed");
+		expect(notification.message).toBe("Project status changed");
+		expect(notification.data.project_id).toBe(99);
 	});
 });

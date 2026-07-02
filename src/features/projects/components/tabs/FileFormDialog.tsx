@@ -92,8 +92,11 @@ export function FileFormDialog({ projectId, open, onOpenChange, driveFolderId }:
 		try {
 			setIsSubmitting(true);
 
+			let driveFileUrl: string | null = null;
+
 			if (data.type === "file" && selectedFile && driveFolderId) {
-				await uploadDriveFile.mutateAsync(selectedFile);
+				const driveFile = await uploadDriveFile.mutateAsync(selectedFile);
+				driveFileUrl = driveFile.webViewLink || driveFile.webContentLink || null;
 			} else if (data.type === "file" && selectedFile) {
 				// Upload file using FormData
 				const formData = new FormData();
@@ -123,7 +126,7 @@ export function FileFormDialog({ projectId, open, onOpenChange, driveFolderId }:
 				});
 			}
 
-			toast.success(driveFolderId && data.type === "file" ? "File uploaded to Google Drive" : "File added successfully");
+			toast.success(driveFolderId && data.type === "file" ? "File uploaded to Google Drive" : "File added successfully", driveFileUrl ? { action: { label: "Open", onClick: () => window.open(driveFileUrl, "_blank") } } : undefined);
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			form.reset();
 			setSelectedFile(null);

@@ -10,6 +10,8 @@ import { createUserSchema, CreateUserFormData } from "../../../schemas/userSchem
 import { UserFormFields } from "./UserFormFields";
 import { toast } from "sonner";
 import { getRoleLabel } from "@/config/simplification";
+import { handleApiError } from "@/lib/errorHandling";
+import { Form } from "@/components/ui/form";
 
 interface CreateUserFormProps {
 	open: boolean;
@@ -64,8 +66,8 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 			toast.success("User created successfully");
 			onOpenChange(false);
 			onSuccess?.();
-		} catch {
-			toast.error("Failed to create user");
+		} catch (error) {
+			toast.error(handleApiError(error));
 		}
 	};
 
@@ -93,12 +95,14 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 			isLoading={createUser.isPending}
 			size="md"
 		>
-			<UserFormFields
-				control={form.control}
-				isEditing={false}
-				roleOptions={roleOptions}
-				specializationOptions={specializationOptions}
-			/>
+			<Form {...form}>
+				<UserFormFields
+					control={form.control}
+					isEditing={false}
+					roleOptions={roleOptions}
+					specializationOptions={specializationOptions}
+				/>
+			</Form>
 		</FormDialog>
 	);
 }
