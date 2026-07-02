@@ -38,7 +38,7 @@ export function LoginForm({ initialEmail }: LoginFormProps) {
 	};
 
 	return (
-		<Card className="w-full max-w-md border-white/15 shadow-2xl shadow-primary/20">
+		<Card className="w-full max-w-md border-border shadow-2xl shadow-[#003770]/10">
 			<CardHeader className="space-y-1 text-center">
 				<CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
 				<CardDescription>Sign in to access your dashboard</CardDescription>

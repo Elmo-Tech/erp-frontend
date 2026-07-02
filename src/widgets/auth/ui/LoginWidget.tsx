@@ -15,8 +15,8 @@ export function LoginWidget() {
 					className="mb-4 rounded-xl"
 					priority
 				/>
-				<h1 className="text-3xl font-extrabold text-white">Elmo ERP</h1>
-				<p className="mt-2 font-medium text-white/80">Enterprise Resource Planning System</p>
+				<h1 className="text-3xl font-light text-foreground">Elmo ERP</h1>
+				<p className="mt-2 font-medium text-muted-foreground">Enterprise Resource Planning System</p>
 			</div>
 
 			<LoginForm />
