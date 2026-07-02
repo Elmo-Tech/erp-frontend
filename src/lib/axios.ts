@@ -1,6 +1,8 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/authStore";
 import { useLocaleStore } from "@/store/localeStore";
+import { handleApiError } from "@/lib/errorHandling";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 const LOGIN_ROUTE = "/login";
@@ -73,13 +75,25 @@ export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
 
 export const handleApiRequestError = (error: AxiosError) => Promise.reject(error);
 
-export const handleApiResponse = (response: AxiosResponse) => response;
+export const handleApiResponse = (response: AxiosResponse) => {
+	const method = response.config.method?.toLowerCase();
+	const message = typeof response.data?.message === "string" ? response.data.message : null;
+
+	if (message && method && method !== "get") {
+		toast.success(message);
+	}
+
+	return response;
+};
 
 export const handleApiResponseError = (error: AxiosError) => {
 	if (error.response?.status === 401) {
 		clearClientAuthState();
 		redirectToLogin();
 	}
+
+	toast.error(handleApiError(error));
+
 	return Promise.reject(error);
 };
 

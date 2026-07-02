@@ -61,6 +61,9 @@ export function HistoryTab({ projectId }: HistoryTabProps) {
 			title: "Title",
 			description: "Description",
 			ui_approved_at: "UI Approval",
+			team_member: "Team Member",
+			project_file: "Project File",
+			google_drive_folder: "Google Drive Folder",
 		};
 		return labels[fieldName] || fieldName;
 	};

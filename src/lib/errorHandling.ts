@@ -52,21 +52,6 @@ export function logError(error: Error, context?: Record<string, unknown>): void 
  * Handle API errors with user-friendly messages
  */
 export function handleApiError(error: unknown): string {
-	if (error instanceof Error) {
-		// Network errors
-		if (error.message.includes("Network") || error.message.includes("fetch")) {
-			return "Network error. Please check your internet connection.";
-		}
-
-		// Timeout errors
-		if (error.message.includes("timeout")) {
-			return "Request timed out. Please try again.";
-		}
-
-		// Default error message
-		return error.message;
-	}
-
 	// Axios errors
 	if (typeof error === "object" && error !== null && "response" in error) {
 		const axiosError = error as {
@@ -83,6 +68,10 @@ export function handleApiError(error: unknown): string {
 			if (status === 422 && data?.errors) {
 				const firstError = Object.values(data.errors)[0];
 				return Array.isArray(firstError) ? firstError[0] : "Validation error";
+			}
+
+			if (data?.message) {
+				return data.message;
 			}
 
 			// Unauthorized (401)
@@ -104,12 +93,22 @@ export function handleApiError(error: unknown): string {
 			if (status >= 500) {
 				return "Server error. Please try again later.";
 			}
-
-			// Custom error message from API
-			if (data?.message) {
-				return data.message;
-			}
 		}
+	}
+
+	if (error instanceof Error) {
+		// Network errors
+		if (error.message.includes("Network") || error.message.includes("fetch")) {
+			return "Network error. Please check your internet connection.";
+		}
+
+		// Timeout errors
+		if (error.message.includes("timeout")) {
+			return "Request timed out. Please try again.";
+		}
+
+		// Default error message
+		return error.message;
 	}
 
 	return "An unexpected error occurred. Please try again.";

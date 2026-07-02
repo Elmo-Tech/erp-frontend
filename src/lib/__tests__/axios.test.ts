@@ -1,5 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { handleApiRequest, handleApiResponseError } from "../axios";
+import { handleApiRequest, handleApiResponse, handleApiResponseError } from "../axios";
+
+const mocks = vi.hoisted(() => ({
+	toastSuccess: vi.fn(),
+	toastError: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		success: mocks.toastSuccess,
+		error: mocks.toastError,
+	},
+}));
 
 const localStorageMock = {
 	getItem: vi.fn(),
@@ -78,10 +90,30 @@ describe("Axios Interceptors", () => {
 	});
 
 	describe("Response Interceptor", () => {
+		it("shows backend success messages for write responses", () => {
+			const response = {
+				config: { method: "post" },
+				data: { success: true, message: "User created from backend" },
+			};
+
+			expect(handleApiResponse(response as never)).toBe(response);
+			expect(mocks.toastSuccess).toHaveBeenCalledWith("User created from backend");
+		});
+
+		it("does not show success toasts for read responses", () => {
+			handleApiResponse({
+				config: { method: "get" },
+				data: { success: true, message: "List loaded" },
+			} as never);
+
+			expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		});
+
 		it("clears auth state and redirects on 401 responses", async () => {
 			const error = {
 				response: {
 					status: 401,
+					data: { message: "Unauthenticated from backend" },
 				},
 			};
 
@@ -90,12 +122,14 @@ describe("Axios Interceptors", () => {
 			expect(localStorageMock.removeItem).toHaveBeenCalledWith("auth_token");
 			expect(localStorageMock.removeItem).toHaveBeenCalledWith("auth-storage");
 			expect(assignMock).toHaveBeenCalledWith("/login");
+			expect(mocks.toastError).toHaveBeenCalledWith("Unauthenticated from backend");
 		});
 
 		it("does not clear auth state for non-401 responses", async () => {
 			const error = {
 				response: {
 					status: 400,
+					data: { message: "Backend rejected it" },
 				},
 			};
 
@@ -103,6 +137,7 @@ describe("Axios Interceptors", () => {
 
 			expect(localStorageMock.removeItem).not.toHaveBeenCalled();
 			expect(assignMock).not.toHaveBeenCalled();
+			expect(mocks.toastError).toHaveBeenCalledWith("Backend rejected it");
 		});
 	});
 });

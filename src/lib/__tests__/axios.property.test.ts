@@ -2,6 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as fc from "fast-check";
 import { handleApiRequest, handleApiResponseError } from "../axios";
 
+const mocks = vi.hoisted(() => ({
+	toastError: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		success: vi.fn(),
+		error: mocks.toastError,
+	},
+}));
+
 const localStorageMock = {
 	getItem: vi.fn(),
 	setItem: vi.fn(),
