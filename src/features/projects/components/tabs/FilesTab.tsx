@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable, Column, ConfirmDialog } from "@/components/shared";
 import { ProjectDriveFile, ProjectFile } from "../../types/project";
 import { FileFormDialog } from "./FileFormDialog";
-import { Plus, FileText, Link2, Download, Trash2, MoreHorizontal, ExternalLink, FolderSync } from "lucide-react";
+import { Plus, FileText, Link2, Download, Trash2, MoreHorizontal, ExternalLink, FolderSync, AlertCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -89,6 +89,7 @@ export function FilesTab({ projectId, files, isLoading, googleDriveFolderId, goo
 	}));
 
 	const rows = [...driveRows, ...localRows];
+	const driveErrorMessage = driveFiles.error instanceof Error ? driveFiles.error.message : "Failed to load Google Drive files";
 
 	const columns: Column<FileRow>[] = [
 		{
@@ -141,12 +142,12 @@ export function FilesTab({ projectId, files, isLoading, googleDriveFolderId, goo
 						<DropdownMenuItem onClick={() => handleDownload(file)}>
 							{file.type === "link" ? (
 								<>
-									<ExternalLink className="h-4 w-4 mr-2" />
+									<ExternalLink className="h-4 w-4 me-2" />
 									Open Link
 								</>
 							) : (
 								<>
-									<Download className="h-4 w-4 mr-2" />
+									<Download className="h-4 w-4 me-2" />
 									Download
 								</>
 							)}
@@ -156,7 +157,7 @@ export function FilesTab({ projectId, files, isLoading, googleDriveFolderId, goo
 								onClick={() => setFileToDelete(file)}
 								className="text-destructive"
 							>
-								<Trash2 className="h-4 w-4 mr-2" />
+								<Trash2 className="h-4 w-4 me-2" />
 								Delete
 							</DropdownMenuItem>
 						)}
@@ -168,6 +169,23 @@ export function FilesTab({ projectId, files, isLoading, googleDriveFolderId, goo
 
 	return (
 		<>
+			{googleDriveFolderId && driveFiles.error && (
+				<div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+					<div className="flex items-center gap-2">
+						<AlertCircle className="h-4 w-4" />
+						<span>{driveErrorMessage}</span>
+					</div>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => driveFiles.refetch()}
+					>
+						Retry Drive
+					</Button>
+				</div>
+			)}
+
 			<DataTable
 				title="Files & Links"
 				titleBadge={googleDriveFolderName ? `${rows.length} items • ${googleDriveFolderName}` : `${rows.length} items`}
@@ -189,13 +207,13 @@ export function FilesTab({ projectId, files, isLoading, googleDriveFolderId, goo
 									variant="outline"
 									onClick={() => setShowDriveDialog(true)}
 								>
-									<FolderSync className="h-4 w-4 mr-2" />
+									<FolderSync className="h-4 w-4 me-2" />
 									{googleDriveFolderId ? "Change Drive Folder" : "Connect Drive Folder"}
 								</Button>
 							)}
 							{canUploadProjectFiles && (
 								<Button onClick={() => setShowCreateDialog(true)}>
-									<Plus className="h-4 w-4 mr-2" />
+									<Plus className="h-4 w-4 me-2" />
 									Add File
 								</Button>
 							)}

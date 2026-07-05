@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { format, isPast, isToday } from "date-fns";
 import { MarkCompleteButton } from "./MarkCompleteButton";
 import { getRoleLabel } from "@/config/simplification";
+import { dedupeTaskTree } from "../utils/taskTree";
 
 // Priority indicator colors
 const PriorityIndicator: Record<TaskPriority, string> = {
@@ -88,7 +89,7 @@ export function MyAssignedTasks() {
 	};
 
 	// Filter tasks (backend already returns only top-level tasks)
-	const filteredTasks =
+	const filteredTasks = dedupeTaskTree(
 		tasksData?.tasks?.filter((task) => {
 			// Search filter
 			if (searchTerm && !task.title.toLowerCase().includes(searchTerm.toLowerCase())) return false;
@@ -99,7 +100,8 @@ export function MyAssignedTasks() {
 			// Priority filter
 			if (filters.priority && task.priority !== filters.priority) return false;
 			return true;
-		}) || [];
+		}) || []
+	);
 
 	// Calculate stats recursively to count all tasks including children
 	const calculateStatsRecursively = (tasks: Task[]): { total: number; done: number; inProgress: number; review: number } => {
@@ -152,7 +154,7 @@ export function MyAssignedTasks() {
 						<div className="flex flex-col sm:flex-row gap-4">
 							<div className="flex-1">
 								<div className="relative">
-									<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+									<Search className="absolute start-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 									<Input
 										placeholder="Search tasks..."
 										value={searchTerm}
@@ -280,7 +282,9 @@ function TaskCard({ task, level, isExpanded, onToggle, expandedTasks, onToggleEx
 
 	const loadedChildren = childrenData?.children || [];
 	const hasChildren = (task.children && task.children.length > 0) || loadedChildren.length > 0;
-	let childTasks = loadedChildren.length > 0 ? loadedChildren : task.children || [];
+	let childTasks = Array.from(
+		new Map((loadedChildren.length > 0 ? loadedChildren : task.children || []).map((child) => [child.taskId, child])).values()
+	);
 
 	// Filter child tasks to show only those where user is assigned
 	if (currentUserId) {
@@ -296,7 +300,7 @@ function TaskCard({ task, level, isExpanded, onToggle, expandedTasks, onToggleEx
 
 	return (
 		<div
-			className={cn("bg-card border rounded-lg transition-all duration-200 hover:shadow-md", task.status === TaskStatus.COMPLETED && "opacity-75", level > 0 && "ml-6 border-l-2 border-l-muted")}
+			className={cn("bg-card border rounded-lg transition-all duration-200 hover:shadow-md", task.status === TaskStatus.COMPLETED && "opacity-75", level > 0 && "ms-6")}
 			style={{ marginLeft: level > 0 ? `${level * 24}px` : 0 }}
 		>
 			<div className="p-4">
@@ -358,7 +362,7 @@ function TaskCard({ task, level, isExpanded, onToggle, expandedTasks, onToggleEx
 											variant="outline"
 											className="h-7 px-2 text-xs"
 										>
-											<Play className="h-3 w-3 mr-1" />
+											<Play className="h-3 w-3 me-1" />
 											Start
 										</Button>
 										<MarkCompleteButton task={task} />
@@ -369,7 +373,7 @@ function TaskCard({ task, level, isExpanded, onToggle, expandedTasks, onToggleEx
 										variant="default"
 										className="text-xs bg-green-100 text-green-800"
 									>
-										<CheckCircle2 className="h-3 w-3 mr-1" />
+										<CheckCircle2 className="h-3 w-3 me-1" />
 										Done
 									</Badge>
 								)}

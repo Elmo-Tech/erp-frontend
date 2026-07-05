@@ -18,6 +18,7 @@ import { Plus, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { dedupeTaskTree } from "@/features/dashboard/utils/taskTree";
 
 import { TaskRow } from "./TaskRow";
 import { TasksEmptyState } from "./TasksEmptyState";
@@ -130,7 +131,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 			});
 	};
 
-	const finalFilteredTasks = filterTasksRecursively(filteredTasks);
+	const finalFilteredTasks = dedupeTaskTree(filterTasksRecursively(filteredTasks));
 
 	// Stats
 	const stats = {
@@ -165,7 +166,7 @@ export function TasksTab({ projectId }: TasksTabProps) {
 							}}
 							size="sm"
 						>
-							<Plus className="h-4 w-4 mr-2" />
+							<Plus className="h-4 w-4 me-2" />
 							New Task
 						</Button>
 					)}

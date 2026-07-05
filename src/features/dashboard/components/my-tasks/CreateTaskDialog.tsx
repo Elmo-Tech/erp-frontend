@@ -146,7 +146,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 
 	const taskCategoryOptions = useMemo(
 		() => [
-			{ value: "none", label: "No Category" },
+			{ value: "none", label: "No category" },
 			...(taskCategoriesData?.data?.map((category) => ({
 				value: category.value,
 				label: category.label,

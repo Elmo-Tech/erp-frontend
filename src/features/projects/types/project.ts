@@ -42,7 +42,7 @@ export interface Project {
 	description: string | null;
 	status: ProjectStatus;
 	previousStatus: ProjectStatus | null;
-	budget: number;
+	budget: number | null;
 	currency?: string;
 	estimatedHours?: number;
 	deadline: string | null;

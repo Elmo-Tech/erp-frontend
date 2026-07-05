@@ -398,7 +398,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onPro
 												<label className="text-sm font-medium text-muted-foreground">Budget</label>
 												<div className="mt-1 flex items-center gap-2">
 													<DollarSign className="h-4 w-4 text-muted-foreground" />
-													<span className="font-mono text-lg">{formatCurrency(project.budget)}</span>
+													<span className="font-mono text-lg">{formatCurrency(project.budget || 0)}</span>
 												</div>
 											</div>
 										</div>

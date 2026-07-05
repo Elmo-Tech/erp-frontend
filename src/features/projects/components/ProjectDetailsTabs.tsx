@@ -174,7 +174,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 							Files ({filesCount})
 						</TabsTrigger>
 					)}
-					{/* {canViewWiki && (
+					{canViewWiki && (
 						<TabsTrigger
 							value="wiki"
 							className="gap-2"
@@ -182,7 +182,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 							<BookOpen className="h-4 w-4" />
 							Wiki
 						</TabsTrigger>
-					)} */}
+					)}
 					{canViewProjectHistory && (
 						<TabsTrigger
 							value="history"

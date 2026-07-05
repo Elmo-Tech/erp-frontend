@@ -84,4 +84,27 @@ describe("FilesTab Google Drive integration", () => {
 		expect(screen.getByText("Change Drive Folder")).toBeInTheDocument();
 		expect(screen.getByText("Drive upload enabled")).toBeInTheDocument();
 	});
+
+	it("shows a retry action when Drive files fail to load", () => {
+		const refetch = vi.fn();
+		mockUseProjectDriveFiles.mockReturnValue({
+			data: undefined,
+			isLoading: false,
+			error: new Error("Google Drive token expired"),
+			refetch,
+		} as unknown as ReturnType<typeof useProjectDriveFiles>);
+
+		renderWithClient(
+			<FilesTab
+				projectId={1}
+				files={[]}
+				googleDriveFolderId="folder-1"
+				googleDriveFolderName="Client Docs"
+			/>
+		);
+
+		expect(screen.getByText("Google Drive token expired")).toBeInTheDocument();
+		screen.getByRole("button", { name: "Retry Drive" }).click();
+		expect(refetch).toHaveBeenCalled();
+	});
 });

@@ -67,7 +67,9 @@ export function TaskRow({
 
 	const loadedChildren = childrenData?.children || [];
 	const hasChildren = (task.children && task.children.length > 0) || loadedChildren.length > 0;
-	let childTasks = loadedChildren.length > 0 ? loadedChildren : task.children || [];
+	let childTasks = Array.from(
+		new Map((loadedChildren.length > 0 ? loadedChildren : task.children || []).map((child) => [child.taskId, child])).values()
+	);
 
 	// Filter child tasks based on user assignment if needed
 	if (showMyTasksOnly && !isAdminOrSuperAdmin && currentUserId) {
@@ -237,17 +239,17 @@ export function TaskRow({
 						>
 							{canEditThisTask && (
 								<DropdownMenuItem onClick={() => onEdit(task)}>
-									<Pencil className="h-4 w-4 mr-2" /> Edit Task
+									<Pencil className="h-4 w-4 me-2" /> Edit Task
 								</DropdownMenuItem>
 							)}
 							{onCreateChild && canCreateWeeklyTasks && task.type === TaskType.MAIN && task.status !== TaskStatus.COMPLETED && (
 								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.WEEKLY)}>
-									<Plus className="h-4 w-4 mr-2" /> Add Weekly Task
+									<Plus className="h-4 w-4 me-2" /> Add Weekly Task
 								</DropdownMenuItem>
 							)}
 							{onCreateChild && canCreateSubtasks && task.type === TaskType.WEEKLY && task.status !== TaskStatus.COMPLETED && (
 								<DropdownMenuItem onClick={() => onCreateChild(task, TaskType.SUBTASK)}>
-									<Plus className="h-4 w-4 mr-2" /> Add Subtask
+									<Plus className="h-4 w-4 me-2" /> Add Subtask
 								</DropdownMenuItem>
 							)}
 							{onDelete && (
@@ -257,7 +259,7 @@ export function TaskRow({
 										onClick={() => onDelete(task)}
 										className="text-destructive focus:text-destructive"
 									>
-										<Trash2 className="h-4 w-4 mr-2" /> Delete
+										<Trash2 className="h-4 w-4 me-2" /> Delete
 									</DropdownMenuItem>
 								</>
 							)}

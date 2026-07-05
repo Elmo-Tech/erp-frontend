@@ -1,6 +1,6 @@
 "use client";
 
-import { UseFormReturn } from "react-hook-form";
+import { FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { FormInput, FormTextarea, FormSelect } from "@/components/shared";
 import { ProjectStatus } from "../../../types/project";
@@ -16,32 +16,25 @@ const statusOptions = [
 	{ value: ProjectStatus.CANCELLED, label: "Cancelled" },
 ];
 
-interface ProjectFormFieldsProps {
-	form: UseFormReturn<{
-		title: string;
-		description?: string;
-		budget: number;
-		deadline?: string;
-		status: ProjectStatus;
-		reason?: string;
-	}>;
+interface ProjectFormFieldsProps<TFormValues extends FieldValues> {
+	form: UseFormReturn<TFormValues>;
 	showReasonField?: boolean;
 }
 
-export function ProjectFormFields({ form, showReasonField }: ProjectFormFieldsProps) {
+export function ProjectFormFields<TFormValues extends FieldValues>({ form, showReasonField }: ProjectFormFieldsProps<TFormValues>) {
 	return (
 		<Form {...form}>
 			<div className="space-y-4">
 				<FormInput
 					control={form.control}
-					name="title"
+					name={"title" as FieldPath<TFormValues>}
 					label="Project Title"
 					placeholder="Enter project title"
 				/>
 
 				<FormTextarea
 					control={form.control}
-					name="description"
+					name={"description" as FieldPath<TFormValues>}
 					label="Description"
 					placeholder="Enter project description"
 					rows={3}
@@ -49,14 +42,14 @@ export function ProjectFormFields({ form, showReasonField }: ProjectFormFieldsPr
 
 				<FormInput
 					control={form.control}
-					name="deadline"
+					name={"deadline" as FieldPath<TFormValues>}
 					label="Deadline"
 					type="date"
 				/>
 
 				<FormSelect
 					control={form.control}
-					name="status"
+					name={"status" as FieldPath<TFormValues>}
 					label="Status"
 					placeholder="Select status"
 					options={statusOptions}
@@ -65,7 +58,7 @@ export function ProjectFormFields({ form, showReasonField }: ProjectFormFieldsPr
 				{showReasonField && (
 					<FormTextarea
 						control={form.control}
-						name="reason"
+						name={"reason" as FieldPath<TFormValues>}
 						label="Reason for Change"
 						placeholder="Explain why the deadline is being changed..."
 						rows={2}

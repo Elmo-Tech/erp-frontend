@@ -12,7 +12,6 @@ import { toast } from "sonner";
 const projectSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	description: z.string().optional(),
-	budget: z.number().min(0, "Budget must be positive"),
 	deadline: z.string().optional(),
 	status: z.nativeEnum(ProjectStatus),
 	reason: z.string().optional(),
@@ -36,7 +35,6 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 		defaultValues: {
 			title: project.title,
 			description: project.description || "",
-			budget: project.budget,
 			deadline: project.deadline || "",
 			status: project.status,
 			reason: "",
@@ -49,7 +47,6 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 		form.reset({
 			title: projectData.title,
 			description: projectData.description || "",
-			budget: projectData.budget,
 			deadline: projectData.deadline || "",
 			status: projectData.status,
 			reason: "",
@@ -76,7 +73,6 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 				payload: {
 					title: data.title,
 					description: data.description,
-					budget: project.budget,
 					deadline: data.deadline || undefined,
 					status: data.status,
 					reason: data.reason || undefined,

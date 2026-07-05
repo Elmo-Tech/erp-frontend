@@ -130,6 +130,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 
 	// Transform task categories to select options
 	const taskCategoryOptions = [
+		{ value: "none", label: "No category" },
 		...(taskCategoriesData?.data?.map((category) => ({
 			value: category.value,
 			label: category.label,
