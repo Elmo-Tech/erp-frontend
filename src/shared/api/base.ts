@@ -74,6 +74,10 @@ function shouldRefreshToken(tokenExpiresAt: string | null | undefined) {
 	return Number.isFinite(expiresAt) && expiresAt - Date.now() <= REFRESH_WINDOW_MS;
 }
 
+function isAuthEndpoint(url: string | undefined) {
+	return url?.includes("/auth/login") || url?.includes("/auth/refresh");
+}
+
 export function clearClientAuthState() {
 	if (!isBrowser()) {
 		return;
@@ -102,6 +106,7 @@ function refreshAuthToken() {
 	}
 
 	if (!Cookies.get(CSRF_COOKIE)) {
+		clearClientAuthState();
 		return Promise.resolve(null);
 	}
 
@@ -159,7 +164,7 @@ export const api = axios.create({
 export const handleApiRequest = async (config: InternalAxiosRequestConfig) => {
 	const persistedAuth = readPersistedAuth();
 
-	if (isTokenExpired(persistedAuth?.state?.tokenExpiresAt)) {
+	if (!isAuthEndpoint(config.url) && isTokenExpired(persistedAuth?.state?.tokenExpiresAt)) {
 		const token = await refreshAuthToken();
 		if (!token) {
 			redirectToLogin();
@@ -167,7 +172,7 @@ export const handleApiRequest = async (config: InternalAxiosRequestConfig) => {
 		}
 	}
 
-	if (!isTokenExpired(persistedAuth?.state?.tokenExpiresAt) && shouldRefreshToken(persistedAuth?.state?.tokenExpiresAt)) {
+	if (!isAuthEndpoint(config.url) && !isTokenExpired(persistedAuth?.state?.tokenExpiresAt) && shouldRefreshToken(persistedAuth?.state?.tokenExpiresAt)) {
 		await refreshAuthToken();
 	}
 
@@ -188,7 +193,7 @@ export const handleApiResponse = (response: AxiosResponse) => response;
 
 export const handleApiResponseError = async (error: AxiosError) => {
 	const originalRequest = error.config as RetriableRequestConfig | undefined;
-	const isAuthRequest = originalRequest?.url?.includes("/auth/login") || originalRequest?.url?.includes("/auth/refresh");
+	const isAuthRequest = isAuthEndpoint(originalRequest?.url);
 
 	if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthRequest) {
 		originalRequest._retry = true;
