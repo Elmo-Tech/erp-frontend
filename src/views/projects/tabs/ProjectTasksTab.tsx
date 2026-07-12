@@ -58,32 +58,17 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 		onTaskDeleted: handleDeletedTask,
 	});
 
-	// ── ABAC: Determine if the current user can manage tasks/milestones ───────
-	// Priority order:
-	//   1. manage_all_projects → full access (global bypass).
-	//   2. manage_tasks → full access.
-	//   3. create_tasks + project manager/tech_lead role → can add tasks/milestones.
-	//   4. Everyone else (developers, QA, designers) → read-only view.
-	const currentUserId = useAuthStore((s) => s.user?.userId);
 	const canManageAllProjects = useAuthStore((s) => s.hasPermission("manage_all_projects"));
 	const canManageProjects = useAuthStore((s) => s.hasPermission("manage_projects"));
 	const { canManageTasks, canCreateTasks, canEditTasks, canDeleteTasks } = useTaskPermissions();
 
-	// Derive the user's project-level role from the members list
-	const currentMember = membersQuery.data?.find((m) => m.userId === currentUserId);
-	const projectRole = currentMember?.role ?? null;
-	const isProjectManagerLevel = projectRole === "manager" || projectRole === "tech_lead";
-
-	// The user can add tasks/milestones if they are a global admin, have manage_tasks,
-	// or have create_tasks AND are a project manager/tech_lead.
 	const canAddMilestones = canManageAllProjects || canManageProjects;
-	const canAddTasks = canManageAllProjects || canManageTasks || (canCreateTasks && isProjectManagerLevel);
+	const canAddTasks = canManageAllProjects || canManageTasks || canCreateTasks;
 	const taskMetadataPermissions = getTaskMetadataPermissions({
 		canManageAllProjects,
 		canManageTasks,
 		canEditTasks,
 		canDeleteTasks,
-		isProjectManagerLevel,
 	});
 
 	const allTasks = tasksQuery.data ?? [];

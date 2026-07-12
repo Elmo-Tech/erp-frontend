@@ -48,7 +48,9 @@ describe("TaskDeliverablesPanel", () => {
 				taskId={10}
 				isDone={false}
 				canToggleDeliverables
-				canManageDeliverableRecords
+				canCreateDeliverables
+				canEditDeliverables
+				canDeleteDeliverables
 			/>,
 		);
 
@@ -69,7 +71,9 @@ describe("TaskDeliverablesPanel", () => {
 				taskId={10}
 				isDone={false}
 				canToggleDeliverables
-				canManageDeliverableRecords
+				canCreateDeliverables
+				canEditDeliverables
+				canDeleteDeliverables
 			/>,
 		);
 
@@ -95,12 +99,33 @@ describe("TaskDeliverablesPanel", () => {
 				taskId={10}
 				isDone={false}
 				canToggleDeliverables={false}
-				canManageDeliverableRecords={false}
+				canCreateDeliverables={false}
+				canEditDeliverables={false}
+				canDeleteDeliverables={false}
 			/>,
 		);
 
 		expect(screen.getByText("No deliverables yet.")).toBeInTheDocument();
 		expect(screen.queryByPlaceholderText("Add a deliverable…")).not.toBeInTheDocument();
 		expect(screen.queryByRole("button", { name: /edit deliverable/i })).not.toBeInTheDocument();
+	});
+
+	it("keeps record editing independent from completion permission", () => {
+		render(
+			<TaskDeliverablesPanel
+				deliverables={deliverables}
+				projectId={2}
+				taskId={10}
+				isDone={false}
+				canToggleDeliverables={false}
+				canCreateDeliverables={false}
+				canEditDeliverables
+				canDeleteDeliverables={false}
+			/>,
+		);
+
+		expect(screen.getAllByRole("button", { name: /edit deliverable/i })).toHaveLength(2);
+		expect(screen.queryByRole("button", { name: /delete deliverable/i })).not.toBeInTheDocument();
+		expect(screen.queryByPlaceholderText("Add a deliverable…")).not.toBeInTheDocument();
 	});
 });

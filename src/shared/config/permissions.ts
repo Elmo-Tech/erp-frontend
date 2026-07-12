@@ -42,6 +42,9 @@ export const SYSTEM_PERMISSIONS = [
 
 	// ── Tasks & Deliverables ─────────────────────────────────────────────────
 	"manage_deliverables", // STRICTLY for users allowed to define deliverables
+	"create_project_task_deliverables",
+	"edit_project_task_deliverables",
+	"delete_project_task_deliverables",
 
 	// ── Dashboard ────────────────────────────────────────────────────────────
 	"view_my_workspace",

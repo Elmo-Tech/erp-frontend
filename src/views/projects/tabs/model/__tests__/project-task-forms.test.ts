@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { buildEditTaskFormDefaults, mapAddMilestoneFormToPayload, mapAddTaskFormToPayload, mapEditTaskFormToPayload } from "../project-task-forms";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { buildAddTaskFormDefaults, buildEditTaskFormDefaults, mapAddMilestoneFormToPayload, mapAddTaskFormToPayload, mapEditTaskFormToPayload } from "../project-task-forms";
 import { ExecutionTaskStatus, type ProjectTask } from "@/features/projects/api/execution.api";
 import { TaskPriority } from "@/shared/lib/statusHelpers";
 
@@ -30,6 +30,20 @@ function makeTask(overrides: Partial<ProjectTask> = {}): ProjectTask {
 }
 
 describe("project task forms model", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("defaults new tasks to the current user and today's local date", () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date(2026, 6, 12, 9, 30));
+
+		expect(buildAddTaskFormDefaults(7)).toMatchObject({
+			assigneeId: "7",
+			startDate: "2026-07-12",
+		});
+	});
+
 	it("maps milestone form data to the backend payload", () => {
 		expect(mapAddMilestoneFormToPayload({ title: "Phase 1" })).toEqual({ title: "Phase 1" });
 	});

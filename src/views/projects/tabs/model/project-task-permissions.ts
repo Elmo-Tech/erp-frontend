@@ -3,7 +3,6 @@ interface TaskMetadataPermissionInput {
 	canManageTasks: boolean;
 	canEditTasks: boolean;
 	canDeleteTasks: boolean;
-	isProjectManagerLevel: boolean;
 }
 
 export function getTaskMetadataPermissions({
@@ -11,12 +10,11 @@ export function getTaskMetadataPermissions({
 	canManageTasks,
 	canEditTasks,
 	canDeleteTasks,
-	isProjectManagerLevel,
 }: TaskMetadataPermissionInput) {
 	const canManageTaskMetadata = canManageAllProjects || canManageTasks;
 
 	return {
-		canEditTaskMetadata: canManageTaskMetadata || (canEditTasks && isProjectManagerLevel),
+		canEditTaskMetadata: canManageTaskMetadata || canEditTasks,
 		canDeleteTask: canManageTaskMetadata || canDeleteTasks,
 	};
 }

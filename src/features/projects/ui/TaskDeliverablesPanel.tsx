@@ -17,15 +17,19 @@ interface TaskDeliverablesPanelProps {
 	taskId: number;
 	isDone: boolean;
 	canToggleDeliverables: boolean;
-	canManageDeliverableRecords: boolean;
+	canCreateDeliverables: boolean;
+	canEditDeliverables: boolean;
+	canDeleteDeliverables: boolean;
 }
 
 interface DeliverableRowProps {
 	deliverable: TaskDeliverable;
 	projectId: number;
 	taskId: number;
-	disabled: boolean;
-	canManage: boolean;
+	isDone: boolean;
+	canToggle: boolean;
+	canEdit: boolean;
+	canDelete: boolean;
 }
 
 interface QuickAddFormProps {
@@ -35,7 +39,7 @@ interface QuickAddFormProps {
 	disabled?: boolean;
 }
 
-function DeliverableRow({ deliverable, projectId, taskId, disabled, canManage }: DeliverableRowProps) {
+function DeliverableRow({ deliverable, projectId, taskId, isDone, canToggle, canEdit, canDelete }: DeliverableRowProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [title, setTitle] = useState(deliverable.title);
 	const toggleDeliverable = useToggleDeliverable();
@@ -78,7 +82,7 @@ function DeliverableRow({ deliverable, projectId, taskId, disabled, canManage }:
 				id={`del-${deliverable.deliverableId}`}
 				checked={deliverable.isCompleted}
 				onCheckedChange={handleToggle}
-				disabled={disabled || toggleDeliverable.isPending}
+				disabled={isDone || !canToggle || toggleDeliverable.isPending}
 				className="mt-0.5 shrink-0"
 			/>
 			{isEditing ? (
@@ -113,9 +117,9 @@ function DeliverableRow({ deliverable, projectId, taskId, disabled, canManage }:
 					{deliverable.title}
 				</label>
 			)}
-			{canManage && !disabled && !isEditing && (
+			{(canEdit || canDelete) && !isDone && !isEditing && (
 				<div className="ml-auto flex shrink-0 items-center gap-1">
-					<Button
+					{canEdit && <Button
 						type="button"
 						variant="ghost"
 						size="icon"
@@ -127,8 +131,8 @@ function DeliverableRow({ deliverable, projectId, taskId, disabled, canManage }:
 					>
 						<Pencil className="size-3.5" />
 						<span className="sr-only">Edit deliverable</span>
-					</Button>
-					<Button
+					</Button>}
+					{canDelete && <Button
 						type="button"
 						variant="ghost"
 						size="icon"
@@ -138,7 +142,7 @@ function DeliverableRow({ deliverable, projectId, taskId, disabled, canManage }:
 					>
 						<Trash2 className="size-3.5" />
 						<span className="sr-only">Delete deliverable</span>
-					</Button>
+					</Button>}
 				</div>
 			)}
 		</div>
@@ -186,7 +190,16 @@ function QuickAddForm({ placeholder, onSubmit, isPending, disabled }: QuickAddFo
 	);
 }
 
-export function TaskDeliverablesPanel({ deliverables, projectId, taskId, isDone, canToggleDeliverables, canManageDeliverableRecords }: TaskDeliverablesPanelProps) {
+export function TaskDeliverablesPanel({
+	deliverables,
+	projectId,
+	taskId,
+	isDone,
+	canToggleDeliverables,
+	canCreateDeliverables,
+	canEditDeliverables,
+	canDeleteDeliverables,
+}: TaskDeliverablesPanelProps) {
 	const createDeliverable = useCreateDeliverable();
 	const totalDeliverables = deliverables.length;
 	const completedDeliverables = deliverables.filter((deliverable) => deliverable.isCompleted).length;
@@ -227,8 +240,10 @@ export function TaskDeliverablesPanel({ deliverables, projectId, taskId, isDone,
 							deliverable={deliverable}
 							projectId={projectId}
 							taskId={taskId}
-							disabled={isDone || !canToggleDeliverables}
-							canManage={canManageDeliverableRecords}
+							isDone={isDone}
+							canToggle={canToggleDeliverables}
+							canEdit={canEditDeliverables}
+							canDelete={canDeleteDeliverables}
 						/>
 					))}
 				</div>
@@ -238,7 +253,7 @@ export function TaskDeliverablesPanel({ deliverables, projectId, taskId, isDone,
 				</div>
 			)}
 
-			{!isDone && canManageDeliverableRecords && (
+			{!isDone && canCreateDeliverables && (
 				<QuickAddForm
 					placeholder="Add a deliverable…"
 					onSubmit={handleAddDeliverable}

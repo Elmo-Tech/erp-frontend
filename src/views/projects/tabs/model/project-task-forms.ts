@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { format } from "date-fns";
 import { optionalNumberInput } from "@/shared/lib/zod-number";
 import type { CreateMilestonePayload, CreateTaskPayload, ProjectTask, UpdateTaskPayload } from "@/features/projects/api/execution.api";
 import type { TaskPriority } from "@/shared/lib/statusHelpers";
@@ -37,6 +38,14 @@ export const addTaskFormDefaults: AddTaskFormData = {
 	startDate: "",
 	dueDate: "",
 };
+
+export function buildAddTaskFormDefaults(currentUserId?: number | null): AddTaskFormData {
+	return {
+		...addTaskFormDefaults,
+		assigneeId: currentUserId ? String(currentUserId) : "",
+		startDate: format(new Date(), "yyyy-MM-dd"),
+	};
+}
 
 export function mapAddMilestoneFormToPayload(data: AddMilestoneFormData): CreateMilestonePayload {
 	return { title: data.title };

@@ -4,12 +4,14 @@ import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useCreateMilestone, useCreateTask } from "@/features/projects/api/execution.api";
 import {
 	addMilestoneFormDefaults,
 	addMilestoneSchema,
 	addTaskFormDefaults,
 	addTaskSchema,
+	buildAddTaskFormDefaults,
 	mapAddMilestoneFormToPayload,
 	mapAddTaskFormToPayload,
 	type AddMilestoneFormData,
@@ -17,6 +19,7 @@ import {
 } from "./project-task-forms";
 
 export function useProjectTaskCreationDialogs(projectId: number) {
+	const currentUserId = useAuthStore((state) => state.user?.userId);
 	const [milestoneOpen, setMilestoneOpen] = useState(false);
 	const [taskOpen, setTaskOpen] = useState(false);
 	const createMilestone = useCreateMilestone();
@@ -38,9 +41,9 @@ export function useProjectTaskCreationDialogs(projectId: number) {
 	}, [milestoneForm]);
 
 	const openTaskDialog = useCallback(() => {
-		taskForm.reset(addTaskFormDefaults);
+		taskForm.reset(buildAddTaskFormDefaults(currentUserId));
 		setTaskOpen(true);
-	}, [taskForm]);
+	}, [currentUserId, taskForm]);
 
 	const submitMilestone = milestoneForm.handleSubmit(async (data) => {
 		try {

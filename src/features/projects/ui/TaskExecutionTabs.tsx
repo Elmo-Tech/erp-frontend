@@ -12,7 +12,9 @@ import { TaskTimeLogsPanel } from "./TaskTimeLogsPanel";
 interface TaskExecutionTabsAccess {
 	isDone: boolean;
 	canToggleDeliverables: boolean;
-	canManageDeliverableRecords: boolean;
+	canCreateDeliverables: boolean;
+	canEditDeliverables: boolean;
+	canDeleteDeliverables: boolean;
 	canWriteTimeEntries: boolean;
 	canManageTimeEntry: (entry: ProjectTimeEntry) => boolean;
 }
@@ -69,7 +71,9 @@ export function TaskExecutionTabs({ task, projectId, totalLogged, access, handle
 							taskId={task.taskId}
 							isDone={access.isDone}
 							canToggleDeliverables={access.canToggleDeliverables}
-							canManageDeliverableRecords={access.canManageDeliverableRecords}
+							canCreateDeliverables={access.canCreateDeliverables}
+							canEditDeliverables={access.canEditDeliverables}
+							canDeleteDeliverables={access.canDeleteDeliverables}
 						/>
 					</div>
 				</ScrollArea>

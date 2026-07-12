@@ -71,7 +71,15 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const currentUserId = useAuthStore((s) => s.user?.userId);
 	const membersQuery = useProjectMembers(projectId);
 
-	const { canManageTasks, canEditTasks, canWorkOnTasks, canManageDeliverables } = useTaskPermissions();
+	const {
+		canManageTasks,
+		canEditTasks,
+		canWorkOnTasks,
+		canManageDeliverables,
+		canCreateProjectTaskDeliverables,
+		canEditProjectTaskDeliverables,
+		canDeleteProjectTaskDeliverables,
+	} = useTaskPermissions();
 
 	// manage_all_projects replaces the old isGlobalAdmin bypass.
 	// Users with this permission skip project-membership workflow ceilings.
@@ -104,7 +112,10 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const isManagerLevel = canManageAllProjects || canManageTasks || canEditTasks || projectRole === "manager" || projectRole === "tech_lead";
 	// Deliverables can be toggled by the assignee or a manager-level user
 	const canToggleDeliverables = isAssignee || isManagerLevel;
-	const canManageDeliverableRecords = isManagerLevel || canManageDeliverables;
+	const hasDeliverableManagementOverride = canManageAllProjects || canManageDeliverables;
+	const canCreateDeliverables = hasDeliverableManagementOverride || canCreateProjectTaskDeliverables;
+	const canEditDeliverables = hasDeliverableManagementOverride || canEditProjectTaskDeliverables;
+	const canDeleteDeliverables = hasDeliverableManagementOverride || canDeleteProjectTaskDeliverables;
 	const closeSheet = useCallback(() => onOpenChange(false), [onOpenChange]);
 
 	const statusActions = useTaskStatusActions({
@@ -196,7 +207,9 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 					access={{
 						isDone,
 						canToggleDeliverables,
-						canManageDeliverableRecords,
+						canCreateDeliverables,
+						canEditDeliverables,
+						canDeleteDeliverables,
 						canWriteTimeEntries,
 						canManageTimeEntry,
 					}}

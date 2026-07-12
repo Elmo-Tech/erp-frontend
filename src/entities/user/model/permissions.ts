@@ -34,6 +34,9 @@ export const TASK_PERMISSIONS = {
 	ASSIGN_TASKS: "assign_tasks",
 	WORK_ON_TASKS: "work_on_tasks",
 	MANAGE_DELIVERABLES: "manage_deliverables",
+	CREATE_PROJECT_TASK_DELIVERABLES: "create_project_task_deliverables",
+	EDIT_PROJECT_TASK_DELIVERABLES: "edit_project_task_deliverables",
+	DELETE_PROJECT_TASK_DELIVERABLES: "delete_project_task_deliverables",
 } as const;
 
 export const INVOICE_PERMISSIONS = {
@@ -135,6 +138,9 @@ export function useTaskPermissions() {
 			canAssignTasks: hasPermission(TASK_PERMISSIONS.ASSIGN_TASKS),
 			canWorkOnTasks: hasPermission(TASK_PERMISSIONS.WORK_ON_TASKS),
 			canManageDeliverables: hasPermission(TASK_PERMISSIONS.MANAGE_DELIVERABLES),
+			canCreateProjectTaskDeliverables: hasPermission(TASK_PERMISSIONS.CREATE_PROJECT_TASK_DELIVERABLES),
+			canEditProjectTaskDeliverables: hasPermission(TASK_PERMISSIONS.EDIT_PROJECT_TASK_DELIVERABLES),
+			canDeleteProjectTaskDeliverables: hasPermission(TASK_PERMISSIONS.DELETE_PROJECT_TASK_DELIVERABLES),
 		}),
 		[hasPermission],
 	);

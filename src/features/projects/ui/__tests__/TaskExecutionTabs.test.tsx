@@ -81,7 +81,9 @@ describe("TaskExecutionTabs", () => {
 				access={{
 					isDone: false,
 					canToggleDeliverables: true,
-					canManageDeliverableRecords: true,
+					canCreateDeliverables: true,
+					canEditDeliverables: true,
+					canDeleteDeliverables: true,
 					canWriteTimeEntries: true,
 					canManageTimeEntry: () => true,
 				}}
