@@ -106,6 +106,15 @@ export interface AttendanceSummary {
 	daily: AttendanceSummaryDay[];
 }
 
+export interface AttendanceFilters {
+	search?: string;
+	userId?: number;
+	from?: string;
+	to?: string;
+	status?: AttendanceStatus;
+	page?: number;
+}
+
 export interface UpdateAttendancePayload {
 	status?: AttendanceStatus;
 	notes?: string | null;
@@ -398,6 +407,12 @@ export interface ReportDeliverableDay {
 	submitted: boolean;
 	taskCount: number;
 	completedTaskCount: number;
+	tasks: Array<{
+		title: string;
+		source: "project" | "personal";
+		projectTitle: string | null;
+		completed: boolean;
+	}>;
 	qaIssues: string[]; // list of QA/PM notes for that day
 }
 
@@ -408,6 +423,7 @@ export interface ReportFinancialBreakdown {
 	manualBonusTotal: number;
 	latenessDeductionAmount: number;
 	manualDeductionTotal: number;
+	unpaidLeaveDeduction: number;
 	netSalary: number;
 	/** Payslip status if one exists for this period */
 	payslipStatus: PayslipStatus | null;
@@ -432,6 +448,9 @@ export interface EmployeeReport {
 		email: string;
 		avatar: string | null;
 		roles: string[];
+		graceDaysAllowed: number;
+		graceDaysUsed: number;
+		graceDaysRemaining: number;
 	};
 	period: {
 		month: number;

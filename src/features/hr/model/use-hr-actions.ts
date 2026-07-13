@@ -26,6 +26,7 @@ import type {
 	CreatePayrollTransactionPayload,
 	UpdatePayrollTransactionPayload,
 	CreatePointAdjustmentPayload,
+	AttendanceFilters,
 } from "@/entities/hr/model/types";
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -64,8 +65,16 @@ export function useCreatePointAdjustment() {
 export function useMyAttendance() {
 	return useQuery({
 		queryKey: hrKeys.attendanceList(),
-		queryFn: hrApi.fetchAttendanceList,
+		queryFn: () => hrApi.fetchAttendanceList(),
 		staleTime: 2 * 60 * 1000,
+	});
+}
+
+export function useAttendanceRecords(filters: AttendanceFilters) {
+	return useQuery({
+		queryKey: hrKeys.attendanceList(filters),
+		queryFn: () => hrApi.fetchAttendanceList(filters),
+		staleTime: 60 * 1000,
 	});
 }
 

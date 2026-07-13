@@ -9,6 +9,8 @@
  *   hrAdminKeys — admin-facing endpoints (shifts, employee-profiles, payroll, settings)
  */
 
+import type { AttendanceFilters } from "./types";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Employee-facing keys
 // ─────────────────────────────────────────────────────────────────────────────
@@ -21,7 +23,7 @@ export const hrKeys = {
 
 	// Attendance — parent key used for broad invalidation after check-out
 	attendance: () => [...hrKeys.all, "attendance"] as const,
-	attendanceList: () => [...hrKeys.attendance(), "list"] as const,
+	attendanceList: (filters?: AttendanceFilters) => [...hrKeys.attendance(), "list", filters] as const,
 	attendanceToday: () => [...hrKeys.attendance(), "today"] as const,
 	teamPulse: () => [...hrKeys.all, "team-pulse"] as const,
 

@@ -2,11 +2,11 @@
 
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
-import { CalendarClock, ExternalLink, LogIn, LogOut, Star, Timer, Trophy } from "lucide-react";
+import { Activity, CalendarClock, ExternalLink, LogIn, LogOut, Star, Timer, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { MEETING_TYPE_LABELS, useGetTodayMeetings, type PolyMeeting } from "@/entities/meetings";
-import { useCheckInMutation, useCheckOutMutation, useMyPoints, useTodayAttendance } from "@/features/hr/model/use-hr-actions";
+import { useAttendanceSummary, useCheckInMutation, useCheckOutMutation, useMyPoints, useTodayAttendance } from "@/features/hr/model/use-hr-actions";
 import { PersonalTasksSummaryCard } from "@/features/personal-tasks/ui/PersonalTasksSummaryCard";
 import { useMyActiveProjectTasks } from "@/features/projects/api/execution.api";
 import { MyActiveProjectTasksCard } from "@/views/dashboard/MyActiveProjectTasksCard";
@@ -212,32 +212,89 @@ function QuickStats() {
 	const completed = dashboardQuery.data?.personal_tasks?.summary.completed ?? 0;
 
 	return (
-		<div className="grid gap-4 sm:grid-cols-2">
-			<Card>
-				<CardHeader className="pb-2">
-					<CardTitle className="flex items-center gap-2 text-sm">
-						<Star className="size-4 text-amber-500" />
+		<div className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-2 sm:divide-x">
+			<div className="p-4">
+				<div className="flex items-center justify-between gap-2">
+					<p className="text-sm font-medium">
 						My Points
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
+					</p>
+						<Star className="size-4 text-amber-500" />
+				</div>
+				<div className="mt-3">
 					<p className="text-3xl font-semibold tabular-nums">{pointsQuery.isLoading ? "--" : points}</p>
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader className="pb-2">
-					<CardTitle className="flex items-center gap-2 text-sm">
-						<Trophy className="size-4 text-emerald-500" />
+					<p className="text-xs text-muted-foreground">Net across recent transactions</p>
+				</div>
+			</div>
+			<div className="border-t p-4 sm:border-t-0">
+				<div className="flex items-center justify-between gap-2">
+					<p className="text-sm font-medium">
 						Completed Tasks
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
+					</p>
+						<Trophy className="size-4 text-emerald-500" />
+				</div>
+				<div className="mt-3">
 					<p className="text-3xl font-semibold tabular-nums">{dashboardQuery.isLoading ? "--" : completed}</p>
 					<p className="text-xs text-muted-foreground">Project + personal tasks</p>
-				</CardContent>
-			</Card>
+				</div>
+			</div>
 		</div>
 	);
+}
+
+function WeeklyWorkRhythm() {
+	const summaryQuery = useAttendanceSummary("week");
+	const summary = summaryQuery.data;
+	const daily = summary?.daily ?? [];
+	const coverage = summary?.expectedMinutes ? Math.min(100, Math.round((summary.actualWorkedMinutes / summary.expectedMinutes) * 100)) : 0;
+
+	return (
+		<div className="overflow-hidden rounded-lg border bg-card lg:col-span-2">
+			<div className="flex items-start justify-between gap-3 border-b px-5 py-4">
+				<div><h2 className="text-sm font-semibold">Weekly work rhythm</h2><p className="mt-1 text-xs text-muted-foreground">Logged time compared with expected hours on recorded days</p></div>
+				<Activity className="size-4 text-primary" />
+			</div>
+			{summaryQuery.isLoading ? (
+				<div className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_260px]"><Skeleton className="h-36" /><Skeleton className="h-36" /></div>
+			) : (
+				<div className="grid md:grid-cols-[minmax(0,1fr)_280px]">
+					<div className="min-w-0 p-5">
+						{daily.length ? <WorkloadBars days={daily} /> : <div className="flex h-36 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">No attendance recorded this week.</div>}
+					</div>
+					<div className="grid grid-cols-3 border-t md:grid-cols-1 md:border-l md:border-t-0 md:divide-y">
+						<WorkMetric label="Coverage" value={`${coverage}%`} detail="of expected time" />
+						<WorkMetric label="Late" value={`${summary?.lateMinutes ?? 0}m`} detail="this week" />
+						<WorkMetric label="Stopped" value={formatDuration(summary?.stoppedMinutes ?? 0)} detail="without logged work" />
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function WorkloadBars({ days }: { days: Array<{ date: string; expectedMinutes: number; actualWorkedMinutes: number }> }) {
+	return (
+		<div className="flex h-36 items-end justify-around gap-3 border-b px-2">
+			{days.map((day) => {
+				const ratio = day.expectedMinutes ? day.actualWorkedMinutes / day.expectedMinutes : 0;
+				return (
+					<div key={day.date} className="flex h-full min-w-8 flex-1 flex-col items-center justify-end gap-2">
+						<div className="relative h-24 w-full max-w-8 overflow-hidden rounded-t-sm bg-muted" title={`${formatDuration(day.actualWorkedMinutes)} logged / ${formatDuration(day.expectedMinutes)} expected`}>
+							<div className="absolute inset-x-0 bottom-0 bg-primary transition-[height] duration-200 motion-reduce:transition-none" style={{ height: `${Math.min(100, Math.round(ratio * 100))}%` }} />
+						</div>
+						<span className="text-[11px] text-muted-foreground">{format(new Date(`${day.date}T00:00:00`), "EEE")}</span>
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
+function WorkMetric({ label, value, detail }: { label: string; value: string; detail: string }) {
+	return <div className="px-4 py-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-xl font-semibold tabular-nums">{value}</p><p className="text-[11px] text-muted-foreground">{detail}</p></div>;
+}
+
+function formatDuration(minutes: number) {
+	return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
 export default function MyWorkspacePage() {
@@ -251,6 +308,7 @@ export default function MyWorkspacePage() {
 			<div className="grid gap-4 lg:grid-cols-2">
 				<AttendanceControl />
 				<QuickStats />
+				<WeeklyWorkRhythm />
 				<DailySchedule />
 				<PersonalTasksSummaryCard />
 				<MyActiveProjectTasksCard />

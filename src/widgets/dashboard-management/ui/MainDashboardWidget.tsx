@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { useDashboardOverview, useEscalateBlocker } from "@/widgets/dashboard-management/model/dashboard.api";
-import { EscalatedBlockersWidget, ExecutiveStatsWidget, PersonalTasksDashboardWidget, ProjectTimelineWidget, TeamDailyPulseWidget, TeamPerformanceWidget } from "@/widgets/dashboard-management/ui/DashboardSectionWidgets";
+import { EscalatedBlockersWidget, ExecutiveStatsWidget, OperationalChartsWidget, PersonalTasksDashboardWidget, ProjectTimelineWidget, TeamDailyPulseWidget, TeamPerformanceWidget } from "@/widgets/dashboard-management/ui/DashboardSectionWidgets";
 import { StartDayGateWidget } from "@/widgets/sop-management/ui/StartDayGateWidget";
 
 interface MainDashboardWidgetProps {
@@ -47,6 +47,7 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 				<div className="space-y-4">
 					{canViewEscalatedBlockers && hasEscalatedBlockers && <EscalatedBlockersWidget blockers={dashboard?.escalated_blockers} />}
 					{canViewFinancialStats && <ExecutiveStatsWidget financial={dashboard?.financial} />}
+					{isAdminScope && (canViewFinancialStats || canViewTeamPerformance) && <OperationalChartsWidget financial={canViewFinancialStats ? dashboard?.financial : undefined} team={canViewTeamPerformance ? dashboard?.team : undefined} />}
 					{canViewTeamPulse && <TeamDailyPulseWidget pulse={dashboard?.team_pulse} />}
 					{canViewProjectTimeline && <ProjectTimelineWidget timeline={dashboard?.timeline} />}
 					{canViewTeamPerformance && <TeamPerformanceWidget team={dashboard?.team} />}

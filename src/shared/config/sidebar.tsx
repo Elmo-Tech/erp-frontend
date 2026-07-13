@@ -126,6 +126,12 @@ export const SidebarConfig = [
                 permission: "manage_shifts",
             },
             {
+                title: "Attendance Management",
+                href: "/dashboard/hr/admin/attendance",
+                icon: CalendarCheck,
+                permission: "manage_attendance",
+            },
+            {
                 title: "Employee Profiles",
                 href: "/dashboard/hr/admin/employees",
                 icon: Users,

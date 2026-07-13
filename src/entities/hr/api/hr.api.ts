@@ -12,6 +12,7 @@ import api from "@/shared/api/base";
 import type {
 	ApiEnvelope,
 	AttendanceRecord,
+	AttendanceFilters,
 	AttendanceSummary,
 	CreateEmployeeProfilePayload,
 	CreateLeaveRequestPayload,
@@ -55,8 +56,17 @@ export async function postPointAdjustment(payload: CreatePointAdjustmentPayload)
 // Employee — Attendance
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function fetchAttendanceList(): Promise<PaginatedResponse<AttendanceRecord>> {
-	const res = await api.get<ApiEnvelope<PaginatedResponse<AttendanceRecord>>>("/hr/attendance");
+export async function fetchAttendanceList(filters?: AttendanceFilters): Promise<PaginatedResponse<AttendanceRecord>> {
+	const queryParams = new URLSearchParams();
+	if (filters?.search) queryParams.set("search", filters.search);
+	if (filters?.userId) queryParams.set("user_id", String(filters.userId));
+	if (filters?.from) queryParams.set("from", filters.from);
+	if (filters?.to) queryParams.set("to", filters.to);
+	if (filters?.status) queryParams.set("status", filters.status);
+	if (filters?.page) queryParams.set("page", String(filters.page));
+
+	const query = queryParams.toString();
+	const res = await api.get<ApiEnvelope<PaginatedResponse<AttendanceRecord>>>(query ? `/hr/attendance?${query}` : "/hr/attendance");
 	return res.data.data;
 }
 

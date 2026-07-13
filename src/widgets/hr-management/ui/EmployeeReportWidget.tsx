@@ -21,7 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Printer, Clock, Star, AlertTriangle, DollarSign, CheckCircle2, XCircle, TrendingUp, TrendingDown, CalendarDays, Pencil, PlusCircle } from "lucide-react";
+import { Activity, ArrowLeft, Printer, Clock, Star, AlertTriangle, DollarSign, CheckCircle2, XCircle, TrendingUp, TrendingDown, CalendarDays, Pencil, PlusCircle, ShieldAlert, Target } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -32,12 +32,13 @@ import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { Separator } from "@/shared/ui/separator";
+import { Progress } from "@/shared/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { useCreatePointAdjustment, useEmployeeReport } from "@/features/hr/model/use-hr-actions";
 import { hrAdminKeys } from "@/entities/hr/model/query-keys";
 import { useEmployeePersonalTasks, useUpdatePersonalTask, useUpdatePersonalTimeEntry, type PersonalTask, type PersonalTimeEntry, type PersonalTaskStatus } from "@/features/personal-tasks/api/personal-tasks.api";
-import type { AttendanceStatus, ReportAttendanceDay, ReportDeliverableDay, ReportPointEntry } from "@/entities/hr/model/types";
+import type { AttendanceStatus, EmployeeReport, ReportAttendanceDay, ReportDeliverableDay, ReportPointEntry } from "@/entities/hr/model/types";
 import { cn } from "@/shared/lib/utils";
 import { TaskPriority, TaskPriorityLabels } from "@/shared/lib/statusHelpers";
 import { Can } from "@/shared/ui/Can";
@@ -110,7 +111,7 @@ function toDateTimeLocal(value: string | null | undefined): string {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface KpiCardProps {
+interface KpiCellProps {
 	icon: React.ElementType;
 	label: string;
 	value: string;
@@ -118,17 +119,72 @@ interface KpiCardProps {
 	trend?: "positive" | "negative" | "neutral";
 }
 
-function KpiCard({ icon: Icon, label, value, sub, trend = "neutral" }: KpiCardProps) {
+function KpiCell({ icon: Icon, label, value, sub, trend = "neutral" }: KpiCellProps) {
 	return (
-		<div className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-sm print:shadow-none print:border">
+		<div className="flex min-w-0 flex-col gap-2 px-4 py-3">
 			<div className="flex items-center justify-between">
-				<span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>
+				<span className="text-xs font-medium text-muted-foreground">{label}</span>
 				<Icon className={cn("h-4 w-4", trend === "positive" && "text-green-500", trend === "negative" && "text-destructive", trend === "neutral" && "text-muted-foreground")} />
 			</div>
-			<p className={cn("text-2xl font-bold tabular-nums", trend === "positive" && "text-green-600", trend === "negative" && "text-destructive")}>{value}</p>
+			<p className={cn("truncate text-2xl font-semibold tabular-nums", trend === "positive" && "text-green-600", trend === "negative" && "text-destructive")}>{value}</p>
 			{sub && <p className="text-xs text-muted-foreground">{sub}</p>}
 		</div>
 	);
+}
+
+function PerformanceOverview({ report }: { report: EmployeeReport }) {
+	const expectedMinutes = report.attendanceDays.reduce((total, day) => total + day.expectedWorkedMinutes, 0);
+	const actualMinutes = report.attendanceDays.reduce((total, day) => total + day.actualWorkedMinutes, 0);
+	const trackedAttendanceDays = report.summary.presentDays + report.summary.absentDays;
+	const totalTasks = report.deliverableDays.reduce((total, day) => total + day.taskCount, 0);
+	const completedTasks = report.deliverableDays.reduce((total, day) => total + day.completedTaskCount, 0);
+	const metrics = [
+		{ label: "Attendance rate", value: percentage(report.summary.presentDays, trackedAttendanceDays), detail: `${report.summary.presentDays} of ${trackedAttendanceDays} tracked days` },
+		{ label: "Punctuality", value: percentage(report.summary.presentDays - report.summary.lateDays, report.summary.presentDays), detail: `${report.summary.lateDays} late days` },
+		{ label: "Work-hour coverage", value: percentage(actualMinutes, expectedMinutes), detail: `${fmtMinutes(actualMinutes)} of ${fmtMinutes(expectedMinutes)}` },
+		{ label: "Task completion", value: percentage(completedTasks, totalTasks), detail: `${completedTasks} of ${totalTasks} due tasks` },
+	];
+	const graceExhausted = report.employee.graceDaysRemaining === 0;
+
+	return (
+		<div className="grid overflow-hidden rounded-xl border bg-card print-avoid-break lg:grid-cols-[minmax(0,1.6fr)_minmax(260px,0.7fr)]">
+			<div className="p-5">
+				<div className="mb-5 flex items-center gap-2"><Activity className="size-4 text-primary" /><h2 className="text-sm font-semibold">Performance overview</h2></div>
+				<div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+					{metrics.map((metric) => <ProgressMetric key={metric.label} {...metric} />)}
+				</div>
+			</div>
+			<div className={cn("border-t p-5 lg:border-l lg:border-t-0", graceExhausted ? "bg-destructive/5" : "bg-muted/25")}>
+				<div className="flex items-start gap-3">
+					<div className={cn("flex size-9 shrink-0 items-center justify-center rounded-full", graceExhausted ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary")}>
+						{graceExhausted ? <ShieldAlert className="size-4" /> : <Target className="size-4" />}
+					</div>
+					<div>
+						<p className="text-sm font-semibold">{graceExhausted ? "Grace allowance exhausted" : `${report.employee.graceDaysRemaining} grace days remaining`}</p>
+						<p className="mt-1 text-xs leading-5 text-muted-foreground">Used {report.employee.graceDaysUsed} of {report.employee.graceDaysAllowed} days in the current allowance cycle.</p>
+					</div>
+				</div>
+				<div className="mt-5 flex gap-2" aria-label={`${report.employee.graceDaysUsed} grace days used out of ${report.employee.graceDaysAllowed}`}>
+					{Array.from({ length: report.employee.graceDaysAllowed }, (_, index) => <span key={index} className={cn("h-2 flex-1 rounded-full", index < report.employee.graceDaysUsed ? (graceExhausted ? "bg-destructive" : "bg-primary") : "bg-border")} />)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function ProgressMetric({ label, value, detail }: { label: string; value: number; detail: string }) {
+	return (
+		<div>
+			<div className="flex items-baseline justify-between gap-3"><p className="text-sm font-medium">{label}</p><p className="text-sm font-semibold tabular-nums">{value}%</p></div>
+			<Progress value={value} className="mt-2 h-1.5" />
+			<p className="mt-1.5 text-xs text-muted-foreground">{detail}</p>
+		</div>
+	);
+}
+
+function percentage(numerator: number, denominator: number) {
+	if (denominator <= 0) return 0;
+	return Math.max(0, Math.min(100, Math.round((numerator / denominator) * 100)));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -238,6 +294,22 @@ const deliverableColumns: Column<ReportDeliverableDay>[] = [
 		render: (d) => <span className="text-xs tabular-nums text-muted-foreground">{d.date}</span>,
 	},
 	{
+		key: "work",
+		header: "Work Delivered",
+		render: (day) => (
+			<div className="min-w-52 space-y-1">
+				{day.tasks.slice(0, 3).map((task) => (
+					<div key={`${task.source}-${task.title}`} className="flex items-center gap-2 text-xs">
+						<span className={cn("size-1.5 shrink-0 rounded-full", task.completed ? "bg-emerald-500" : "bg-amber-500")} />
+						<span className="truncate">{task.title}</span>
+						{task.projectTitle ? <span className="truncate text-muted-foreground">· {task.projectTitle}</span> : null}
+					</div>
+				))}
+				{day.tasks.length > 3 ? <p className="text-xs text-muted-foreground">+{day.tasks.length - 3} more</p> : null}
+			</div>
+		),
+	},
+	{
 		key: "submitted",
 		header: "Submitted",
 		render: (d) => (d.submitted ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-destructive" />),
@@ -258,9 +330,9 @@ const deliverableColumns: Column<ReportDeliverableDay>[] = [
 		render: (d) =>
 			d.qaIssues.length > 0 ? (
 				<ul className="space-y-0.5">
-					{d.qaIssues.map((note, i) => (
+					{d.qaIssues.map((note) => (
 						<li
-							key={i}
+							key={note}
 							className="flex items-start gap-1 text-xs text-destructive"
 						>
 							<AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
@@ -440,7 +512,7 @@ function AdminPersonalTasksCard({ userId, month, year }: { userId: number; month
 		);
 	});
 
-	const tasks = tasksQuery.data ?? [];
+	const tasks = (tasksQuery.data ?? []).filter((task) => taskFallsInPeriod(task, month, year));
 
 	return (
 		<Card className="print-avoid-break">
@@ -459,7 +531,7 @@ function AdminPersonalTasksCard({ userId, month, year }: { userId: number; month
 				) : tasksQuery.error ? (
 					<p className="py-6 text-center text-sm text-destructive">Failed to load personal tasks.</p>
 				) : tasks.length === 0 ? (
-					<p className="py-6 text-center text-sm text-muted-foreground">No personal tasks for this employee.</p>
+					<p className="py-6 text-center text-sm text-muted-foreground">No personal tasks or time logs in the selected period.</p>
 				) : (
 					<div className="divide-y rounded-md border">
 						{tasks.map((task) => (
@@ -558,6 +630,16 @@ function AdminPersonalTasksCard({ userId, month, year }: { userId: number; month
 			</FormDialog>
 		</Card>
 	);
+}
+
+function taskFallsInPeriod(task: PersonalTask, month: number, year: number) {
+	const matchesPeriod = (value: string | null | undefined) => {
+		if (!value) return false;
+		const date = new Date(value);
+		return !Number.isNaN(date.getTime()) && date.getMonth() + 1 === month && date.getFullYear() === year;
+	};
+
+	return matchesPeriod(task.dueDate) || matchesPeriod(task.completedAt) || matchesPeriod(task.createdAt) || Boolean(task.timeEntries?.some((entry) => matchesPeriod(entry.startTime)));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -791,29 +873,29 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 						</div>
 
 						{/* ── CARD 1: KPI Summary ──────────────────────────────── */}
-						<div className="grid grid-cols-2 gap-4 md:grid-cols-4 print-avoid-break">
-							<KpiCard
+						<div className="grid grid-cols-2 divide-x divide-y overflow-hidden rounded-xl border bg-card md:grid-cols-4 md:divide-y-0 print-avoid-break">
+							<KpiCell
 								icon={Clock}
 								label="Task Hours"
 								value={fmtHours(report.summary.totalTaskHours)}
 								sub={`${report.summary.completedTaskCount} tasks completed`}
 								trend="neutral"
 							/>
-							<KpiCard
+							<KpiCell
 								icon={runningTotal >= 0 ? TrendingUp : TrendingDown}
 								label="Points Balance"
 								value={runningTotal >= 0 ? `+${runningTotal}` : String(runningTotal)}
-								sub="2-month cycle"
+								sub="Selected month"
 								trend={runningTotal >= 0 ? "positive" : "negative"}
 							/>
-							<KpiCard
+							<KpiCell
 								icon={CalendarDays}
 								label="Late Days"
 								value={String(report.summary.lateDays)}
 								sub={`${report.summary.absentDays} absent · ${report.summary.presentDays} present`}
 								trend={report.summary.lateDays > 0 ? "negative" : "positive"}
 							/>
-							<KpiCard
+							<KpiCell
 								icon={DollarSign}
 								label="Net Salary"
 								value={fmt(report.summary.netSalary)}
@@ -821,6 +903,8 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 								trend="neutral"
 							/>
 						</div>
+
+						<PerformanceOverview report={report} />
 
 						{/* ── CARD 2: Point Ledger ─────────────────────────────── */}
 						<Card className="print-avoid-break">
@@ -970,6 +1054,14 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 										<FinancialRow
 											label="Manual Deductions"
 											value={report.financialBreakdown.manualDeductionTotal}
+											sign="-"
+										/>
+									)}
+
+									{report.financialBreakdown.unpaidLeaveDeduction > 0 && (
+										<FinancialRow
+											label="Unpaid Leave"
+											value={report.financialBreakdown.unpaidLeaveDeduction}
 											sign="-"
 										/>
 									)}

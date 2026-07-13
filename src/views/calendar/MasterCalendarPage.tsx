@@ -4,7 +4,7 @@ import { MasterCalendarWidget } from "@/widgets/calendar-management/ui/MasterCal
 
 export default function MasterCalendarPage() {
 	return (
-		<div className="mx-auto w-full max-w-5xl">
+		<div className="mx-auto w-full max-w-7xl">
 			<MasterCalendarWidget />
 		</div>
 	);

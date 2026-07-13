@@ -10,7 +10,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import type { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import type { LucideIcon } from "lucide-react";
-import { BriefcaseBusiness, CalendarCheck, CalendarDays, CheckSquare, Clock, CreditCard, ExternalLink, FileText, Flag, Loader2, Plus, Timer } from "lucide-react";
+import { BriefcaseBusiness, CalendarCheck, CalendarDays, CheckSquare, Clock, CreditCard, ExternalLink, FileText, Flag, ListFilter, Loader2, Plus, Timer } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Can } from "@/shared/ui/Can";
@@ -222,7 +222,8 @@ function buildEventEditTarget(item: AggregatedCalendarItem) {
 
 function AgendaRows({ items, onOpen }: { items: AggregatedCalendarItem[]; onOpen: (item: AggregatedCalendarItem) => void }) {
 	const grouped = useMemo(() => {
-		return items.reduce<Record<string, AggregatedCalendarItem[]>>((acc, item) => {
+		const chronologicalItems = [...items].sort((left, right) => (left.startTime ?? left.date).localeCompare(right.startTime ?? right.date));
+		return chronologicalItems.reduce<Record<string, AggregatedCalendarItem[]>>((acc, item) => {
 			acc[item.date] ??= [];
 			acc[item.date].push(item);
 			return acc;
@@ -275,6 +276,43 @@ function AgendaRows({ items, onOpen }: { items: AggregatedCalendarItem[]; onOpen
 			))}
 		</div>
 	);
+}
+
+function CalendarInsights({ items }: { items: AggregatedCalendarItem[] }) {
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const nextWeek = new Date(today);
+	nextWeek.setDate(today.getDate() + 7);
+	const datedItems = items.map((item) => ({ item, date: new Date(`${item.date}T00:00:00`) }));
+	const upcoming = datedItems.filter(({ date }) => date >= today && date <= nextWeek).length;
+	const overdue = datedItems.filter(({ item, date }) => date < today && isCommitment(item) && !isCompletedStatus(item.status)).length;
+	const countsByDay = items.reduce<Record<string, number>>((counts, item) => {
+		counts[item.date] = (counts[item.date] ?? 0) + 1;
+		return counts;
+	}, {});
+	const busyDays = Object.values(countsByDay).filter((count) => count >= 4).length;
+	const insights = [
+		{ label: "Visible items", value: items.length, detail: "in current filters" },
+		{ label: "Next 7 days", value: upcoming, detail: "upcoming commitments" },
+		{ label: "Busy days", value: busyDays, detail: "4+ items scheduled" },
+		{ label: "Overdue", value: overdue, detail: "open dated commitments" },
+	] as const;
+
+	return (
+		<div className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-2 lg:grid-cols-4 lg:divide-x">
+			{insights.map((insight) => <div key={insight.label} className="border-b px-4 py-3 last:border-b-0 lg:border-b-0"><p className="text-xs text-muted-foreground">{insight.label}</p><p className="mt-1 text-xl font-semibold tabular-nums">{insight.value}</p><p className="text-[11px] text-muted-foreground">{insight.detail}</p></div>)}
+		</div>
+	);
+}
+
+function isCommitment(item: AggregatedCalendarItem) {
+	return item.type === "task" || item.type === "invoice" || item.type === "milestone" || item.type === "subscription";
+}
+
+function isCompletedStatus(status: string | null | undefined) {
+	if (!status) return false;
+	const normalized = status.toLowerCase();
+	return normalized.includes("complete") || normalized.includes("done") || normalized.includes("paid");
 }
 
 function agendaSubtitle(item: AggregatedCalendarItem) {
@@ -499,12 +537,19 @@ export function MasterCalendarWidget() {
 	const [meetingTarget, setMeetingTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [milestoneTarget, setMilestoneTarget] = useState<AggregatedCalendarItem | null>(null);
 	const [attendanceTarget, setAttendanceTarget] = useState<AggregatedCalendarItem | null>(null);
+	const [activeTypes, setActiveTypes] = useState<Set<AggregatedItemType>>(() => new Set(Object.keys(TYPE_THEME) as AggregatedItemType[]));
+	const [agendaOpen, setAgendaOpen] = useState(false);
 
 	const startDate = format(startOfMonth(currentDate), "yyyy-MM-dd");
 	const endDate = format(endOfMonth(currentDate), "yyyy-MM-dd");
 	const { data, isLoading, error } = useCalendarFeed({ startDate, endDate });
 	const items = useMemo(() => data?.items ?? [], [data?.items]);
-	const events = useMemo<FullCalendarEvent[]>(() => items.map(toFullCalendarEvent), [items]);
+	const visibleItems = useMemo(() => items.filter((item) => activeTypes.has(item.type)), [activeTypes, items]);
+	const events = useMemo<FullCalendarEvent[]>(() => visibleItems.map(toFullCalendarEvent), [visibleItems]);
+	const typeCounts = useMemo(() => items.reduce<Partial<Record<AggregatedItemType, number>>>((counts, item) => {
+		counts[item.type] = (counts[item.type] ?? 0) + 1;
+		return counts;
+	}, {}), [items]);
 
 	const taskMeta = taskTarget?.meta as TaskMeta | undefined;
 	const taskProjectId = taskMeta?.projectId ?? 0;
@@ -563,6 +608,14 @@ export function MasterCalendarWidget() {
 
 	const eventTargetAsEvent = editTarget ? buildEventEditTarget(editTarget) : null;
 	const invoiceEditTarget = invoiceTarget ? buildInvoiceEditTarget(invoiceTarget) : null;
+	const toggleType = (type: AggregatedItemType) => {
+		setActiveTypes((current) => {
+			const next = new Set(current);
+			if (next.has(type)) next.delete(type);
+			else next.add(type);
+			return next;
+		});
+	};
 
 	return (
 		<>
@@ -769,21 +822,33 @@ export function MasterCalendarWidget() {
 					</Can>
 				</div>
 
-				<div className="flex flex-wrap items-center gap-2">
+				<CalendarInsights items={visibleItems} />
+
+				<div className="flex flex-col gap-3 rounded-lg border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+					<div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter calendar item types">
 					{(Object.keys(TYPE_THEME) as AggregatedItemType[]).map((type) => {
 						const theme = TYPE_THEME[type];
 						const Icon = theme.icon;
+						const active = activeTypes.has(type);
 						return (
-							<Badge
+							<button
 								key={type}
-								variant="outline"
-								className={cn("gap-1.5 border px-2.5 py-1 text-xs", theme.softClass)}
+								type="button"
+								aria-pressed={active}
+								onClick={() => toggleType(type)}
+								className={cn("inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", active ? theme.softClass : "border-border bg-background text-muted-foreground opacity-65 hover:opacity-100")}
 							>
 								<Icon className="size-3" />
 								{theme.label}
-							</Badge>
+								<span className="tabular-nums opacity-70">{typeCounts[type] ?? 0}</span>
+							</button>
 						);
 					})}
+					</div>
+					<div className="flex shrink-0 items-center gap-2">
+						<Button type="button" variant="ghost" size="sm" onClick={() => setActiveTypes(new Set(Object.keys(TYPE_THEME) as AggregatedItemType[]))}>Show all</Button>
+						<Button type="button" variant="outline" size="sm" onClick={() => setAgendaOpen((open) => !open)} aria-expanded={agendaOpen}><ListFilter className="size-3.5" />{agendaOpen ? "Hide agenda" : "Show agenda"}</Button>
+					</div>
 				</div>
 
 				{isLoading ? (
@@ -826,7 +891,7 @@ export function MasterCalendarWidget() {
 					</div>
 				)}
 
-				{!isLoading && !error && items.length > 0 ? <AgendaRows items={items} onOpen={openItem} /> : null}
+				{!isLoading && !error && agendaOpen && visibleItems.length > 0 ? <AgendaRows items={visibleItems} onOpen={openItem} /> : null}
 
 				{!isLoading && !error && events.length === 0 ? (
 					<div className="flex flex-col items-center gap-3 py-8">

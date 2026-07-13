@@ -1,5 +1,4 @@
 import { BriefcaseBusiness, CircleDollarSign, Clock3, FolderKanban, TrendingDown, TrendingUp } from "lucide-react";
-import { Card, CardContent } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/utils";
 
 type TrendDirection = "up" | "down" | "neutral";
@@ -78,29 +77,24 @@ export function ExecutiveStatsWidget({ financial }: ExecutiveStatsWidgetProps) {
 	] as const;
 
 	return (
-		<section className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+		<section className="grid overflow-hidden rounded-lg border bg-card md:grid-cols-2 lg:grid-cols-4 lg:divide-x">
 			{stats.map((stat) => {
 				const Icon = stat.icon;
 
 				return (
-					<Card
+					<div
 						key={stat.key}
-						className="rounded-md border-border bg-card/60 backdrop-blur-md py-0"
+						className="border-b border-border p-4 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0"
 					>
-						<CardContent className="p-4">
-							<div className="flex items-start justify-between gap-3">
-								<div className="min-w-0">
-									<p className="truncate text-xs font-medium text-muted-foreground">{stat.label}</p>
-									<p className="mt-2 truncate text-2xl font-semibold tracking-tight tabular-nums text-foreground">{stat.value}</p>
-								</div>
-								<div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground">
-									<Icon className="size-4" />
-								</div>
+						<div className="flex items-start justify-between gap-3">
+							<div className="min-w-0">
+								<p className="truncate text-xs font-medium text-muted-foreground">{stat.label}</p>
+								<p className="mt-2 truncate text-2xl font-semibold tracking-tight tabular-nums text-foreground">{stat.value}</p>
 							</div>
-
-							<TrendLine trend={stat.trend} />
-						</CardContent>
-					</Card>
+							<Icon className="size-4 shrink-0 text-muted-foreground" />
+						</div>
+						<TrendLine trend={stat.trend} />
+					</div>
 				);
 			})}
 		</section>
