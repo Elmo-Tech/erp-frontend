@@ -186,24 +186,32 @@ function ProgressMetric({ label, value, detail }: { label: string; value: number
 interface WeeklyHours {
 	label: string;
 	range: string;
-	actualMinutes: number;
+	presenceMinutes: number;
+	trackedMinutes: number;
+	untrackedMinutes: number;
 	expectedMinutes: number;
 }
 
 function WorkHoursBreakdown({ report }: { report: EmployeeReport }) {
 	const weeks = monthlyWeekHours(report);
-	const totalActualMinutes = weeks.reduce((total, week) => total + week.actualMinutes, 0);
+	const totalPresenceMinutes = weeks.reduce((total, week) => total + week.presenceMinutes, 0);
+	const totalTrackedMinutes = weeks.reduce((total, week) => total + week.trackedMinutes, 0);
+	const totalUntrackedMinutes = weeks.reduce((total, week) => total + week.untrackedMinutes, 0);
 	const totalExpectedMinutes = weeks.reduce((total, week) => total + week.expectedMinutes, 0);
 
 	return (
 		<section className="overflow-hidden rounded-xl border bg-card print-avoid-break">
 			<div className="grid lg:grid-cols-[280px_minmax(0,1fr)]">
 				<div className="border-b bg-muted/20 p-5 lg:border-b-0 lg:border-r">
-					<div className="flex items-center gap-2 text-sm font-semibold"><Clock className="size-4 text-primary" />Monthly work total</div>
-					<p className="mt-5 text-3xl font-semibold tabular-nums">{fmtMinutes(totalActualMinutes)}</p>
+					<div className="flex items-center gap-2 text-sm font-semibold"><Clock className="size-4 text-primary" />Monthly attendance total</div>
+					<p className="mt-5 text-3xl font-semibold tabular-nums">{fmtMinutes(totalPresenceMinutes)}</p>
 					<p className="mt-1 text-xs text-muted-foreground">of {fmtMinutes(totalExpectedMinutes)} expected in {report.period.label}</p>
-					<div className="mt-4 flex items-center justify-between text-xs"><span className="text-muted-foreground">Monthly coverage</span><span className="font-semibold tabular-nums">{percentage(totalActualMinutes, totalExpectedMinutes)}%</span></div>
-					<Progress value={percentage(totalActualMinutes, totalExpectedMinutes)} className="mt-2 h-1.5" />
+					<div className="mt-4 flex items-center justify-between text-xs"><span className="text-muted-foreground">Monthly coverage</span><span className="font-semibold tabular-nums">{percentage(totalPresenceMinutes, totalExpectedMinutes)}%</span></div>
+					<Progress value={percentage(totalPresenceMinutes, totalExpectedMinutes)} className="mt-2 h-1.5" />
+					<div className="mt-5 grid grid-cols-2 gap-2 border-t pt-4 text-xs">
+						<div><p className="text-muted-foreground">On task timers</p><p className="mt-1 font-semibold tabular-nums">{fmtMinutes(totalTrackedMinutes)}</p></div>
+						<div><p className="text-muted-foreground">Not on timers</p><p className="mt-1 font-semibold tabular-nums">{fmtMinutes(totalUntrackedMinutes)}</p></div>
+					</div>
 				</div>
 
 				<div className="p-5">
@@ -218,13 +226,16 @@ function WorkHoursBreakdown({ report }: { report: EmployeeReport }) {
 }
 
 function WeeklyHoursRow({ week }: { week: WeeklyHours }) {
-	const coverage = percentage(week.actualMinutes, week.expectedMinutes);
+	const coverage = percentage(week.presenceMinutes, week.expectedMinutes);
 
 	return (
 		<div>
 			<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
 				<div><p className="text-sm font-medium">{week.label}</p><p className="text-xs text-muted-foreground">{week.range}</p></div>
-				<p className="text-sm tabular-nums"><span className="font-semibold">{fmtMinutes(week.actualMinutes)}</span><span className="text-muted-foreground"> / {fmtMinutes(week.expectedMinutes)}</span></p>
+				<div className="text-left sm:text-right">
+					<p className="text-sm tabular-nums"><span className="font-semibold">{fmtMinutes(week.presenceMinutes)}</span><span className="text-muted-foreground"> / {fmtMinutes(week.expectedMinutes)} attendance</span></p>
+					<p className="text-xs text-muted-foreground">{fmtMinutes(week.trackedMinutes)} on tasks · {fmtMinutes(week.untrackedMinutes)} not on timers</p>
+				</div>
 			</div>
 			<Progress value={coverage} className="mt-2 h-1.5" />
 		</div>
@@ -255,7 +266,9 @@ function buildWeeklyHours(days: ReportAttendanceDay[], weekStart: Date, weekEnd:
 	return {
 		label: `Week ${weekNumber}`,
 		range: `${formatDate(weekStart, "MMM d")} – ${formatDate(weekEnd, "MMM d")}`,
-		actualMinutes: weekDays.reduce((total, day) => total + day.actualWorkedMinutes, 0),
+		presenceMinutes: weekDays.reduce((total, day) => total + day.actualWorkedMinutes, 0),
+		trackedMinutes: weekDays.reduce((total, day) => total + day.trackedWorkMinutes, 0),
+		untrackedMinutes: weekDays.reduce((total, day) => total + day.untrackedMinutes, 0),
 		expectedMinutes: weekDays.reduce((total, day) => total + day.expectedWorkedMinutes, 0),
 	};
 }
@@ -330,7 +343,7 @@ const attendanceColumns: Column<ReportAttendanceDay>[] = [
 	},
 	{
 		key: "worked",
-		header: "Worked",
+		header: "Attendance",
 		className: "text-right",
 		render: (d) => <span className="text-xs tabular-nums font-medium">{d.workedHours > 0 ? fmtHours(d.workedHours) : "—"}</span>,
 	},
@@ -342,9 +355,9 @@ const attendanceColumns: Column<ReportAttendanceDay>[] = [
 	},
 	{
 		key: "stopped",
-		header: "Stopped",
+		header: "Task tracking",
 		className: "text-right",
-		render: (d) => <span className="text-xs tabular-nums text-muted-foreground">{fmtMinutes(d.stoppedMinutes)}</span>,
+		render: (d) => <div className="text-right text-xs tabular-nums"><p className="font-medium">{fmtMinutes(d.trackedWorkMinutes)}</p><p className="text-muted-foreground">{fmtMinutes(d.untrackedMinutes)} untracked</p></div>,
 	},
 	{
 		key: "late",

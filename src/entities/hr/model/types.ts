@@ -384,6 +384,8 @@ export interface ReportAttendanceDay {
 	clockOut: string | null; // "17:30"
 	workedHours: number; // decimal hours, e.g. 8.25
 	actualWorkedMinutes: number;
+	trackedWorkMinutes: number;
+	untrackedMinutes: number;
 	expectedWorkedMinutes: number;
 	stoppedMinutes: number;
 	lateMinutes: number;
