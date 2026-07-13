@@ -16,12 +16,13 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { addDays, endOfMonth, endOfWeek, format as formatDate } from "date-fns";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Activity, ArrowLeft, Printer, Clock, Star, AlertTriangle, DollarSign, CheckCircle2, XCircle, TrendingUp, TrendingDown, CalendarDays, Pencil, PlusCircle, ShieldAlert, Target } from "lucide-react";
+import { Activity, ArrowLeft, Printer, Clock, Star, AlertTriangle, DollarSign, CheckCircle2, XCircle, TrendingUp, TrendingDown, CalendarDays, CalendarRange, Pencil, PlusCircle, ShieldAlert, Target } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -180,6 +181,87 @@ function ProgressMetric({ label, value, detail }: { label: string; value: number
 			<p className="mt-1.5 text-xs text-muted-foreground">{detail}</p>
 		</div>
 	);
+}
+
+interface WeeklyHours {
+	label: string;
+	range: string;
+	actualMinutes: number;
+	expectedMinutes: number;
+}
+
+function WorkHoursBreakdown({ report }: { report: EmployeeReport }) {
+	const weeks = monthlyWeekHours(report);
+	const totalActualMinutes = weeks.reduce((total, week) => total + week.actualMinutes, 0);
+	const totalExpectedMinutes = weeks.reduce((total, week) => total + week.expectedMinutes, 0);
+
+	return (
+		<section className="overflow-hidden rounded-xl border bg-card print-avoid-break">
+			<div className="grid lg:grid-cols-[280px_minmax(0,1fr)]">
+				<div className="border-b bg-muted/20 p-5 lg:border-b-0 lg:border-r">
+					<div className="flex items-center gap-2 text-sm font-semibold"><Clock className="size-4 text-primary" />Monthly work total</div>
+					<p className="mt-5 text-3xl font-semibold tabular-nums">{fmtMinutes(totalActualMinutes)}</p>
+					<p className="mt-1 text-xs text-muted-foreground">of {fmtMinutes(totalExpectedMinutes)} expected in {report.period.label}</p>
+					<div className="mt-4 flex items-center justify-between text-xs"><span className="text-muted-foreground">Monthly coverage</span><span className="font-semibold tabular-nums">{percentage(totalActualMinutes, totalExpectedMinutes)}%</span></div>
+					<Progress value={percentage(totalActualMinutes, totalExpectedMinutes)} className="mt-2 h-1.5" />
+				</div>
+
+				<div className="p-5">
+					<div className="mb-4 flex items-center gap-2"><CalendarRange className="size-4 text-muted-foreground" /><h2 className="text-sm font-semibold">Hours by week</h2></div>
+					<div className="space-y-4">
+						{weeks.map((week) => <WeeklyHoursRow key={week.label} week={week} />)}
+					</div>
+				</div>
+			</div>
+		</section>
+	);
+}
+
+function WeeklyHoursRow({ week }: { week: WeeklyHours }) {
+	const coverage = percentage(week.actualMinutes, week.expectedMinutes);
+
+	return (
+		<div>
+			<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+				<div><p className="text-sm font-medium">{week.label}</p><p className="text-xs text-muted-foreground">{week.range}</p></div>
+				<p className="text-sm tabular-nums"><span className="font-semibold">{fmtMinutes(week.actualMinutes)}</span><span className="text-muted-foreground"> / {fmtMinutes(week.expectedMinutes)}</span></p>
+			</div>
+			<Progress value={coverage} className="mt-2 h-1.5" />
+		</div>
+	);
+}
+
+function monthlyWeekHours(report: EmployeeReport): WeeklyHours[] {
+	const monthStart = new Date(report.period.year, report.period.month - 1, 1);
+	const monthEnd = endOfMonth(monthStart);
+	const weeks: WeeklyHours[] = [];
+	let weekStart = monthStart;
+
+	while (weekStart <= monthEnd) {
+		const weekEnd = earlierDate(endOfWeek(weekStart, { weekStartsOn: 1 }), monthEnd);
+		weeks.push(buildWeeklyHours(report.attendanceDays, weekStart, weekEnd, weeks.length + 1));
+		weekStart = addDays(weekEnd, 1);
+	}
+
+	return weeks;
+}
+
+function buildWeeklyHours(days: ReportAttendanceDay[], weekStart: Date, weekEnd: Date, weekNumber: number): WeeklyHours {
+	const weekDays = days.filter((day) => {
+		const date = new Date(`${day.date}T00:00:00`);
+		return date >= weekStart && date <= weekEnd;
+	});
+
+	return {
+		label: `Week ${weekNumber}`,
+		range: `${formatDate(weekStart, "MMM d")} – ${formatDate(weekEnd, "MMM d")}`,
+		actualMinutes: weekDays.reduce((total, day) => total + day.actualWorkedMinutes, 0),
+		expectedMinutes: weekDays.reduce((total, day) => total + day.expectedWorkedMinutes, 0),
+	};
+}
+
+function earlierDate(left: Date, right: Date) {
+	return left <= right ? left : right;
 }
 
 function percentage(numerator: number, denominator: number) {
@@ -905,6 +987,8 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 						</div>
 
 						<PerformanceOverview report={report} />
+
+						<WorkHoursBreakdown report={report} />
 
 						{/* ── CARD 2: Point Ledger ─────────────────────────────── */}
 						<Card className="print-avoid-break">
