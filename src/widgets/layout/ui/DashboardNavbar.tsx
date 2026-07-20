@@ -64,7 +64,7 @@ export function DashboardNavbar() {
             <div className="flex items-center gap-2">
                 <AttendanceStatusPill />
                 <ActiveTimerPill />
-                <Can permission={["manage_all_projects", "manage_users", "manage_employees", "manage_team_timers"]}>
+                <Can permission="view_team_pulse">
                     <TeamPulsePopover />
                 </Can>
 

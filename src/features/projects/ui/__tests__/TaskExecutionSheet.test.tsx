@@ -77,4 +77,26 @@ describe("TaskExecutionSheet", () => {
 
 		expect(screen.queryByRole("button", { name: /log time/i })).not.toBeInTheDocument();
 	});
+
+	it("does not treat timer permission as manual-log permission", () => {
+		useAuthStore.setState({
+			user: { userId: 7, name: "Mona", email: "mona@example.test", avatar: "", role: "developer" },
+			permissions: [{ permissionName: "start_timer", access: true }],
+		});
+
+		render(
+			<TaskExecutionSheet
+				task={task}
+				projectId={2}
+				open
+				onOpenChange={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: /start timer/i })).toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole("tab", { name: /time logs/i }));
+
+		expect(screen.queryByRole("button", { name: /log time/i })).not.toBeInTheDocument();
+	});
 });

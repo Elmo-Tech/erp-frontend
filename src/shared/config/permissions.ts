@@ -17,6 +17,10 @@ export const SYSTEM_PERMISSIONS = [
 	"manage_settings",
 	"manage_users",
 	"manage_roles",
+	"assign_user_roles",
+	"reset_user_credentials",
+	"manage_protected_users",
+	"protected_user_account",
 	"manage_dictionaries",
 	"use_ai_agent",
 
@@ -58,6 +62,8 @@ export const SYSTEM_PERMISSIONS = [
 	"view_all_blockers",
 	"view_escalated_blockers",
 	"view_team_pulse",
+	"escalate_blockers",
+	"resolve_blockers",
 
 	// ── User Management (granular) ───────────────────────────────────────────
 	"view_users",
@@ -113,6 +119,7 @@ export const SYSTEM_PERMISSIONS = [
 	"delete_tasks",
 	"assign_tasks",
 	"view_internal_notes",
+	"create_internal_notes",
 	"work_on_tasks",
 
 	// ── Sales — Leads (granular) ─────────────────────────────────────────────

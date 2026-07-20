@@ -45,7 +45,6 @@ export interface TaskExecutionSheetProps {
 	onOpenChange: (open: boolean) => void;
 }
 
-const TIME_ENTRY_WRITE_PERMISSIONS = ["start_timer", "log_time", "manage_time_entries"];
 const TIME_ENTRY_MANAGE_PERMISSIONS = ["manage_time_entries", "manage_all_projects"];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,8 +83,12 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	// manage_all_projects replaces the old isGlobalAdmin bypass.
 	// Users with this permission skip project-membership workflow ceilings.
 	const canManageAllProjects = useAuthStore((s) => s.hasPermission("manage_all_projects"));
-	const canWriteTimeEntries = useAuthStore((s) => s.hasAnyPermission(TIME_ENTRY_WRITE_PERMISSIONS));
 	const canManageTimeEntries = useAuthStore((s) => s.hasAnyPermission(TIME_ENTRY_MANAGE_PERMISSIONS));
+	const canStartTimer = useAuthStore((s) => s.hasPermission("start_timer")) || canManageTimeEntries;
+	const canStopTimer = useAuthStore((s) => s.hasPermission("stop_timer")) || canManageTimeEntries;
+	const canLogTime = useAuthStore((s) => s.hasPermission("log_time")) || canManageTimeEntries;
+	const hasEditTimeEntries = useAuthStore((s) => s.hasPermission("edit_time_entries")) || canManageTimeEntries;
+	const hasDeleteTimeEntries = useAuthStore((s) => s.hasPermission("delete_time_entries")) || canManageTimeEntries;
 
 	// projectRole is the user's MEMBERSHIP role within this specific project
 	// (manager, tech_lead, developer, qa, designer).
@@ -117,6 +120,8 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const canEditDeliverables = hasDeliverableManagementOverride || canEditProjectTaskDeliverables;
 	const canDeleteDeliverables = hasDeliverableManagementOverride || canDeleteProjectTaskDeliverables;
 	const closeSheet = useCallback(() => onOpenChange(false), [onOpenChange]);
+	const isTimerRunning = task?.timeEntries?.some((entry) => entry.isRunning) ?? false;
+	const canToggleTimer = isTimerRunning ? canStopTimer : canStartTimer;
 
 	const statusActions = useTaskStatusActions({
 		task,
@@ -130,10 +135,10 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 		(e: React.MouseEvent) => {
 			e.preventDefault();
 			e.stopPropagation();
-			if (!task || !canWriteTimeEntries) return;
+			if (!task || !canToggleTimer) return;
 			toggleTimer.mutate({ projectId, taskId: task.taskId }, { onError: () => toast.error("Failed to toggle timer.") });
 		},
-		[toggleTimer, projectId, task, canWriteTimeEntries],
+		[toggleTimer, projectId, task, canToggleTimer],
 	);
 
 	const handleDeleteTimeEntry = useCallback(
@@ -152,21 +157,26 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 
 	// ── Derived state ─────────────────────────────────────────────────────────
 	const deliverables = task?.deliverables ?? [];
-	const timeEntries = task?.timeEntries ?? [];
 	const totalDeliverables = deliverables.length;
 	const completedDeliverables = deliverables.filter((d) => d.isCompleted).length;
 	const allDeliverablesDone = totalDeliverables === 0 || completedDeliverables === totalDeliverables;
 	const remainingDeliverables = totalDeliverables - completedDeliverables;
 
 	const isDone = task?.status === ExecutionTaskStatus.DONE;
-	const runningEntry = timeEntries.find((e) => e.isRunning) ?? null;
-	const isTimerRunning = runningEntry !== null;
 
 	const currentStatusColor = getStatusColor(task?.status ?? "");
 	const totalLogged = formatTaskMinutes(task?.totalLoggedMinutes ?? 0);
-	const canManageTimeEntry = useCallback(
+	const isManageableTimeEntry = useCallback(
 		(entry: ProjectTimeEntry) => entry.userId === currentUserId || canManageTimeEntries || isManagerLevel,
 		[currentUserId, canManageTimeEntries, isManagerLevel],
+	);
+	const canEditTimeEntry = useCallback(
+		(entry: ProjectTimeEntry) => hasEditTimeEntries && isManageableTimeEntry(entry),
+		[hasEditTimeEntries, isManageableTimeEntry],
+	);
+	const canDeleteTimeEntry = useCallback(
+		(entry: ProjectTimeEntry) => hasDeleteTimeEntries && isManageableTimeEntry(entry),
+		[hasDeleteTimeEntries, isManageableTimeEntry],
 	);
 
 	// ── Early return after all hooks ──────────────────────────────────────────
@@ -193,7 +203,7 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 					allowedStatusOptions={statusActions.allowedStatusOptions}
 					isDone={isDone}
 					isTimerRunning={isTimerRunning}
-					canWriteTimeEntries={canWriteTimeEntries}
+					canWriteTimeEntries={canToggleTimer}
 					isStatusPending={statusActions.isStatusPending}
 					isTimerPending={toggleTimer.isPending}
 					onStatusChange={statusActions.changeStatus}
@@ -210,8 +220,9 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 						canCreateDeliverables,
 						canEditDeliverables,
 						canDeleteDeliverables,
-						canWriteTimeEntries,
-						canManageTimeEntry,
+						canLogTime,
+						canEditTimeEntry,
+						canDeleteTimeEntry,
 					}}
 					handlers={{
 						onLogTime: manualTimeDialog.openManualTimeDialog,

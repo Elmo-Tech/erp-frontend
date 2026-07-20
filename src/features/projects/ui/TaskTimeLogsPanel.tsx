@@ -12,8 +12,9 @@ interface TaskTimeLogsPanelProps {
 	timeEntries: ProjectTimeEntry[];
 	totalLogged: string;
 	isDone: boolean;
-	canWriteTimeEntries: boolean;
-	canManageTimeEntry: (entry: ProjectTimeEntry) => boolean;
+	canLogTime: boolean;
+	canEditTimeEntry: (entry: ProjectTimeEntry) => boolean;
+	canDeleteTimeEntry: (entry: ProjectTimeEntry) => boolean;
 	onLogTime: () => void;
 	onEditTimeEntry: (entry: ProjectTimeEntry) => void;
 	onDeleteTimeEntry: (entry: ProjectTimeEntry) => void;
@@ -21,12 +22,13 @@ interface TaskTimeLogsPanelProps {
 
 interface TimeEntryRowProps {
 	entry: ProjectTimeEntry;
-	canManage: boolean;
+	canEdit: boolean;
+	canDelete: boolean;
 	onEdit: (entry: ProjectTimeEntry) => void;
 	onDelete: (entry: ProjectTimeEntry) => void;
 }
 
-function TimeEntryRow({ entry, canManage, onEdit, onDelete }: TimeEntryRowProps) {
+function TimeEntryRow({ entry, canEdit, canDelete, onEdit, onDelete }: TimeEntryRowProps) {
 	const userName = entry.user?.name ?? `User #${entry.userId}`;
 	const duration = entry.durationMinutes != null ? formatTaskMinutes(entry.durationMinutes) : entry.isRunning ? "Running…" : "—";
 
@@ -58,28 +60,32 @@ function TimeEntryRow({ entry, canManage, onEdit, onDelete }: TimeEntryRowProps)
 					</Badge>
 				)}
 				<span className="text-xs font-medium tabular-nums">{duration}</span>
-				{canManage && !entry.isRunning && (
+				{(canEdit || canDelete) && !entry.isRunning && (
 					<div className="flex items-center gap-1">
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className="h-7 w-7"
-							onClick={() => onEdit(entry)}
-						>
-							<Pencil className="size-3.5" />
-							<span className="sr-only">Edit time entry</span>
-						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className="h-7 w-7 text-destructive hover:text-destructive"
-							onClick={() => onDelete(entry)}
-						>
-							<Trash2 className="size-3.5" />
-							<span className="sr-only">Delete time entry</span>
-						</Button>
+						{canEdit && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								className="h-7 w-7"
+								onClick={() => onEdit(entry)}
+							>
+								<Pencil className="size-3.5" />
+								<span className="sr-only">Edit time entry</span>
+							</Button>
+						)}
+						{canDelete && (
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								className="h-7 w-7 text-destructive hover:text-destructive"
+								onClick={() => onDelete(entry)}
+							>
+								<Trash2 className="size-3.5" />
+								<span className="sr-only">Delete time entry</span>
+							</Button>
+						)}
 					</div>
 				)}
 			</div>
@@ -91,8 +97,9 @@ export function TaskTimeLogsPanel({
 	timeEntries,
 	totalLogged,
 	isDone,
-	canWriteTimeEntries,
-	canManageTimeEntry,
+	canLogTime,
+	canEditTimeEntry,
+	canDeleteTimeEntry,
 	onLogTime,
 	onEditTimeEntry,
 	onDeleteTimeEntry,
@@ -107,7 +114,7 @@ export function TaskTimeLogsPanel({
 							Total logged: <span className="font-medium text-foreground">{totalLogged}</span>
 						</p>
 					</div>
-					{!isDone && canWriteTimeEntries && (
+					{!isDone && canLogTime && (
 						<Button
 							type="button"
 							size="sm"
@@ -126,7 +133,8 @@ export function TaskTimeLogsPanel({
 							<TimeEntryRow
 								key={entry.entryId}
 								entry={entry}
-								canManage={canManageTimeEntry(entry)}
+								canEdit={canEditTimeEntry(entry)}
+								canDelete={canDeleteTimeEntry(entry)}
 								onEdit={onEditTimeEntry}
 								onDelete={onDeleteTimeEntry}
 							/>
@@ -136,7 +144,7 @@ export function TaskTimeLogsPanel({
 					<div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-md border border-dashed text-center">
 						<Timer className="size-6 text-muted-foreground/40" />
 						<p className="text-sm font-medium text-muted-foreground">No time logged yet</p>
-						<p className="text-xs text-muted-foreground/70">{canWriteTimeEntries ? "Start the timer or log time manually." : "Time entries will appear here once logged."}</p>
+						<p className="text-xs text-muted-foreground/70">{canLogTime ? "Log time manually to add the first entry." : "Time entries will appear here once logged."}</p>
 					</div>
 				)}
 			</div>

@@ -8,6 +8,10 @@ describe("SYSTEM_PERMISSIONS dashboard split", () => {
 		expect(SYSTEM_PERMISSIONS).toContain("view_global_stats");
 	});
 
+	it("separates blocker reads from escalation and resolution writes", () => {
+		expect(SYSTEM_PERMISSIONS).toEqual(expect.arrayContaining(["view_all_blockers", "view_escalated_blockers", "escalate_blockers", "resolve_blockers"]));
+	});
+
 	it("includes team timer and granular calendar permissions", () => {
 		expect(SYSTEM_PERMISSIONS).toEqual(
 			expect.arrayContaining([
@@ -21,6 +25,10 @@ describe("SYSTEM_PERMISSIONS dashboard split", () => {
 				"collect_subscription_payments",
 			]),
 		);
+	});
+
+	it("separates internal note reads from writes", () => {
+		expect(SYSTEM_PERMISSIONS).toEqual(expect.arrayContaining(["view_internal_notes", "create_internal_notes"]));
 	});
 
 	it("exposes reports navigation behind view_reports", () => {

@@ -77,33 +77,37 @@ function buildColumns(onEdit: (user: User) => void, onDelete: (user: User) => vo
 			header: "",
 			className: "text-right",
 			render: (u) => (
-				<Can permission="manage_users">
-					<div className="flex items-center justify-end gap-1">
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8"
-							title={u.isActive ? "Deactivate user" : "Activate user"}
-							onClick={(e) => {
-								e.stopPropagation();
-								onToggle(u);
-							}}
-						>
-							{u.isActive ? <ToggleRight className="h-3.5 w-3.5 text-green-600" /> : <ToggleLeft className="h-3.5 w-3.5 text-muted-foreground" />}
-							<span className="sr-only">Toggle {u.name}</span>
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8"
-							onClick={(e) => {
-								e.stopPropagation();
-								onEdit(u);
-							}}
-						>
-							<Pencil className="h-3.5 w-3.5" />
-							<span className="sr-only">Edit {u.name}</span>
-						</Button>
+				<div className="flex items-center justify-end gap-1">
+					<Can permission="manage_users">
+						<>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								title={u.isActive ? "Deactivate user" : "Activate user"}
+								onClick={(e) => {
+									e.stopPropagation();
+									onToggle(u);
+								}}
+							>
+								{u.isActive ? <ToggleRight className="h-3.5 w-3.5 text-green-600" /> : <ToggleLeft className="h-3.5 w-3.5 text-muted-foreground" />}
+								<span className="sr-only">Toggle {u.name}</span>
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								onClick={(e) => {
+									e.stopPropagation();
+									onEdit(u);
+								}}
+							>
+								<Pencil className="h-3.5 w-3.5" />
+								<span className="sr-only">Edit {u.name}</span>
+							</Button>
+						</>
+					</Can>
+					<Can permission="delete_users">
 						<Button
 							variant="ghost"
 							size="icon"
@@ -116,8 +120,8 @@ function buildColumns(onEdit: (user: User) => void, onDelete: (user: User) => vo
 							<Trash2 className="h-3.5 w-3.5" />
 							<span className="sr-only">Delete {u.name}</span>
 						</Button>
-					</div>
-				</Can>
+					</Can>
+				</div>
 			),
 		},
 	];

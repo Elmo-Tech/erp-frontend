@@ -84,8 +84,9 @@ describe("TaskExecutionTabs", () => {
 					canCreateDeliverables: true,
 					canEditDeliverables: true,
 					canDeleteDeliverables: true,
-					canWriteTimeEntries: true,
-					canManageTimeEntry: () => true,
+					canLogTime: true,
+					canEditTimeEntry: () => true,
+					canDeleteTimeEntry: () => true,
 				}}
 				handlers={{
 					onLogTime: vi.fn(),

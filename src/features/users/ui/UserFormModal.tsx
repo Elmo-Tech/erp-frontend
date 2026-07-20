@@ -9,6 +9,9 @@ import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSwitch } from "@/shared/ui/forms/FormSwitch";
 import { FormMultiCombobox } from "@/shared/ui/forms/FormMultiCombobox";
+import { Can } from "@/shared/ui/Can";
+import { EMPLOYEE_PERMISSIONS } from "@/entities/user/model/permissions";
+import { useAuthStore } from "@/entities/user/model/auth.store";
 import { useCreateUser, useUpdateUser, useRoles } from "../model/use-user-actions";
 import { createUserSchema, editUserSchema, CREATE_USER_DEFAULT_VALUES, ROLE_LABELS, AVAILABLE_ROLES, type CreateUserFormData, type EditUserFormData } from "../model/users.schema";
 import type { User } from "@/entities/user/model/types";
@@ -32,6 +35,9 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 	const isEditing = editTarget !== null;
 	const createUser = useCreateUser();
 	const updateUser = useUpdateUser();
+	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const canAssignRoles = hasPermission(EMPLOYEE_PERMISSIONS.ASSIGN_USER_ROLES);
+	const canResetCredentials = hasPermission(EMPLOYEE_PERMISSIONS.RESET_USER_CREDENTIALS);
 
 	// Fetch roles from the backend so the list is always in sync with the seeder
 	const { data: rolesData } = useRoles();
@@ -92,7 +98,7 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 				email: data.email,
 				password: data.password,
 				password_confirmation: data.password_confirmation,
-				roles: data.roles,
+				roles: canAssignRoles ? data.roles : [],
 				isActive: data.isActive,
 			});
 			toast.success("User created successfully");
@@ -108,11 +114,13 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 			const payload: Record<string, unknown> = {
 				name: data.name,
 				email: data.email,
-				roles: data.roles,
 				isActive: data.isActive,
 			};
+			if (canAssignRoles) {
+				payload.roles = data.roles;
+			}
 			// Only include password fields if the user typed a new password
-			if (data.password) {
+			if (canResetCredentials && data.password) {
 				payload.password = data.password;
 				payload.password_confirmation = data.password_confirmation;
 			}
@@ -160,42 +168,46 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 							/>
 						</div>
 
-						<FormMultiCombobox
-							control={editForm.control}
-							name="roles"
-							label="Roles"
-							placeholder="Select roles…"
-							searchPlaceholder="Search roles…"
-							emptyText="No roles found."
-							options={roleOptions}
-							disabled={isPending}
-							description="Assign one or more roles. Roles determine what the user can access."
-						/>
+						<Can permission={EMPLOYEE_PERMISSIONS.ASSIGN_USER_ROLES}>
+							<FormMultiCombobox
+								control={editForm.control}
+								name="roles"
+								label="Roles"
+								placeholder="Select roles…"
+								searchPlaceholder="Search roles…"
+								emptyText="No roles found."
+								options={roleOptions}
+								disabled={isPending}
+								description="Assign one or more roles. Roles determine what the user can access."
+							/>
+						</Can>
 
-						<div className="border-t pt-4">
-							<p className="text-sm font-medium mb-3">Change Password</p>
-							<p className="text-xs text-muted-foreground mb-3">Leave blank to keep the current password.</p>
-							<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-								<FormInput
-									control={editForm.control}
-									name="password"
-									label="New Password"
-									type="password"
-									placeholder="Min. 8 characters"
-									autoComplete="new-password"
-									disabled={isPending}
-								/>
-								<FormInput
-									control={editForm.control}
-									name="password_confirmation"
-									label="Confirm Password"
-									type="password"
-									placeholder="Repeat password"
-									autoComplete="new-password"
-									disabled={isPending}
-								/>
+						<Can permission={EMPLOYEE_PERMISSIONS.RESET_USER_CREDENTIALS}>
+							<div className="border-t pt-4">
+								<p className="text-sm font-medium mb-3">Change Password</p>
+								<p className="text-xs text-muted-foreground mb-3">Leave blank to keep the current password.</p>
+								<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+									<FormInput
+										control={editForm.control}
+										name="password"
+										label="New Password"
+										type="password"
+										placeholder="Min. 8 characters"
+										autoComplete="new-password"
+										disabled={isPending}
+									/>
+									<FormInput
+										control={editForm.control}
+										name="password_confirmation"
+										label="Confirm Password"
+										type="password"
+										placeholder="Repeat password"
+										autoComplete="new-password"
+										disabled={isPending}
+									/>
+								</div>
 							</div>
-						</div>
+						</Can>
 
 						<FormSwitch
 							control={editForm.control}
@@ -264,17 +276,19 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 						/>
 					</div>
 
-					<FormMultiCombobox
-						control={createForm.control}
-						name="roles"
-						label="Roles"
-						placeholder="Select roles…"
-						searchPlaceholder="Search roles…"
-						emptyText="No roles found."
-						options={roleOptions}
-						disabled={isPending}
-						description="Assign one or more roles. Roles determine what the user can access."
-					/>
+					<Can permission={EMPLOYEE_PERMISSIONS.ASSIGN_USER_ROLES}>
+						<FormMultiCombobox
+							control={createForm.control}
+							name="roles"
+							label="Roles"
+							placeholder="Select roles…"
+							searchPlaceholder="Search roles…"
+							emptyText="No roles found."
+							options={roleOptions}
+							disabled={isPending}
+							description="Assign one or more roles. Roles determine what the user can access."
+						/>
+					</Can>
 
 					<FormSwitch
 						control={createForm.control}

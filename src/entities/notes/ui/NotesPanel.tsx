@@ -9,6 +9,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 import { EmptyState } from "@/shared/ui/data-display/EmptyState";
 import { formatDateTimeDisplay } from "@/shared/lib/dateUtils";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { useTaskPermissions } from "@/entities/user/model/permissions";
 import { useCreateNote, useNotes } from "../api/notes.api";
 import type { NoteModelType } from "../model/types";
 
@@ -21,6 +22,7 @@ export function NotesPanel({ modelType, modelId }: NotesPanelProps) {
 	const [body, setBody] = useState("");
 	const notesQuery = useNotes(modelType, modelId);
 	const createNote = useCreateNote(modelType, modelId);
+	const { canCreateInternalNotes } = useTaskPermissions();
 	const notes = notesQuery.data ?? [];
 	const trimmedBody = body.trim();
 
@@ -40,28 +42,30 @@ export function NotesPanel({ modelType, modelId }: NotesPanelProps) {
 
 	return (
 		<section className="flex flex-col gap-4">
-			<div className="rounded-md border bg-background p-4">
-				<div className="flex flex-col gap-3">
-					<Textarea
-						value={body}
-						onChange={(event) => setBody(event.target.value)}
-						placeholder="Add an internal note..."
-						rows={4}
-						disabled={createNote.isPending}
-					/>
-					<div className="flex justify-end">
-						<Button
-							type="button"
-							size="sm"
-							onClick={handleSubmit}
-							disabled={!trimmedBody || createNote.isPending}
-						>
-							<Plus data-icon="inline-start" />
-							Add Note
-						</Button>
+			{canCreateInternalNotes ? (
+				<div className="rounded-md border bg-background p-4">
+					<div className="flex flex-col gap-3">
+						<Textarea
+							value={body}
+							onChange={(event) => setBody(event.target.value)}
+							placeholder="Add an internal note..."
+							rows={4}
+							disabled={createNote.isPending}
+						/>
+						<div className="flex justify-end">
+							<Button
+								type="button"
+								size="sm"
+								onClick={handleSubmit}
+								disabled={!trimmedBody || createNote.isPending}
+							>
+								<Plus data-icon="inline-start" />
+								Add Note
+							</Button>
+						</div>
 					</div>
 				</div>
-			</div>
+			) : null}
 
 			{notesQuery.isLoading ? (
 				<div className="space-y-3">

@@ -25,6 +25,7 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 	const canViewAllBlockers = hasPermission("view_all_blockers");
 	const canViewEscalatedBlockers = hasPermission("view_escalated_blockers");
 	const canViewTeamPulse = hasPermission("view_team_pulse");
+	const canEscalateBlockers = hasPermission("escalate_blockers");
 	const hasEscalatedBlockers = Boolean(dashboard?.escalated_blockers?.length);
 	const canShowPersonalPanel = !isAdminScope && (canViewPersonalTasks || canViewAllBlockers);
 	const canShowGlobalBlockers = isAdminScope && canViewAllBlockers;
@@ -57,7 +58,7 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 							blockers={dashboard?.blockers}
 							showTasksPanel={canViewPersonalTasks}
 							blockersTitle={canViewAllBlockers ? "Active blockers" : "My blockers"}
-							onEscalate={canViewAllBlockers ? (blocker) => {
+							onEscalate={canEscalateBlockers ? (blocker) => {
 								const taskId = blocker.task_id ?? Number(blocker.id);
 								if (!taskId) {
 									toast.error("Unable to escalate blocker");
@@ -77,7 +78,7 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 							blockers={dashboard?.blockers}
 							showTasksPanel={false}
 							blockersTitle="Active blockers"
-							onEscalate={(blocker) => {
+							onEscalate={canEscalateBlockers ? (blocker) => {
 								const taskId = blocker.task_id ?? Number(blocker.id);
 								if (!taskId) {
 									toast.error("Unable to escalate blocker");
@@ -88,7 +89,7 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 									onSuccess: () => toast.success("Blocker escalated to founder"),
 									onError: () => toast.error("Failed to escalate blocker"),
 								});
-							}}
+							} : undefined}
 							escalatingTaskId={escalateBlocker.variables}
 						/>
 					)}

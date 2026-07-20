@@ -30,8 +30,9 @@ describe("TaskTimeLogsPanel", () => {
 				timeEntries={timeEntries}
 				totalLogged="1h 15m"
 				isDone={false}
-				canWriteTimeEntries
-				canManageTimeEntry={() => true}
+				canLogTime
+				canEditTimeEntry={() => true}
+				canDeleteTimeEntry={() => true}
 				onLogTime={vi.fn()}
 				onEditTimeEntry={vi.fn()}
 				onDeleteTimeEntry={vi.fn()}
@@ -54,8 +55,9 @@ describe("TaskTimeLogsPanel", () => {
 				timeEntries={[]}
 				totalLogged="0m"
 				isDone={false}
-				canWriteTimeEntries={false}
-				canManageTimeEntry={() => false}
+				canLogTime={false}
+				canEditTimeEntry={() => false}
+				canDeleteTimeEntry={() => false}
 				onLogTime={vi.fn()}
 				onEditTimeEntry={vi.fn()}
 				onDeleteTimeEntry={vi.fn()}
@@ -64,5 +66,24 @@ describe("TaskTimeLogsPanel", () => {
 
 		expect(screen.queryByRole("button", { name: /log time/i })).not.toBeInTheDocument();
 		expect(screen.getByText("Time entries will appear here once logged.")).toBeInTheDocument();
+	});
+
+	it("keeps edit and delete controls independently permissioned", () => {
+		render(
+			<TaskTimeLogsPanel
+				timeEntries={timeEntries}
+				totalLogged="1h 15m"
+				isDone={false}
+				canLogTime={false}
+				canEditTimeEntry={() => true}
+				canDeleteTimeEntry={() => false}
+				onLogTime={vi.fn()}
+				onEditTimeEntry={vi.fn()}
+				onDeleteTimeEntry={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: /edit time entry/i })).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: /delete time entry/i })).not.toBeInTheDocument();
 	});
 });

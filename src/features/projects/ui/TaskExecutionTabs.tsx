@@ -15,8 +15,9 @@ interface TaskExecutionTabsAccess {
 	canCreateDeliverables: boolean;
 	canEditDeliverables: boolean;
 	canDeleteDeliverables: boolean;
-	canWriteTimeEntries: boolean;
-	canManageTimeEntry: (entry: ProjectTimeEntry) => boolean;
+	canLogTime: boolean;
+	canEditTimeEntry: (entry: ProjectTimeEntry) => boolean;
+	canDeleteTimeEntry: (entry: ProjectTimeEntry) => boolean;
 }
 
 interface TaskExecutionTabsHandlers {
@@ -87,8 +88,9 @@ export function TaskExecutionTabs({ task, projectId, totalLogged, access, handle
 					timeEntries={task.timeEntries ?? []}
 					totalLogged={totalLogged}
 					isDone={access.isDone}
-					canWriteTimeEntries={access.canWriteTimeEntries}
-					canManageTimeEntry={access.canManageTimeEntry}
+					canLogTime={access.canLogTime}
+					canEditTimeEntry={access.canEditTimeEntry}
+					canDeleteTimeEntry={access.canDeleteTimeEntry}
 					onLogTime={handlers.onLogTime}
 					onEditTimeEntry={handlers.onEditTimeEntry}
 					onDeleteTimeEntry={handlers.onDeleteTimeEntry}

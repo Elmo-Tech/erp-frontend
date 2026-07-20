@@ -9,6 +9,7 @@ import { projectApi } from "@/entities/project/api/project.api";
 import { ProjectStatus, ProjectStatusLabels } from "@/entities/project/model/types";
 import { reportsApi } from "@/entities/reports/api/reports.api";
 import type { ProjectProfitabilityRow, ReportFilters, ReportKey, SalesFinanceRow, TeamTimeRow } from "@/entities/reports/model/types";
+import { useAuthStore } from "@/entities/user/model/auth.store";
 import { userApi } from "@/entities/user/api/user.api";
 import { ProtectedDashboardRoute } from "@/widgets/layout/ui/ProtectedDashboardRoute";
 import { Badge } from "@/shared/ui/badge";
@@ -41,16 +42,21 @@ const STATUS_OPTIONS = [
 const DEFAULT_FILTERS: ReportFilters = {};
 
 export default function ReportsPage() {
-	const [activeReport, setActiveReport] = useState<ReportKey>("overview");
+	const canViewFinancialStats = useAuthStore((state) => state.hasPermission("view_financial_stats"));
+	const [selectedReport, setSelectedReport] = useState<ReportKey>("overview");
 	const [filters, setFilters] = useState<ReportFilters>(DEFAULT_FILTERS);
+	const activeReport = canViewFinancialStats ? selectedReport : "team-time";
+	const visibleReportTabs = canViewFinancialStats ? REPORT_TABS : REPORT_TABS.filter((tab) => tab.key === "team-time");
 
 	const overview = useQuery({
 		queryKey: ["reports", "overview", filters],
 		queryFn: () => reportsApi.getOverview(filters),
+		enabled: canViewFinancialStats,
 	});
 	const projects = useQuery({
 		queryKey: ["reports", "projects", filters],
 		queryFn: () => reportsApi.getProjects(filters),
+		enabled: canViewFinancialStats,
 	});
 	const teamTime = useQuery({
 		queryKey: ["reports", "team-time", filters],
@@ -59,6 +65,7 @@ export default function ReportsPage() {
 	const salesFinance = useQuery({
 		queryKey: ["reports", "sales-finance", filters],
 		queryFn: () => reportsApi.getSalesFinance(filters),
+		enabled: canViewFinancialStats,
 	});
 
 	const updateFilters = (partial: Partial<ReportFilters>) => {
@@ -94,11 +101,11 @@ export default function ReportsPage() {
 
 				<Tabs
 					value={activeReport}
-					onValueChange={(value) => setActiveReport(value as ReportKey)}
+					onValueChange={(value) => setSelectedReport(value as ReportKey)}
 					className="gap-4"
 				>
 					<TabsList className="w-full justify-start overflow-x-auto rounded-md">
-						{REPORT_TABS.map((tab) => (
+						{visibleReportTabs.map((tab) => (
 							<TabsTrigger
 								key={tab.key}
 								value={tab.key}
@@ -108,21 +115,21 @@ export default function ReportsPage() {
 						))}
 					</TabsList>
 
-					<TabsContent value="overview">
+					{canViewFinancialStats && <TabsContent value="overview">
 						{overview.data ? (
 							<OverviewReport data={overview.data.metrics} />
 						) : (
 							<ReportState isLoading={overview.isLoading} error={overview.error} />
 						)}
-					</TabsContent>
+					</TabsContent>}
 
-					<TabsContent value="projects">
+					{canViewFinancialStats && <TabsContent value="projects">
 						<ProjectReportTable
 							rows={projects.data?.rows ?? []}
 							isLoading={projects.isLoading}
 							error={projects.error}
 						/>
-					</TabsContent>
+					</TabsContent>}
 
 					<TabsContent value="team-time">
 						<TeamTimeReportTable
@@ -132,13 +139,13 @@ export default function ReportsPage() {
 						/>
 					</TabsContent>
 
-					<TabsContent value="sales-finance">
+					{canViewFinancialStats && <TabsContent value="sales-finance">
 						<SalesFinanceReportTable
 							rows={salesFinance.data?.rows ?? []}
 							isLoading={salesFinance.isLoading}
 							error={salesFinance.error}
 						/>
-					</TabsContent>
+					</TabsContent>}
 				</Tabs>
 			</section>
 		</ProtectedDashboardRoute>

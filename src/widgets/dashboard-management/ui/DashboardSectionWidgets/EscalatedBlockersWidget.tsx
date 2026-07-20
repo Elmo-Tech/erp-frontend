@@ -4,6 +4,7 @@ import { AlertCircle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
+import { useAuthStore } from "@/entities/user/model/auth.store";
 import { EscalatedBlocker, useResolveEscalatedBlocker } from "@/widgets/dashboard-management/model/dashboard.api";
 
 interface EscalatedBlockersWidgetProps {
@@ -12,6 +13,7 @@ interface EscalatedBlockersWidgetProps {
 
 export function EscalatedBlockersWidget({ blockers = [] }: EscalatedBlockersWidgetProps) {
 	const resolveMutation = useResolveEscalatedBlocker();
+	const canResolveBlockers = useAuthStore((state) => state.hasPermission("resolve_blockers"));
 
 	if (!blockers.length) {
 		return null;
@@ -51,7 +53,7 @@ export function EscalatedBlockersWidget({ blockers = [] }: EscalatedBlockersWidg
 								<p className="mt-0.5 tabular-nums">{formatDateTime(blocker.escalated_at)}</p>
 							</div>
 
-							<Button
+							{canResolveBlockers && <Button
 								type="button"
 								size="sm"
 								variant="outline"
@@ -66,7 +68,7 @@ export function EscalatedBlockersWidget({ blockers = [] }: EscalatedBlockersWidg
 							>
 								{isResolving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
 								Resolve
-							</Button>
+							</Button>}
 						</div>
 					);
 				})}
