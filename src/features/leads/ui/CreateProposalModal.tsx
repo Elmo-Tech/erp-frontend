@@ -68,8 +68,7 @@ export function CreateProposalModal({ leadId, open, onOpenChange, onCreated }: C
 				template_id: values.template_id ?? null,
 				validity_date: values.validity_date,
 				notes: values.notes ?? null,
-				// file_path: handled by a dedicated upload endpoint when wired up
-				file_path: null,
+				upload_file: values.upload_file,
 			});
 			toast.success("Proposal created successfully.");
 			reset();

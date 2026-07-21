@@ -148,7 +148,7 @@ export function CreateContractModal({ leadId, open, onOpenChange, onCreated }: C
 				apply_promo: values.apply_promo,
 				promo_discount: values.promo_discount ?? null,
 				addons: values.addons,
-				file_path: null,
+				upload_file: values.upload_file,
 			});
 			toast.success("Contract created successfully.");
 			reset();

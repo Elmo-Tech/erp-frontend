@@ -29,7 +29,8 @@ export interface StageResultPayload {
 	skip_reason?: string | null;
 	status?: string | null;
 	assigned_to?: number | null;
-	file_path?: string | null;
+	due_date?: string | null;
+	upload_file?: File;
 	notes?: string | null;
 
 	// Quotation
@@ -238,6 +239,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 			type,
 			creation_type: "task",
 			assigned_to: payload.assignedTo,
+			due_date: payload.deadline,
 			notes: payload.notes ?? null,
 		};
 	}
@@ -248,9 +250,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 			stage,
 			type,
 			creation_type: "direct_upload",
-			// File upload is handled separately (multipart); here we pass null
-			// until a dedicated file-upload endpoint is wired up.
-			file_path: null,
+			upload_file: "upload_file" in payload ? payload.upload_file : undefined,
 			notes: (payload as { notes?: string }).notes ?? null,
 		};
 	}
@@ -263,7 +263,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 			stage,
 			type: "quotation",
 			creation_type: "direct_upload",
-			file_path: null,
+			upload_file: p.upload_file,
 			currency: p.currency ?? null,
 			base_price: p.base_price ?? null,
 			commission_type: p.commission_type ?? null,
@@ -280,7 +280,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 		stage,
 		type: "contract",
 		creation_type: "direct_upload",
-		file_path: null,
+		upload_file: p.upload_file,
 		contract_model: p.contract_model ?? null,
 		development_days: p.development_days ?? null,
 		review_days: p.review_days ?? null,
@@ -302,6 +302,47 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 		addons: p.addons ?? null,
 		notes: p.notes ?? null,
 	};
+}
+
+function appendFormDataValue(formData: FormData, key: string, value: unknown): void {
+	if (value === undefined) return;
+
+	if (value === null) {
+		formData.append(key, "");
+		return;
+	}
+
+	if (typeof File !== "undefined" && value instanceof File) {
+		formData.append(key, value);
+		return;
+	}
+
+	if (Array.isArray(value)) {
+		value.forEach((entry, index) => appendFormDataValue(formData, `${key}[${index}]`, entry));
+		return;
+	}
+
+	if (typeof value === "object") {
+		Object.entries(value).forEach(([nestedKey, nestedValue]) => appendFormDataValue(formData, `${key}[${nestedKey}]`, nestedValue));
+		return;
+	}
+
+	formData.append(key, typeof value === "boolean" ? (value ? "1" : "0") : String(value));
+}
+
+function containsFile(value: unknown): boolean {
+	if (typeof File !== "undefined" && value instanceof File) return true;
+	if (Array.isArray(value)) return value.some(containsFile);
+	if (value && typeof value === "object") return Object.values(value).some(containsFile);
+	return false;
+}
+
+function requestBodyForPayload<T extends Record<string, unknown>>(payload: T): T | FormData {
+	if (!containsFile(payload)) return payload;
+
+	const formData = new FormData();
+	Object.entries(payload).forEach(([key, value]) => appendFormDataValue(formData, key, value));
+	return formData;
 }
 
 function isScheduledMeetingResult(result: StageModalResult): boolean {
@@ -355,13 +396,13 @@ export async function updateLeadStage(leadId: number, newStage: PipelineStage, s
 	const scheduledMeeting = stageResults.map(mapScheduledMeetingPayload).find((meeting): meeting is ScheduledMeetingPayload => meeting !== null);
 	const documentStageResults = stageResults.filter((result) => !isScheduledMeetingResult(result));
 
+	const mappedStageResults = documentStageResults.map(mapStageResultToPayload);
 	const payload = {
 		new_stage: stageValueMap[newStage] ?? newStage,
-		stage_results: documentStageResults.map(mapStageResultToPayload),
+		stage_results: mappedStageResults,
 		...(scheduledMeeting ? { scheduled_meeting: scheduledMeeting } : {}),
 	};
-
-	const response = await api.post<UpdateLeadStageResponse>(`/leads/${leadId}/stage`, payload);
+	const response = await api.post<UpdateLeadStageResponse>(`/leads/${leadId}/stage`, requestBodyForPayload(payload));
 
 	return response.data;
 }
@@ -536,7 +577,11 @@ export interface LeadProposal {
 	creation_type: string;
 	skip_reason: string | null;
 	file_path: string | null;
+	file_name: string | null;
+	file_mime_type: string | null;
+	file_size: number | null;
 	assigned_to: number | null;
+	personal_task_id: number | null;
 	assignee: { id: number; name: string; email: string; avatar: string | null } | null;
 	created_at: string;
 	updated_at: string;
@@ -548,12 +593,16 @@ export interface LeadQuotation {
 	creation_type: string;
 	skip_reason: string | null;
 	file_path: string | null;
+	file_name: string | null;
+	file_mime_type: string | null;
+	file_size: number | null;
 	currency: string | null;
 	base_price: number | null;
 	commission_type: string | null;
 	final_total: number | null;
 	payment_stages: Array<{ stage_name: string; percentage: number; amount: number }>;
 	assigned_to: number | null;
+	personal_task_id: number | null;
 	assignee: { id: number; name: string; email: string; avatar: string | null } | null;
 	created_at: string;
 	updated_at: string;
@@ -565,6 +614,9 @@ export interface LeadContract {
 	creation_type: string;
 	skip_reason: string | null;
 	file_path: string | null;
+	file_name: string | null;
+	file_mime_type: string | null;
+	file_size: number | null;
 	contract_model: string | null;
 	development_days: number | null;
 	review_days: number | null;
@@ -585,6 +637,7 @@ export interface LeadContract {
 	addons: Array<{ name: string; price: number }>;
 	notes: string | null;
 	assigned_to: number | null;
+	personal_task_id: number | null;
 	assignee: { id: number; name: string; email: string; avatar: string | null } | null;
 	created_at: string;
 	updated_at: string;
@@ -641,7 +694,7 @@ export function useGetLeadContracts(leadId: number) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function createLeadProposal(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadProposal }> {
-	const res = await api.post<{ success: boolean; data: LeadProposal }>(`/leads/${leadId}/proposals`, payload);
+	const res = await api.post<{ success: boolean; data: LeadProposal }>(`/leads/${leadId}/proposals`, requestBodyForPayload(payload));
 	return res.data;
 }
 
@@ -658,7 +711,7 @@ export function useCreateLeadProposal(leadId: number) {
 	});
 }
 
-export async function updateLeadProposal(leadId: number, proposalId: number, payload: Partial<Pick<LeadProposal, "status" | "file_path" | "assigned_to">>): Promise<{ data: LeadProposal }> {
+export async function updateLeadProposal(leadId: number, proposalId: number, payload: Partial<Pick<LeadProposal, "status" | "assigned_to">>): Promise<{ data: LeadProposal }> {
 	const res = await api.patch<{ success: boolean; data: LeadProposal }>(`/leads/${leadId}/proposals/${proposalId}`, payload);
 	return res.data;
 }
@@ -667,7 +720,7 @@ export function useUpdateLeadProposal(leadId: number) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ proposalId, payload }: { proposalId: number; payload: Partial<Pick<LeadProposal, "status" | "file_path" | "assigned_to">> }) => updateLeadProposal(leadId, proposalId, payload),
+		mutationFn: ({ proposalId, payload }: { proposalId: number; payload: Partial<Pick<LeadProposal, "status" | "assigned_to">> }) => updateLeadProposal(leadId, proposalId, payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: leadKeys.proposals(leadId) });
 		},
@@ -675,7 +728,7 @@ export function useUpdateLeadProposal(leadId: number) {
 }
 
 export async function createLeadQuotation(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadQuotation }> {
-	const res = await api.post<{ success: boolean; data: LeadQuotation }>(`/leads/${leadId}/quotations`, payload);
+	const res = await api.post<{ success: boolean; data: LeadQuotation }>(`/leads/${leadId}/quotations`, requestBodyForPayload(payload));
 	return res.data;
 }
 
@@ -714,11 +767,11 @@ export function useDeleteLeadQuotation(leadId: number) {
 }
 
 export async function createLeadContract(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadContract }> {
-	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts`, payload);
+	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts`, requestBodyForPayload(payload));
 	return res.data;
 }
 
-export async function updateLeadContract(leadId: number, contractId: number, payload: Partial<Pick<LeadContract, "status" | "file_path" | "assigned_to">>): Promise<{ data: LeadContract }> {
+export async function updateLeadContract(leadId: number, contractId: number, payload: Partial<Pick<LeadContract, "status" | "assigned_to">>): Promise<{ data: LeadContract }> {
 	const res = await api.patch<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts/${contractId}`, payload);
 	return res.data;
 }
@@ -727,7 +780,7 @@ export function useUpdateLeadContract(leadId: number) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ contractId, payload }: { contractId: number; payload: Partial<Pick<LeadContract, "status" | "file_path" | "assigned_to">> }) => updateLeadContract(leadId, contractId, payload),
+		mutationFn: ({ contractId, payload }: { contractId: number; payload: Partial<Pick<LeadContract, "status" | "assigned_to">> }) => updateLeadContract(leadId, contractId, payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: leadKeys.contracts(leadId) });
 		},

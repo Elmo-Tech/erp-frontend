@@ -31,6 +31,19 @@ describe("leads API", () => {
 		expect(mockedApi.post).toHaveBeenCalledWith("/leads/7/proposals", { creation_type: "direct_upload" });
 	});
 
+	it("creates a lead document with its selected upload file", async () => {
+		mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: 9 } } });
+		const document = new File(["%PDF"], "proposal.pdf", { type: "application/pdf" });
+
+		await createLeadProposal(7, { creation_type: "direct_upload", upload_file: document });
+
+		const [endpoint, body] = mockedApi.post.mock.calls[0] as [string, FormData];
+		expect(endpoint).toBe("/leads/7/proposals");
+		expect(body).toBeInstanceOf(FormData);
+		expect(body.get("creation_type")).toBe("direct_upload");
+		expect(body.get("upload_file")).toBe(document);
+	});
+
 	it("invalidates the exact proposals query key after creating a proposal", async () => {
 		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
 		const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
@@ -112,9 +125,36 @@ describe("leads API", () => {
 					type: "proposal",
 					creation_type: "task",
 					assigned_to: 3,
+					due_date: "2026-08-01",
 					notes: "Prepare the proposal.",
 				},
 			],
 		});
+	});
+
+	it("sends direct-upload documents as multipart stage evidence", async () => {
+		mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: 7, stage: "meeting" } } });
+		const document = new File(["%PDF-private-content"], "discovery-proposal.pdf", { type: "application/pdf" });
+
+		await updateLeadStage(7, "meeting", [
+			{
+				stage: "meeting",
+				payload: {
+					mode: "direct_upload",
+					upload_file: document,
+					notes: "Discovery proposal.",
+				},
+			},
+		]);
+
+		const [endpoint, body] = mockedApi.post.mock.calls[0] as [string, FormData];
+		expect(endpoint).toBe("/leads/7/stage");
+		expect(body).toBeInstanceOf(FormData);
+		expect(body.get("new_stage")).toBe("meeting");
+		expect(body.get("stage_results[0][stage]")).toBe("meeting");
+		expect(body.get("stage_results[0][type]")).toBe("proposal");
+		expect(body.get("stage_results[0][creation_type]")).toBe("direct_upload");
+		expect(body.get("stage_results[0][upload_file]")).toBe(document);
+		expect(body.get("stage_results[0][notes]")).toBe("Discovery proposal.");
 	});
 });

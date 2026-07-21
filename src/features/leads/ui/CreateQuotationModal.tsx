@@ -73,7 +73,7 @@ export function CreateQuotationModal({ leadId, open, onOpenChange, onCreated }: 
 				final_total: values.final_total,
 				payment_stages: values.payment_stages,
 				notes: values.notes ?? null,
-				file_path: null,
+				upload_file: values.upload_file,
 			});
 			toast.success("Quotation created successfully.");
 			reset();
