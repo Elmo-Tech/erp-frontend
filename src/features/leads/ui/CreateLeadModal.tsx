@@ -33,6 +33,7 @@ import type { SelectOption } from "@/shared/ui/forms/FormSelect";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
 import { useSettingsDictionary } from "@/shared/api/settings.api";
 import { useCreateLead } from "../api/leads.api";
+import { useSalesPermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -144,6 +145,7 @@ interface CreateLeadModalProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
+	const { canCreateLeads } = useSalesPermissions();
 	const createLeadMutation = useCreateLead();
 
 	const form = useForm<CreateLeadFormInput, unknown, CreateLeadFormOutput>({
@@ -179,6 +181,11 @@ export function CreateLeadModal({ open, onOpenChange }: CreateLeadModalProps) {
 	};
 
 	const handleSubmit = async (data: CreateLeadFormOutput) => {
+		if (!canCreateLeads) {
+			toast.error("You do not have permission to create leads");
+			return;
+		}
+
 		// Build the title and contact fields from the type-specific fields
 		let title: string;
 		let company_name: string | null = null;

@@ -18,7 +18,6 @@ import { Sheet, SheetContent } from "@/shared/ui/sheet";
 import {
 	useToggleTaskTimer,
 	useDeleteTimeEntry,
-	useProjectMembers,
 	ExecutionTaskStatus,
 	ExecutionTaskStatusColors,
 } from "../api/execution.api";
@@ -68,16 +67,19 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	// ── PBAC: Permission flags from the auth store ────────────────────────────
 	// Every access decision is driven by granular permissions.
 	const currentUserId = useAuthStore((s) => s.user?.userId);
-	const membersQuery = useProjectMembers(projectId);
 
 	const {
 		canManageTasks,
 		canEditTasks,
 		canWorkOnTasks,
+		canChangeTaskStatus,
+		canCompleteTasks,
+		canReopenTasks,
 		canManageDeliverables,
 		canCreateProjectTaskDeliverables,
 		canEditProjectTaskDeliverables,
 		canDeleteProjectTaskDeliverables,
+		canToggleProjectTaskDeliverables,
 	} = useTaskPermissions();
 
 	// manage_all_projects replaces the old isGlobalAdmin bypass.
@@ -90,35 +92,28 @@ export function TaskExecutionSheet({ task, projectId, open, onOpenChange }: Task
 	const hasEditTimeEntries = useAuthStore((s) => s.hasPermission("edit_time_entries")) || canManageTimeEntries;
 	const hasDeleteTimeEntries = useAuthStore((s) => s.hasPermission("delete_time_entries")) || canManageTimeEntries;
 
-	// projectRole is the user's MEMBERSHIP role within this specific project
-	// (manager, tech_lead, developer, qa, designer).
-	const projectRole = canManageAllProjects
-		? null // bypass: no workflow ceiling applies
-		: (membersQuery.data?.find((m) => m.userId === currentUserId)?.role ?? null);
-
 	const taskExecutionAccess = useMemo(
 		() => ({
 			canManageAllProjects,
 			canManageTasks,
-			canEditTasks,
 			canWorkOnTasks,
-			canManageDeliverables,
-			projectRole,
+			canChangeTaskStatus,
+			canCompleteTasks,
+			canReopenTasks,
 			currentUserId,
+			allowedActions: task?.allowedActions,
 		}),
-		[canManageAllProjects, canManageTasks, canEditTasks, canWorkOnTasks, canManageDeliverables, projectRole, currentUserId],
+		[canManageAllProjects, canManageTasks, canWorkOnTasks, canChangeTaskStatus, canCompleteTasks, canReopenTasks, currentUserId, task?.allowedActions],
 	);
 
 	// ── ABAC: Assignee check ──────────────────────────────────────────────────
 	// isAssignee is true when the current user is the task's explicit assignee.
-	const isAssignee = task ? task.assigneeId === currentUserId : false;
-	const isManagerLevel = canManageAllProjects || canManageTasks || canEditTasks || projectRole === "manager" || projectRole === "tech_lead";
-	// Deliverables can be toggled by the assignee or a manager-level user
-	const canToggleDeliverables = isAssignee || isManagerLevel;
-	const hasDeliverableManagementOverride = canManageAllProjects || canManageDeliverables;
-	const canCreateDeliverables = hasDeliverableManagementOverride || canCreateProjectTaskDeliverables;
-	const canEditDeliverables = hasDeliverableManagementOverride || canEditProjectTaskDeliverables;
-	const canDeleteDeliverables = hasDeliverableManagementOverride || canDeleteProjectTaskDeliverables;
+	const isManagerLevel = canManageAllProjects || canManageTasks || canEditTasks;
+	const hasDeliverableManagementOverride = canManageAllProjects || canManageTasks || canManageDeliverables;
+	const canToggleDeliverables = task?.allowedActions?.toggleDeliverable ?? (hasDeliverableManagementOverride || canToggleProjectTaskDeliverables);
+	const canCreateDeliverables = task?.allowedActions?.createDeliverable ?? (hasDeliverableManagementOverride || canCreateProjectTaskDeliverables);
+	const canEditDeliverables = task?.allowedActions?.editDeliverable ?? (hasDeliverableManagementOverride || canEditProjectTaskDeliverables);
+	const canDeleteDeliverables = task?.allowedActions?.deleteDeliverable ?? (hasDeliverableManagementOverride || canDeleteProjectTaskDeliverables);
 	const closeSheet = useCallback(() => onOpenChange(false), [onOpenChange]);
 	const isTimerRunning = task?.timeEntries?.some((entry) => entry.isRunning) ?? false;
 	const canToggleTimer = isTimerRunning ? canStopTimer : canStartTimer;

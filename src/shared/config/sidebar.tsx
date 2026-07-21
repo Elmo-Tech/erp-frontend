@@ -66,7 +66,7 @@ export const SidebarConfig = [
                 title: "Sales Pipeline",
                 href: "/dashboard/leads",
                 icon: Target,
-                permission: "view_leads",
+                permission: ["manage_leads", "view_leads", "create_leads", "edit_leads", "delete_leads", "convert_leads", "view_quotations", "create_quotations", "edit_quotations", "delete_quotations", "calculate_quotations", "manage_contracts", "view_contracts", "create_contracts", "edit_contracts", "delete_contracts", "sign_contracts"],
             },
         ],
     },
@@ -135,7 +135,7 @@ export const SidebarConfig = [
                 title: "Employee Profiles",
                 href: "/dashboard/hr/admin/employees",
                 icon: Users,
-                permission: "manage_employees",
+                permission: ["manage_employees", "view_employees", "create_employees", "edit_employees", "delete_employees", "view_employee_salary", "view_employee_performance"],
             },
             {
                 title: "Payroll",
@@ -170,7 +170,7 @@ export const SidebarConfig = [
                 title: "Invoices",
                 href: "/dashboard/finance/invoices",
                 icon: Receipt,
-                permission: "manage_invoices",
+                permission: ["manage_invoices", "view_invoices", "create_invoices", "edit_invoices", "delete_invoices", "send_invoices", "cancel_invoices"],
             },
             {
                 title: "Subscriptions",
@@ -198,13 +198,13 @@ export const SidebarConfig = [
                 title: "Users",
                 href: "/dashboard/users",
                 icon: UserCog,
-                permission: "manage_users",
+                permission: ["manage_users", "view_users", "create_users", "edit_users", "delete_users", "toggle_user_status", "assign_user_roles", "reset_user_credentials"],
             },
             {
                 title: "Roles & Permissions",
                 href: "/dashboard/roles",
                 icon: Shield,
-                permission: "manage_roles",
+                permission: ["manage_roles", "view_roles", "create_roles", "edit_roles", "delete_roles"],
             },
             {
                 title: "Manage SOPs",

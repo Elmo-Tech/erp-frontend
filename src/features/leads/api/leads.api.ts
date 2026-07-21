@@ -422,6 +422,21 @@ export function useCreateLead() {
 	});
 }
 
+export async function deleteLead(leadId: number): Promise<void> {
+	await api.delete(`/leads/${leadId}`);
+}
+
+export function useDeleteLead() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (leadId: number) => deleteLead(leadId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.all });
+		},
+	});
+}
+
 // ─── Get Leads ───────────────────────────────────────────────────────────────
 
 export interface GetLeadsResponse {
@@ -676,6 +691,22 @@ export function useUpdateQuotationStatus(leadId: number) {
 	});
 }
 
+export async function deleteLeadQuotation(leadId: number, quotationId: number): Promise<void> {
+	await api.delete(`/leads/${leadId}/quotations/${quotationId}`);
+}
+
+export function useDeleteLeadQuotation(leadId: number) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (quotationId: number) => deleteLeadQuotation(leadId, quotationId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.quotations(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
+		},
+	});
+}
+
 export async function createLeadContract(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadContract }> {
 	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts`, payload);
 	return res.data;
@@ -693,6 +724,39 @@ export function useUpdateLeadContract(leadId: number) {
 		mutationFn: ({ contractId, payload }: { contractId: number; payload: Partial<Pick<LeadContract, "status" | "file_path" | "assigned_to">> }) => updateLeadContract(leadId, contractId, payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: leadKeys.contracts(leadId) });
+		},
+	});
+}
+
+export async function signLeadContract(leadId: number, contractId: number): Promise<{ data: LeadContract }> {
+	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts/${contractId}/sign`);
+	return res.data;
+}
+
+export function useSignLeadContract(leadId: number) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (contractId: number) => signLeadContract(leadId, contractId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.contracts(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
+		},
+	});
+}
+
+export async function deleteLeadContract(leadId: number, contractId: number): Promise<void> {
+	await api.delete(`/leads/${leadId}/contracts/${contractId}`);
+}
+
+export function useDeleteLeadContract(leadId: number) {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (contractId: number) => deleteLeadContract(leadId, contractId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: leadKeys.contracts(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
 		},
 	});
 }

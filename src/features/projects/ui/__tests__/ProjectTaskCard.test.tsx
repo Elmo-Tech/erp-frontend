@@ -65,4 +65,31 @@ describe("ProjectTaskCard", () => {
 		expect(onDelete).toHaveBeenCalledWith(makeTask());
 		expect(onClick).not.toHaveBeenCalled();
 	});
+
+	it("uses backend allowedActions instead of broader fallback permissions", () => {
+		renderWithQueryClient(
+			<ProjectTaskCard
+				task={makeTask({
+					allowedActions: {
+						edit: false,
+						delete: false,
+						changeStatus: false,
+						complete: false,
+						reopen: false,
+						createDeliverable: false,
+						editDeliverable: false,
+						deleteDeliverable: false,
+						toggleDeliverable: false,
+					},
+				})}
+				projectId={2}
+				onClick={vi.fn()}
+				canEdit
+				canDelete
+			/>,
+		);
+
+		expect(screen.queryByRole("button", { name: "Edit task: Build Login" })).not.toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Delete task: Build Login" })).not.toBeInTheDocument();
+	});
 });

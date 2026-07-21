@@ -67,6 +67,11 @@ export async function putInvoice(id: number, payload: UpdateInvoicePayload): Pro
 	return res.data.data;
 }
 
+export async function sendInvoice(id: number): Promise<Invoice> {
+	const res = await api.post<ApiEnvelope<Invoice>>(`/finance/invoices/${id}/send`);
+	return res.data.data;
+}
+
 export async function deleteInvoice(id: number): Promise<void> {
 	await api.delete(`/finance/invoices/${id}`);
 }

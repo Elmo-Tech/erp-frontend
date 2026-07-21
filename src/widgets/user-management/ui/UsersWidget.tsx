@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
-import { Can } from "@/shared/ui/Can";
+import { useEmployeePermissions } from "@/entities/user/model/permissions";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
 import { UserFormModal } from "@/features/users/ui/UserFormModal";
@@ -17,7 +17,12 @@ import type { User } from "@/entities/user/model/types";
 // Column definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildColumns(onEdit: (user: User) => void, onDelete: (user: User) => void, onToggle: (user: User) => void): Column<User>[] {
+function buildColumns(
+	onEdit: (user: User) => void,
+	onDelete: (user: User) => void,
+	onToggle: (user: User) => void,
+	permissions: { canOpenEditor: boolean; canDelete: boolean; canToggle: boolean },
+): Column<User>[] {
 	return [
 		{
 			key: "user",
@@ -76,38 +81,38 @@ function buildColumns(onEdit: (user: User) => void, onDelete: (user: User) => vo
 			key: "actions",
 			header: "",
 			className: "text-right",
-			render: (u) => (
+				render: (u) => (
 				<div className="flex items-center justify-end gap-1">
-					<Can permission="manage_users">
-						<>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								title={u.isActive ? "Deactivate user" : "Activate user"}
-								onClick={(e) => {
-									e.stopPropagation();
-									onToggle(u);
-								}}
-							>
-								{u.isActive ? <ToggleRight className="h-3.5 w-3.5 text-green-600" /> : <ToggleLeft className="h-3.5 w-3.5 text-muted-foreground" />}
-								<span className="sr-only">Toggle {u.name}</span>
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								onClick={(e) => {
-									e.stopPropagation();
-									onEdit(u);
-								}}
-							>
-								<Pencil className="h-3.5 w-3.5" />
-								<span className="sr-only">Edit {u.name}</span>
-							</Button>
-						</>
-					</Can>
-					<Can permission="delete_users">
+					{permissions.canToggle && (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8"
+							title={u.isActive ? "Deactivate user" : "Activate user"}
+							onClick={(e) => {
+								e.stopPropagation();
+								onToggle(u);
+							}}
+						>
+							{u.isActive ? <ToggleRight className="h-3.5 w-3.5 text-green-600" /> : <ToggleLeft className="h-3.5 w-3.5 text-muted-foreground" />}
+							<span className="sr-only">Toggle {u.name}</span>
+						</Button>
+					)}
+					{permissions.canOpenEditor && (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8"
+							onClick={(e) => {
+								e.stopPropagation();
+								onEdit(u);
+							}}
+						>
+							<Pencil className="h-3.5 w-3.5" />
+							<span className="sr-only">Edit {u.name}</span>
+						</Button>
+					)}
+					{permissions.canDelete && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -120,7 +125,7 @@ function buildColumns(onEdit: (user: User) => void, onDelete: (user: User) => vo
 							<Trash2 className="h-3.5 w-3.5" />
 							<span className="sr-only">Delete {u.name}</span>
 						</Button>
-					</Can>
+					)}
 				</div>
 			),
 		},
@@ -132,6 +137,8 @@ function buildColumns(onEdit: (user: User) => void, onDelete: (user: User) => vo
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function UsersWidget() {
+	const { canCreateUsers, canEditUsers, canDeleteUsers, canToggleUserStatus, canAssignUserRoles, canResetUserCredentials } = useEmployeePermissions();
+	const canOpenUserEditor = canEditUsers || canAssignUserRoles || canResetUserCredentials;
 	const { data, isLoading, error } = useUsers();
 	const deleteUser = useDeleteUser();
 	const toggleStatus = useToggleUserStatus();
@@ -158,6 +165,8 @@ export function UsersWidget() {
 	};
 
 	const handleToggle = async (user: User) => {
+		if (!canToggleUserStatus) return;
+
 		try {
 			await toggleStatus.mutateAsync(user.userId);
 			toast.success(`${user.name} ${user.isActive ? "deactivated" : "activated"}`);
@@ -168,6 +177,10 @@ export function UsersWidget() {
 
 	const handleDeleteConfirm = async () => {
 		if (!deleteTarget) return;
+		if (!canDeleteUsers) {
+			toast.error("You do not have permission to delete users");
+			return;
+		}
 		try {
 			await deleteUser.mutateAsync(deleteTarget.userId);
 			toast.success(`${deleteTarget.name} deleted`);
@@ -177,7 +190,11 @@ export function UsersWidget() {
 		}
 	};
 
-	const columns = buildColumns(handleEdit, setDeleteTarget, handleToggle);
+	const columns = buildColumns(handleEdit, setDeleteTarget, handleToggle, {
+		canOpenEditor: canOpenUserEditor,
+		canDelete: canDeleteUsers,
+		canToggle: canToggleUserStatus,
+	});
 
 	return (
 		<section className="flex flex-col gap-6">
@@ -186,7 +203,7 @@ export function UsersWidget() {
 					<h1 className="text-2xl font-semibold tracking-tight">Users</h1>
 					<p className="text-sm text-muted-foreground">Manage system users, their roles, and access status.</p>
 				</div>
-				<Can permission="manage_users">
+				{canCreateUsers && (
 					<Button
 						size="sm"
 						className="gap-2 shrink-0"
@@ -195,7 +212,7 @@ export function UsersWidget() {
 						<Plus className="h-4 w-4" />
 						New User
 					</Button>
-				</Can>
+				)}
 			</div>
 
 			<DataTable<User>
@@ -210,7 +227,7 @@ export function UsersWidget() {
 					icon: Users,
 					title: "No users found",
 					description: "Create the first user to get started.",
-					action: { label: "New User", onClick: handleCreate },
+					action: canCreateUsers ? { label: "New User", onClick: handleCreate } : undefined,
 				}}
 			/>
 

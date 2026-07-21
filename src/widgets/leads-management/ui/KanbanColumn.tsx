@@ -19,6 +19,7 @@ import { LeadCard } from "./LeadCard";
 interface KanbanColumnProps {
 	stage: PipelineStage;
 	leads: Lead[];
+	isDragDisabled: boolean;
 	onCardClick?: (leadId: number) => void;
 }
 
@@ -32,7 +33,7 @@ const STAGE_ACCENT: Record<PipelineStage, string> = {
 	closed_won: "bg-emerald-500",
 };
 
-export function KanbanColumn({ stage, leads, onCardClick }: KanbanColumnProps) {
+export function KanbanColumn({ stage, leads, isDragDisabled, onCardClick }: KanbanColumnProps) {
 	return (
 		<div className="flex flex-col w-[272px] shrink-0">
 			{/* ── Column header ──────────────────────────────────────────────── */}
@@ -57,6 +58,7 @@ export function KanbanColumn({ stage, leads, onCardClick }: KanbanColumnProps) {
 								key={lead.id}
 								lead={lead}
 								index={index}
+								isDragDisabled={isDragDisabled}
 								onCardClick={onCardClick}
 							/>
 						))}

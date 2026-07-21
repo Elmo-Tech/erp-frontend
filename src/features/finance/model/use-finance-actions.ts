@@ -70,6 +70,17 @@ export function useDeleteInvoice() {
 	});
 }
 
+export function useSendInvoice() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (id: number) => financeApi.sendInvoice(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: financeKeys.invoices() });
+		},
+	});
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // SUBSCRIPTIONS
 // ═════════════════════════════════════════════════════════════════════════════

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { userApi } from "@/entities/user/api/user.api";
 import { userKeys } from "@/entities/user/model/query-keys";
+import { useAuthStore } from "@/entities/user/model/auth.store";
 import type { CreateRolePayload, Permission, Role, RoleListResponse, UpdateRolePayload } from "@/entities/user/model/types";
 
 export function useRoles(enabled = true) {
@@ -55,6 +56,10 @@ export function useUpdateRole() {
 
 			// 3. Invalidate to ensure eventual consistency with the server.
 			queryClient.invalidateQueries({ queryKey: userKeys.roles() });
+
+			if (useAuthStore.getState().role?.toLowerCase() === updatedRole.name.toLowerCase()) {
+				queryClient.invalidateQueries({ queryKey: userKeys.profiles() });
+			}
 		},
 	});
 }

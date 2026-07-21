@@ -6,10 +6,9 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
-import { useAuthStore } from "@/entities/user/model/auth.store";
+import { isPermissionGranted, useAuthStore } from "@/entities/user/model/auth.store";
 import { useSidebarStore } from "@/widgets/layout/model/sidebar.store";
 import { Button } from "@/shared/ui/button";
-import { Can } from "@/shared/ui/Can";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip";
 import { SidebarConfig } from "@/shared/config/sidebar";
 
@@ -17,7 +16,7 @@ interface NavItem {
     title: string;
     href: string;
     icon: React.ElementType;
-    permission?: string;
+    permission?: string | string[];
 }
 
 interface NavGroup {
@@ -30,7 +29,7 @@ const navGroups: NavGroup[] = SidebarConfig;
 export function Sidebar() {
     const { isCollapsed, isMobileOpen, toggleCollapsed, closeMobile } = useSidebarStore();
     const pathname = usePathname();
-    const hasPermission = useAuthStore((state) => state.hasPermission);
+    const permissions = useAuthStore((state) => state.permissions);
 
     useEffect(() => {
         closeMobile();
@@ -46,7 +45,8 @@ export function Sidebar() {
 
     const filterItems = (items: NavItem[]) => {
         return items.filter((item) => {
-            if (item.permission && !hasPermission(item.permission)) return false;
+            if (typeof item.permission === "string" && !isPermissionGranted(permissions, item.permission)) return false;
+            if (Array.isArray(item.permission) && !item.permission.some((permission) => isPermissionGranted(permissions, permission))) return false;
             return true;
         });
     };
@@ -134,14 +134,6 @@ export function Sidebar() {
                                         ) : (
                                             <div key={item.href}>{linkContent}</div>
                                         );
-
-                                        if (item.permission) {
-                                            return (
-                                                <Can key={item.href} permission={item.permission}>
-                                                    {navItem}
-                                                </Can>
-                                            );
-                                        }
 
                                         return navItem;
                                     })}

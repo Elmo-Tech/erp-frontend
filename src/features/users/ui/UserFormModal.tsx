@@ -10,8 +10,7 @@ import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSwitch } from "@/shared/ui/forms/FormSwitch";
 import { FormMultiCombobox } from "@/shared/ui/forms/FormMultiCombobox";
 import { Can } from "@/shared/ui/Can";
-import { EMPLOYEE_PERMISSIONS } from "@/entities/user/model/permissions";
-import { useAuthStore } from "@/entities/user/model/auth.store";
+import { EMPLOYEE_PERMISSIONS, useEmployeePermissions } from "@/entities/user/model/permissions";
 import { useCreateUser, useUpdateUser, useRoles } from "../model/use-user-actions";
 import { createUserSchema, editUserSchema, CREATE_USER_DEFAULT_VALUES, ROLE_LABELS, AVAILABLE_ROLES, type CreateUserFormData, type EditUserFormData } from "../model/users.schema";
 import type { User } from "@/entities/user/model/types";
@@ -35,9 +34,7 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 	const isEditing = editTarget !== null;
 	const createUser = useCreateUser();
 	const updateUser = useUpdateUser();
-	const hasPermission = useAuthStore((state) => state.hasPermission);
-	const canAssignRoles = hasPermission(EMPLOYEE_PERMISSIONS.ASSIGN_USER_ROLES);
-	const canResetCredentials = hasPermission(EMPLOYEE_PERMISSIONS.RESET_USER_CREDENTIALS);
+	const { canCreateUsers, canEditUsers, canToggleUserStatus, canAssignUserRoles, canResetUserCredentials } = useEmployeePermissions();
 
 	// Fetch roles from the backend so the list is always in sync with the seeder
 	const { data: rolesData } = useRoles();
@@ -92,13 +89,18 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 	// ── Submit handlers ────────────────────────────────────────────────────────
 
 	const handleCreate = async (data: CreateUserFormData) => {
+		if (!canCreateUsers) {
+			toast.error("You do not have permission to create users");
+			return;
+		}
+
 		try {
 			await createUser.mutateAsync({
 				name: data.name,
 				email: data.email,
 				password: data.password,
 				password_confirmation: data.password_confirmation,
-				roles: canAssignRoles ? data.roles : [],
+				roles: canAssignUserRoles ? data.roles : [],
 				isActive: data.isActive,
 			});
 			toast.success("User created successfully");
@@ -110,17 +112,25 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 
 	const handleEdit = async (data: EditUserFormData) => {
 		if (!editTarget) return;
+		if (!canEditUsers && !canAssignUserRoles && !canResetUserCredentials && !canToggleUserStatus) {
+			toast.error("You do not have permission to update this user");
+			return;
+		}
+
 		try {
-			const payload: Record<string, unknown> = {
-				name: data.name,
-				email: data.email,
-				isActive: data.isActive,
-			};
-			if (canAssignRoles) {
+			const payload: Record<string, unknown> = {};
+			if (canEditUsers) {
+				payload.name = data.name;
+				payload.email = data.email;
+			}
+			if (canToggleUserStatus) {
+				payload.isActive = data.isActive;
+			}
+			if (canAssignUserRoles) {
 				payload.roles = data.roles;
 			}
 			// Only include password fields if the user typed a new password
-			if (canResetCredentials && data.password) {
+			if (canResetUserCredentials && data.password) {
 				payload.password = data.password;
 				payload.password_confirmation = data.password_confirmation;
 			}
@@ -156,7 +166,7 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 								name="name"
 								label="Full Name"
 								placeholder="Jane Cooper"
-								disabled={isPending}
+								disabled={isPending || !canEditUsers}
 							/>
 							<FormInput
 								control={editForm.control}
@@ -164,7 +174,7 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 								label="Email"
 								type="email"
 								placeholder="jane@example.com"
-								disabled={isPending}
+								disabled={isPending || !canEditUsers}
 							/>
 						</div>
 
@@ -209,13 +219,15 @@ export function UserFormModal({ open, onClose, editTarget }: UserFormModalProps)
 							</div>
 						</Can>
 
-						<FormSwitch
-							control={editForm.control}
-							name="isActive"
-							label="Active"
-							description="Inactive users cannot log in."
-							disabled={isPending}
-						/>
+						<Can permission={EMPLOYEE_PERMISSIONS.TOGGLE_USER_STATUS}>
+							<FormSwitch
+								control={editForm.control}
+								name="isActive"
+								label="Active"
+								description="Inactive users cannot log in."
+								disabled={isPending}
+							/>
+						</Can>
 					</div>
 				</Form>
 			</FormDialog>

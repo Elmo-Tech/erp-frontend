@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
 import { useDeleteInvoice } from "@/features/finance/model/use-finance-actions";
 import type { Invoice } from "@/entities/finance/model/types";
+import { useInvoicePermissions } from "@/entities/user/model/permissions";
 
 interface DeleteInvoiceDialogProps {
 	open: boolean;
@@ -12,10 +13,15 @@ interface DeleteInvoiceDialogProps {
 }
 
 export function DeleteInvoiceDialog({ open, onClose, invoice }: DeleteInvoiceDialogProps) {
+	const { canDeleteInvoices } = useInvoicePermissions();
 	const deleteInvoice = useDeleteInvoice();
 
 	const handleConfirm = async () => {
 		if (!invoice) return;
+		if (!canDeleteInvoices) {
+			toast.error("You do not have permission to delete invoices");
+			return;
+		}
 
 		try {
 			await deleteInvoice.mutateAsync(invoice.id);

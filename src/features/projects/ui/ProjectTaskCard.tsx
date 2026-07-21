@@ -45,6 +45,8 @@ export function ProjectTaskCard({ task, projectId, onClick, canEdit = false, can
 	const toggleTimer = useToggleTaskTimer();
 	const view = buildTaskCardView(task);
 	const elapsedSeconds = useLiveTimer(view.runningEntry?.startTime, view.isRunning);
+	const canEditTask = task.allowedActions?.edit ?? canEdit;
+	const canDeleteTask = task.allowedActions?.delete ?? canDelete;
 
 	const handleTimerToggle = useCallback(
 		(event: React.MouseEvent) => {
@@ -92,8 +94,8 @@ export function ProjectTaskCard({ task, projectId, onClick, canEdit = false, can
 			<ProjectTaskCardHeader
 				task={task}
 				view={view}
-				canEdit={canEdit}
-				canDelete={canDelete}
+				canEdit={canEditTask}
+				canDelete={canDeleteTask}
 				onEditClick={handleEdit}
 				onDeleteClick={handleDelete}
 			/>

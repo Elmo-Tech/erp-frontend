@@ -80,4 +80,21 @@ describe("ProjectTasksActions", () => {
 		expect(screen.queryByRole("button", { name: "Add Milestone" })).not.toBeInTheDocument();
 		expect(screen.queryByRole("button", { name: "Add Task" })).not.toBeInTheDocument();
 	});
+
+	it("shows task creation for the global project-management umbrella", () => {
+		useAuthStore.setState({ permissions: [{ permissionName: "manage_all_projects", access: true }] });
+
+		render(
+			<ProjectTasksActionHeader
+				milestoneCount={0}
+				taskCount={0}
+				canAddMilestones={false}
+				canAddTasks
+				onAddMilestone={vi.fn()}
+				onAddTask={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByRole("button", { name: "Add Task" })).toBeInTheDocument();
+	});
 });

@@ -12,5 +12,6 @@ export const userKeys = {
 	permissions: () => [...userKeys.all, "permissions"] as const,
 	auditLogs: (filters?: AuditLogFilters) => [...userKeys.all, "audit-logs", filters] as const,
 	auditActions: () => [...userKeys.all, "audit-actions"] as const,
-	profile: () => [...userKeys.all, "profile"] as const,
+	profiles: () => [...userKeys.all, "profile"] as const,
+	profile: (userId?: number) => [...userKeys.profiles(), userId] as const,
 };

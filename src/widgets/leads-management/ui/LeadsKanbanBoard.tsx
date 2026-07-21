@@ -32,6 +32,7 @@ import { PIPELINE_STAGES } from "@/features/leads/model/pipelineConstants";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
 import type { Lead, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
 import { getPipelineStageGateFailure } from "@/features/leads/model/pipelineGates";
+import { getPipelinePermissionFailure } from "@/features/leads/model/pipeline-permission-gates";
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
 import { leadKeys, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
 import { KanbanColumn } from "./KanbanColumn";
@@ -42,11 +43,15 @@ import { KanbanColumn } from "./KanbanColumn";
 
 interface LeadsKanbanBoardProps {
 	leads: Lead[];
+	canEdit: boolean;
+	canConvert: boolean;
+	canCreateQuotations: boolean;
+	canCreateContracts: boolean;
 	/** Called when a card is clicked (not dragged). Receives the lead ID. */
 	onCardClick?: (leadId: number) => void;
 }
 
-export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) {
+export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotations, canCreateContracts, onCardClick }: LeadsKanbanBoardProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const updateLeadStageMutation = useUpdateLeadStage();
@@ -118,6 +123,19 @@ export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) 
 	// ── Commit helper — fires the stage update API, then conversion if won ────
 	const commitStageUpdate = useCallback(
 		async (leadId: number, toStage: PipelineStage, results: StageModalResult[]) => {
+			const fromStage = usePipelineStore.getState().pendingDrag?.fromStage ?? leads.find((lead) => lead.id === leadId)?.stage ?? toStage;
+			const permissionFailure = getPipelinePermissionFailure(fromStage, toStage, {
+				canEditLeads: canEdit,
+				canConvertLeads: canConvert,
+				canCreateQuotations,
+				canCreateContracts,
+			});
+			if (permissionFailure) {
+				toast.error(permissionFailure);
+				cancelDrag();
+				return;
+			}
+
 			setIsCommitting(true);
 			try {
 				await updateLeadStageMutation.mutateAsync({ leadId, newStage: toStage, stageResults: results });
@@ -139,7 +157,7 @@ export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) 
 				invalidateLeadQueries();
 			}
 		},
-		[cancelDrag, invalidateLeadQueries, triggerConversion, updateLeadStageMutation],
+		[canConvert, canCreateContracts, canCreateQuotations, canEdit, cancelDrag, invalidateLeadQueries, leads, triggerConversion, updateLeadStageMutation],
 	);
 
 	// ── onDragEnd — the Drag Interceptor Engine entry point ──────────────────
@@ -155,6 +173,16 @@ export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) 
 			const leadId = Number(draggableId);
 			const fromStage = source.droppableId as PipelineStage;
 			const toStage = destination.droppableId as PipelineStage;
+			const permissionFailure = getPipelinePermissionFailure(fromStage, toStage, {
+				canEditLeads: canEdit,
+				canConvertLeads: canConvert,
+				canCreateQuotations,
+				canCreateContracts,
+			});
+			if (permissionFailure) {
+				toast.error(permissionFailure);
+				return;
+			}
 			const lead = leads.find((item) => item.id === leadId);
 
 			if (lead) {
@@ -182,7 +210,7 @@ export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) 
 			}
 			// Otherwise the modal queue is non-empty — StageModal will render.
 		},
-		[leads, startDrag, setCachedLeadStage, commitStageUpdate],
+		[canConvert, canCreateContracts, canCreateQuotations, canEdit, leads, startDrag, setCachedLeadStage, commitStageUpdate],
 	);
 
 	// ── Modal submit handler ──────────────────────────────────────────────────
@@ -212,6 +240,7 @@ export function LeadsKanbanBoard({ leads, onCardClick }: LeadsKanbanBoardProps) 
 							key={stage}
 							stage={stage}
 							leads={leadsByStage[stage]}
+							isDragDisabled={!canEdit}
 							onCardClick={onCardClick}
 						/>
 					))}

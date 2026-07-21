@@ -2,16 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Plus, Pencil, Trash2 } from "lucide-react";
+import { FileText, Plus, Pencil, Send, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { Can, usePermissionGate } from "@/shared/ui/Can";
+import { useInvoicePermissions } from "@/entities/user/model/permissions";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { FilterSelect } from "@/shared/ui/filters/FilterSelect";
 import { DatePicker } from "@/shared/ui/forms";
 import { InvoiceFormModal } from "@/features/finance/ui/InvoiceFormModal";
 import { DeleteInvoiceDialog } from "@/features/finance/ui/DeleteInvoiceDialog";
-import { useInvoices } from "@/features/finance/model/use-finance-actions";
+import { useInvoices, useSendInvoice } from "@/features/finance/model/use-finance-actions";
 import { clientApi } from "@/entities/client/api/client.api";
 import { clientKeys } from "@/entities/client/model/query-keys";
 import { projectApi } from "@/entities/project/api/project.api";
@@ -35,7 +36,12 @@ const STATUS_VARIANT: Record<InvoiceStatus, "default" | "secondary" | "destructi
 // Column definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildColumns(onEdit: (invoice: Invoice) => void, onDelete: (invoice: Invoice) => void): Column<Invoice>[] {
+function buildColumns(
+	onEdit: (invoice: Invoice) => void,
+	onDelete: (invoice: Invoice) => void,
+	onSend: (invoice: Invoice) => void,
+	permissions: { canEdit: boolean; canDelete: boolean; canSend: boolean; isSending: boolean },
+): Column<Invoice>[] {
 	return [
 		{
 			key: "invoiceNumber",
@@ -75,8 +81,23 @@ function buildColumns(onEdit: (invoice: Invoice) => void, onDelete: (invoice: In
 			header: "",
 			className: "text-right",
 			render: (inv) => (
-				<Can permission="manage_invoices">
-					<div className="flex items-center justify-end gap-1">
+				<div className="flex items-center justify-end gap-1">
+					{permissions.canSend && inv.status === "draft" && (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 text-primary hover:text-primary"
+							disabled={permissions.isSending}
+							onClick={(e) => {
+								e.stopPropagation();
+								onSend(inv);
+							}}
+						>
+							<Send className="h-3.5 w-3.5" />
+							<span className="sr-only">Send {inv.invoiceNumber}</span>
+						</Button>
+					)}
+					{permissions.canEdit && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -89,6 +110,8 @@ function buildColumns(onEdit: (invoice: Invoice) => void, onDelete: (invoice: In
 							<Pencil className="h-3.5 w-3.5" />
 							<span className="sr-only">Edit {inv.invoiceNumber}</span>
 						</Button>
+					)}
+					{permissions.canDelete && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -101,8 +124,8 @@ function buildColumns(onEdit: (invoice: Invoice) => void, onDelete: (invoice: In
 							<Trash2 className="h-3.5 w-3.5" />
 							<span className="sr-only">Delete {inv.invoiceNumber}</span>
 						</Button>
-					</div>
-				</Can>
+					)}
+				</div>
 			),
 		},
 	];
@@ -113,11 +136,11 @@ function buildColumns(onEdit: (invoice: Invoice) => void, onDelete: (invoice: In
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function InvoicesWidget() {
-	const { can } = usePermissionGate();
+	const { canCreateInvoices, canEditInvoices, canDeleteInvoices, canSendInvoices } = useInvoicePermissions();
+	const sendInvoice = useSendInvoice();
 	const [filters, setFilters] = useState<FinanceFilters>({});
 	const { data, isLoading, error } = useInvoices(filters);
 	const invoices = data?.data ?? [];
-	const canManageInvoices = can("manage_invoices");
 	const clientsQuery = useQuery({ queryKey: clientKeys.list({ perPage: 100 }), queryFn: () => clientApi.getClients({ perPage: 100 }), staleTime: 5 * 60 * 1000 });
 	const projectsQuery = useQuery({ queryKey: projectKeys.list({ perPage: 100 }), queryFn: () => projectApi.getProjects({ perPage: 100 }), staleTime: 5 * 60 * 1000 });
 
@@ -140,7 +163,22 @@ export function InvoicesWidget() {
 		setEditTarget(null);
 	};
 
-	const columns = buildColumns(handleEdit, setDeleteTarget);
+	const handleSend = async (invoice: Invoice) => {
+		if (!canSendInvoices) return;
+		try {
+			await sendInvoice.mutateAsync(invoice.id);
+			toast.success(`Invoice ${invoice.invoiceNumber} sent`);
+		} catch {
+			toast.error("Failed to send invoice");
+		}
+	};
+
+	const columns = buildColumns(handleEdit, setDeleteTarget, handleSend, {
+		canEdit: canEditInvoices,
+		canDelete: canDeleteInvoices,
+		canSend: canSendInvoices,
+		isSending: sendInvoice.isPending,
+	});
 	const clientOptions = useMemo(() => (clientsQuery.data?.clients ?? []).map((client) => ({ value: String(client.id), label: client.display_name })), [clientsQuery.data?.clients]);
 	const projectOptions = useMemo(() => (projectsQuery.data?.projects ?? []).map((project) => ({ value: String(project.projectId), label: project.title })), [projectsQuery.data?.projects]);
 
@@ -151,7 +189,7 @@ export function InvoicesWidget() {
 					<h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
 					<p className="text-sm text-muted-foreground">Create and manage client invoices with line items, tax, and discounts.</p>
 				</div>
-				<Can permission="manage_invoices">
+				{canCreateInvoices && (
 					<Button
 						size="sm"
 						className="gap-2 shrink-0"
@@ -160,7 +198,7 @@ export function InvoicesWidget() {
 						<Plus className="h-4 w-4" />
 						New Invoice
 					</Button>
-				</Can>
+				)}
 			</div>
 
 			<div className="grid gap-3 border-y py-3 md:grid-cols-2 xl:grid-cols-5">
@@ -183,7 +221,7 @@ export function InvoicesWidget() {
 					icon: FileText,
 					title: "No invoices yet",
 					description: "Create your first invoice to start billing clients.",
-					action: canManageInvoices ? { label: "New Invoice", onClick: handleCreate } : undefined,
+					action: canCreateInvoices ? { label: "New Invoice", onClick: handleCreate } : undefined,
 				}}
 			/>
 

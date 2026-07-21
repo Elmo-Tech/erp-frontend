@@ -99,4 +99,40 @@ describe("TaskExecutionSheet", () => {
 
 		expect(screen.queryByRole("button", { name: /log time/i })).not.toBeInTheDocument();
 	});
+
+	it("uses resource allowedActions to suppress broader task controls", () => {
+		useAuthStore.setState({
+			user: { userId: 7, name: "Mona", email: "mona@example.test", avatar: "", role: "developer" },
+			permissions: [
+				{ permissionName: "manage_all_projects", access: true },
+				{ permissionName: "manage_tasks", access: true },
+				{ permissionName: "manage_deliverables", access: true },
+			],
+		});
+
+		render(
+			<TaskExecutionSheet
+				task={{
+					...task,
+					allowedActions: {
+						edit: false,
+						delete: false,
+						changeStatus: false,
+						complete: false,
+						reopen: false,
+						createDeliverable: false,
+						editDeliverable: false,
+						deleteDeliverable: false,
+						toggleDeliverable: false,
+					},
+				}}
+				projectId={2}
+				open
+				onOpenChange={vi.fn()}
+			/>,
+		);
+
+		expect(screen.queryByRole("button", { name: "Mark as Done" })).not.toBeInTheDocument();
+		expect(screen.queryByPlaceholderText("Add a deliverable…")).not.toBeInTheDocument();
+	});
 });

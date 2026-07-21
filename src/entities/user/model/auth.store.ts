@@ -25,6 +25,10 @@ export interface Permission {
 	access: boolean;
 }
 
+export function isPermissionGranted(permissions: Permission[], permissionName: string): boolean {
+	return permissions.some((permission) => permission.permissionName === permissionName && permission.access);
+}
+
 export interface AuthState {
 	user: User | null;
 	token: string | null;
@@ -37,6 +41,7 @@ export interface AuthState {
 	// ── Actions ──────────────────────────────────────────────────────────────
 	setAuth: (data: { user: User; expiresIn: number; role: string; permissions: Permission[] }) => void;
 	refreshAuth: (data: { user?: User; expiresIn: number; role?: string; permissions?: Permission[] }) => void;
+	syncProfile: (data: { user: User; role: string; permissions: Permission[] }) => void;
 	logout: () => void;
 	updateUser: (user: Partial<User>) => void;
 
@@ -80,6 +85,10 @@ export const useAuthStore = create<AuthState>()(
 				}));
 			},
 
+			syncProfile: ({ user, role, permissions }) => {
+				set({ user, role, permissions });
+			},
+
 			logout: () => {
 				set({
 					user: null,
@@ -98,8 +107,7 @@ export const useAuthStore = create<AuthState>()(
 
 			hasPermission: (permissionName: string) => {
 				const { permissions } = get();
-				const perm = permissions.find((p) => p.permissionName === permissionName);
-				return perm?.access ?? false;
+				return isPermissionGranted(permissions, permissionName);
 			},
 
 			hasAnyPermission: (permissionNames: string[]) => {
@@ -138,15 +146,14 @@ export const useAuthStore = create<AuthState>()(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function usePermissions() {
-	const hasPermission = useAuthStore((s) => s.hasPermission);
-	const hasAnyPermission = useAuthStore((s) => s.hasAnyPermission);
-	const hasAllPermissions = useAuthStore((s) => s.hasAllPermissions);
+	const permissions = useAuthStore((state) => state.permissions);
 
 	return useMemo(
-		() => ({ hasPermission, hasAnyPermission, hasAllPermissions }),
-		// Store actions are stable references — this memo only re-runs when the
-		// store instance itself changes (practically never).
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[],
+		() => ({
+			hasPermission: (permissionName: string) => isPermissionGranted(permissions, permissionName),
+			hasAnyPermission: (permissionNames: string[]) => permissionNames.some((permissionName) => isPermissionGranted(permissions, permissionName)),
+			hasAllPermissions: (permissionNames: string[]) => permissionNames.every((permissionName) => isPermissionGranted(permissions, permissionName)),
+		}),
+		[permissions],
 	);
 }

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
 import { useDeleteHrProfile } from "@/features/hr/model/use-hr-actions";
 import type { EmployeeProfile } from "@/entities/hr/model/types";
+import { useEmployeePermissions } from "@/entities/user/model/permissions";
 
 interface DeleteHrProfileDialogProps {
 	open: boolean;
@@ -13,10 +14,15 @@ interface DeleteHrProfileDialogProps {
 }
 
 export function DeleteHrProfileDialog({ open, onClose, profile }: DeleteHrProfileDialogProps) {
+	const { canDeleteEmployees } = useEmployeePermissions();
 	const deleteProfile = useDeleteHrProfile();
 
 	const handleConfirm = async () => {
 		if (!profile) return;
+		if (!canDeleteEmployees) {
+			toast.error("You do not have permission to remove employee profiles");
+			return;
+		}
 
 		try {
 			await deleteProfile.mutateAsync(profile.id);

@@ -18,6 +18,7 @@ import type { Invoice } from "@/entities/finance/model/types";
 import { useClientsQuery } from "@/entities/client/api/client.api";
 import { useGetClientProjects } from "@/entities/project/api/project.api";
 import { useSettingsDictionary } from "@/shared/api/settings.api";
+import { useInvoicePermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -34,6 +35,7 @@ interface InvoiceFormModalProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModalProps) {
+	const { canCreateInvoices, canEditInvoices, canSendInvoices } = useInvoicePermissions();
 	const isEditing = editTarget !== null;
 	const createInvoice = useCreateInvoice();
 	const updateInvoice = useUpdateInvoice();
@@ -80,7 +82,7 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 	// Invoice statuses from settings dictionary
 	const statusDict = useSettingsDictionary("invoice-statuses", open);
 	// Fallback to hardcoded options if dictionary is empty (e.g. not yet seeded)
-	const statusOptions =
+	const allStatusOptions =
 		statusDict.options.length > 0
 			? statusDict.options
 			: [
@@ -89,6 +91,7 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 					{ value: "paid", label: "Paid" },
 					{ value: "overdue", label: "Overdue" },
 				];
+	const statusOptions = allStatusOptions.filter((option) => option.value !== "sent" || canSendInvoices || fullInvoice?.status === "sent");
 
 	// useFieldArray for dynamic line items
 	const { fields, append, remove } = useFieldArray({
@@ -126,6 +129,16 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 	}, [open, fullInvoice, form]);
 
 	const handleSubmit = async (data: InvoiceFormData) => {
+		if ((isEditing && !canEditInvoices) || (!isEditing && !canCreateInvoices)) {
+			toast.error(`You do not have permission to ${isEditing ? "edit" : "create"} invoices`);
+			return;
+		}
+
+		if (data.status === "sent" && fullInvoice?.status !== "sent" && !canSendInvoices) {
+			toast.error("You do not have permission to send invoices");
+			return;
+		}
+
 		try {
 			const payload = {
 				...data,

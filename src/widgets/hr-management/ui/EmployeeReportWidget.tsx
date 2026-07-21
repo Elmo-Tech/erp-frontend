@@ -42,7 +42,7 @@ import { useEmployeePersonalTasks, useUpdatePersonalTask, useUpdatePersonalTimeE
 import type { AttendanceStatus, EmployeeReport, ReportAttendanceDay, ReportDeliverableDay, ReportPointEntry } from "@/entities/hr/model/types";
 import { cn } from "@/shared/lib/utils";
 import { TaskPriority, TaskPriorityLabels } from "@/shared/lib/statusHelpers";
-import { Can } from "@/shared/ui/Can";
+import { useEmployeePermissions, usePointPermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -778,6 +778,8 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 	const [month, setMonth] = useState(now.getMonth() + 1);
 	const [year, setYear] = useState(now.getFullYear());
 	const [pointDialogOpen, setPointDialogOpen] = useState(false);
+	const { canAwardPoints, canDeductPoints } = usePointPermissions();
+	const { canViewEmployeeSalary } = useEmployeePermissions();
 
 	const { data: report, isLoading, error } = useEmployeeReport(userId, month, year);
 	const createPointAdjustment = useCreatePointAdjustment();
@@ -800,7 +802,7 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 
 	const openPointDialog = () => {
 		pointForm.reset({
-			direction: "add",
+			direction: canAwardPoints ? "add" : "deduct",
 			points: "",
 			reason: "",
 		});
@@ -808,6 +810,11 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 	};
 
 	const submitPointAdjustment = pointForm.handleSubmit((data) => {
+		if ((data.direction === "add" && !canAwardPoints) || (data.direction === "deduct" && !canDeductPoints)) {
+			toast.error("You do not have permission for this point adjustment");
+			return;
+		}
+
 		const absolutePoints = Number(data.points);
 		const signedPoints = data.direction === "deduct" ? -absolutePoints : absolutePoints;
 
@@ -919,7 +926,7 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 							<Printer className="h-4 w-4" />
 							Print
 						</Button>
-						<Can permission={["manage_points", "manage_user_points", "award_points", "deduct_points"]}>
+						{(canAwardPoints || canDeductPoints) && (
 							<Button
 								type="button"
 								variant="outline"
@@ -930,7 +937,7 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 								<PlusCircle className="h-4 w-4" />
 								Adjust Points
 							</Button>
-						</Can>
+						)}
 					</div>
 				</div>
 
@@ -968,7 +975,7 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 						</div>
 
 						{/* ── CARD 1: KPI Summary ──────────────────────────────── */}
-						<div className="grid grid-cols-2 divide-x divide-y overflow-hidden rounded-xl border bg-card md:grid-cols-4 md:divide-y-0 print-avoid-break">
+						<div className={cn("grid grid-cols-2 divide-x divide-y overflow-hidden rounded-xl border bg-card md:divide-y-0 print-avoid-break", canViewEmployeeSalary ? "md:grid-cols-4" : "md:grid-cols-3")}>
 							<KpiCell
 								icon={Clock}
 								label="Task Hours"
@@ -990,13 +997,15 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 								sub={`${report.summary.absentDays} absent · ${report.summary.presentDays} present`}
 								trend={report.summary.lateDays > 0 ? "negative" : "positive"}
 							/>
-							<KpiCell
-								icon={DollarSign}
-								label="Net Salary"
-								value={fmt(report.summary.netSalary)}
-								sub={report.financialBreakdown.payslipStatus ? `Payslip: ${report.financialBreakdown.payslipStatus}` : "No payslip yet"}
-								trend="neutral"
-							/>
+							{canViewEmployeeSalary && (
+								<KpiCell
+									icon={DollarSign}
+									label="Net Salary"
+									value={fmt(report.summary.netSalary)}
+									sub={report.financialBreakdown.payslipStatus ? `Payslip: ${report.financialBreakdown.payslipStatus}` : "No payslip yet"}
+									trend="neutral"
+								/>
+							)}
 						</div>
 
 						<PerformanceOverview report={report} />
@@ -1103,104 +1112,91 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 						</Card>
 
 						{/* ── CARD 5: Financial Breakdown ──────────────────────── */}
-						<Card className="print-break print-avoid-break">
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<DollarSign className="h-4 w-4 text-emerald-500" />
-									Financial Breakdown
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="flex flex-col gap-1 max-w-lg">
-									{/* Base */}
-									<FinancialRow
-										label="Base Salary"
-										value={report.financialBreakdown.baseSalary}
-										sign="+"
-									/>
-
-									{/* Points bonus */}
-									<FinancialRow
-										label="Points Bonus"
-										value={report.financialBreakdown.pointsBonusAmount}
-										sign="+"
-										muted={report.financialBreakdown.pointsBonusAmount === 0}
-									/>
-
-									{/* Manual bonuses */}
-									{report.financialBreakdown.manualBonusTotal > 0 && (
+						{canViewEmployeeSalary && (
+							<Card className="print-break print-avoid-break">
+								<CardHeader>
+									<CardTitle className="flex items-center gap-2">
+										<DollarSign className="h-4 w-4 text-emerald-500" />
+										Financial Breakdown
+									</CardTitle>
+								</CardHeader>
+								<CardContent>
+									<div className="flex flex-col gap-1 max-w-lg">
 										<FinancialRow
-											label="Manual Bonuses"
-											value={report.financialBreakdown.manualBonusTotal}
+											label="Base Salary"
+											value={report.financialBreakdown.baseSalary}
 											sign="+"
 										/>
-									)}
-
-									<Separator className="my-1" />
-
-									{/* Lateness deduction */}
-									<FinancialRow
-										label="Lateness Deduction"
-										value={report.financialBreakdown.latenessDeductionAmount}
-										sign="-"
-										muted={report.financialBreakdown.latenessDeductionAmount === 0}
-									/>
-
-									{/* Manual deductions */}
-									{report.financialBreakdown.manualDeductionTotal > 0 && (
 										<FinancialRow
-											label="Manual Deductions"
-											value={report.financialBreakdown.manualDeductionTotal}
-											sign="-"
+											label="Points Bonus"
+											value={report.financialBreakdown.pointsBonusAmount}
+											sign="+"
+											muted={report.financialBreakdown.pointsBonusAmount === 0}
 										/>
-									)}
-
-									{report.financialBreakdown.unpaidLeaveDeduction > 0 && (
+										{report.financialBreakdown.manualBonusTotal > 0 && (
+											<FinancialRow
+												label="Manual Bonuses"
+												value={report.financialBreakdown.manualBonusTotal}
+												sign="+"
+											/>
+										)}
+										<Separator className="my-1" />
 										<FinancialRow
-											label="Unpaid Leave"
-											value={report.financialBreakdown.unpaidLeaveDeduction}
+											label="Lateness Deduction"
+											value={report.financialBreakdown.latenessDeductionAmount}
 											sign="-"
+											muted={report.financialBreakdown.latenessDeductionAmount === 0}
 										/>
-									)}
+										{report.financialBreakdown.manualDeductionTotal > 0 && (
+											<FinancialRow
+												label="Manual Deductions"
+												value={report.financialBreakdown.manualDeductionTotal}
+												sign="-"
+											/>
+										)}
+										{report.financialBreakdown.unpaidLeaveDeduction > 0 && (
+											<FinancialRow
+												label="Unpaid Leave"
+												value={report.financialBreakdown.unpaidLeaveDeduction}
+												sign="-"
+											/>
+										)}
+										<Separator className="my-1" />
+										<FinancialRow
+											label="Net Salary"
+											value={report.financialBreakdown.netSalary}
+											sign="="
+											highlight
+										/>
+									</div>
 
-									<Separator className="my-1" />
-
-									{/* Net total */}
-									<FinancialRow
-										label="Net Salary"
-										value={report.financialBreakdown.netSalary}
-										sign="="
-										highlight
-									/>
-								</div>
-
-								{/* Manual transactions detail */}
-								{report.manualTransactions.length > 0 && (
-									<>
-										<Separator className="my-4" />
-										<p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Manual Transaction Detail</p>
-										<div className="flex flex-col gap-1">
-											{report.manualTransactions.map((tx) => (
-												<div
-													key={tx.id}
-													className="flex items-center justify-between rounded-md px-3 py-1.5 text-sm hover:bg-muted/40"
-												>
-													<div className="flex items-center gap-2">
-														{tx.type === "manual_bonus" ? <TrendingUp className="h-3.5 w-3.5 text-green-600" /> : <TrendingDown className="h-3.5 w-3.5 text-destructive" />}
-														<span className="text-muted-foreground">{tx.transactionDate}</span>
-														<span>{tx.reason}</span>
+									{report.manualTransactions.length > 0 && (
+										<>
+											<Separator className="my-4" />
+											<p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Manual Transaction Detail</p>
+											<div className="flex flex-col gap-1">
+												{report.manualTransactions.map((tx) => (
+													<div
+														key={tx.id}
+														className="flex items-center justify-between rounded-md px-3 py-1.5 text-sm hover:bg-muted/40"
+													>
+														<div className="flex items-center gap-2">
+															{tx.type === "manual_bonus" ? <TrendingUp className="h-3.5 w-3.5 text-green-600" /> : <TrendingDown className="h-3.5 w-3.5 text-destructive" />}
+															<span className="text-muted-foreground">{tx.transactionDate}</span>
+															<span>{tx.reason}</span>
+														</div>
+														<span className={cn("tabular-nums font-semibold", tx.type === "manual_bonus" ? "text-green-600" : "text-destructive")}>
+															{tx.type === "manual_bonus" ? "+" : "-"}
+															{fmt(tx.amount)}
+														</span>
 													</div>
-													<span className={cn("tabular-nums font-semibold", tx.type === "manual_bonus" ? "text-green-600" : "text-destructive")}>
-														{tx.type === "manual_bonus" ? "+" : "-"}
-														{fmt(tx.amount)}
-													</span>
-												</div>
-											))}
-										</div>
-									</>
-								)}
-							</CardContent>
-						</Card>
+												))}
+											</div>
+										</>
+									)}
+								</CardContent>
+							</Card>
+						)}
 
 						{/* ── Print footer ─────────────────────────────────────── */}
 						<div className="hidden print:block mt-8 border-t pt-4 text-center text-xs text-muted-foreground">
@@ -1226,8 +1222,8 @@ export function EmployeeReportWidget({ userId }: EmployeeReportWidgetProps) {
 							name="direction"
 							label="Adjustment"
 							options={[
-								{ value: "add", label: "Add points" },
-								{ value: "deduct", label: "Deduct points" },
+								...(canAwardPoints ? [{ value: "add", label: "Add points" }] : []),
+								...(canDeductPoints ? [{ value: "deduct", label: "Deduct points" }] : []),
 							]}
 						/>
 						<FormInput

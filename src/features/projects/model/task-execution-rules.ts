@@ -1,13 +1,14 @@
-import { EXECUTION_TASK_STATUS_OPTIONS, ExecutionTaskStatus, type ExecutionTaskStatusValue } from "../api/execution.api";
+import { EXECUTION_TASK_STATUS_OPTIONS, ExecutionTaskStatus, type ExecutionTaskStatusValue, type TaskAllowedActions } from "../api/execution.api";
 
 export interface TaskExecutionAccess {
 	canManageAllProjects: boolean;
 	canManageTasks: boolean;
-	canEditTasks: boolean;
 	canWorkOnTasks: boolean;
-	canManageDeliverables: boolean;
-	projectRole: string | null;
+	canChangeTaskStatus: boolean;
+	canCompleteTasks: boolean;
+	canReopenTasks: boolean;
 	currentUserId?: number | null;
+	allowedActions?: TaskAllowedActions;
 }
 
 export interface TaskExecutionAction {
@@ -24,29 +25,49 @@ interface TaskExecutionActionInput extends TaskExecutionAccess {
 	taskAssigneeId: number | null;
 }
 
+const ASSIGNEE_WORKFLOW_STATUSES: readonly string[] = [ExecutionTaskStatus.TO_DO, ExecutionTaskStatus.IN_PROGRESS, ExecutionTaskStatus.IN_REVIEW];
 const SUBMITTED_REVIEW_STATUSES: readonly string[] = [ExecutionTaskStatus.IN_REVIEW, ExecutionTaskStatus.QA, ExecutionTaskStatus.DONE];
 
-function canMarkTaskAsCompleted(access: TaskExecutionAccess): boolean {
-	return access.canManageAllProjects || access.canManageDeliverables || access.canManageTasks || access.projectRole === "manager" || access.projectRole === "tech_lead";
+function hasUmbrellaAccess(access: TaskExecutionAccess): boolean {
+	return access.canManageAllProjects || access.canManageTasks;
 }
 
-function canUpdateTaskStatus(access: TaskExecutionAccess): boolean {
-	return access.canManageAllProjects || access.canManageTasks || access.canEditTasks || access.canWorkOnTasks;
+function canCompleteTask(access: TaskExecutionAccess): boolean {
+	return access.allowedActions?.complete ?? (hasUmbrellaAccess(access) || access.canCompleteTasks);
 }
 
-export function getAllowedTaskStatusOptions(access: TaskExecutionAccess): TaskStatusOption[] {
-	if (!canUpdateTaskStatus(access)) {
-		return [];
-	}
-
-	if (canMarkTaskAsCompleted(access)) {
-		return [...EXECUTION_TASK_STATUS_OPTIONS];
-	}
-
-	return EXECUTION_TASK_STATUS_OPTIONS.filter((option) => option.value !== ExecutionTaskStatus.DONE);
+function canReopenTask(access: TaskExecutionAccess): boolean {
+	return access.allowedActions?.reopen ?? (hasUmbrellaAccess(access) || access.canReopenTasks);
 }
 
-function getManagerCompletionAction(): TaskExecutionAction {
+function canChangeAdministrativeStatus(access: TaskExecutionAccess): boolean {
+	return access.allowedActions?.changeStatus ?? (hasUmbrellaAccess(access) || access.canChangeTaskStatus);
+}
+
+function canAssigneeUseWorkflow(input: TaskExecutionActionInput): boolean {
+	if (input.allowedActions && !input.allowedActions.changeStatus) return false;
+
+	return input.canWorkOnTasks && input.taskAssigneeId === input.currentUserId;
+}
+
+function canChangeToStatus(input: TaskExecutionActionInput, targetStatus: string): boolean {
+	if (targetStatus === ExecutionTaskStatus.DONE) return canCompleteTask(input);
+	if (input.taskStatus === ExecutionTaskStatus.DONE) return canReopenTask(input);
+	if (canChangeAdministrativeStatus(input)) return true;
+
+	return canAssigneeUseWorkflow(input) && ASSIGNEE_WORKFLOW_STATUSES.includes(targetStatus);
+}
+
+export function getAllowedTaskStatusOptions(input: TaskExecutionActionInput): TaskStatusOption[] {
+	const actionableOptions = EXECUTION_TASK_STATUS_OPTIONS.filter(
+		(option) => option.value !== input.taskStatus && canChangeToStatus(input, option.value),
+	);
+	if (actionableOptions.length === 0) return [];
+
+	return EXECUTION_TASK_STATUS_OPTIONS.filter((option) => option.value === input.taskStatus || actionableOptions.includes(option));
+}
+
+function getCompletionAction(): TaskExecutionAction {
 	return {
 		label: "Mark as Done",
 		targetStatus: ExecutionTaskStatus.DONE,
@@ -65,21 +86,10 @@ function getSubmitForReviewAction(): TaskExecutionAction {
 }
 
 export function getPrimaryTaskAction(input: TaskExecutionActionInput): TaskExecutionAction | null {
-	if (input.taskStatus === ExecutionTaskStatus.DONE) {
-		return null;
-	}
-
-	if (input.canEditTasks || input.canManageAllProjects || input.canManageTasks) {
-		return getManagerCompletionAction();
-	}
-
-	if (!input.canWorkOnTasks || input.taskAssigneeId !== input.currentUserId) {
-		return null;
-	}
-
-	if (SUBMITTED_REVIEW_STATUSES.includes(input.taskStatus)) {
-		return null;
-	}
+	if (input.taskStatus === ExecutionTaskStatus.DONE) return null;
+	if (canCompleteTask(input)) return getCompletionAction();
+	if (!canAssigneeUseWorkflow(input)) return null;
+	if (SUBMITTED_REVIEW_STATUSES.includes(input.taskStatus)) return null;
 
 	return getSubmitForReviewAction();
 }

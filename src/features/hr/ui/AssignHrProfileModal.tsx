@@ -14,6 +14,7 @@ import { useGetInternalUsers } from "@/entities/user/api/user.api";
 import { useShifts, useAssignHrProfile, useUpdateHrProfile } from "@/features/hr/model/use-hr-actions";
 import { assignHrProfileSchema, editHrProfileSchema, ASSIGN_HR_PROFILE_DEFAULT_VALUES, type AssignHrProfileFormData, type EditHrProfileFormData } from "@/features/hr/model/hr.schema";
 import type { EmployeeProfile } from "@/entities/hr/model/types";
+import { useEmployeePermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -34,6 +35,7 @@ interface AssignHrProfileModalProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function AssignForm({ open, onClose }: { open: boolean; onClose: () => void }) {
+	const { canCreateEmployees } = useEmployeePermissions();
 	const assignProfile = useAssignHrProfile();
 	const usersQuery = useGetInternalUsers(open);
 	const shiftsQuery = useShifts();
@@ -70,6 +72,11 @@ function AssignForm({ open, onClose }: { open: boolean; onClose: () => void }) {
 	);
 
 	const handleSubmit = async (data: AssignHrProfileFormData) => {
+		if (!canCreateEmployees) {
+			toast.error("You do not have permission to create employee profiles");
+			return;
+		}
+
 		try {
 			await assignProfile.mutateAsync(data);
 			toast.success("HR profile assigned successfully");
@@ -159,6 +166,7 @@ function AssignForm({ open, onClose }: { open: boolean; onClose: () => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function EditForm({ open, onClose, editTarget }: { open: boolean; onClose: () => void; editTarget: EmployeeProfile }) {
+	const { canEditEmployees } = useEmployeePermissions();
 	const updateProfile = useUpdateHrProfile();
 	const shiftsQuery = useShifts();
 
@@ -196,6 +204,11 @@ function EditForm({ open, onClose, editTarget }: { open: boolean; onClose: () =>
 	);
 
 	const handleSubmit = async (data: EditHrProfileFormData) => {
+		if (!canEditEmployees) {
+			toast.error("You do not have permission to edit employee profiles");
+			return;
+		}
+
 		try {
 			await updateProfile.mutateAsync({ id: editTarget.id, payload: data });
 			toast.success("HR profile updated successfully");

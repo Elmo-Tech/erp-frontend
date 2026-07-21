@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { ShieldX, ArrowLeft } from "lucide-react";
 import { Button } from "@/shared/ui/button";
-import { useAuthStore } from "@/entities/user/model/auth.store";
+import { usePermissionGate } from "@/shared/ui/Can";
 
 export default function UnauthorizedPage() {
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const { can } = usePermissionGate();
 
 	const getRedirectPath = () => {
-		if (hasPermission("access_client_portal")) return "/client";
+		if (can("access_client_portal")) return "/client";
 		return "/dashboard";
 	};
 

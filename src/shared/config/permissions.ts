@@ -49,6 +49,7 @@ export const SYSTEM_PERMISSIONS = [
 	"create_project_task_deliverables",
 	"edit_project_task_deliverables",
 	"delete_project_task_deliverables",
+	"toggle_project_task_deliverables",
 
 	// ── Dashboard ────────────────────────────────────────────────────────────
 	"view_my_workspace",
@@ -70,6 +71,7 @@ export const SYSTEM_PERMISSIONS = [
 	"create_users",
 	"edit_users",
 	"delete_users",
+	"toggle_user_status",
 
 	// ── Role & Permission Management (granular) ──────────────────────────────
 	"view_roles",
@@ -121,6 +123,9 @@ export const SYSTEM_PERMISSIONS = [
 	"view_internal_notes",
 	"create_internal_notes",
 	"work_on_tasks",
+	"change_task_status",
+	"complete_tasks",
+	"reopen_tasks",
 
 	// ── Sales — Leads (granular) ─────────────────────────────────────────────
 	"view_leads",
@@ -184,6 +189,7 @@ export const SYSTEM_PERMISSIONS = [
 	"view_employees",
 	"create_employees",
 	"edit_employees",
+	"delete_employees",
 	"view_employee_salary",
 	"view_employee_performance",
 

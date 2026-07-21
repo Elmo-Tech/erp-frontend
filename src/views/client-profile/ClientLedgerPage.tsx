@@ -1,15 +1,16 @@
 "use client";
 
-import { FileText, Loader2, Pencil, Plus, ReceiptText, Trash2, WalletCards } from "lucide-react";
+import { FileText, Loader2, Pencil, Plus, ReceiptText, Send, Trash2, WalletCards } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useClientProfile } from "@/widgets/client-management/model/client-profile.context";
-import { useInvoices } from "@/features/finance/model/use-finance-actions";
+import { useInvoices, useSendInvoice } from "@/features/finance/model/use-finance-actions";
 import { InvoiceFormModal } from "@/features/finance/ui/InvoiceFormModal";
 import { DeleteInvoiceDialog } from "@/features/finance/ui/DeleteInvoiceDialog";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { Can, usePermissionGate } from "@/shared/ui/Can";
+import { useInvoicePermissions } from "@/entities/user/model/permissions";
 import { formatCurrency } from "@/shared/lib/formatters";
 import { formatDate } from "@/shared/lib/dateUtils";
 import type { Invoice, InvoiceStatus } from "@/entities/finance/model/types";
@@ -25,7 +26,12 @@ const STATUS_VARIANT: Record<InvoiceStatus, "default" | "secondary" | "destructi
 	overdue: "destructive",
 };
 
-function buildColumns(onEdit: (inv: Invoice) => void, onDelete: (inv: Invoice) => void): Column<Invoice>[] {
+function buildColumns(
+	onEdit: (inv: Invoice) => void,
+	onDelete: (inv: Invoice) => void,
+	onSend: (inv: Invoice) => void,
+	permissions: { canEdit: boolean; canDelete: boolean; canSend: boolean; isSending: boolean },
+): Column<Invoice>[] {
 	return [
 		{
 			key: "invoiceNumber",
@@ -65,8 +71,23 @@ function buildColumns(onEdit: (inv: Invoice) => void, onDelete: (inv: Invoice) =
 			header: "",
 			className: "text-right",
 			render: (inv) => (
-				<Can permission="manage_invoices">
-					<div className="flex items-center justify-end gap-1">
+				<div className="flex items-center justify-end gap-1">
+					{permissions.canSend && inv.status === "draft" && (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 text-primary hover:text-primary"
+							disabled={permissions.isSending}
+							onClick={(event) => {
+								event.stopPropagation();
+								onSend(inv);
+							}}
+						>
+							<Send className="h-3.5 w-3.5" />
+							<span className="sr-only">Send {inv.invoiceNumber}</span>
+						</Button>
+					)}
+					{permissions.canEdit && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -79,6 +100,8 @@ function buildColumns(onEdit: (inv: Invoice) => void, onDelete: (inv: Invoice) =
 							<Pencil className="h-3.5 w-3.5" />
 							<span className="sr-only">Edit {inv.invoiceNumber}</span>
 						</Button>
+					)}
+					{permissions.canDelete && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -91,8 +114,8 @@ function buildColumns(onEdit: (inv: Invoice) => void, onDelete: (inv: Invoice) =
 							<Trash2 className="h-3.5 w-3.5" />
 							<span className="sr-only">Delete {inv.invoiceNumber}</span>
 						</Button>
-					</div>
-				</Can>
+					)}
+				</div>
 			),
 		},
 	];
@@ -103,11 +126,11 @@ function buildColumns(onEdit: (inv: Invoice) => void, onDelete: (inv: Invoice) =
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function ClientLedgerPage() {
-	const { can } = usePermissionGate();
+	const { canCreateInvoices, canEditInvoices, canDeleteInvoices, canSendInvoices } = useInvoicePermissions();
+	const sendInvoice = useSendInvoice();
 	const client = useClientProfile();
 	const { data, isLoading, error } = useInvoices({ clientId: client.clientId });
 	const invoices = data?.data ?? [];
-	const canManageInvoices = can("manage_invoices");
 
 	const [formOpen, setFormOpen] = useState(false);
 	const [editTarget, setEditTarget] = useState<Invoice | null>(null);
@@ -139,7 +162,22 @@ export default function ClientLedgerPage() {
 		{ label: "Outstanding", value: outstanding, icon: FileText },
 	];
 
-	const columns = buildColumns(handleEdit, setDeleteTarget);
+	const handleSend = async (invoice: Invoice) => {
+		if (!canSendInvoices) return;
+		try {
+			await sendInvoice.mutateAsync(invoice.id);
+			toast.success(`Invoice ${invoice.invoiceNumber} sent`);
+		} catch {
+			toast.error("Failed to send invoice");
+		}
+	};
+
+	const columns = buildColumns(handleEdit, setDeleteTarget, handleSend, {
+		canEdit: canEditInvoices,
+		canDelete: canDeleteInvoices,
+		canSend: canSendInvoices,
+		isSending: sendInvoice.isPending,
+	});
 
 	return (
 		<section className="flex flex-col gap-4">
@@ -169,7 +207,7 @@ export default function ClientLedgerPage() {
 			{/* ── Invoice table ─────────────────────────────────────────────── */}
 			<div className="flex items-center justify-between">
 				<p className="text-sm font-medium text-muted-foreground">Invoice history for this client</p>
-				<Can permission="manage_invoices">
+				{canCreateInvoices && (
 					<Button
 						size="sm"
 						className="gap-2"
@@ -178,7 +216,7 @@ export default function ClientLedgerPage() {
 						<Plus className="h-4 w-4" />
 						New Invoice
 					</Button>
-				</Can>
+				)}
 			</div>
 
 			<DataTable<Invoice>
@@ -193,7 +231,7 @@ export default function ClientLedgerPage() {
 					icon: ReceiptText,
 					title: "No invoices yet",
 					description: "Client invoices and payment records will appear here.",
-					action: canManageInvoices ? { label: "New Invoice", onClick: handleCreate } : undefined,
+					action: canCreateInvoices ? { label: "New Invoice", onClick: handleCreate } : undefined,
 				}}
 			/>
 

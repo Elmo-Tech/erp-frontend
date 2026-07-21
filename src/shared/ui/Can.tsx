@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useAuthStore } from "@/entities/user/model/auth.store";
+import { isPermissionGranted, useAuthStore } from "@/entities/user/model/auth.store";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -51,13 +51,13 @@ interface CanProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function Can({ permission, allOf = false, children, fallback = null }: CanProps) {
-	const hasPermission = useAuthStore((s) => s.hasPermission);
-	const hasAnyPermission = useAuthStore((s) => s.hasAnyPermission);
-	const hasAllPermissions = useAuthStore((s) => s.hasAllPermissions);
+	const permissions = useAuthStore((state) => state.permissions);
 
 	const granted = (() => {
-		if (typeof permission === "string") return hasPermission(permission);
-		return allOf ? hasAllPermissions(permission) : hasAnyPermission(permission);
+		if (typeof permission === "string") return isPermissionGranted(permissions, permission);
+		return allOf
+			? permission.every((permissionName) => isPermissionGranted(permissions, permissionName))
+			: permission.some((permissionName) => isPermissionGranted(permissions, permissionName));
 	})();
 
 	return granted ? <>{children}</> : <>{fallback}</>;
@@ -75,13 +75,11 @@ export function Can({ permission, allOf = false, children, fallback = null }: Ca
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function usePermissionGate() {
-	const hasPermission = useAuthStore((s) => s.hasPermission);
-	const hasAnyPermission = useAuthStore((s) => s.hasAnyPermission);
-	const hasAllPermissions = useAuthStore((s) => s.hasAllPermissions);
+	const permissions = useAuthStore((state) => state.permissions);
 
 	return {
-		can: (permission: string) => hasPermission(permission),
-		canAny: (permissions: string[]) => hasAnyPermission(permissions),
-		canAll: (permissions: string[]) => hasAllPermissions(permissions),
+		can: (permission: string) => isPermissionGranted(permissions, permission),
+		canAny: (permissionNames: string[]) => permissionNames.some((permissionName) => isPermissionGranted(permissions, permissionName)),
+		canAll: (permissionNames: string[]) => permissionNames.every((permissionName) => isPermissionGranted(permissions, permissionName)),
 	};
 }

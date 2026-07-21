@@ -18,11 +18,12 @@ import { LeadDetailsSheet } from "./LeadDetailsSheet";
 interface LeadCardProps {
 	lead: Lead;
 	index: number;
+	isDragDisabled: boolean;
 	/** If provided, clicking the card calls this instead of opening the sheet. */
 	onCardClick?: (leadId: number) => void;
 }
 
-export function LeadCard({ lead, index, onCardClick }: LeadCardProps) {
+export function LeadCard({ lead, index, isDragDisabled, onCardClick }: LeadCardProps) {
 	const [sheetOpen, setSheetOpen] = useState(false);
 
 	const handleClick = () => {
@@ -38,6 +39,7 @@ export function LeadCard({ lead, index, onCardClick }: LeadCardProps) {
 			<Draggable
 				draggableId={String(lead.id)}
 				index={index}
+				isDragDisabled={isDragDisabled}
 			>
 				{(provided, snapshot) => (
 					<div

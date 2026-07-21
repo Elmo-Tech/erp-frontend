@@ -10,7 +10,7 @@ import { ProtectedDashboardRoute } from "./ProtectedDashboardRoute";
 interface DashboardLayoutProps {
     children: ReactNode;
     allowedRoles?: string[];
-    requiredPermission?: string;
+    requiredPermission?: string | string[];
 }
 
 export function DashboardLayout({ children, allowedRoles, requiredPermission }: DashboardLayoutProps) {

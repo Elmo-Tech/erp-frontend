@@ -13,14 +13,16 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { PlusIcon, Receipt, ExternalLink } from "lucide-react";
+import { PlusIcon, Receipt, ExternalLink, Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
-import { useGetLeadQuotations, useUpdateQuotationStatus, type LeadQuotation } from "@/features/leads/api/leads.api";
+import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
+import { useDeleteLeadQuotation, useGetLeadQuotations, useUpdateQuotationStatus, type LeadQuotation } from "@/features/leads/api/leads.api";
 import { CreateQuotationModal } from "@/features/leads/ui/CreateQuotationModal";
 import { format } from "date-fns";
+import { useSalesPermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -48,9 +50,12 @@ interface LeadQuotationsTabProps {
 }
 
 export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
+	const { canCreateQuotations, canEditQuotations, canDeleteQuotations } = useSalesPermissions();
 	const [modalOpen, setModalOpen] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState<LeadQuotation | null>(null);
 	const quotationsQuery = useGetLeadQuotations(leadId);
 	const updateStatus = useUpdateQuotationStatus(leadId);
+	const deleteQuotation = useDeleteLeadQuotation(leadId);
 	const quotations = quotationsQuery.data ?? [];
 
 	const columns: Column<LeadQuotation>[] = [
@@ -61,7 +66,7 @@ export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
 			render: (q) => (
 				<Select
 					value={q.status}
-					disabled={updateStatus.isPending}
+					disabled={!canEditQuotations || updateStatus.isPending}
 					onValueChange={(status) => {
 						updateStatus.mutate(
 							{ quotationId: q.id, status },
@@ -115,7 +120,35 @@ export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
 				),
 		},
 		{ key: "created", header: "Created", render: (q) => <span className="text-sm text-muted-foreground">{format(new Date(q.created_at), "MMM d, yyyy")}</span> },
+		{
+			key: "actions",
+			header: "",
+			className: "text-right",
+			render: (quotation) =>
+				canDeleteQuotations ? (
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8 text-destructive hover:text-destructive"
+						onClick={() => setDeleteTarget(quotation)}
+					>
+						<Trash2 className="h-3.5 w-3.5" />
+						<span className="sr-only">Delete quotation {quotation.id}</span>
+					</Button>
+				) : null,
+		},
 	];
+
+	const handleDelete = async () => {
+		if (!deleteTarget || !canDeleteQuotations) return;
+		try {
+			await deleteQuotation.mutateAsync(deleteTarget.id);
+			toast.success("Quotation deleted");
+			setDeleteTarget(null);
+		} catch {
+			toast.error("Failed to delete quotation");
+		}
+	};
 
 	return (
 		<div className="pt-4 space-y-4">
@@ -124,14 +157,16 @@ export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
 				<p className="text-sm text-muted-foreground">
 					{quotations.length} quotation{quotations.length !== 1 ? "s" : ""}
 				</p>
-				<Button
-					size="sm"
-					className="gap-1.5"
-					onClick={() => setModalOpen(true)}
-				>
-					<PlusIcon className="size-4" />
-					Add Quotation
-				</Button>
+				{canCreateQuotations && (
+					<Button
+						size="sm"
+						className="gap-1.5"
+						onClick={() => setModalOpen(true)}
+					>
+						<PlusIcon className="size-4" />
+						Add Quotation
+					</Button>
+				)}
 			</div>
 
 			<DataTable
@@ -148,11 +183,24 @@ export function LeadQuotationsTab({ leadId }: LeadQuotationsTabProps) {
 			/>
 
 			{/* ── Creation modal — renders QuotationDirectUploadTab exactly ── */}
-			<CreateQuotationModal
-				leadId={leadId}
-				open={modalOpen}
-				onOpenChange={setModalOpen}
-				onCreated={() => quotationsQuery.refetch()}
+			{canCreateQuotations && (
+				<CreateQuotationModal
+					leadId={leadId}
+					open={modalOpen}
+					onOpenChange={setModalOpen}
+					onCreated={() => quotationsQuery.refetch()}
+				/>
+			)}
+
+			<ConfirmDialog
+				open={deleteTarget !== null}
+				onOpenChange={(open) => !open && setDeleteTarget(null)}
+				title="Delete Quotation"
+				description="Delete this quotation? This action cannot be undone."
+				confirmLabel="Delete"
+				variant="destructive"
+				isLoading={deleteQuotation.isPending}
+				onConfirm={handleDelete}
 			/>
 		</div>
 	);

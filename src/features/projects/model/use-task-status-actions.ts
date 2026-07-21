@@ -37,7 +37,17 @@ export function useTaskStatusActions({ task, projectId, taskExecutionAccess, onT
 	const completeTask = useCompleteTask();
 	const updateStatus = useUpdateTaskStatus();
 
-	const allowedStatusOptions = useMemo(() => getAllowedTaskStatusOptions(taskExecutionAccess), [taskExecutionAccess]);
+	const allowedStatusOptions = useMemo(
+		() =>
+			task
+				? getAllowedTaskStatusOptions({
+						...taskExecutionAccess,
+						taskStatus: task.status,
+						taskAssigneeId: task.assigneeId,
+					})
+				: [],
+		[task, taskExecutionAccess],
+	);
 
 	const primaryAction = useMemo(
 		() =>

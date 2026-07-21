@@ -46,6 +46,18 @@ export interface TaskAssignee {
 	avatar?: string | null;
 }
 
+export interface TaskAllowedActions {
+	edit: boolean;
+	delete: boolean;
+	changeStatus: boolean;
+	complete: boolean;
+	reopen: boolean;
+	createDeliverable: boolean;
+	editDeliverable: boolean;
+	deleteDeliverable: boolean;
+	toggleDeliverable: boolean;
+}
+
 export interface ProjectTask {
 	taskId: number;
 	projectId: number;
@@ -61,6 +73,7 @@ export interface ProjectTask {
 	assigneeId: number | null;
 	isInBacklog: boolean;
 	totalLoggedMinutes: number;
+	allowedActions?: TaskAllowedActions;
 	assignee?: TaskAssignee | null;
 	milestone?: {
 		milestoneId: number;
@@ -134,6 +147,7 @@ export function mapProjectTaskResource(resource: RawProjectTaskResource): Projec
 		assigneeId: resource.assigneeId,
 		isInBacklog: resource.isInBacklog,
 		totalLoggedMinutes: resource.totalLoggedMinutes,
+		allowedActions: resource.allowedActions,
 		assignee: resource.assignee,
 		milestone: resource.milestone,
 		project: resource.project,

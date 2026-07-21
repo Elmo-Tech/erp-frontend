@@ -30,6 +30,7 @@ import { LeadsKanbanBoard } from "@/widgets/leads-management";
 import { STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
 import type { Lead } from "@/features/leads/model/types";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
+import { useSalesPermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stage badge colours
@@ -126,6 +127,7 @@ function LeadsTable({ leads, onRowClick }: LeadsTableProps) {
 type ViewMode = "board" | "table";
 
 export default function LeadsPipelinePage() {
+	const { canCreateLeads, canEditLeads, canConvertLeads, canCreateQuotations, canCreateContracts } = useSalesPermissions();
 	const router = useRouter();
 	const [filters, setFilters] = useState<LeadFilters>({});
 	const leadsQuery = useGetLeads(filters);
@@ -170,10 +172,12 @@ export default function LeadsPipelinePage() {
 						</ToggleGroupItem>
 					</ToggleGroup>
 
-					<Button onClick={() => setIsModalOpen(true)}>
-						<PlusIcon className="mr-2 size-4" />
-						Add Lead
-					</Button>
+					{canCreateLeads && (
+						<Button onClick={() => setIsModalOpen(true)}>
+							<PlusIcon className="mr-2 size-4" />
+							Add Lead
+						</Button>
+					)}
 				</div>
 			</div>
 
@@ -231,6 +235,10 @@ export default function LeadsPipelinePage() {
 					<LeadsKanbanBoard
 						leads={leads}
 						onCardClick={handleRowClick}
+						canEdit={canEditLeads}
+						canConvert={canConvertLeads}
+						canCreateQuotations={canCreateQuotations}
+						canCreateContracts={canCreateContracts}
 					/>
 				</div>
 			) : (
@@ -241,10 +249,12 @@ export default function LeadsPipelinePage() {
 			)}
 
 			{/* ── Create lead modal ────────────────────────────────────────── */}
-			<CreateLeadModal
-				open={isModalOpen}
-				onOpenChange={setIsModalOpen}
-			/>
+			{canCreateLeads && (
+				<CreateLeadModal
+					open={isModalOpen}
+					onOpenChange={setIsModalOpen}
+				/>
+			)}
 		</div>
 	);
 }

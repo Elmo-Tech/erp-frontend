@@ -28,8 +28,9 @@ export default function ProfilePage() {
 	const updateUser = useAuthStore((s) => s.updateUser);
 
 	const profileQuery = useQuery({
-		queryKey: userKeys.profile(),
+		queryKey: userKeys.profile(storeUser?.userId),
 		queryFn: userApi.getProfile,
+		enabled: storeUser !== null,
 	});
 
 	const profile = profileQuery.data?.data.profile;
@@ -38,7 +39,7 @@ export default function ProfilePage() {
 		mutationFn: userApi.updateProfile,
 		onSuccess: (response) => {
 			updateUser({ name: response.data.profile.name });
-			queryClient.invalidateQueries({ queryKey: userKeys.profile() });
+			queryClient.invalidateQueries({ queryKey: userKeys.profiles() });
 			toast.success("Profile updated.");
 		},
 		onError: () => toast.error("Failed to update profile."),
@@ -48,7 +49,7 @@ export default function ProfilePage() {
 		mutationFn: userApi.updateAvatar,
 		onSuccess: (response) => {
 			updateUser({ avatar: response.data.avatar });
-			queryClient.invalidateQueries({ queryKey: userKeys.profile() });
+			queryClient.invalidateQueries({ queryKey: userKeys.profiles() });
 			toast.success("Avatar updated.");
 		},
 		onError: () => toast.error("Failed to update avatar."),

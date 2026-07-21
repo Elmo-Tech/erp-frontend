@@ -25,6 +25,7 @@ import { ContractDirectUploadTab } from "./PipelineModals/ContractDirectUploadTa
 import { contractStandardSchema, contractSaasSchema } from "./PipelineModals/stageModal.schema";
 import { createLeadContract } from "@/features/leads/api/leads.api";
 import { z } from "zod";
+import { useSalesPermissions } from "@/entities/user/model/permissions";
 
 // ─── Runtime schema — mirrors the pipeline's contractStageModalSchema logic ──
 // We validate the base fields always, then branch on contract_model at submit.
@@ -69,6 +70,7 @@ interface CreateContractModalProps {
 }
 
 export function CreateContractModal({ leadId, open, onOpenChange, onCreated }: CreateContractModalProps) {
+	const { canCreateContracts } = useSalesPermissions();
 	const form = useForm<ContractFormValues>({
 		resolver: zodResolver(contractFormSchema as any),
 		defaultValues: {
@@ -102,6 +104,11 @@ export function CreateContractModal({ leadId, open, onOpenChange, onCreated }: C
 	} = form;
 
 	const onSubmit = async (values: ContractFormValues) => {
+		if (!canCreateContracts) {
+			toast.error("You do not have permission to create contracts");
+			return;
+		}
+
 		// Runtime branch validation — mirrors StageModal.tsx approach
 		if (values.contract_model === "standard") {
 			const result = contractStandardSchema.safeParse(values);

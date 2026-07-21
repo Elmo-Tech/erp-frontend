@@ -3,18 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { useAuthStore } from "@/entities/user/model/auth.store";
+import { isPermissionGranted, useAuthStore } from "@/entities/user/model/auth.store";
+import { useAuthProfileSync } from "@/features/auth/model/use-auth-profile-sync";
 
 interface ProtectedDashboardRouteProps {
 	children: React.ReactNode;
 	allowedRoles?: string[];
-	requiredPermission?: string;
+	requiredPermission?: string | string[];
 }
 
 export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermission }: ProtectedDashboardRouteProps) {
 	const router = useRouter();
-	const { isAuthenticated, role, hasPermission, tokenExpiresAt, logout } = useAuthStore();
+	const { isAuthenticated, role, permissions, tokenExpiresAt, logout } = useAuthStore();
+	const hasRequiredPermission = !requiredPermission || (typeof requiredPermission === "string"
+		? isPermissionGranted(permissions, requiredPermission)
+		: requiredPermission.some((permission) => isPermissionGranted(permissions, permission)));
 	const [hasHydrated, setHasHydrated] = useState(() => useAuthStore.persist?.hasHydrated?.() ?? false);
+	const profileQuery = useAuthProfileSync(hasHydrated && isAuthenticated);
 
 	useEffect(() => {
 		if (hasHydrated) return;
@@ -37,7 +42,7 @@ export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermis
 	}, [hasHydrated]);
 
 	useEffect(() => {
-		if (!hasHydrated) return;
+		if (!hasHydrated || profileQuery.isPending) return;
 		const hasCookie = hasAuthCookie();
 
 		if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date() && !hasCookie) {
@@ -56,16 +61,16 @@ export function ProtectedDashboardRoute({ children, allowedRoles, requiredPermis
 			return;
 		}
 
-		if (requiredPermission && !hasPermission(requiredPermission)) {
+		if (!hasRequiredPermission) {
 			router.replace("/unauthorized");
 			return;
 		}
-	}, [allowedRoles, hasHydrated, hasPermission, isAuthenticated, logout, requiredPermission, role, router, tokenExpiresAt]);
+	}, [allowedRoles, hasHydrated, hasRequiredPermission, isAuthenticated, logout, profileQuery.isPending, role, router, tokenExpiresAt]);
 
 	const isExpiredWithoutCookie = Boolean(tokenExpiresAt && new Date(tokenExpiresAt) < new Date() && !hasAuthCookie());
 	const isRoleDenied = Boolean(allowedRoles && role && !allowedRoles.includes(role));
-	const isPermissionDenied = Boolean(requiredPermission && !hasPermission(requiredPermission));
-	const canRender = hasHydrated && isAuthenticated && !isExpiredWithoutCookie && !isRoleDenied && !isPermissionDenied;
+	const isPermissionDenied = !hasRequiredPermission;
+	const canRender = hasHydrated && !profileQuery.isPending && isAuthenticated && !isExpiredWithoutCookie && !isRoleDenied && !isPermissionDenied;
 
 	if (!canRender) {
 		return (

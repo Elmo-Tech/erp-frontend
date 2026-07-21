@@ -105,6 +105,7 @@ export type {
 	ProjectTask,
 	ProjectTaskFilters,
 	RawProjectTaskResource,
+	TaskAllowedActions,
 	TaskAssignee,
 	TaskListData,
 } from "../model/project-task-contract";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronRight, Loader2, Lock, Plus, RefreshCw, Shield, ShieldAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -86,8 +86,8 @@ export default function RolesPage() {
 	const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
 	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-	const { canManageRoles, canViewRoles } = useEmployeePermissions();
-	const canAccess = canViewRoles || canManageRoles;
+	const { canManageRoles, canViewRoles, canCreateRoles, canEditRoles, canDeleteRoles, canManageProtectedUsers } = useEmployeePermissions();
+	const canAccess = canViewRoles || canManageRoles || canCreateRoles || canEditRoles || canDeleteRoles;
 
 	const rolesQuery = useRoles(canAccess);
 	const permissionsQuery = usePermissions(canAccess);
@@ -127,7 +127,7 @@ export default function RolesPage() {
 				<ShieldAlert className="size-14 text-muted-foreground" />
 				<p className="text-lg font-semibold">Access Restricted</p>
 				<p className="max-w-xs text-sm text-muted-foreground">
-					You need <code className="rounded bg-muted px-1 text-xs">view_roles</code> or <code className="rounded bg-muted px-1 text-xs">manage_roles</code> to access this page.
+					You need a role-management permission such as <code className="rounded bg-muted px-1 text-xs">view_roles</code>, <code className="rounded bg-muted px-1 text-xs">edit_roles</code>, or <code className="rounded bg-muted px-1 text-xs">manage_roles</code> to access this page.
 				</p>
 			</div>
 		);
@@ -143,7 +143,7 @@ export default function RolesPage() {
 							<Shield className="size-6" />
 							Roles &amp; Permissions
 						</h1>
-						<p className="mt-1 text-sm text-muted-foreground">Each column is a role. Each row is a permission. Toggle a checkbox to grant or revoke access. Changes take effect on the user&apos;s next login.</p>
+						<p className="mt-1 text-sm text-muted-foreground">Each column is a role. Each row is a permission. Active sessions refresh permissions automatically. Protected roles cannot be renamed or deleted, and require protected-account access before their permissions can change.</p>
 					</div>
 
 					<div className="flex items-center gap-2">
@@ -160,7 +160,7 @@ export default function RolesPage() {
 							Refresh
 						</Button>
 
-						<Can permission="manage_roles">
+						<Can permission={["create_roles", "manage_roles"]}>
 							<Button
 								size="sm"
 								onClick={() => setCreateOpen(true)}
@@ -200,7 +200,9 @@ export default function RolesPage() {
 						permissions={permissions}
 						collapsedGroups={collapsedGroups}
 						onToggleGroup={toggleGroup}
-						canManage={canManageRoles}
+						canEdit={canEditRoles}
+						canDelete={canDeleteRoles}
+						canManageProtected={canManageProtectedUsers}
 						onDeleteRole={setDeleteTarget}
 					/>
 				)}
@@ -212,7 +214,7 @@ export default function RolesPage() {
 							<Shield className="size-12 text-muted-foreground/40" />
 							<p className="font-medium">No roles found</p>
 							<p className="text-sm text-muted-foreground">Create your first role to get started.</p>
-							<Can permission="manage_roles">
+							<Can permission={["create_roles", "manage_roles"]}>
 								<Button
 									size="sm"
 									onClick={() => setCreateOpen(true)}
@@ -288,17 +290,19 @@ interface MatrixProps {
 	permissions: Permission[];
 	collapsedGroups: Set<string>;
 	onToggleGroup: (group: string) => void;
-	canManage: boolean;
+	canEdit: boolean;
+	canDelete: boolean;
+	canManageProtected: boolean;
 	onDeleteRole: (role: Role) => void;
 }
 
-function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, canManage, onDeleteRole }: MatrixProps) {
+function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, canEdit, canDelete, canManageProtected, onDeleteRole }: MatrixProps) {
 	const [updatingCell, setUpdatingCell] = useState<string | null>(null);
 	const updateRole = useUpdateRole();
 	const groups = sortedGroups(permissions);
 
 	const toggle = async (role: Role, permName: string) => {
-		if (!canManage) return;
+		if (!canEdit || (isProtected(role) && !canManageProtected)) return;
 		const key = `${role.id}:${permName}`;
 		const next = role.permissions.includes(permName) ? role.permissions.filter((p) => p !== permName) : [...role.permissions, permName];
 		setUpdatingCell(key);
@@ -334,7 +338,7 @@ function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, 
 													<TooltipTrigger asChild>
 														<Lock className="size-3 text-muted-foreground" />
 													</TooltipTrigger>
-													<TooltipContent>Protected — cannot be modified</TooltipContent>
+													<TooltipContent>Protected name and deletion; permission changes require protected-account access</TooltipContent>
 												</Tooltip>
 											)}
 										</div>
@@ -347,7 +351,7 @@ function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, 
 												{role.permissions.length}
 											</Badge>
 
-											{!isProtected(role) && canManage && (
+											{!isProtected(role) && canDelete && (
 												<Tooltip>
 													<TooltipTrigger asChild>
 														<button
@@ -373,7 +377,7 @@ function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, 
 						{groups.map(([group, perms]) => {
 							const isCollapsed = collapsedGroups.has(group);
 							return (
-								<>
+								<Fragment key={group}>
 									{/* ── Group header row ──────────────────────────────── */}
 									<tr
 										key={`group-${group}`}
@@ -422,10 +426,7 @@ function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, 
 													const key = `${role.id}:${perm.name}`;
 													const checked = role.permissions.includes(perm.name);
 													const isUpdating = updatingCell === key;
-													// Only lock when the current user lacks manage_roles.
-													// Protected-role flag is informational only — the Founder
-													// must be able to edit any role.
-													const locked = !canManage;
+													const locked = !canEdit || (isProtected(role) && !canManageProtected);
 
 													return (
 														<td
@@ -449,7 +450,7 @@ function PermissionMatrix({ roles, permissions, collapsedGroups, onToggleGroup, 
 												})}
 											</tr>
 										))}
-								</>
+								</Fragment>
 							);
 						})}
 					</tbody>

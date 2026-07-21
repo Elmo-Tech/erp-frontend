@@ -1,5 +1,10 @@
-import { useMemo } from "react";
-import { useAuthStore } from "./auth.store";
+import { useCallback, useMemo } from "react";
+import { isPermissionGranted, useAuthStore } from "./auth.store";
+
+function usePermissionChecker() {
+	const permissions = useAuthStore((state) => state.permissions);
+	return useCallback((permissionName: string) => isPermissionGranted(permissions, permissionName), [permissions]);
+}
 
 export const CLIENT_PERMISSIONS = {
 	MANAGE_CLIENTS: "manage_clients",
@@ -34,10 +39,14 @@ export const TASK_PERMISSIONS = {
 	CREATE_INTERNAL_NOTES: "create_internal_notes",
 	ASSIGN_TASKS: "assign_tasks",
 	WORK_ON_TASKS: "work_on_tasks",
+	CHANGE_TASK_STATUS: "change_task_status",
+	COMPLETE_TASKS: "complete_tasks",
+	REOPEN_TASKS: "reopen_tasks",
 	MANAGE_DELIVERABLES: "manage_deliverables",
 	CREATE_PROJECT_TASK_DELIVERABLES: "create_project_task_deliverables",
 	EDIT_PROJECT_TASK_DELIVERABLES: "edit_project_task_deliverables",
 	DELETE_PROJECT_TASK_DELIVERABLES: "delete_project_task_deliverables",
+	TOGGLE_PROJECT_TASK_DELIVERABLES: "toggle_project_task_deliverables",
 } as const;
 
 export const INVOICE_PERMISSIONS = {
@@ -57,6 +66,11 @@ export const SALES_PERMISSIONS = {
 	EDIT_LEADS: "edit_leads",
 	DELETE_LEADS: "delete_leads",
 	CONVERT_LEADS: "convert_leads",
+	VIEW_QUOTATIONS: "view_quotations",
+	CREATE_QUOTATIONS: "create_quotations",
+	EDIT_QUOTATIONS: "edit_quotations",
+	DELETE_QUOTATIONS: "delete_quotations",
+	CALCULATE_QUOTATIONS: "calculate_quotations",
 	MANAGE_CONTRACTS: "manage_contracts",
 	VIEW_CONTRACTS: "view_contracts",
 	CREATE_CONTRACTS: "create_contracts",
@@ -71,23 +85,40 @@ export const EMPLOYEE_PERMISSIONS = {
 	CREATE_USERS: "create_users",
 	EDIT_USERS: "edit_users",
 	DELETE_USERS: "delete_users",
+	TOGGLE_USER_STATUS: "toggle_user_status",
 	ASSIGN_USER_ROLES: "assign_user_roles",
 	RESET_USER_CREDENTIALS: "reset_user_credentials",
+	MANAGE_EMPLOYEES: "manage_employees",
+	VIEW_EMPLOYEES: "view_employees",
+	CREATE_EMPLOYEES: "create_employees",
+	EDIT_EMPLOYEES: "edit_employees",
+	DELETE_EMPLOYEES: "delete_employees",
+	VIEW_EMPLOYEE_SALARY: "view_employee_salary",
+	VIEW_EMPLOYEE_PERFORMANCE: "view_employee_performance",
 	MANAGE_ROLES: "manage_roles",
 	VIEW_ROLES: "view_roles",
+	CREATE_ROLES: "create_roles",
+	EDIT_ROLES: "edit_roles",
+	DELETE_ROLES: "delete_roles",
+	MANAGE_PROTECTED_USERS: "manage_protected_users",
 	MANAGE_PROJECT_MEMBERS: "manage_project_members",
 	VIEW_PROJECT_MEMBERS: "view_project_members",
 	ADD_PROJECT_MEMBERS: "add_project_members",
 	REMOVE_PROJECT_MEMBERS: "remove_project_members",
 } as const;
 
+export const POINT_PERMISSIONS = {
+	MANAGE_POINTS: "manage_points",
+	AWARD_POINTS: "award_points",
+	DEDUCT_POINTS: "deduct_points",
+} as const;
+
 export function useClientPermissions() {
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const hasPermission = usePermissionChecker();
 
 	return useMemo(() => {
 		const canManageClients = hasPermission(CLIENT_PERMISSIONS.MANAGE_CLIENTS);
 
-		// After backend permission seed changes, users must re-login so auth local storage receives the refreshed permissions array.
 		return {
 			canManageClients,
 			canViewClients: canManageClients || hasPermission(CLIENT_PERMISSIONS.VIEW_CLIENTS),
@@ -99,7 +130,7 @@ export function useClientPermissions() {
 }
 
 export function useProjectPermissions() {
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const hasPermission = usePermissionChecker();
 
 	return useMemo(
 		() => ({
@@ -116,7 +147,7 @@ export function useProjectPermissions() {
 }
 
 export function useMeetingPermissions() {
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const hasPermission = usePermissionChecker();
 
 	return useMemo(
 		() => ({
@@ -127,85 +158,129 @@ export function useMeetingPermissions() {
 }
 
 export function useTaskPermissions() {
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const hasPermission = usePermissionChecker();
 
-	return useMemo(
-		() => ({
-			canManageTasks: hasPermission(TASK_PERMISSIONS.MANAGE_TASKS),
-			canViewTasks: hasPermission(TASK_PERMISSIONS.VIEW_TASKS),
+	return useMemo(() => {
+		const canManageTasks = hasPermission(TASK_PERMISSIONS.MANAGE_TASKS);
+
+		return {
+			canManageTasks,
+			canViewTasks: canManageTasks || hasPermission(TASK_PERMISSIONS.VIEW_TASKS),
 			canViewTaskControl: hasPermission(TASK_PERMISSIONS.VIEW_TASK_CONTROL),
-			canCreateTasks: hasPermission(TASK_PERMISSIONS.CREATE_TASKS),
-			canEditTasks: hasPermission(TASK_PERMISSIONS.EDIT_TASKS),
-			canDeleteTasks: hasPermission(TASK_PERMISSIONS.DELETE_TASKS),
+			canCreateTasks: canManageTasks || hasPermission(TASK_PERMISSIONS.CREATE_TASKS),
+			canEditTasks: canManageTasks || hasPermission(TASK_PERMISSIONS.EDIT_TASKS),
+			canDeleteTasks: canManageTasks || hasPermission(TASK_PERMISSIONS.DELETE_TASKS),
 			canViewInternalNotes: hasPermission(TASK_PERMISSIONS.VIEW_INTERNAL_NOTES),
 			canCreateInternalNotes: hasPermission(TASK_PERMISSIONS.CREATE_INTERNAL_NOTES),
 			canAssignTasks: hasPermission(TASK_PERMISSIONS.ASSIGN_TASKS),
 			canWorkOnTasks: hasPermission(TASK_PERMISSIONS.WORK_ON_TASKS),
+			canChangeTaskStatus: canManageTasks || hasPermission(TASK_PERMISSIONS.CHANGE_TASK_STATUS),
+			canCompleteTasks: canManageTasks || hasPermission(TASK_PERMISSIONS.COMPLETE_TASKS),
+			canReopenTasks: canManageTasks || hasPermission(TASK_PERMISSIONS.REOPEN_TASKS),
 			canManageDeliverables: hasPermission(TASK_PERMISSIONS.MANAGE_DELIVERABLES),
 			canCreateProjectTaskDeliverables: hasPermission(TASK_PERMISSIONS.CREATE_PROJECT_TASK_DELIVERABLES),
 			canEditProjectTaskDeliverables: hasPermission(TASK_PERMISSIONS.EDIT_PROJECT_TASK_DELIVERABLES),
 			canDeleteProjectTaskDeliverables: hasPermission(TASK_PERMISSIONS.DELETE_PROJECT_TASK_DELIVERABLES),
-		}),
-		[hasPermission],
-	);
+			canToggleProjectTaskDeliverables: canManageTasks || hasPermission(TASK_PERMISSIONS.TOGGLE_PROJECT_TASK_DELIVERABLES),
+		};
+	}, [hasPermission]);
 }
 
 export function useInvoicePermissions() {
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const hasPermission = usePermissionChecker();
 
-	return useMemo(
-		() => ({
-			canManageInvoices: hasPermission(INVOICE_PERMISSIONS.MANAGE_INVOICES),
-			canViewInvoices: hasPermission(INVOICE_PERMISSIONS.VIEW_INVOICES),
-			canCreateInvoices: hasPermission(INVOICE_PERMISSIONS.CREATE_INVOICES),
-			canEditInvoices: hasPermission(INVOICE_PERMISSIONS.EDIT_INVOICES),
-			canDeleteInvoices: hasPermission(INVOICE_PERMISSIONS.DELETE_INVOICES),
-			canSendInvoices: hasPermission(INVOICE_PERMISSIONS.SEND_INVOICES),
-			canCancelInvoices: hasPermission(INVOICE_PERMISSIONS.CANCEL_INVOICES),
-		}),
-		[hasPermission],
-	);
+	return useMemo(() => {
+		const canManageInvoices = hasPermission(INVOICE_PERMISSIONS.MANAGE_INVOICES);
+
+		return {
+			canManageInvoices,
+			canViewInvoices: canManageInvoices || hasPermission(INVOICE_PERMISSIONS.VIEW_INVOICES),
+			canCreateInvoices: canManageInvoices || hasPermission(INVOICE_PERMISSIONS.CREATE_INVOICES),
+			canEditInvoices: canManageInvoices || hasPermission(INVOICE_PERMISSIONS.EDIT_INVOICES),
+			canDeleteInvoices: canManageInvoices || hasPermission(INVOICE_PERMISSIONS.DELETE_INVOICES),
+			canSendInvoices: canManageInvoices || hasPermission(INVOICE_PERMISSIONS.SEND_INVOICES),
+			canCancelInvoices: canManageInvoices || hasPermission(INVOICE_PERMISSIONS.CANCEL_INVOICES),
+		};
+	}, [hasPermission]);
 }
 
 export function useSalesPermissions() {
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const hasPermission = usePermissionChecker();
 
-	return useMemo(
-		() => ({
-			canManageLeads: hasPermission(SALES_PERMISSIONS.MANAGE_LEADS),
-			canViewLeads: hasPermission(SALES_PERMISSIONS.VIEW_LEADS),
-			canCreateLeads: hasPermission(SALES_PERMISSIONS.CREATE_LEADS),
-			canEditLeads: hasPermission(SALES_PERMISSIONS.EDIT_LEADS),
-			canDeleteLeads: hasPermission(SALES_PERMISSIONS.DELETE_LEADS),
-			canConvertLeads: hasPermission(SALES_PERMISSIONS.CONVERT_LEADS),
-			canManageContracts: hasPermission(SALES_PERMISSIONS.MANAGE_CONTRACTS),
-			canViewContracts: hasPermission(SALES_PERMISSIONS.VIEW_CONTRACTS),
-			canCreateContracts: hasPermission(SALES_PERMISSIONS.CREATE_CONTRACTS),
-			canEditContracts: hasPermission(SALES_PERMISSIONS.EDIT_CONTRACTS),
-			canDeleteContracts: hasPermission(SALES_PERMISSIONS.DELETE_CONTRACTS),
-			canSignContracts: hasPermission(SALES_PERMISSIONS.SIGN_CONTRACTS),
-		}),
-		[hasPermission],
-	);
+	return useMemo(() => {
+		const canManageLeads = hasPermission(SALES_PERMISSIONS.MANAGE_LEADS);
+		const canManageContracts = hasPermission(SALES_PERMISSIONS.MANAGE_CONTRACTS);
+
+		return {
+			canManageLeads,
+			canViewLeads: canManageLeads || hasPermission(SALES_PERMISSIONS.VIEW_LEADS),
+			canCreateLeads: canManageLeads || hasPermission(SALES_PERMISSIONS.CREATE_LEADS),
+			canEditLeads: canManageLeads || hasPermission(SALES_PERMISSIONS.EDIT_LEADS),
+			canDeleteLeads: canManageLeads || hasPermission(SALES_PERMISSIONS.DELETE_LEADS),
+			canConvertLeads: canManageLeads || hasPermission(SALES_PERMISSIONS.CONVERT_LEADS),
+			canViewQuotations: canManageLeads || hasPermission(SALES_PERMISSIONS.VIEW_QUOTATIONS),
+			canCreateQuotations: canManageLeads || hasPermission(SALES_PERMISSIONS.CREATE_QUOTATIONS),
+			canEditQuotations: canManageLeads || hasPermission(SALES_PERMISSIONS.EDIT_QUOTATIONS),
+			canDeleteQuotations: canManageLeads || hasPermission(SALES_PERMISSIONS.DELETE_QUOTATIONS),
+			canCalculateQuotations: canManageLeads || hasPermission(SALES_PERMISSIONS.CALCULATE_QUOTATIONS),
+			canManageContracts,
+			canViewContracts: canManageContracts || hasPermission(SALES_PERMISSIONS.VIEW_CONTRACTS),
+			canCreateContracts: canManageContracts || hasPermission(SALES_PERMISSIONS.CREATE_CONTRACTS),
+			canEditContracts: canManageContracts || hasPermission(SALES_PERMISSIONS.EDIT_CONTRACTS),
+			canDeleteContracts: canManageContracts || hasPermission(SALES_PERMISSIONS.DELETE_CONTRACTS),
+			canSignContracts: canManageContracts || hasPermission(SALES_PERMISSIONS.SIGN_CONTRACTS),
+		};
+	}, [hasPermission]);
 }
 
 export function useEmployeePermissions() {
-	const hasPermission = useAuthStore((state) => state.hasPermission);
+	const hasPermission = usePermissionChecker();
 
-	return useMemo(
-		() => ({
-			canManageUsers: hasPermission(EMPLOYEE_PERMISSIONS.MANAGE_USERS),
-			canViewUsers: hasPermission(EMPLOYEE_PERMISSIONS.VIEW_USERS),
-			canCreateUsers: hasPermission(EMPLOYEE_PERMISSIONS.CREATE_USERS),
-			canEditUsers: hasPermission(EMPLOYEE_PERMISSIONS.EDIT_USERS),
+	return useMemo(() => {
+		const canManageUsers = hasPermission(EMPLOYEE_PERMISSIONS.MANAGE_USERS);
+		const canManageEmployees = hasPermission(EMPLOYEE_PERMISSIONS.MANAGE_EMPLOYEES);
+		const canManageRoles = hasPermission(EMPLOYEE_PERMISSIONS.MANAGE_ROLES);
+
+		return {
+			canManageUsers,
+			canViewUsers: canManageUsers || hasPermission(EMPLOYEE_PERMISSIONS.VIEW_USERS),
+			canCreateUsers: canManageUsers || hasPermission(EMPLOYEE_PERMISSIONS.CREATE_USERS),
+			canEditUsers: canManageUsers || hasPermission(EMPLOYEE_PERMISSIONS.EDIT_USERS),
 			canDeleteUsers: hasPermission(EMPLOYEE_PERMISSIONS.DELETE_USERS),
-			canManageRoles: hasPermission(EMPLOYEE_PERMISSIONS.MANAGE_ROLES),
-			canViewRoles: hasPermission(EMPLOYEE_PERMISSIONS.VIEW_ROLES),
+			canToggleUserStatus: hasPermission(EMPLOYEE_PERMISSIONS.TOGGLE_USER_STATUS),
+			canAssignUserRoles: hasPermission(EMPLOYEE_PERMISSIONS.ASSIGN_USER_ROLES),
+			canResetUserCredentials: hasPermission(EMPLOYEE_PERMISSIONS.RESET_USER_CREDENTIALS),
+			canManageEmployees,
+			canViewEmployees: canManageEmployees || hasPermission(EMPLOYEE_PERMISSIONS.VIEW_EMPLOYEES),
+			canCreateEmployees: canManageEmployees || hasPermission(EMPLOYEE_PERMISSIONS.CREATE_EMPLOYEES),
+			canEditEmployees: canManageEmployees || hasPermission(EMPLOYEE_PERMISSIONS.EDIT_EMPLOYEES),
+			canDeleteEmployees: canManageEmployees || hasPermission(EMPLOYEE_PERMISSIONS.DELETE_EMPLOYEES),
+			canViewEmployeeSalary: canManageEmployees || hasPermission(EMPLOYEE_PERMISSIONS.VIEW_EMPLOYEE_SALARY),
+			canViewEmployeePerformance: canManageEmployees || hasPermission(EMPLOYEE_PERMISSIONS.VIEW_EMPLOYEE_PERFORMANCE),
+			canManageRoles,
+			canViewRoles: canManageRoles || hasPermission(EMPLOYEE_PERMISSIONS.VIEW_ROLES),
+			canCreateRoles: canManageRoles || hasPermission(EMPLOYEE_PERMISSIONS.CREATE_ROLES),
+			canEditRoles: canManageRoles || hasPermission(EMPLOYEE_PERMISSIONS.EDIT_ROLES),
+			canDeleteRoles: canManageRoles || hasPermission(EMPLOYEE_PERMISSIONS.DELETE_ROLES),
+			canManageProtectedUsers: hasPermission(EMPLOYEE_PERMISSIONS.MANAGE_PROTECTED_USERS),
 			canManageProjectMembers: hasPermission(EMPLOYEE_PERMISSIONS.MANAGE_PROJECT_MEMBERS),
 			canViewProjectMembers: hasPermission(EMPLOYEE_PERMISSIONS.VIEW_PROJECT_MEMBERS),
 			canAddProjectMembers: hasPermission(EMPLOYEE_PERMISSIONS.ADD_PROJECT_MEMBERS),
 			canRemoveProjectMembers: hasPermission(EMPLOYEE_PERMISSIONS.REMOVE_PROJECT_MEMBERS),
-		}),
-		[hasPermission],
-	);
+		};
+	}, [hasPermission]);
+}
+
+export function usePointPermissions() {
+	const hasPermission = usePermissionChecker();
+
+	return useMemo(() => {
+		const canManagePoints = hasPermission(POINT_PERMISSIONS.MANAGE_POINTS);
+
+		return {
+			canManagePoints,
+			canAwardPoints: canManagePoints || hasPermission(POINT_PERMISSIONS.AWARD_POINTS),
+			canDeductPoints: canManagePoints || hasPermission(POINT_PERMISSIONS.DEDUCT_POINTS),
+		};
+	}, [hasPermission]);
 }

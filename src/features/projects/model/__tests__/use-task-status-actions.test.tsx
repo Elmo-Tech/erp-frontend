@@ -29,20 +29,20 @@ const mockedApi = api as unknown as {
 const managerAccess = {
 	canManageAllProjects: false,
 	canManageTasks: false,
-	canEditTasks: true,
 	canWorkOnTasks: false,
-	canManageDeliverables: false,
-	projectRole: "manager",
+	canChangeTaskStatus: true,
+	canCompleteTasks: true,
+	canReopenTasks: true,
 	currentUserId: 7,
 } as const;
 
 const developerAccess = {
 	canManageAllProjects: false,
 	canManageTasks: false,
-	canEditTasks: false,
 	canWorkOnTasks: true,
-	canManageDeliverables: false,
-	projectRole: "developer",
+	canChangeTaskStatus: false,
+	canCompleteTasks: false,
+	canReopenTasks: false,
 	currentUserId: 7,
 } as const;
 

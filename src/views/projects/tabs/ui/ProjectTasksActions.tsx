@@ -99,7 +99,7 @@ function AddMilestoneButton({ onAddMilestone }: { onAddMilestone: () => void }) 
 
 function AddTaskButton({ icon: TaskIcon, onAddTask }: { icon: typeof Plus; onAddTask: () => void }) {
 	return (
-		<Can permission={["create_tasks", "manage_tasks"]}>
+		<Can permission={["create_tasks", "manage_tasks", "manage_all_projects"]}>
 			<Button
 				size="sm"
 				onClick={onAddTask}

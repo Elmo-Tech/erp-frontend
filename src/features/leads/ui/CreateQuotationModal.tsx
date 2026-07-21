@@ -24,6 +24,7 @@ import { ScrollArea } from "@/shared/ui/scroll-area";
 import { QuotationDirectUploadTab } from "./PipelineModals/QuotationDirectUploadTab";
 import { quotationDirectUploadSchema, type QuotationDirectUploadValues } from "./PipelineModals/stageModal.schema";
 import { createLeadQuotation } from "@/features/leads/api/leads.api";
+import { useSalesPermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,7 @@ interface CreateQuotationModalProps {
 }
 
 export function CreateQuotationModal({ leadId, open, onOpenChange, onCreated }: CreateQuotationModalProps) {
+	const { canCreateQuotations } = useSalesPermissions();
 	const form = useForm<QuotationDirectUploadInput, unknown, QuotationDirectUploadValues>({
 		resolver: zodResolver(quotationDirectUploadSchema),
 		defaultValues: {
@@ -57,6 +59,11 @@ export function CreateQuotationModal({ leadId, open, onOpenChange, onCreated }: 
 	} = form;
 
 	const onSubmit = async (values: QuotationDirectUploadValues) => {
+		if (!canCreateQuotations) {
+			toast.error("You do not have permission to create quotations");
+			return;
+		}
+
 		try {
 			await createLeadQuotation(leadId, {
 				creation_type: "direct_upload",

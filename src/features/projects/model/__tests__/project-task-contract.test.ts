@@ -49,6 +49,7 @@ describe("project task contract", () => {
 			assigneeId: 7,
 			isInBacklog: true,
 			totalLoggedMinutes: 90,
+			allowedActions: undefined,
 			assignee: { userId: 7, name: "Mona", avatar: null },
 			milestone: null,
 			project: undefined,
@@ -59,6 +60,22 @@ describe("project task contract", () => {
 		});
 		expect("parentId" in task).toBe(false);
 		expect("subtasks" in task).toBe(false);
+	});
+
+	it("preserves object-level task actions returned by the backend", () => {
+		const allowedActions = {
+			edit: true,
+			delete: false,
+			changeStatus: true,
+			complete: false,
+			reopen: false,
+			createDeliverable: true,
+			editDeliverable: false,
+			deleteDeliverable: false,
+			toggleDeliverable: true,
+		};
+
+		expect(mapProjectTaskResource(makeRawTask({ allowedActions })).allowedActions).toEqual(allowedActions);
 	});
 
 	it("maps task lists through the same resource contract", () => {

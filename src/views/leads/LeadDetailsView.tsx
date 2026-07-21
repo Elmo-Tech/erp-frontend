@@ -21,18 +21,20 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Building2, Mail, Phone, DollarSign, Calendar, ChevronRight, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Building2, Mail, Phone, DollarSign, Calendar, ChevronRight, CheckCircle2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Separator } from "@/shared/ui/separator";
+import { ConfirmDialog } from "@/shared/ui/dialogs/ConfirmDialog";
 import { cn } from "@/shared/lib/utils";
-import { getLead, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
+import { getLead, useConvertLeadToProject, useDeleteLead, useUpdateLeadStage } from "@/features/leads/api/leads.api";
 import { usePipelineStore } from "@/features/leads/model/usePipelineStore";
 import { PIPELINE_STAGES, STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
 import { getPipelineStageGateFailure } from "@/features/leads/model/pipelineGates";
+import { getPipelinePermissionFailure } from "@/features/leads/model/pipeline-permission-gates";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
 import type { Lead, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
@@ -42,6 +44,7 @@ import { PolyMeetingForm } from "@/features/meetings/ui/PolyMeetingForm";
 import { LeadProposalsTab } from "@/views/leads/tabs/LeadProposalsTab";
 import { LeadQuotationsTab } from "@/views/leads/tabs/LeadQuotationsTab";
 import { LeadContractsTab } from "@/views/leads/tabs/LeadContractsTab";
+import { useSalesPermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Backend → frontend stage mapping
@@ -66,9 +69,10 @@ interface StageStepperProps {
 	currentStage: PipelineStage;
 	onAdvance: (toStage: PipelineStage) => void;
 	isAdvancing: boolean;
+	canAdvanceTo: (toStage: PipelineStage) => boolean;
 }
 
-function StageStepper({ currentStage, onAdvance, isAdvancing }: StageStepperProps) {
+function StageStepper({ currentStage, onAdvance, isAdvancing, canAdvanceTo }: StageStepperProps) {
 	const currentIdx = PIPELINE_STAGES.indexOf(currentStage);
 
 	return (
@@ -77,6 +81,7 @@ function StageStepper({ currentStage, onAdvance, isAdvancing }: StageStepperProp
 				const isCompleted = idx < currentIdx;
 				const isCurrent = idx === currentIdx;
 				const isNext = idx === currentIdx + 1;
+				const canAdvance = isNext && canAdvanceTo(stage);
 				const isLast = idx === PIPELINE_STAGES.length - 1;
 
 				return (
@@ -86,17 +91,17 @@ function StageStepper({ currentStage, onAdvance, isAdvancing }: StageStepperProp
 					>
 						<button
 							type="button"
-							disabled={!isNext || isAdvancing}
-							onClick={() => isNext && onAdvance(stage)}
+							disabled={!canAdvance || isAdvancing}
+							onClick={() => canAdvance && onAdvance(stage)}
 							className={cn(
 								"flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
 								isCompleted && "bg-emerald-100 text-emerald-700 cursor-default",
 								isCurrent && "bg-primary text-primary-foreground shadow-sm cursor-default",
-								isNext && !isAdvancing && "bg-muted hover:bg-primary/10 hover:text-primary border border-dashed border-primary/40 cursor-pointer",
-								isNext && isAdvancing && "bg-muted text-muted-foreground cursor-not-allowed opacity-60",
+								canAdvance && !isAdvancing && "bg-muted hover:bg-primary/10 hover:text-primary border border-dashed border-primary/40 cursor-pointer",
+								isNext && (!canAdvance || isAdvancing) && "bg-muted text-muted-foreground cursor-not-allowed opacity-60",
 								!isCompleted && !isCurrent && !isNext && "bg-muted/50 text-muted-foreground/50 cursor-default",
 							)}
-							title={isNext ? `Advance to ${STAGE_LABELS[stage]}` : undefined}
+							title={canAdvance ? `Advance to ${STAGE_LABELS[stage]}` : undefined}
 						>
 							{isCompleted && <CheckCircle2 className="size-3 shrink-0" />}
 							{STAGE_LABELS[stage]}
@@ -189,12 +194,31 @@ interface LeadDetailsViewProps {
 }
 
 export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
+	const {
+		canEditLeads,
+		canDeleteLeads,
+		canConvertLeads,
+		canViewQuotations,
+		canCreateQuotations,
+		canEditQuotations,
+		canDeleteQuotations,
+		canCalculateQuotations,
+		canViewContracts,
+		canCreateContracts,
+		canEditContracts,
+		canDeleteContracts,
+		canSignContracts,
+	} = useSalesPermissions();
+	const canAccessQuotations = canViewQuotations || canCreateQuotations || canEditQuotations || canDeleteQuotations || canCalculateQuotations;
+	const canAccessContracts = canViewContracts || canCreateContracts || canEditContracts || canDeleteContracts || canSignContracts;
 	const router = useRouter();
 	const updateLeadStageMutation = useUpdateLeadStage();
 	const convertLeadToProjectMutation = useConvertLeadToProject();
+	const deleteLeadMutation = useDeleteLead();
 	const [lead, setLead] = useState<Lead | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isAdvancing, setIsAdvancing] = useState(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
 	// Pipeline store — reuse the same interceptor engine
 	const startDrag = usePipelineStore((s) => s.startDrag);
@@ -243,6 +267,18 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 	// ── Commit stage update ───────────────────────────────────────────────────
 	const commitStageUpdate = useCallback(
 		async (toStage: PipelineStage, results: StageModalResult[]) => {
+			const permissionFailure = getPipelinePermissionFailure(lead?.stage ?? toStage, toStage, {
+				canEditLeads,
+				canConvertLeads,
+				canCreateQuotations,
+				canCreateContracts,
+			});
+			if (permissionFailure) {
+				toast.error(permissionFailure);
+				cancelDrag();
+				return;
+			}
+
 			setIsAdvancing(true);
 			try {
 				await updateLeadStageMutation.mutateAsync({ leadId, newStage: toStage, stageResults: results });
@@ -287,13 +323,23 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 				setIsAdvancing(false);
 			}
 		},
-		[leadId, cancelDrag, convertLeadToProjectMutation, updateLeadStageMutation],
+		[canConvertLeads, canCreateContracts, canCreateQuotations, canEditLeads, lead, leadId, cancelDrag, convertLeadToProjectMutation, updateLeadStageMutation],
 	);
 
 	// ── Stepper advance handler ───────────────────────────────────────────────
 	const handleAdvance = useCallback(
 		(toStage: PipelineStage) => {
 			if (!lead) return;
+			const permissionFailure = getPipelinePermissionFailure(lead.stage, toStage, {
+				canEditLeads,
+				canConvertLeads,
+				canCreateQuotations,
+				canCreateContracts,
+			});
+			if (permissionFailure) {
+				toast.error(permissionFailure);
+				return;
+			}
 
 			const gateFailure = getPipelineStageGateFailure(lead, toStage);
 			if (gateFailure) {
@@ -314,7 +360,7 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 				}
 			}
 		},
-		[lead, startDrag, commitStageUpdate],
+		[canConvertLeads, canCreateContracts, canCreateQuotations, canEditLeads, lead, startDrag, commitStageUpdate],
 	);
 
 	// ── Modal submit ──────────────────────────────────────────────────────────
@@ -328,6 +374,17 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 		},
 		[activeModal, advanceQueue, commitStageUpdate],
 	);
+
+	const handleDelete = async () => {
+		if (!canDeleteLeads) return;
+		try {
+			await deleteLeadMutation.mutateAsync(leadId);
+			toast.success("Lead deleted");
+			router.push("/dashboard/leads");
+		} catch {
+			toast.error("Failed to delete lead");
+		}
+	};
 
 	// ── Loading skeleton ──────────────────────────────────────────────────────
 	if (isLoading) {
@@ -387,6 +444,17 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 							</p>
 						)}
 					</div>
+					{canDeleteLeads && (
+						<Button
+							variant="ghost"
+							size="icon"
+							className="shrink-0 text-destructive hover:text-destructive"
+							onClick={() => setDeleteDialogOpen(true)}
+						>
+							<Trash2 className="size-4" />
+							<span className="sr-only">Delete lead</span>
+						</Button>
+					)}
 				</div>
 
 				{/* Stage stepper */}
@@ -395,6 +463,14 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 						currentStage={lead.stage}
 						onAdvance={handleAdvance}
 						isAdvancing={isAdvancing}
+						canAdvanceTo={(stage) =>
+							getPipelinePermissionFailure(lead.stage, stage, {
+								canEditLeads,
+								canConvertLeads,
+								canCreateQuotations,
+								canCreateContracts,
+							}) === null
+						}
 					/>
 				</div>
 			</div>
@@ -407,8 +483,8 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 					<TabsTrigger value="overview">Overview</TabsTrigger>
 					<TabsTrigger value="meetings">Meetings</TabsTrigger>
 					<TabsTrigger value="proposals">Proposals</TabsTrigger>
-					<TabsTrigger value="quotations">Quotations</TabsTrigger>
-					<TabsTrigger value="contracts">Contracts</TabsTrigger>
+					{canAccessQuotations && <TabsTrigger value="quotations">Quotations</TabsTrigger>}
+					{canAccessContracts && <TabsTrigger value="contracts">Contracts</TabsTrigger>}
 				</TabsList>
 
 				<TabsContent value="overview">
@@ -432,13 +508,17 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 					<LeadProposalsTab leadId={lead.id} />
 				</TabsContent>
 
-				<TabsContent value="quotations">
-					<LeadQuotationsTab leadId={lead.id} />
-				</TabsContent>
+				{canAccessQuotations && (
+					<TabsContent value="quotations">
+						<LeadQuotationsTab leadId={lead.id} />
+					</TabsContent>
+				)}
 
-				<TabsContent value="contracts">
-					<LeadContractsTab leadId={lead.id} />
-				</TabsContent>
+				{canAccessContracts && (
+					<TabsContent value="contracts">
+						<LeadContractsTab leadId={lead.id} />
+					</TabsContent>
+				)}
 			</Tabs>
 
 			{/* ── Stage modal (reuses pipeline engine) ─────────────────────── */}
@@ -450,6 +530,17 @@ export function LeadDetailsView({ leadId }: LeadDetailsViewProps) {
 					isLoading={isAdvancing}
 				/>
 			)}
+
+			<ConfirmDialog
+				open={deleteDialogOpen}
+				onOpenChange={setDeleteDialogOpen}
+				title="Delete Lead"
+				description="Delete this lead? This action cannot be undone."
+				confirmLabel="Delete"
+				variant="destructive"
+				isLoading={deleteLeadMutation.isPending}
+				onConfirm={handleDelete}
+			/>
 		</div>
 	);
 }

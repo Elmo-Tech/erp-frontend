@@ -7,7 +7,7 @@ import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
-import { Can } from "@/shared/ui/Can";
+import { useEmployeePermissions } from "@/entities/user/model/permissions";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { AssignHrProfileModal } from "@/features/hr/ui/AssignHrProfileModal";
 import { DeleteHrProfileDialog } from "@/features/hr/ui/DeleteHrProfileDialog";
@@ -30,7 +30,11 @@ function formatCurrency(amount: number): string {
 // Column definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
-function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (profile: EmployeeProfile) => void): Column<EmployeeProfile>[] {
+function buildColumns(
+	onEdit: (profile: EmployeeProfile) => void,
+	onDelete: (profile: EmployeeProfile) => void,
+	permissions: { canEdit: boolean; canDelete: boolean; canViewPerformance: boolean; canViewSalary: boolean },
+): Column<EmployeeProfile>[] {
 	return [
 		{
 			key: "employee",
@@ -67,13 +71,13 @@ function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (pro
 			key: "base_salary",
 			header: "Base Salary",
 			className: "text-right",
-			render: (p) => <span className="text-sm font-semibold tabular-nums">{formatCurrency(p.baseSalary)}</span>,
+			render: (p) => <span className="text-sm font-semibold tabular-nums">{permissions.canViewSalary ? formatCurrency(p.baseSalary) : "—"}</span>,
 		},
 		{
 			key: "hourly_rate",
 			header: "Hourly Rate",
 			className: "text-right",
-			render: (p) => <span className="text-sm tabular-nums text-muted-foreground">{formatCurrency(p.hourlyRate)}/hr</span>,
+			render: (p) => <span className="text-sm tabular-nums text-muted-foreground">{permissions.canViewSalary ? `${formatCurrency(p.hourlyRate)}/hr` : "—"}</span>,
 		},
 		{
 			key: "actions",
@@ -81,8 +85,7 @@ function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (pro
 			className: "text-right",
 			render: (p) => (
 				<div className="flex items-center justify-end gap-1">
-					{/* View Performance Report — visible to anyone with manage_employees */}
-					<Can permission="manage_employees">
+					{permissions.canViewPerformance && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -95,8 +98,8 @@ function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (pro
 								<span className="sr-only">Performance report for {p.user?.name}</span>
 							</Link>
 						</Button>
-					</Can>
-					<Can permission="manage_employees">
+					)}
+					{permissions.canEdit && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -109,6 +112,8 @@ function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (pro
 							<Pencil className="h-3.5 w-3.5" />
 							<span className="sr-only">Edit {p.user?.name}</span>
 						</Button>
+					)}
+					{permissions.canDelete && (
 						<Button
 							variant="ghost"
 							size="icon"
@@ -121,7 +126,7 @@ function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (pro
 							<Trash2 className="h-3.5 w-3.5" />
 							<span className="sr-only">Remove {p.user?.name}</span>
 						</Button>
-					</Can>
+					)}
 				</div>
 			),
 		},
@@ -133,6 +138,7 @@ function buildColumns(onEdit: (profile: EmployeeProfile) => void, onDelete: (pro
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function EmployeeProfilesWidget() {
+	const { canCreateEmployees, canEditEmployees, canDeleteEmployees, canViewEmployeeSalary, canViewEmployeePerformance } = useEmployeePermissions();
 	const { data: profiles, isLoading, error } = useEmployeeProfiles();
 	// Fetch shifts to detect the "no shifts" condition for the guidance alert
 	const { data: shifts, isLoading: shiftsLoading } = useShifts();
@@ -158,7 +164,12 @@ export function EmployeeProfilesWidget() {
 		setEditTarget(null);
 	};
 
-	const columns = buildColumns(handleEdit, setDeleteTarget);
+	const columns = buildColumns(handleEdit, setDeleteTarget, {
+		canEdit: canEditEmployees,
+		canDelete: canDeleteEmployees,
+		canViewPerformance: canViewEmployeePerformance,
+		canViewSalary: canViewEmployeeSalary,
+	});
 
 	return (
 		<section className="flex flex-col gap-6">
@@ -167,7 +178,7 @@ export function EmployeeProfilesWidget() {
 					<h1 className="text-2xl font-semibold tracking-tight">Employee HR Profiles</h1>
 					<p className="text-sm text-muted-foreground">Assign and manage salary, shift, and HR information for each user.</p>
 				</div>
-				<Can permission="manage_employees">
+				{canCreateEmployees && (
 					<Button
 						size="sm"
 						className="gap-2 shrink-0"
@@ -176,7 +187,7 @@ export function EmployeeProfilesWidget() {
 						<Plus className="h-4 w-4" />
 						Assign Profile
 					</Button>
-				</Can>
+				)}
 			</div>
 
 			{/* ── Guidance alert: no shifts exist yet ── */}
@@ -208,7 +219,7 @@ export function EmployeeProfilesWidget() {
 					icon: Users,
 					title: "No HR profiles assigned",
 					description: hasNoShifts ? "Create a shift first, then assign HR profiles to users." : "Assign HR profiles to users to manage salaries and shifts.",
-					action: { label: "Assign Profile", onClick: handleAssign },
+					action: canCreateEmployees ? { label: "Assign Profile", onClick: handleAssign } : undefined,
 				}}
 			/>
 
