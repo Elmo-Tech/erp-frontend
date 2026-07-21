@@ -88,4 +88,33 @@ describe("leads API", () => {
 			},
 		});
 	});
+
+	it("identifies the completed stage in each document result", async () => {
+		mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: 7, stage: "proposal" } } });
+
+		await updateLeadStage(7, "proposal", [
+			{
+				stage: "proposal",
+				payload: {
+					mode: "task",
+					assignedTo: 3,
+					deadline: "2026-08-01",
+					notes: "Prepare the proposal.",
+				},
+			},
+		]);
+
+		expect(mockedApi.post).toHaveBeenCalledWith("/leads/7/stage", {
+			new_stage: "proposal",
+			stage_results: [
+				{
+					stage: "proposal",
+					type: "proposal",
+					creation_type: "task",
+					assigned_to: 3,
+					notes: "Prepare the proposal.",
+				},
+			],
+		});
+	});
 });

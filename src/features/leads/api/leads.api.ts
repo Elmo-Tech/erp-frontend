@@ -23,6 +23,7 @@ import { PIPELINE_STAGES } from "../model/pipelineConstants";
  * ProcessLeadStageUpdateAction expects.
  */
 export interface StageResultPayload {
+	stage: "meeting" | "proposal" | "quotation" | "contract";
 	type: "proposal" | "quotation" | "contract";
 	creation_type: "task" | "direct_upload" | "skipped";
 	skip_reason?: string | null;
@@ -222,6 +223,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 			throw new Error(`[leads.api] skip_reason is required for stage "${stage}" but was not provided.`);
 		}
 		return {
+			stage,
 			type,
 			creation_type: "skipped",
 			skip_reason: payload.skipReason,
@@ -232,6 +234,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 	// ── Task mode ─────────────────────────────────────────────────────────────
 	if (payload.mode === "task") {
 		return {
+			stage,
 			type,
 			creation_type: "task",
 			assigned_to: payload.assignedTo,
@@ -242,6 +245,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 	// ── Direct upload — generic (meeting / proposal) ──────────────────────────
 	if (stage === "meeting" || stage === "proposal") {
 		return {
+			stage,
 			type,
 			creation_type: "direct_upload",
 			// File upload is handled separately (multipart); here we pass null
@@ -256,6 +260,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const p = payload as any;
 		return {
+			stage,
 			type: "quotation",
 			creation_type: "direct_upload",
 			file_path: null,
@@ -272,6 +277,7 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const p = payload as any;
 	return {
+		stage,
 		type: "contract",
 		creation_type: "direct_upload",
 		file_path: null,
