@@ -3,7 +3,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
-import { createLeadProposal, leadKeys, updateLeadQuotationStatus, updateLeadStage, useCreateLeadProposal } from "../leads.api";
+import { createLeadProposal, getProposalTemplates, leadKeys, updateLeadQuotationStatus, updateLeadStage, useCreateLeadProposal } from "../leads.api";
 
 vi.mock("@/shared/api/base", () => ({
 	default: {
@@ -14,6 +14,7 @@ vi.mock("@/shared/api/base", () => ({
 }));
 
 const mockedApi = api as unknown as {
+	get: Mock;
 	post: Mock;
 	patch: Mock;
 };
@@ -29,6 +30,14 @@ describe("leads API", () => {
 		await expect(createLeadProposal(7, { creation_type: "direct_upload" })).resolves.toEqual({ success: true, data: { id: 9 } });
 
 		expect(mockedApi.post).toHaveBeenCalledWith("/leads/7/proposals", { creation_type: "direct_upload" });
+	});
+
+	it("loads the proposal template catalog from the backend", async () => {
+		const templates = [{ id: 1, name: "Standard Proposal", description: "General projects" }];
+		mockedApi.get.mockResolvedValueOnce({ data: { success: true, data: templates } });
+
+		await expect(getProposalTemplates()).resolves.toEqual(templates);
+		expect(mockedApi.get).toHaveBeenCalledWith("/lead-proposal-templates");
 	});
 
 	it("creates a lead document with its selected upload file", async () => {
@@ -156,5 +165,37 @@ describe("leads API", () => {
 		expect(body.get("stage_results[0][creation_type]")).toBe("direct_upload");
 		expect(body.get("stage_results[0][upload_file]")).toBe(document);
 		expect(body.get("stage_results[0][notes]")).toBe("Discovery proposal.");
+	});
+
+	it("sends the selected proposal template as stage evidence", async () => {
+		mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: 7, stage: "proposal" } } });
+
+		await updateLeadStage(7, "proposal", [
+			{
+				stage: "proposal",
+				payload: {
+					mode: "direct_upload",
+					proposal_source: "use_template",
+					template_id: 3,
+					validity_date: "2026-09-30",
+					notes: "Annual subscription with guided onboarding.",
+				},
+			},
+		]);
+
+		expect(mockedApi.post).toHaveBeenCalledWith("/leads/7/stage", {
+			new_stage: "proposal",
+			stage_results: [
+				{
+					stage: "proposal",
+					type: "proposal",
+					creation_type: "direct_upload",
+					proposal_source: "use_template",
+					template_id: 3,
+					validity_date: "2026-09-30",
+					notes: "Annual subscription with guided onboarding.",
+				},
+			],
+		});
 	});
 });

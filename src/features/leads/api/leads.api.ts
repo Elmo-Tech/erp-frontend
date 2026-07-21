@@ -8,8 +8,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/shared/api/base";
-import type { StageModalResult } from "../model/types";
-import type { Lead } from "../model/types";
+import type { Lead, ProposalDirectUploadPayload, StageModalResult } from "../model/types";
 import type { PipelineStage } from "../model/pipelineConstants";
 import { PIPELINE_STAGES } from "../model/pipelineConstants";
 
@@ -32,6 +31,9 @@ export interface StageResultPayload {
 	due_date?: string | null;
 	upload_file?: File;
 	notes?: string | null;
+	proposal_source?: "upload_new" | "use_template" | null;
+	template_id?: number | null;
+	validity_date?: string | null;
 
 	// Quotation
 	currency?: string | null;
@@ -101,6 +103,7 @@ export interface LeadFilters {
 
 export const leadKeys = {
 	all: ["leads"] as const,
+	proposalTemplates: () => [...leadKeys.all, "proposal-templates"] as const,
 	lists: () => [...leadKeys.all, "list"] as const,
 	list: (filters?: LeadFilters) => [...leadKeys.lists(), filters] as const,
 	details: () => [...leadKeys.all, "detail"] as const,
@@ -109,6 +112,26 @@ export const leadKeys = {
 	quotations: (leadId: number) => [...leadKeys.detail(leadId), "quotations"] as const,
 	contracts: (leadId: number) => [...leadKeys.detail(leadId), "contracts"] as const,
 };
+
+export interface ProposalTemplateOption {
+	id: number;
+	name: string;
+	description: string;
+}
+
+export async function getProposalTemplates(): Promise<ProposalTemplateOption[]> {
+	const response = await api.get<{ success: boolean; data: ProposalTemplateOption[] }>("/lead-proposal-templates");
+
+	return response.data.data;
+}
+
+export function useGetProposalTemplates() {
+	return useQuery({
+		queryKey: leadKeys.proposalTemplates(),
+		queryFn: getProposalTemplates,
+		staleTime: Number.POSITIVE_INFINITY,
+	});
+}
 
 export interface RawLeadResource {
 	id: number;
@@ -244,14 +267,30 @@ function mapStageResultToPayload(result: StageModalResult): StageResultPayload {
 		};
 	}
 
-	// ── Direct upload — generic (meeting / proposal) ──────────────────────────
-	if (stage === "meeting" || stage === "proposal") {
+	// ── Direct upload — generic meeting evidence ──────────────────────────────
+	if (stage === "meeting") {
 		return {
 			stage,
 			type,
 			creation_type: "direct_upload",
 			upload_file: "upload_file" in payload ? payload.upload_file : undefined,
 			notes: (payload as { notes?: string }).notes ?? null,
+		};
+	}
+
+	// ── Direct upload — proposal ──────────────────────────────────────────────
+	if (stage === "proposal") {
+		const proposal = payload as ProposalDirectUploadPayload;
+
+		return {
+			stage,
+			type: "proposal",
+			creation_type: "direct_upload",
+			proposal_source: proposal.proposal_source,
+			template_id: proposal.template_id ?? null,
+			validity_date: proposal.validity_date,
+			notes: proposal.notes ?? null,
+			...(proposal.upload_file ? { upload_file: proposal.upload_file } : {}),
 		};
 	}
 
@@ -575,6 +614,10 @@ export interface LeadProposal {
 	id: number;
 	status: string;
 	creation_type: string;
+	proposal_source: string | null;
+	template_id: number | null;
+	validity_date: string | null;
+	notes: string | null;
 	skip_reason: string | null;
 	file_path: string | null;
 	file_name: string | null;

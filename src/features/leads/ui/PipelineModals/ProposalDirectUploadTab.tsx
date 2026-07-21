@@ -20,6 +20,7 @@ import { FormFileInput } from "@/shared/ui/forms/FormFileInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
+import { useGetProposalTemplates } from "@/features/leads/api/leads.api";
 import type { ProposalStageModalValues } from "./stageModal.schema";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -27,18 +28,6 @@ import type { ProposalStageModalValues } from "./stageModal.schema";
 // ─────────────────────────────────────────────────────────────────────────────
 
 type ProposalUploadFormValues = Extract<ProposalStageModalValues, { mode: "direct_upload" }>;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Placeholder template options
-// Replace with a real API-driven list when templates are available.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const TEMPLATE_OPTIONS = [
-	{ value: "1", label: "Standard Proposal Template" },
-	{ value: "2", label: "Enterprise Proposal Template" },
-	{ value: "3", label: "SaaS Proposal Template" },
-	{ value: "4", label: "Retainer Proposal Template" },
-];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Segmented control item
@@ -82,9 +71,14 @@ function Segment({ value, current, icon: Icon, label, description, onClick }: Se
 
 export function ProposalDirectUploadTab() {
 	const { control, setValue, clearErrors } = useFormContext<ProposalUploadFormValues>();
+	const templatesQuery = useGetProposalTemplates();
 
 	const proposalSource = useWatch({ control, name: "proposal_source" }) as string | undefined;
 	const isUpload = !proposalSource || proposalSource === "upload_new";
+	const templateOptions = (templatesQuery.data ?? []).map((template) => ({
+		value: String(template.id),
+		label: template.name,
+	}));
 
 	const handleSourceChange = (value: "upload_new" | "use_template") => {
 		setValue("proposal_source", value);
@@ -138,8 +132,10 @@ export function ProposalDirectUploadTab() {
 					control={control}
 					name="template_id"
 					label="Proposal Template"
-					placeholder="Select a template…"
-					options={TEMPLATE_OPTIONS}
+					placeholder={templatesQuery.isPending ? "Loading templates…" : "Select a template…"}
+					description={templatesQuery.isError ? "Templates could not be loaded. Please try again." : undefined}
+					options={templateOptions}
+					disabled={templatesQuery.isPending || templatesQuery.isError}
 				/>
 			)}
 
