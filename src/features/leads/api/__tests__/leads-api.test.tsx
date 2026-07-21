@@ -1,15 +1,13 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
-import { createLeadProposal, getProposalTemplates, leadKeys, updateLeadQuotationStatus, updateLeadStage, useCreateLeadProposal } from "../leads.api";
+import { deleteLead, getProposalTemplates, updateLeadQuotationStatus, updateLeadStage } from "../leads.api";
 
 vi.mock("@/shared/api/base", () => ({
 	default: {
 		get: vi.fn(),
 		post: vi.fn(),
 		patch: vi.fn(),
+		delete: vi.fn(),
 	},
 }));
 
@@ -17,19 +15,12 @@ const mockedApi = api as unknown as {
 	get: Mock;
 	post: Mock;
 	patch: Mock;
+	delete: Mock;
 };
 
 describe("leads API", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-	});
-
-	it("creates a lead proposal through the lead proposals endpoint", async () => {
-		mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: 9 } } });
-
-		await expect(createLeadProposal(7, { creation_type: "direct_upload" })).resolves.toEqual({ success: true, data: { id: 9 } });
-
-		expect(mockedApi.post).toHaveBeenCalledWith("/leads/7/proposals", { creation_type: "direct_upload" });
 	});
 
 	it("loads the proposal template catalog from the backend", async () => {
@@ -40,39 +31,20 @@ describe("leads API", () => {
 		expect(mockedApi.get).toHaveBeenCalledWith("/lead-proposal-templates");
 	});
 
-	it("creates a lead document with its selected upload file", async () => {
-		mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: 9 } } });
-		const document = new File(["%PDF"], "proposal.pdf", { type: "application/pdf" });
-
-		await createLeadProposal(7, { creation_type: "direct_upload", upload_file: document });
-
-		const [endpoint, body] = mockedApi.post.mock.calls[0] as [string, FormData];
-		expect(endpoint).toBe("/leads/7/proposals");
-		expect(body).toBeInstanceOf(FormData);
-		expect(body.get("creation_type")).toBe("direct_upload");
-		expect(body.get("upload_file")).toBe(document);
-	});
-
-	it("invalidates the exact proposals query key after creating a proposal", async () => {
-		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-		const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
-		mockedApi.post.mockResolvedValueOnce({ data: { success: true, data: { id: 10 } } });
-
-		const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
-		const { result } = renderHook(() => useCreateLeadProposal(7), { wrapper });
-
-		result.current.mutate({ creation_type: "direct_upload" });
-
-		await waitFor(() => expect(result.current.isSuccess).toBe(true));
-		expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: leadKeys.proposals(7) });
-	});
-
-	it("updates quotation status through the lead quotation endpoint", async () => {
+	it("updates quotation status through the Kanban pipeline endpoint", async () => {
 		mockedApi.patch.mockResolvedValueOnce({ data: { success: true, data: { id: 11, status: "accepted" } } });
 
 		await expect(updateLeadQuotationStatus(7, 11, "accepted")).resolves.toEqual({ success: true, data: { id: 11, status: "accepted" } });
 
-		expect(mockedApi.patch).toHaveBeenCalledWith("/leads/7/quotations/11", { status: "accepted" });
+		expect(mockedApi.patch).toHaveBeenCalledWith("/leads/7/pipeline/quotations/11", { status: "accepted" });
+	});
+
+	it("deletes leads through the Kanban pipeline endpoint", async () => {
+		mockedApi.delete.mockResolvedValueOnce({ data: { success: true } });
+
+		await deleteLead(7);
+
+		expect(mockedApi.delete).toHaveBeenCalledWith("/leads/7/pipeline");
 	});
 
 	it("sends scheduled meeting data separately from document stage results", async () => {

@@ -99,7 +99,6 @@ export function QuotationDirectUploadTab() {
 
 			{/* ── 3. Payment Stages ──────────────────────────────────────────── */}
 			<PaymentStagesFieldArray
-				control={control}
 				fieldArrayName="payment_stages"
 				finalTotal={finalTotal ?? 0}
 				currency={currency ?? ""}

@@ -29,6 +29,7 @@ describe("lead API mappers", () => {
 			stage: "new",
 			assignedTo: 4,
 			expectedBudget: 25000,
+			source: "sales",
 			hasCompletedMeeting: true,
 			hasAcceptedProposalOrQuotation: false,
 			createdAt: "2026-06-01T10:00:00.000Z",

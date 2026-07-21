@@ -11,8 +11,18 @@ export interface Lead {
 	company?: string;
 	email?: string;
 	phone?: string;
+	contactName?: string;
+	notes?: string;
+	source?: string;
+	expectedCloseDate?: string;
 	stage: PipelineStage;
 	assignedTo?: number;
+	assignee?: {
+		id: number;
+		name: string;
+		email: string;
+		avatar: string | null;
+	};
 	expectedBudget?: number;
 	hasCompletedMeeting?: boolean;
 	hasAcceptedProposalOrQuotation?: boolean;

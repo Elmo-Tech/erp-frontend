@@ -4,7 +4,7 @@
  * ActivityTimeline
  *
  * Extracted from LeadDetailsSheet so it can be reused standalone in
- * the LeadActivityTab on the Lead Details Page.
+ * the read-only lead details sheet.
  *
  * Shows a vertical timeline of pipeline stages — completed (emerald),
  * current (primary), and pending (muted) — with status badges.

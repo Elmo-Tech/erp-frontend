@@ -14,7 +14,6 @@
  */
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { PlusIcon, LayoutGrid, List } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/shared/ui/button";
@@ -27,6 +26,7 @@ import { useGetLeads } from "@/features/leads/api/leads.api";
 import type { LeadFilters } from "@/features/leads/api/leads.api";
 import { CreateLeadModal } from "@/features/leads/ui/CreateLeadModal";
 import { LeadsKanbanBoard } from "@/widgets/leads-management";
+import { LeadDetailsSheet } from "@/widgets/leads-management";
 import { STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
 import type { Lead } from "@/features/leads/model/types";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
@@ -127,16 +127,18 @@ function LeadsTable({ leads, onRowClick }: LeadsTableProps) {
 type ViewMode = "board" | "table";
 
 export default function LeadsPipelinePage() {
-	const { canCreateLeads, canEditLeads, canConvertLeads, canCreateQuotations, canCreateContracts } = useSalesPermissions();
-	const router = useRouter();
+	const { canCreateLeads, canEditLeads, canDeleteLeads, canConvertLeads, canCreateQuotations, canEditQuotations, canCreateContracts, canEditContracts, canSignContracts } = useSalesPermissions();
+	const canManagePipelineActions = canEditLeads || canDeleteLeads || canEditQuotations || canEditContracts || canSignContracts;
 	const [filters, setFilters] = useState<LeadFilters>({});
 	const leadsQuery = useGetLeads(filters);
 	const leads = leadsQuery.data ?? [];
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [viewMode, setViewMode] = useState<ViewMode>("board");
+	const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
+	const selectedLead = leads.find((lead) => lead.id === selectedLeadId) ?? null;
 
 	const handleRowClick = (id: number) => {
-		router.push(`/dashboard/leads/${id}`);
+		setSelectedLeadId(id);
 	};
 
 	return (
@@ -145,7 +147,7 @@ export default function LeadsPipelinePage() {
 			<div className="flex items-center justify-between flex-wrap gap-3">
 				<div>
 					<h1 className="text-2xl font-semibold tracking-tight">Sales Pipeline</h1>
-					<p className="text-sm text-muted-foreground mt-0.5">{viewMode === "board" ? "Drag leads across stages to advance them through the pipeline." : "Click a row to open the lead details page."}</p>
+					<p className="text-sm text-muted-foreground mt-0.5">{viewMode === "board" ? "Move leads between stages here. Click a card to view details." : "Click a row to view lead details. Stage changes stay in the Kanban board."}</p>
 				</div>
 
 				<div className="flex items-center gap-2">
@@ -239,6 +241,7 @@ export default function LeadsPipelinePage() {
 						canConvert={canConvertLeads}
 						canCreateQuotations={canCreateQuotations}
 						canCreateContracts={canCreateContracts}
+						canManagePipelineActions={canManagePipelineActions}
 					/>
 				</div>
 			) : (
@@ -255,6 +258,14 @@ export default function LeadsPipelinePage() {
 					onOpenChange={setIsModalOpen}
 				/>
 			)}
+
+			<LeadDetailsSheet
+				lead={selectedLead}
+				open={selectedLead !== null}
+				onOpenChange={(open) => {
+					if (!open) setSelectedLeadId(null);
+				}}
+			/>
 		</div>
 	);
 }

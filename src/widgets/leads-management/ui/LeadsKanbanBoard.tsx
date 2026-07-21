@@ -36,6 +36,7 @@ import { getPipelinePermissionFailure } from "@/features/leads/model/pipeline-pe
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
 import { leadKeys, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
 import { KanbanColumn } from "./KanbanColumn";
+import { LeadPipelineActionsDialog } from "./LeadPipelineActionsDialog";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -47,11 +48,12 @@ interface LeadsKanbanBoardProps {
 	canConvert: boolean;
 	canCreateQuotations: boolean;
 	canCreateContracts: boolean;
+	canManagePipelineActions: boolean;
 	/** Called when a card is clicked (not dragged). Receives the lead ID. */
 	onCardClick?: (leadId: number) => void;
 }
 
-export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotations, canCreateContracts, onCardClick }: LeadsKanbanBoardProps) {
+export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotations, canCreateContracts, canManagePipelineActions, onCardClick }: LeadsKanbanBoardProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const updateLeadStageMutation = useUpdateLeadStage();
@@ -68,6 +70,7 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 
 	// ── Local loading state (shown on the modal submit button) ────────────────
 	const [isCommitting, setIsCommitting] = useState(false);
+	const [actionLead, setActionLead] = useState<Lead | null>(null);
 
 	const invalidateLeadQueries = useCallback(() => {
 		queryClient.invalidateQueries({ queryKey: leadKeys.all });
@@ -112,7 +115,7 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 				// Log and surface a non-blocking warning so the user can retry.
 				console.error("[LeadsKanbanBoard] Conversion failed:", conversionErr);
 				toast.warning("Lead marked as won, but automatic conversion failed.", {
-					description: "Please convert the lead manually from the lead detail page.",
+					description: "Retry conversion from the Kanban card actions.",
 					duration: 8000,
 				});
 			}
@@ -160,6 +163,45 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 		[canConvert, canCreateContracts, canCreateQuotations, canEdit, cancelDrag, invalidateLeadQueries, leads, triggerConversion, updateLeadStageMutation],
 	);
 
+	const beginStageTransition = useCallback(
+		(leadId: number, fromStage: PipelineStage, toStage: PipelineStage) => {
+			const permissionFailure = getPipelinePermissionFailure(fromStage, toStage, {
+				canEditLeads: canEdit,
+				canConvertLeads: canConvert,
+				canCreateQuotations,
+				canCreateContracts,
+			});
+			if (permissionFailure) {
+				toast.error(permissionFailure);
+				return;
+			}
+
+			const lead = leads.find((item) => item.id === leadId);
+			if (lead) {
+				const gateFailure = getPipelineStageGateFailure(lead, toStage);
+				if (gateFailure) {
+					toast.error(gateFailure);
+					return;
+				}
+			}
+
+			const intercepted = startDrag(leadId, fromStage, toStage);
+			if (!intercepted) return;
+			setCachedLeadStage(leadId, toStage);
+
+			const queueAfterIntercept = usePipelineStore.getState().modalQueue;
+			if (queueAfterIntercept.length === 0) {
+				const drag = usePipelineStore.getState().pendingDrag;
+				if (drag) {
+					commitStageUpdate(drag.leadId, drag.toStage, []).finally(() => {
+						usePipelineStore.getState()._resetDragState();
+					});
+				}
+			}
+		},
+		[canConvert, canCreateContracts, canCreateQuotations, canEdit, commitStageUpdate, leads, setCachedLeadStage, startDrag],
+	);
+
 	// ── onDragEnd — the Drag Interceptor Engine entry point ──────────────────
 	const handleDragEnd = useCallback(
 		(result: DropResult) => {
@@ -173,44 +215,18 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 			const leadId = Number(draggableId);
 			const fromStage = source.droppableId as PipelineStage;
 			const toStage = destination.droppableId as PipelineStage;
-			const permissionFailure = getPipelinePermissionFailure(fromStage, toStage, {
-				canEditLeads: canEdit,
-				canConvertLeads: canConvert,
-				canCreateQuotations,
-				canCreateContracts,
-			});
-			if (permissionFailure) {
-				toast.error(permissionFailure);
-				return;
-			}
-			const lead = leads.find((item) => item.id === leadId);
-
-			if (lead) {
-				const gateFailure = getPipelineStageGateFailure(lead, toStage);
-				if (gateFailure) {
-					toast.error(gateFailure);
-					return;
-				}
-			}
-
-			const intercepted = startDrag(leadId, fromStage, toStage);
-			if (!intercepted) return;
-			setCachedLeadStage(leadId, toStage);
-
-			// If the queue is empty (no modal stages between from and to),
-			// commit immediately without opening any modal.
-			const queueAfterIntercept = usePipelineStore.getState().modalQueue;
-			if (queueAfterIntercept.length === 0) {
-				const drag = usePipelineStore.getState().pendingDrag;
-				if (drag) {
-					commitStageUpdate(drag.leadId, drag.toStage, []).finally(() => {
-						usePipelineStore.getState()._resetDragState();
-					});
-				}
-			}
-			// Otherwise the modal queue is non-empty — StageModal will render.
+			beginStageTransition(leadId, fromStage, toStage);
 		},
-		[canConvert, canCreateContracts, canCreateQuotations, canEdit, leads, startDrag, setCachedLeadStage, commitStageUpdate],
+		[beginStageTransition],
+	);
+
+	const handleAdvance = useCallback(
+		(lead: Lead) => {
+			const currentStageIndex = PIPELINE_STAGES.indexOf(lead.stage);
+			const nextStage = PIPELINE_STAGES[currentStageIndex + 1];
+			if (nextStage) beginStageTransition(lead.id, lead.stage, nextStage);
+		},
+		[beginStageTransition],
 	);
 
 	// ── Modal submit handler ──────────────────────────────────────────────────
@@ -242,6 +258,9 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 							leads={leadsByStage[stage]}
 							isDragDisabled={!canEdit}
 							onCardClick={onCardClick}
+							onAdvance={handleAdvance}
+							onManageActions={setActionLead}
+							canManageActions={(lead) => canManagePipelineActions || (canConvert && lead.stage === "closed_won")}
 						/>
 					))}
 				</div>
@@ -259,6 +278,14 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 					isLoading={isCommitting}
 				/>
 			)}
+
+			<LeadPipelineActionsDialog
+				lead={actionLead}
+				open={actionLead !== null}
+				onOpenChange={(open) => {
+					if (!open) setActionLead(null);
+				}}
+			/>
 		</>
 	);
 }

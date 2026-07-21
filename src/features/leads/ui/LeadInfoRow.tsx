@@ -2,7 +2,7 @@
 
 /**
  * Shared lead UI primitives — extracted from LeadDetailsSheet so both
- * the Kanban sheet and the full-page LeadDetailsView use identical visuals.
+ * lead detail surfaces use identical visuals.
  */
 
 import { cn } from "@/shared/lib/utils";

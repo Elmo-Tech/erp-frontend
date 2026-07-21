@@ -161,7 +161,15 @@ const BACKEND_TO_FRONTEND_STAGE: Record<string, PipelineStage> = {
 	closed_won: "closed_won",
 };
 
-export function mapLeadResourceToLead(item: RawLeadResource): Lead | null {
+type RawLeadDetails = RawLeadResource &
+	Partial<{
+		contact_name: string | null;
+		notes: string | null;
+		expected_close_date: string | null;
+		assignee: Lead["assignee"] | null;
+	}>;
+
+export function mapLeadResourceToLead(item: RawLeadDetails): Lead | null {
 	const stage = BACKEND_TO_FRONTEND_STAGE[item.stage];
 	if (!stage || !PIPELINE_STAGES.includes(stage)) return null;
 
@@ -171,8 +179,13 @@ export function mapLeadResourceToLead(item: RawLeadResource): Lead | null {
 		company: item.company ?? undefined,
 		email: item.email ?? undefined,
 		phone: item.phone ?? undefined,
+		...(item.contact_name ? { contactName: item.contact_name } : {}),
+		...(item.notes ? { notes: item.notes } : {}),
+		...(item.source ? { source: item.source } : {}),
+		...(item.expected_close_date ? { expectedCloseDate: item.expected_close_date } : {}),
 		stage,
 		assignedTo: item.assignedTo ?? undefined,
+		...(item.assignee ? { assignee: item.assignee } : {}),
 		expectedBudget: item.expected_budget ?? undefined,
 		hasCompletedMeeting: item.hasCompletedMeeting ?? false,
 		hasAcceptedProposalOrQuotation: item.hasAcceptedProposalOrQuotation ?? false,
@@ -509,7 +522,7 @@ export function useCreateLead() {
 }
 
 export async function deleteLead(leadId: number): Promise<void> {
-	await api.delete(`/leads/${leadId}`);
+	await api.delete(`/leads/${leadId}/pipeline`);
 }
 
 export function useDeleteLead() {
@@ -695,11 +708,11 @@ export async function getLeadProposals(leadId: number): Promise<{ data: LeadProp
 	return res.data;
 }
 
-export function useGetLeadProposals(leadId: number) {
+export function useGetLeadProposals(leadId: number, enabled = true) {
 	return useQuery({
 		queryKey: leadKeys.proposals(leadId),
 		queryFn: () => getLeadProposals(leadId),
-		enabled: leadId > 0,
+		enabled: enabled && leadId > 0,
 		select: (response) => response.data,
 	});
 }
@@ -709,11 +722,11 @@ export async function getLeadQuotations(leadId: number): Promise<{ data: LeadQuo
 	return res.data;
 }
 
-export function useGetLeadQuotations(leadId: number) {
+export function useGetLeadQuotations(leadId: number, enabled = true) {
 	return useQuery({
 		queryKey: leadKeys.quotations(leadId),
 		queryFn: () => getLeadQuotations(leadId),
-		enabled: leadId > 0,
+		enabled: enabled && leadId > 0,
 		select: (response) => response.data,
 	});
 }
@@ -723,39 +736,20 @@ export async function getLeadContracts(leadId: number): Promise<{ data: LeadCont
 	return res.data;
 }
 
-export function useGetLeadContracts(leadId: number) {
+export function useGetLeadContracts(leadId: number, enabled = true) {
 	return useQuery({
 		queryKey: leadKeys.contracts(leadId),
 		queryFn: () => getLeadContracts(leadId),
-		enabled: leadId > 0,
+		enabled: enabled && leadId > 0,
 		select: (response) => response.data,
 	});
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST sub-resources (direct creation — same payload shape as pipeline)
-// ─────────────────────────────────────────────────────────────────────────────
-
-export async function createLeadProposal(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadProposal }> {
-	const res = await api.post<{ success: boolean; data: LeadProposal }>(`/leads/${leadId}/proposals`, requestBodyForPayload(payload));
-	return res.data;
-}
-
-export function useCreateLeadProposal(leadId: number) {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: (payload: Record<string, unknown>) => createLeadProposal(leadId, payload),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: leadKeys.proposals(leadId) });
-			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
-			queryClient.invalidateQueries({ queryKey: leadKeys.list() });
-		},
-	});
-}
+// Document creation only occurs inside updateLeadStage. These mutations are
+// approval/signature commands exposed from the Kanban action dialog.
 
 export async function updateLeadProposal(leadId: number, proposalId: number, payload: Partial<Pick<LeadProposal, "status" | "assigned_to">>): Promise<{ data: LeadProposal }> {
-	const res = await api.patch<{ success: boolean; data: LeadProposal }>(`/leads/${leadId}/proposals/${proposalId}`, payload);
+	const res = await api.patch<{ success: boolean; data: LeadProposal }>(`/leads/${leadId}/pipeline/proposals/${proposalId}`, payload);
 	return res.data;
 }
 
@@ -766,17 +760,14 @@ export function useUpdateLeadProposal(leadId: number) {
 		mutationFn: ({ proposalId, payload }: { proposalId: number; payload: Partial<Pick<LeadProposal, "status" | "assigned_to">> }) => updateLeadProposal(leadId, proposalId, payload),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: leadKeys.proposals(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
+			queryClient.invalidateQueries({ queryKey: leadKeys.lists() });
 		},
 	});
 }
 
-export async function createLeadQuotation(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadQuotation }> {
-	const res = await api.post<{ success: boolean; data: LeadQuotation }>(`/leads/${leadId}/quotations`, requestBodyForPayload(payload));
-	return res.data;
-}
-
 export async function updateLeadQuotationStatus(leadId: number, quotationId: number, status: string): Promise<{ data: LeadQuotation }> {
-	const res = await api.patch<{ success: boolean; data: LeadQuotation }>(`/leads/${leadId}/quotations/${quotationId}`, { status });
+	const res = await api.patch<{ success: boolean; data: LeadQuotation }>(`/leads/${leadId}/pipeline/quotations/${quotationId}`, { status });
 	return res.data;
 }
 
@@ -788,34 +779,13 @@ export function useUpdateQuotationStatus(leadId: number) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: leadKeys.quotations(leadId) });
 			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
-			queryClient.invalidateQueries({ queryKey: leadKeys.list() });
+			queryClient.invalidateQueries({ queryKey: leadKeys.lists() });
 		},
 	});
-}
-
-export async function deleteLeadQuotation(leadId: number, quotationId: number): Promise<void> {
-	await api.delete(`/leads/${leadId}/quotations/${quotationId}`);
-}
-
-export function useDeleteLeadQuotation(leadId: number) {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: (quotationId: number) => deleteLeadQuotation(leadId, quotationId),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: leadKeys.quotations(leadId) });
-			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
-		},
-	});
-}
-
-export async function createLeadContract(leadId: number, payload: Record<string, unknown>): Promise<{ data: LeadContract }> {
-	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts`, requestBodyForPayload(payload));
-	return res.data;
 }
 
 export async function updateLeadContract(leadId: number, contractId: number, payload: Partial<Pick<LeadContract, "status" | "assigned_to">>): Promise<{ data: LeadContract }> {
-	const res = await api.patch<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts/${contractId}`, payload);
+	const res = await api.patch<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/pipeline/contracts/${contractId}`, payload);
 	return res.data;
 }
 
@@ -831,7 +801,7 @@ export function useUpdateLeadContract(leadId: number) {
 }
 
 export async function signLeadContract(leadId: number, contractId: number): Promise<{ data: LeadContract }> {
-	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/contracts/${contractId}/sign`);
+	const res = await api.post<{ success: boolean; data: LeadContract }>(`/leads/${leadId}/pipeline/contracts/${contractId}/sign`);
 	return res.data;
 }
 
@@ -840,22 +810,6 @@ export function useSignLeadContract(leadId: number) {
 
 	return useMutation({
 		mutationFn: (contractId: number) => signLeadContract(leadId, contractId),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: leadKeys.contracts(leadId) });
-			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });
-		},
-	});
-}
-
-export async function deleteLeadContract(leadId: number, contractId: number): Promise<void> {
-	await api.delete(`/leads/${leadId}/contracts/${contractId}`);
-}
-
-export function useDeleteLeadContract(leadId: number) {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: (contractId: number) => deleteLeadContract(leadId, contractId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: leadKeys.contracts(leadId) });
 			queryClient.invalidateQueries({ queryKey: leadKeys.detail(leadId) });

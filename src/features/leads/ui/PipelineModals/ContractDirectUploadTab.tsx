@@ -185,7 +185,6 @@ export function ContractDirectUploadTab() {
 							/>
 						</div>
 						<PaymentStagesFieldArray
-							control={control}
 							fieldArrayName="payment_stages"
 							finalTotal={totalAmount ?? 0}
 							currency={currency ?? ""}

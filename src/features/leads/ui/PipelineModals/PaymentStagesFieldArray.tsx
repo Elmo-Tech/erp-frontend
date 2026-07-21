@@ -13,7 +13,7 @@
  *  - currency       : display symbol
  */
 
-import { useFieldArray, useWatch, useFormContext, type Control } from "react-hook-form";
+import { useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { Button } from "@/shared/ui/button";
 import { Separator } from "@/shared/ui/separator";
 import { PlusIcon, Trash2Icon } from "lucide-react";
@@ -21,8 +21,6 @@ import { cn } from "@/shared/lib/utils";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 
 interface PaymentStagesFieldArrayProps {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	control: Control<any>;
 	fieldArrayName: string;
 	/** The reference total. Pass 0 (not undefined) when total is not yet entered. */
 	finalTotal: number;
@@ -34,12 +32,12 @@ interface StageRow {
 	percentage?: number;
 }
 
-export function PaymentStagesFieldArray({ control, fieldArrayName, finalTotal, currency }: PaymentStagesFieldArrayProps) {
+
+export function PaymentStagesFieldArray({ fieldArrayName, finalTotal, currency }: PaymentStagesFieldArrayProps) {
+	const { control, setValue } = useFormContext();
 	const { fields, append, remove } = useFieldArray({ control, name: fieldArrayName });
 
-	// useFormContext gives us the same control — useWatch needs the exact control ref
-	const { control: ctxControl, setValue } = useFormContext();
-	const stages = useWatch({ control: ctxControl, name: fieldArrayName }) as StageRow[] | undefined;
+	const stages = useWatch({ control, name: fieldArrayName }) as StageRow[] | undefined;
 
 	const allocated = (stages ?? []).reduce((sum, s) => sum + (Number(s?.amount) || 0), 0);
 	const remaining = (finalTotal || 0) - allocated;

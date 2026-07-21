@@ -4,7 +4,7 @@
  * PipelineProgress
  *
  * Extracted from LeadDetailsSheet so it can be reused standalone in
- * the LeadActivityTab on the Lead Details Page.
+ * the read-only lead details sheet.
  *
  * Renders a horizontal progress bar showing all pipeline stages with
  * colour-coded dots: completed (emerald), current (primary), pending (muted).

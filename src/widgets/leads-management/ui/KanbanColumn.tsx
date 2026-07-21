@@ -21,6 +21,9 @@ interface KanbanColumnProps {
 	leads: Lead[];
 	isDragDisabled: boolean;
 	onCardClick?: (leadId: number) => void;
+	onAdvance?: (lead: Lead) => void;
+	onManageActions?: (lead: Lead) => void;
+	canManageActions?: (lead: Lead) => boolean;
 }
 
 // Subtle accent colour per stage for the header dot
@@ -33,7 +36,7 @@ const STAGE_ACCENT: Record<PipelineStage, string> = {
 	closed_won: "bg-emerald-500",
 };
 
-export function KanbanColumn({ stage, leads, isDragDisabled, onCardClick }: KanbanColumnProps) {
+export function KanbanColumn({ stage, leads, isDragDisabled, onCardClick, onAdvance, onManageActions, canManageActions }: KanbanColumnProps) {
 	return (
 		<div className="flex flex-col w-[272px] shrink-0">
 			{/* ── Column header ──────────────────────────────────────────────── */}
@@ -60,6 +63,8 @@ export function KanbanColumn({ stage, leads, isDragDisabled, onCardClick }: Kanb
 								index={index}
 								isDragDisabled={isDragDisabled}
 								onCardClick={onCardClick}
+								onAdvance={onAdvance}
+								onManageActions={canManageActions?.(lead) ? onManageActions : undefined}
 							/>
 						))}
 						{provided.placeholder}
