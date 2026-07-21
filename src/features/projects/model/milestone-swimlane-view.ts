@@ -1,7 +1,7 @@
 import { MilestoneStatus, MilestoneStatusColors, MilestoneStatusLabels } from "@/shared/lib/statusHelpers";
 import type { Milestone } from "../api/execution.api";
 
-const DEFAULT_STATUS_COLOR = "bg-gray-100 text-gray-800 border-gray-200";
+const DEFAULT_STATUS_COLOR = "bg-muted text-muted-foreground border-border";
 
 export interface MilestoneSwimlaneView {
 	progress: number;

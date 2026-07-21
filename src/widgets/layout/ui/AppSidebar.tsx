@@ -55,26 +55,26 @@ export function Sidebar() {
 
     return (
         <TooltipProvider delayDuration={0}>
-            {isMobileOpen && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={closeMobile} />}
+			{isMobileOpen && <div className="fixed inset-0 z-40 bg-[#020b1a]/55 backdrop-blur-[2px] lg:hidden" onClick={closeMobile} />}
 
             <aside
                 className={cn(
-                    "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-sidebar-border/80 bg-sidebar/85 text-sidebar-foreground shadow-xl shadow-primary/10 backdrop-blur-lg transition-all duration-300",
+					"fixed top-3 bottom-3 left-3 z-50 flex flex-col overflow-hidden rounded-3xl border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[var(--shadow-nav)] backdrop-blur-xl transition-[width,transform] duration-300 ease-out",
                     "lg:translate-x-0",
                     isCollapsed ? "lg:w-17.5" : "lg:w-64",
-                    isMobileOpen ? "translate-x-0 w-64" : "-translate-x-full",
+					isMobileOpen ? "w-64 translate-x-0" : "-translate-x-[calc(100%+0.75rem)]",
                 )}
             >
-                <div className="flex h-16 items-center justify-between border-b border-sidebar-border/80 px-4">
+				<div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
                     {(!isCollapsed || isMobileOpen) && (
-                        <Link href="/dashboard" className="flex items-center gap-2">
-                            <Image src="/logo.webp" alt="Elmo ERP" width={32} height={32} className="rounded-lg" />
-                            <span className="text-lg font-semibold">Elmo ERP</span>
+						<Link href="/dashboard" className="flex items-center gap-2.5">
+							<span className="elmo-brand-mark rounded-xl p-1"><Image src="/logo.webp" alt="Elmo ERP" width={30} height={30} className="size-[30px] rounded-lg" /></span>
+							<span className="text-lg font-extrabold tracking-tight">Elmo ERP</span>
                         </Link>
                     )}
                     {isCollapsed && !isMobileOpen && (
                         <Link href="/dashboard" className="mx-auto">
-                            <Image src="/logo.webp" alt="Elmo ERP" width={32} height={32} className="rounded-lg" />
+							<span className="elmo-brand-mark block rounded-xl p-1"><Image src="/logo.webp" alt="Elmo ERP" width={30} height={30} className="size-[30px] rounded-lg" /></span>
                         </Link>
                     )}
                     <Button variant="ghost" size="icon" onClick={closeMobile} className="h-8 w-8 lg:hidden">
@@ -88,21 +88,21 @@ export function Sidebar() {
                 </div>
 
                 {isCollapsed && (
-                    <div className="hidden justify-center border-b border-sidebar-border/80 py-2 lg:flex">
+					<div className="hidden justify-center border-b border-sidebar-border py-2 lg:flex">
                         <Button variant="ghost" size="icon" onClick={toggleCollapsed} className="h-8 w-8">
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
                 )}
 
-                <nav className="flex-1 overflow-y-auto py-4">
+				<nav className="flex-1 overflow-y-auto py-4 [scrollbar-width:thin]">
                     {navGroups.map((group) => {
                         const filteredItems = filterItems(group.items);
                         if (filteredItems.length === 0) return null;
 
                         return (
                             <div key={group.title} className="mb-6">
-                                {!showCollapsed && <h3 className="px-4 mb-2 text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">{group.title}</h3>}
+								{!showCollapsed && <h3 className="mb-2 px-4 text-[0.6875rem] font-bold tracking-[0.14em] text-sidebar-foreground/55 uppercase">{group.title}</h3>}
                                 {showCollapsed && <div className="h-px bg-sidebar-border mx-3 mb-2" />}
 
                                 <div className="space-y-1 px-3">
@@ -114,8 +114,8 @@ export function Sidebar() {
                                             <Link
                                                 href={item.href}
                                                 className={cn(
-                                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-all",
-                                                    isActive ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+												"flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-[background-color,color,box-shadow] duration-200",
+												isActive ? "bg-primary text-primary-foreground shadow-[var(--glow-primary-small)]" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                                                     showCollapsed && "justify-center px-2",
                                                 )}
                                             >
@@ -143,7 +143,7 @@ export function Sidebar() {
                     })}
                 </nav>
 
-                <div className="border-t border-sidebar-border/80 p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-sidebar-foreground/60 text-center">© 2026 Elmo ERP</p>}</div>
+				<div className="border-t border-sidebar-border p-4">{(!isCollapsed || isMobileOpen) && <p className="text-center text-xs text-sidebar-foreground/55">© 2026 Elmo ERP</p>}</div>
             </aside>
         </TooltipProvider>
     );

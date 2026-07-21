@@ -23,8 +23,8 @@ export const ExecutionTaskStatusLabels: Record<ExecutionTaskStatusValue, string>
 };
 
 export const ExecutionTaskStatusColors: Record<ExecutionTaskStatusValue, string> = {
-	backlog: "bg-gray-100 text-gray-700 border-gray-200",
-	to_do: "bg-slate-100 text-slate-700 border-slate-200",
+	backlog: "bg-muted text-muted-foreground border-border",
+	to_do: "bg-muted text-muted-foreground border-border",
 	in_progress: "bg-blue-100 text-blue-700 border-blue-200",
 	in_review: "bg-yellow-100 text-yellow-700 border-yellow-200",
 	qa: "bg-purple-100 text-purple-700 border-purple-200",

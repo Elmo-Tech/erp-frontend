@@ -42,8 +42,8 @@ const TYPE_THEME: Record<
 		icon: CalendarDays,
 		color: "#64748b",
 		eventClass: "calendar-event-event bg-slate-500 text-white border-none",
-		softClass: "bg-slate-50 text-slate-700 border-slate-100 dark:bg-slate-950/40 dark:text-slate-200 dark:border-slate-900/60",
-		textClass: "text-slate-700 dark:text-slate-300",
+		softClass: "bg-muted text-muted-foreground border-border",
+		textClass: "text-muted-foreground",
 	},
 	meeting: {
 		label: "Meetings",
@@ -231,13 +231,13 @@ function AgendaRows({ items, onOpen }: { items: AggregatedCalendarItem[]; onOpen
 	}, [items]);
 
 	return (
-		<div className="rounded-md border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+		<div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] backdrop-blur-[14px]">
 			{Object.entries(grouped).map(([date, dayItems]) => (
 				<div
 					key={date}
 					className="grid border-b last:border-b-0 md:grid-cols-[150px_1fr]"
 				>
-					<div className="border-b bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200 md:border-b-0 md:border-r">
+					<div className="border-b border-border bg-muted/60 px-4 py-3 text-sm font-semibold text-foreground md:border-b-0 md:border-r">
 						{formatDateLabel(date)}
 					</div>
 					<div className="divide-y">
@@ -248,7 +248,7 @@ function AgendaRows({ items, onOpen }: { items: AggregatedCalendarItem[]; onOpen
 								<button
 									key={item.id}
 									type="button"
-									className="grid w-full grid-cols-[28px_1fr_auto] items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-900/70"
+									className="grid w-full grid-cols-[28px_1fr_auto] items-center gap-3 px-4 py-3 text-start transition-colors hover:bg-primary/[0.045]"
 									onClick={() => onOpen(item)}
 								>
 									<span
@@ -371,7 +371,7 @@ function MilestoneSheet({ item, onOpenChange }: { item: AggregatedCalendarItem |
 					</div>
 					<div className="rounded-md border p-4">
 						<div className="text-xs font-medium uppercase text-muted-foreground">Progress</div>
-						<div className="mt-2 h-2 rounded-full bg-slate-100 dark:bg-slate-800">
+						<div className="mt-2 h-2 rounded-full bg-muted">
 							<div
 								className="h-2 rounded-full bg-emerald-500"
 								style={{ width: `${Math.min(Math.max(meta.progressPercentage ?? 0, 0), 100)}%` }}
@@ -479,7 +479,7 @@ function AttendanceSheet({ item, onOpenChange }: { item: AggregatedCalendarItem 
 									<button
 										key={`${task.projectId}-${task.taskId}`}
 										type="button"
-										className="grid w-full gap-2 rounded-md border p-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-900/70"
+										className="grid w-full gap-2 rounded-xl border p-3 text-start transition-colors hover:bg-primary/[0.045]"
 										onClick={() => {
 											if (task.source === "project" && task.projectId) router.push(`/dashboard/projects/${task.projectId}`);
 										}}
@@ -621,14 +621,11 @@ export function MasterCalendarWidget() {
 		<>
 			<style>{`
 				.fc {
-					--fc-border-color: #e5e7eb;
-					--fc-today-bg-color: rgba(0, 112, 243, 0.07);
-					--fc-neutral-bg-color: #f8fafc;
+					--fc-border-color: var(--border);
+					--fc-today-bg-color: rgb(0 82 255 / 7%);
+					--fc-neutral-bg-color: var(--surface-glass-soft);
+					color: var(--foreground);
 					font-family: inherit;
-				}
-				.dark .fc {
-					--fc-border-color: #1f2937;
-					--fc-neutral-bg-color: #0f172a;
 				}
 				.fc .fc-scrollgrid {
 					border: 0 !important;
@@ -638,27 +635,21 @@ export function MasterCalendarWidget() {
 					border-color: var(--fc-border-color) !important;
 				}
 				.fc-col-header-cell {
-					background: #f9fafb;
+					background: var(--surface-glass-soft);
 					border: 0 !important;
-				}
-				.dark .fc-col-header-cell {
-					background: #0f172a;
 				}
 				.fc-col-header-cell-cushion {
 					padding: 11px 8px !important;
 					font-size: 11px !important;
 					font-weight: 700 !important;
 					text-transform: uppercase;
-					color: #64748b !important;
+					color: var(--muted-foreground) !important;
 				}
 				.fc-daygrid-day-number {
 					padding: 8px !important;
 					font-size: 12px !important;
 					font-weight: 600 !important;
-					color: #334155 !important;
-				}
-				.dark .fc-daygrid-day-number {
-					color: #cbd5e1 !important;
+					color: var(--foreground) !important;
 				}
 				.fc-day-today .fc-daygrid-day-number {
 					margin: 4px;
@@ -669,7 +660,7 @@ export function MasterCalendarWidget() {
 					align-items: center;
 					justify-content: center;
 					border-radius: 999px;
-					background: #0070f3;
+					background: var(--primary);
 					color: #fff !important;
 				}
 				.fc-event {
@@ -719,63 +710,51 @@ export function MasterCalendarWidget() {
 				.fc-event:hover {
 					opacity: .95;
 					transform: translateY(-1px);
-					box-shadow: 0 8px 18px rgba(15, 23, 42, .13) !important;
+					box-shadow: var(--glow-primary-small) !important;
 				}
 				.fc .fc-button-primary {
-					border: 1px solid #dbe3ef !important;
-					background: #fff !important;
-					color: #334155 !important;
-					border-radius: 7px !important;
+					border: 1px solid var(--border) !important;
+					background: var(--surface-glass-strong) !important;
+					color: var(--foreground) !important;
+					border-radius: 999px !important;
 					padding: 7px 10px !important;
 					font-size: 12px !important;
 					font-weight: 650 !important;
 					text-transform: capitalize !important;
-					box-shadow: 0 1px 1px rgba(15, 23, 42, .04);
-				}
-				.dark .fc .fc-button-primary {
-					border-color: #243044 !important;
-					background: #111827 !important;
-					color: #d1d5db !important;
+					box-shadow: 0 1px 2px rgb(2 11 26 / 6%);
 				}
 				.fc .fc-button-primary:hover,
 				.fc .fc-button-primary.fc-button-active {
-					border-color: #0070f3 !important;
-					background: #0070f3 !important;
+					border-color: var(--primary) !important;
+					background: var(--primary) !important;
 					color: #fff !important;
 				}
 				.fc-toolbar-title {
 					font-size: 18px !important;
 					font-weight: 700 !important;
-					color: #0f172a !important;
-				}
-				.dark .fc-toolbar-title {
-					color: #f8fafc !important;
+					color: var(--foreground) !important;
 				}
 				.fc-list {
 					border: 0 !important;
 				}
 				.fc-list-day-cushion {
-					background: #f8fafc !important;
-					color: #334155 !important;
+					background: var(--surface-glass-soft) !important;
+					color: var(--foreground) !important;
 					font-size: 12px;
 					text-transform: uppercase;
 				}
-				.dark .fc-list-day-cushion {
-					background: #0f172a !important;
-					color: #cbd5e1 !important;
-				}
 				.fc-list-event td {
 					padding: 12px 10px !important;
-					border-color: #eef2f7 !important;
-				}
-				.dark .fc-list-event td {
-					border-color: #1f2937 !important;
+					border-color: var(--border) !important;
 				}
 				.fc-popover {
-					border-radius: 8px !important;
+					border-radius: 16px !important;
 					border-color: var(--fc-border-color) !important;
+					background: var(--popover) !important;
+					color: var(--popover-foreground) !important;
 					overflow: hidden;
-					box-shadow: 0 18px 45px rgba(15, 23, 42, .18) !important;
+					box-shadow: var(--shadow-card) !important;
+					backdrop-filter: blur(18px);
 				}
 				.fc-daygrid-day-frame {
 					min-height: 108px;
@@ -852,11 +831,11 @@ export function MasterCalendarWidget() {
 				</div>
 
 				{isLoading ? (
-					<div className="rounded-md border bg-white py-16 text-center text-sm text-muted-foreground dark:bg-slate-950">Loading calendar...</div>
+					<div className="rounded-2xl border bg-card py-16 text-center text-sm text-muted-foreground shadow-[var(--shadow-card)] backdrop-blur-[14px]">Loading calendar...</div>
 				) : error ? (
-					<div className="rounded-md border bg-white py-16 text-center text-sm text-destructive dark:bg-slate-950">Failed to load calendar data.</div>
+					<div className="rounded-2xl border bg-card py-16 text-center text-sm text-destructive shadow-[var(--shadow-card)] backdrop-blur-[14px]">Failed to load calendar data.</div>
 				) : (
-					<div className="overflow-hidden rounded-md border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
+					<div className="overflow-hidden rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)] backdrop-blur-[14px]">
 						<FullCalendar
 							ref={calendarRef}
 							plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}

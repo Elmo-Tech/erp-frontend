@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
-import { Activity, ExternalLink, ListTodo, Loader2, LogIn, LogOut, Menu, Moon, Play, Search, Square, Sun, Timer, User } from "lucide-react";
+import { Activity, ExternalLink, ListTodo, Loader2, LogIn, LogOut, Menu, Play, Search, Square, Timer, User } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { authApi } from "@/features/auth/api/auth.api";
@@ -25,10 +24,10 @@ import { SystemNotificationsDropdown } from "@/widgets/system-notifications/ui/S
 import { Can } from "@/shared/ui/Can";
 import { cn } from "@/shared/lib/utils";
 import { TaskPriorityColors, TaskPriorityLabels } from "@/shared/lib/statusHelpers";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function DashboardNavbar() {
     const router = useRouter();
-    const { resolvedTheme, setTheme } = useTheme();
     const { user, role, logout } = useAuthStore();
     const { toggleMobileOpen } = useSidebarStore();
     const initials = user?.name
@@ -50,12 +49,12 @@ export function DashboardNavbar() {
     });
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-sidebar-border/80 bg-sidebar/85 px-4 text-sidebar-foreground shadow-sm shadow-primary/10 backdrop-blur-lg lg:px-6">
+		<header className="sticky top-3 z-30 mx-3 mt-3 flex h-16 items-center justify-between rounded-2xl border border-sidebar-border bg-sidebar px-4 text-sidebar-foreground shadow-[var(--shadow-nav)] backdrop-blur-xl lg:mx-4 lg:px-5">
             <div className="flex items-center gap-3">
                 <Button type="button" variant="ghost" size="icon" onClick={toggleMobileOpen} className="lg:hidden" aria-label="Toggle menu">
                     <Menu />
                 </Button>
-                <Button type="button" variant="outline" size="sm" className="hidden w-64 justify-start border-white/15 bg-white/10 text-sidebar-foreground/70 disabled:opacity-80 md:flex" disabled>
+				<Button type="button" variant="outline" size="sm" className="hidden w-64 justify-start bg-surface-glass-soft text-sidebar-foreground/70 disabled:opacity-80 md:flex" disabled>
                     <Search data-icon="inline-start" />
                     Search
                 </Button>
@@ -68,9 +67,7 @@ export function DashboardNavbar() {
                     <TeamPulsePopover />
                 </Can>
 
-                <Button type="button" variant="ghost" size="icon" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")} aria-label="Toggle theme">
-                    {resolvedTheme === "dark" ? <Sun /> : <Moon />}
-                </Button>
+				<ThemeToggle />
 
                 <SystemNotificationsDropdown />
 
@@ -501,7 +498,7 @@ function TeamPulseRow({ item, now, selected, onSelect }: { item: TeamPulseItem; 
         <button type="button" className={cn("w-full rounded-md px-3 py-2 text-left hover:bg-muted/50", selected && "bg-muted")} onClick={onSelect}>
             <div className="flex items-start justify-between gap-3">
                 <p className="text-sm leading-5">{message}</p>
-                <span className={item.status === "clocked_in" ? "mt-1 size-2 rounded-full bg-emerald-500" : "mt-1 size-2 rounded-full bg-slate-300"} />
+				<span className={item.status === "clocked_in" ? "mt-1 size-2 rounded-full bg-emerald-500" : "mt-1 size-2 rounded-full bg-muted-foreground/40"} />
             </div>
             {item.activeProjectTitle && <p className="mt-0.5 text-xs text-muted-foreground">{item.activeProjectTitle}</p>}
         </button>

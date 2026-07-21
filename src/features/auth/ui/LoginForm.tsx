@@ -38,10 +38,10 @@ export function LoginForm({ initialEmail }: LoginFormProps) {
 	};
 
 	return (
-		<Card className="w-full max-w-md border-border shadow-2xl shadow-[#003770]/10">
+		<Card className="w-full max-w-md border-border/90 bg-surface-glass py-7 shadow-[var(--shadow-card)] backdrop-blur-xl">
 			<CardHeader className="space-y-1 text-center">
-				<CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-				<CardDescription>Sign in to access your dashboard</CardDescription>
+				<CardTitle className="text-2xl font-extrabold tracking-tight">Welcome back</CardTitle>
+				<CardDescription className="leading-6">Sign in to continue to your workspace</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<Form {...form}>
@@ -49,7 +49,7 @@ export function LoginForm({ initialEmail }: LoginFormProps) {
 						onSubmit={form.handleSubmit(onSubmit)}
 						className="space-y-4"
 					>
-						{error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{(error as { response?: { data?: { message?: string } } })?.response?.data?.message || "An error occurred during login"}</div>}
+						{error && <div role="alert" className="rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm font-medium text-destructive">{(error as { response?: { data?: { message?: string } } })?.response?.data?.message || "An error occurred during login"}</div>}
 
 						<FormInput
 							control={form.control}
@@ -83,7 +83,7 @@ export function LoginForm({ initialEmail }: LoginFormProps) {
 
 						<Button
 							type="submit"
-							className="w-full"
+							className="mt-2 h-11 w-full"
 							disabled={isPending}
 						>
 							{isPending ? (

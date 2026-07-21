@@ -7,7 +7,7 @@ import {
 	type ExecutionTaskStatusValue,
 } from "../api/execution.api";
 
-const DEFAULT_STATUS_COLOR = "bg-gray-100 text-gray-800 border-gray-200";
+const DEFAULT_STATUS_COLOR = "bg-muted text-muted-foreground border-border";
 
 export interface TaskCardView {
 	runningEntry: ProjectTimeEntry | null;

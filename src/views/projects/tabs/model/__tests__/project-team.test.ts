@@ -26,7 +26,7 @@ describe("project-team model", () => {
 		});
 		expect(getProjectMemberRoleConfig("architect")).toEqual({
 			label: "architect",
-			className: "bg-gray-50 text-gray-700 border-gray-200",
+			className: "bg-muted/70 text-muted-foreground border-border",
 		});
 		expect(getProjectMemberInitials("Mona Hassan")).toBe("MH");
 	});

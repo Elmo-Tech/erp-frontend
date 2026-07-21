@@ -4,7 +4,7 @@ import type { InternalUser } from "@/entities/user/model/types";
 
 const fallbackRoleConfig = {
 	label: "",
-	className: "bg-gray-50 text-gray-700 border-gray-200",
+	className: "bg-muted/70 text-muted-foreground border-border",
 };
 
 export const projectMemberRoleOptions = [

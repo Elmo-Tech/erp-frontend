@@ -32,10 +32,10 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 	const hasAnyDashboardSection = canViewFinancialStats || canViewProjectTimeline || canViewTeamPerformance || canShowPersonalPanel || canShowGlobalBlockers || canViewEscalatedBlockers || canViewTeamPulse;
 
 	return (
-		<div className="space-y-4">
-			<div className="flex flex-col gap-1 border-b pb-4">
-				<h1 className="text-2xl font-semibold tracking-tight">{isAdminScope ? "Company Analytics" : "Dashboard"}</h1>
-				<p className="text-sm text-muted-foreground">{isAdminScope ? "Company-wide revenue, project, and team KPIs." : "Permission-scoped operational state and immediate work."}</p>
+		<div className="space-y-5">
+			<div className="flex flex-col gap-1.5 border-b border-border/80 pb-5">
+				<h1 className="text-3xl font-extrabold tracking-[-0.03em]">{isAdminScope ? "Company Analytics" : "Dashboard"}</h1>
+				<p className="max-w-2xl text-sm leading-6 text-muted-foreground">{isAdminScope ? "Company-wide revenue, project, and team KPIs." : "Permission-scoped operational state and immediate work."}</p>
 			</div>
 
 			{!isAdminScope && <StartDayGateWidget />}
@@ -43,7 +43,7 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 			{dashboardQuery.isLoading ? (
 				<DashboardSkeleton />
 			) : dashboardQuery.error ? (
-				<div className="flex min-h-48 items-center justify-center rounded-md border px-4 text-center text-sm text-muted-foreground">Unable to load dashboard data.</div>
+				<div className="elmo-glass flex min-h-48 items-center justify-center rounded-2xl px-4 text-center text-sm text-muted-foreground">Unable to load dashboard data.</div>
 			) : hasAnyDashboardSection ? (
 				<div className="space-y-4">
 					{canViewEscalatedBlockers && hasEscalatedBlockers && <EscalatedBlockersWidget blockers={dashboard?.escalated_blockers} />}
@@ -95,7 +95,7 @@ export function MainDashboardWidget({ scope = "main" }: MainDashboardWidgetProps
 					)}
 				</div>
 			) : (
-				<div className="flex min-h-48 items-center justify-center rounded-md border px-4 text-center text-sm text-muted-foreground">No dashboard sections are enabled for your account.</div>
+				<div className="elmo-glass flex min-h-48 items-center justify-center rounded-2xl px-4 text-center text-sm text-muted-foreground">No dashboard sections are enabled for your account.</div>
 			)}
 		</div>
 	);
@@ -105,12 +105,12 @@ function DashboardSkeleton() {
 	return (
 		<div className="space-y-4">
 			<div className="grid gap-3 md:grid-cols-4">
-				<Skeleton className="h-24 w-full rounded-md" />
-				<Skeleton className="h-24 w-full rounded-md" />
-				<Skeleton className="h-24 w-full rounded-md" />
-				<Skeleton className="h-24 w-full rounded-md" />
+				<Skeleton className="h-24 w-full rounded-2xl" />
+				<Skeleton className="h-24 w-full rounded-2xl" />
+				<Skeleton className="h-24 w-full rounded-2xl" />
+				<Skeleton className="h-24 w-full rounded-2xl" />
 			</div>
-			<Skeleton className="h-72 w-full rounded-md" />
+			<Skeleton className="h-72 w-full rounded-2xl" />
 		</div>
 	);
 }

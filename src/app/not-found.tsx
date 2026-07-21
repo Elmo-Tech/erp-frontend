@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
  */
 export default function NotFound() {
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+		<div className="flex min-h-screen items-center justify-center p-4">
 			<Card className="w-full max-w-md">
 				<CardHeader>
 					<div className="flex items-center gap-2">
@@ -23,7 +23,7 @@ export default function NotFound() {
 				</CardHeader>
 
 				<CardContent>
-					<div className="rounded-lg bg-muted p-4">
+					<div className="rounded-xl border border-border bg-muted/70 p-4">
 						<p className="text-sm text-muted-foreground">This could happen if:</p>
 						<ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted-foreground">
 							<li>The URL was typed incorrectly</li>

@@ -6,9 +6,19 @@
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
-	--font-sans: var(--font-geist-sans);
-	--font-mono: var(--font-geist-mono);
-	--font-display: var(--font-stripe-display);
+	--color-canvas: var(--canvas);
+	--color-surface-deep: var(--surface-deep);
+	--color-surface-solid: var(--surface-solid);
+	--color-surface-menu: var(--surface-menu);
+	--color-surface-glass: var(--surface-glass);
+	--color-surface-glass-soft: var(--surface-glass-soft);
+	--color-surface-glass-strong: var(--surface-glass-strong);
+	--color-cyan: var(--cyan);
+	--color-sky: var(--sky);
+	--color-periwinkle: var(--periwinkle);
+	--font-sans: var(--font-sans);
+	--font-mono: var(--font-mono);
+	--font-display: var(--font-display);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,99 +58,204 @@
 }
 
 :root {
-	--font-geist-sans:
-		"sohne-var", "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-	--font-geist-mono:
-		"SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-	--font-stripe-display:
-		"sohne-var", "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-	--stripe-primary: #533afd;
-	--stripe-ink: #0d253d;
-	--stripe-canvas-soft: #f6f9fc;
-	--stripe-mesh-cream: #f5e9d4;
-	--stripe-mesh-lavender: #b9b9f9;
-	--stripe-mesh-ruby: #ea2261;
-	--stripe-mesh-magenta: #f96bee;
-	--radius: 0.75rem;
-	--background: #f6f9fc;
-	--foreground: #0d253d;
-	--card: #ffffff;
-	--card-foreground: #0d253d;
-	--popover: #ffffff;
-	--popover-foreground: #0d253d;
-	--primary: #533afd;
+	color-scheme: light;
+	/* Light mode keeps the airy canvas while the app background provides depth. */
+	--font-sans: Arial, "IBM Plex Sans Arabic", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	--font-mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+	--font-display: Arial, "IBM Plex Sans Arabic", system-ui, sans-serif;
+	--primary: #0052ff;
+	--primary-dark: #2b418f;
 	--primary-foreground: #ffffff;
-	--secondary: #ffffff;
-	--secondary-foreground: #533afd;
-	--muted: #f6f9fc;
-	--muted-foreground: #64748d;
-	--accent: #f6f9fc;
-	--accent-foreground: #0d253d;
-	--destructive: #ea2261;
-	--border: #e3e8ee;
-	--input: #a8c3de;
-	--ring: #533afd;
-	--chart-1: #533afd;
-	--chart-2: #4434d4;
-	--chart-3: #ea2261;
-	--chart-4: #f96bee;
-	--chart-5: #0d253d;
-	--sidebar: #1c1e54;
-	--sidebar-foreground: #ffffff;
-	--sidebar-primary: #533afd;
+	--cyan: #47d6ff;
+	--sky: #439ff7;
+	--periwinkle: #b7c4ff;
+	--gradient-brand: linear-gradient(90deg, #0068c9 0%, #0052ff 49.52%, #2b418f 100%);
+	--gradient-primary: linear-gradient(90deg, #0052ff 0%, #2b418f 100%);
+	--canvas: #f4f8ff;
+	--background: #edf4ff;
+	--foreground: #071426;
+	--surface-deep: #e3edfb;
+	--surface-solid: #ffffff;
+	--surface-menu: #ffffff;
+	--surface-glass: rgb(255 255 255 / 78%);
+	--surface-glass-soft: rgb(244 248 255 / 68%);
+	--surface-glass-strong: rgb(255 255 255 / 94%);
+	--card: rgb(255 255 255 / 78%);
+	--card-foreground: #071426;
+	--popover: rgb(255 255 255 / 96%);
+	--popover-foreground: #071426;
+	--secondary: #e3edfb;
+	--secondary-foreground: #1f3652;
+	--muted: #e7f0ff;
+	--muted-foreground: #52657d;
+	--accent: #e3edfb;
+	--accent-foreground: #071426;
+	--destructive: #b42318;
+	--border: rgb(15 47 89 / 15%);
+	--input: rgb(15 47 89 / 22%);
+	--ring: #0052ff;
+	--chart-1: #0052ff;
+	--chart-2: #0068c9;
+	--chart-3: #2b418f;
+	--chart-4: #0f8a8d;
+	--chart-5: #a15c00;
+	--sidebar: rgb(255 255 255 / 86%);
+	--sidebar-foreground: #071426;
+	--sidebar-primary: #0052ff;
 	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: #2e2b8c;
-	--sidebar-accent-foreground: #ffffff;
-	--sidebar-border: rgb(255 255 255 / 12%);
-	--sidebar-ring: #665efd;
+	--sidebar-accent: #e3edfb;
+	--sidebar-accent-foreground: #071426;
+	--sidebar-border: rgb(15 47 89 / 15%);
+	--sidebar-ring: #0052ff;
+	--glow-primary: 0 12px 32px rgb(0 82 255 / 18%);
+	--glow-primary-hover: 0 14px 38px rgb(0 82 255 / 28%);
+	--glow-primary-small: 0 6px 18px rgb(0 82 255 / 16%);
+	--shadow-card: 0 18px 40px -20px rgb(20 54 92 / 28%);
+	--shadow-nav: 0 12px 32px rgb(20 54 92 / 14%);
+	--radius: 0.875rem;
 }
 
 .dark {
-	--background: #1c1e54;
+	color-scheme: dark;
+	/* Dark mode preserves the original deep-navy surface hierarchy. */
+	--gradient-brand: linear-gradient(90deg, #47d6ff 0%, #439ff7 49.52%, #3e66ef 100%);
+	--canvas: #020b1a;
+	--background: #091423;
 	--foreground: #ffffff;
-	--card: #0d253d;
+	--surface-deep: #040e1d;
+	--surface-solid: #0a192f;
+	--surface-menu: #0a0f1e;
+	--surface-glass: rgb(4 14 29 / 70%);
+	--surface-glass-soft: rgb(10 25 47 / 40%);
+	--surface-glass-strong: rgb(10 25 47 / 80%);
+	--card: rgb(4 14 29 / 70%);
 	--card-foreground: #ffffff;
-	--popover: #0d253d;
+	--popover: rgb(10 25 47 / 96%);
 	--popover-foreground: #ffffff;
-	--primary: #533afd;
-	--primary-foreground: #ffffff;
-	--secondary: #273951;
-	--secondary-foreground: #ffffff;
-	--muted: #273951;
-	--muted-foreground: #a8c3de;
-	--accent: #273951;
+	--secondary: #0a192f;
+	--secondary-foreground: #d8e3f9;
+	--muted: #0a192f;
+	--muted-foreground: #94a3b8;
+	--accent: #102746;
 	--accent-foreground: #ffffff;
-	--destructive: #ea2261;
-	--border: rgb(255 255 255 / 12%);
-	--input: rgb(255 255 255 / 15%);
-	--ring: #665efd;
-	--chart-1: #665efd;
-	--chart-2: #533afd;
-	--chart-3: #ea2261;
-	--chart-4: #f96bee;
-	--chart-5: #ffffff;
-	--sidebar: #1c1e54;
+	--destructive: #f87171;
+	--border: rgb(216 227 249 / 15%);
+	--input: rgb(216 227 249 / 24%);
+	--ring: #47d6ff;
+	--chart-1: #47d6ff;
+	--chart-2: #439ff7;
+	--chart-3: #3e66ef;
+	--chart-4: #b7c4ff;
+	--chart-5: #fbbf24;
+	--sidebar: rgb(4 14 29 / 88%);
 	--sidebar-foreground: #ffffff;
-	--sidebar-primary: #533afd;
+	--sidebar-primary: #0052ff;
 	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: #2e2b8c;
-	--sidebar-accent-foreground: #ffffff;
-	--sidebar-border: rgb(255 255 255 / 12%);
-	--sidebar-ring: #665efd;
+	--sidebar-accent: rgb(71 214 255 / 10%);
+	--sidebar-accent-foreground: #d8e3f9;
+	--sidebar-border: rgb(216 227 249 / 15%);
+	--sidebar-ring: #47d6ff;
+	--glow-primary: 0 0 50px rgb(0 82 255 / 50%);
+	--glow-primary-hover: 0 0 60px rgb(0 82 255 / 70%);
+	--glow-primary-small: 0 0 20px rgb(0 82 255 / 40%);
+	--shadow-card: 0 25px 50px -12px rgb(0 0 0 / 25%);
+	--shadow-nav: 0 4px 30px rgb(0 0 0 / 20%);
 }
 
 @layer base {
 	* {
 		@apply border-border outline-ring/50;
 	}
-	body {
-		@apply bg-background text-foreground relative min-h-screen overflow-x-hidden;
+
+	html {
+		scroll-behavior: smooth;
 	}
+
+	body {
+		@apply relative min-h-screen overflow-x-hidden bg-background text-foreground antialiased;
+		background-image:
+			radial-gradient(ellipse 80% 38% at 8% -8%, rgb(71 214 255 / 18%), transparent 72%),
+			radial-gradient(ellipse 70% 34% at 96% 2%, rgb(0 82 255 / 12%), transparent 74%),
+			linear-gradient(180deg, var(--canvas), var(--background));
+		background-attachment: fixed;
+		font-family: var(--font-sans);
+		text-rendering: optimizeLegibility;
+	}
+
+	.dark body {
+		background-image:
+			radial-gradient(ellipse 85% 34% at 10% -8%, rgb(71 214 255 / 18%), transparent 72%),
+			radial-gradient(ellipse 75% 36% at 96% 0%, rgb(0 82 255 / 24%), transparent 74%),
+			linear-gradient(180deg, #020b1a, #091423 58%, #020b1a);
+	}
+
 	h1,
 	h2,
 	h3 {
-		font-family: var(--font-stripe-display);
-		font-weight: 300;
-		letter-spacing: 0;
+		font-family: var(--font-display);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		text-wrap: balance;
+	}
+
+	p {
+		text-wrap: pretty;
+	}
+
+	::selection {
+		background: rgb(0 82 255 / 20%);
+		color: var(--foreground);
+	}
+
+	.dark ::selection {
+		background: rgb(71 214 255 / 28%);
+	}
+
+	:focus-visible {
+		outline-color: var(--ring);
+	}
+}
+
+@layer components {
+	.elmo-glass {
+		background: var(--surface-glass);
+		border: 1px solid var(--border);
+		box-shadow: var(--shadow-card);
+		backdrop-filter: blur(14px);
+	}
+
+	.elmo-brand-text {
+		color: var(--primary);
+	}
+
+	.elmo-brand-mark {
+		background: var(--gradient-primary);
+		box-shadow: var(--glow-primary-small);
+	}
+
+	[data-slot="dialog-content"],
+	[data-slot="sheet-content"],
+	[data-slot="popover-content"],
+	[data-slot="dropdown-menu-content"],
+	[data-slot="dropdown-menu-sub-content"],
+	[data-slot="select-content"] {
+		background: var(--popover);
+		border-color: var(--border);
+		box-shadow: var(--shadow-card);
+		backdrop-filter: blur(18px);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
 	}
 }

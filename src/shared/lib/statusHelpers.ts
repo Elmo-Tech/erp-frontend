@@ -50,7 +50,7 @@ export const LeadPriorityLabels: Record<LeadPriority, string> = {
 };
 
 export const LeadPriorityColors: Record<LeadPriority, string> = {
-	[LeadPriority.LOW]: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[LeadPriority.LOW]: "bg-muted text-muted-foreground border-border",
 	[LeadPriority.MEDIUM]: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[LeadPriority.HIGH]: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
 	[LeadPriority.URGENT]: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
@@ -78,7 +78,7 @@ export const QuotationStatusLabels: Record<QuotationStatus, string> = {
 };
 
 export const QuotationStatusColors: Record<QuotationStatus, string> = {
-	[QuotationStatus.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[QuotationStatus.DRAFT]: "bg-muted text-muted-foreground border-border",
 	[QuotationStatus.SENT]: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[QuotationStatus.VIEWED]: "bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800",
 	[QuotationStatus.EXPIRED]: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
@@ -107,7 +107,7 @@ export const ContractStatusLabels: Record<ContractStatus, string> = {
 };
 
 export const ContractStatusColors: Record<ContractStatus, string> = {
-	[ContractStatus.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[ContractStatus.DRAFT]: "bg-muted text-muted-foreground border-border",
 	[ContractStatus.PENDING_SIGNATURE]: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
 	[ContractStatus.SIGNED]: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[ContractStatus.ACTIVE]: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
@@ -139,7 +139,7 @@ export const ProjectStatusLabels: Record<ProjectStatus, string> = {
 };
 
 export const ProjectStatusColors: Record<ProjectStatus, string> = {
-	[ProjectStatus.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[ProjectStatus.DRAFT]: "bg-muted text-muted-foreground border-border",
 	[ProjectStatus.ACTIVE]: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[ProjectStatus.UI_UX]: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
 	[ProjectStatus.DEVELOPMENT]: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
@@ -167,7 +167,7 @@ export const TaskStatusLabels: Record<TaskStatus, string> = {
 };
 
 export const TaskStatusColors: Record<TaskStatus, string> = {
-	[TaskStatus.TODO]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[TaskStatus.TODO]: "bg-muted text-muted-foreground border-border",
 	[TaskStatus.IN_PROGRESS]: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[TaskStatus.REVIEW]: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
 	[TaskStatus.TESTING]: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800",
@@ -190,7 +190,7 @@ export const TaskPriorityLabels: Record<TaskPriority, string> = {
 };
 
 export const TaskPriorityColors: Record<TaskPriority, string> = {
-	[TaskPriority.LOW]: "bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700",
+	[TaskPriority.LOW]: "bg-muted text-muted-foreground border-border",
 	[TaskPriority.MEDIUM]: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[TaskPriority.HIGH]: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
 	[TaskPriority.URGENT]: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
@@ -214,11 +214,11 @@ export const InvoiceStatusLabels: Record<InvoiceStatus, string> = {
 };
 
 export const InvoiceStatusColors: Record<InvoiceStatus, string> = {
-	[InvoiceStatus.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[InvoiceStatus.DRAFT]: "bg-muted text-muted-foreground border-border",
 	[InvoiceStatus.SENT]: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[InvoiceStatus.PAID]: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
 	[InvoiceStatus.OVERDUE]: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
-	[InvoiceStatus.CANCELLED]: "bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700",
+	[InvoiceStatus.CANCELLED]: "bg-muted/70 text-muted-foreground border-border",
 };
 
 // ============ Milestone Status ============
@@ -239,7 +239,7 @@ export const MilestoneStatusLabels: Record<MilestoneStatus, string> = {
 };
 
 export const MilestoneStatusColors: Record<MilestoneStatus, string> = {
-	[MilestoneStatus.PENDING]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[MilestoneStatus.PENDING]: "bg-muted text-muted-foreground border-border",
 	[MilestoneStatus.DUE]: "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
 	[MilestoneStatus.INVOICED]: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[MilestoneStatus.PAID]: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
@@ -261,7 +261,7 @@ export const ClientStatusLabels: Record<ClientStatus, string> = {
 
 export const ClientStatusColors: Record<ClientStatus, string> = {
 	[ClientStatus.ACTIVE]: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
-	[ClientStatus.INACTIVE]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[ClientStatus.INACTIVE]: "bg-muted text-muted-foreground border-border",
 	[ClientStatus.SUSPENDED]: "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
 };
 
@@ -332,7 +332,7 @@ export const DeliverableStatusLabels: Record<DeliverableStatus, string> = {
 };
 
 export const DeliverableStatusColors: Record<DeliverableStatus, string> = {
-	[DeliverableStatus.PENDING]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[DeliverableStatus.PENDING]: "bg-muted text-muted-foreground border-border",
 	[DeliverableStatus.SUBMITTED]: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
 	[DeliverableStatus.UNDER_REVIEW]: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
 	[DeliverableStatus.APPROVED]: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800",
@@ -386,10 +386,10 @@ export const TaskCategoryColors: Record<TaskCategory, string> = {
 	[TaskCategory.IOS]: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
 	[TaskCategory.ANDROID]: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
 	[TaskCategory.REACT_NATIVE]: "bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800",
-	[TaskCategory.DEPLOYMENT]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
-	[TaskCategory.INFRASTRUCTURE]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
-	[TaskCategory.CI_CD]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
-	[TaskCategory.MONITORING]: "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800/50 dark:text-gray-300 dark:border-gray-700",
+	[TaskCategory.DEPLOYMENT]: "bg-muted text-muted-foreground border-border",
+	[TaskCategory.INFRASTRUCTURE]: "bg-muted text-muted-foreground border-border",
+	[TaskCategory.CI_CD]: "bg-muted text-muted-foreground border-border",
+	[TaskCategory.MONITORING]: "bg-muted text-muted-foreground border-border",
 	[TaskCategory.TESTING]: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
 	[TaskCategory.AUTOMATION]: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
 	[TaskCategory.BUG_FIX]: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800",
@@ -403,7 +403,7 @@ export function getStatusLabel<T extends string>(status: T, labels: Record<T, st
 }
 
 export function getStatusColor<T extends string>(status: T, colors: Record<T, string>): string {
-	return colors[status] || "bg-gray-100 text-gray-800 border-gray-200";
+	return colors[status] || "bg-muted text-muted-foreground border-border";
 }
 
 // ============ Project Status Transitions ============

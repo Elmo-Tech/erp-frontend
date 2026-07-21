@@ -51,7 +51,7 @@ const TIME_ENTRY_MANAGE_PERMISSIONS = ["manage_time_entries", "manage_all_projec
 // ─────────────────────────────────────────────────────────────────────────────
 
 function getStatusColor(status: string): string {
-	return ExecutionTaskStatusColors[status as keyof typeof ExecutionTaskStatusColors] ?? "bg-gray-100 text-gray-700 border-gray-200";
+	return ExecutionTaskStatusColors[status as keyof typeof ExecutionTaskStatusColors] ?? "bg-muted text-muted-foreground border-border";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

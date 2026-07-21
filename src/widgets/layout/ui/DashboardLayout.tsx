@@ -16,17 +16,14 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, allowedRoles, requiredPermission }: DashboardLayoutProps) {
     const { isCollapsed } = useSidebarStore();
 
-    return (
-        <ProtectedDashboardRoute allowedRoles={allowedRoles} requiredPermission={requiredPermission}>
-            <div className="min-h-screen bg-background">
-                <AppSidebar />
-                {/* Content shifts right by exactly the sidebar width.
-				    The sidebar is `fixed` so it's out of flow — we use
-				    margin-left (not flex) to create the offset. */}
-                <div className={cn("flex flex-col min-h-screen transition-all duration-300", isCollapsed ? "lg:ml-17.5" : "lg:ml-64")}>
-                    <DashboardNavbar />
-                    <main className="flex-1 p-4 lg:p-6">{children}</main>
-                </div>
+	return (
+		<ProtectedDashboardRoute allowedRoles={allowedRoles} requiredPermission={requiredPermission}>
+			<div className="relative min-h-screen bg-transparent">
+				<AppSidebar />
+				<div className={cn("flex min-h-screen flex-col transition-[margin] duration-300 ease-out", isCollapsed ? "lg:ml-[5.5rem]" : "lg:ml-[17rem]")}>
+					<DashboardNavbar />
+					<main className="flex-1 px-4 pt-4 pb-8 lg:px-6 lg:pt-5">{children}</main>
+				</div>
             </div>
         </ProtectedDashboardRoute>
     );

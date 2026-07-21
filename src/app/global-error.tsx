@@ -31,15 +31,16 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 	}, [error]);
 
 	return (
-		<html>
-			<body>
+		<html style={{ colorScheme: "light dark" }}>
+			<body style={{ margin: 0, fontFamily: "Arial, system-ui, sans-serif" }}>
 				<div
 					style={{
 						display: "flex",
 						minHeight: "100vh",
 						alignItems: "center",
 						justifyContent: "center",
-						backgroundColor: "#f9fafb",
+						background: "radial-gradient(circle at 15% 0%, rgba(71, 214, 255, .18), transparent 35%), radial-gradient(circle at 90% 5%, rgba(0, 82, 255, .18), transparent 38%), light-dark(#f4f8ff, #020b1a)",
+						color: "light-dark(#071426, #ffffff)",
 						padding: "1rem",
 					}}
 				>
@@ -47,29 +48,32 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 						style={{
 							width: "100%",
 							maxWidth: "42rem",
-							backgroundColor: "white",
-							borderRadius: "0.5rem",
-							boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+							backgroundColor: "light-dark(rgba(255, 255, 255, .88), rgba(4, 14, 29, .78))",
+							border: "1px solid light-dark(rgba(15, 47, 89, .15), rgba(216, 227, 249, .15))",
+							borderRadius: "1.5rem",
+							boxShadow: "0 20px 50px -20px rgba(0, 31, 78, .35)",
+							backdropFilter: "blur(18px)",
 							padding: "2rem",
 						}}
 					>
 						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-							<AlertTriangle style={{ width: "1.5rem", height: "1.5rem", color: "#ef4444" }} />
+							<AlertTriangle style={{ width: "1.5rem", height: "1.5rem", color: "light-dark(#b42318, #f87171)" }} />
 							<h1 style={{ fontSize: "1.5rem", fontWeight: "bold", margin: 0 }}>Critical Error</h1>
 						</div>
 
-						<p style={{ marginTop: "0.5rem", color: "#6b7280" }}>A critical error occurred. Please refresh the page or contact support.</p>
+						<p style={{ marginTop: "0.5rem", color: "light-dark(#52657d, #c3c5d9)" }}>A critical error occurred. Please refresh the page or contact support.</p>
 
 						<div
 							style={{
 								marginTop: "1rem",
 								padding: "1rem",
-								backgroundColor: "#fee2e2",
-								borderRadius: "0.5rem",
+								backgroundColor: "light-dark(rgba(180, 35, 24, .1), rgba(248, 113, 113, .1))",
+								border: "1px solid light-dark(rgba(180, 35, 24, .2), rgba(248, 113, 113, .2))",
+								borderRadius: "0.75rem",
 							}}
 						>
-							<p style={{ fontSize: "0.875rem", fontWeight: "500", color: "#dc2626" }}>{error.message || "An unexpected error occurred"}</p>
-							{error.digest && <p style={{ marginTop: "0.25rem", fontSize: "0.75rem", color: "#9ca3af" }}>Error ID: {error.digest}</p>}
+							<p style={{ fontSize: "0.875rem", fontWeight: "600", color: "light-dark(#b42318, #f87171)" }}>{error.message || "An unexpected error occurred"}</p>
+							{error.digest && <p style={{ marginTop: "0.25rem", fontSize: "0.75rem", color: "light-dark(#52657d, #94a3b8)" }}>Error ID: {error.digest}</p>}
 						</div>
 
 						{process.env.NODE_ENV === "development" && (
@@ -77,8 +81,8 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 								style={{
 									marginTop: "1rem",
 									padding: "1rem",
-									backgroundColor: "#f3f4f6",
-									borderRadius: "0.5rem",
+									backgroundColor: "light-dark(#e7f0ff, #0a192f)",
+									borderRadius: "0.75rem",
 								}}
 							>
 								<summary style={{ cursor: "pointer", fontSize: "0.875rem", fontWeight: "500" }}>Error Details (Development Only)</summary>
@@ -101,12 +105,12 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
 								marginTop: "1.5rem",
 								width: "100%",
 								padding: "0.5rem 1rem",
-								backgroundColor: "#3b82f6",
+								background: "linear-gradient(90deg, #0052ff 0%, #2b418f 100%)",
 								color: "white",
 								border: "none",
-								borderRadius: "0.375rem",
+								borderRadius: "999px",
 								fontSize: "0.875rem",
-								fontWeight: "500",
+								fontWeight: "700",
 								cursor: "pointer",
 								display: "flex",
 								alignItems: "center",

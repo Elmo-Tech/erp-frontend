@@ -77,7 +77,7 @@ export function ExecutiveStatsWidget({ financial }: ExecutiveStatsWidgetProps) {
 	] as const;
 
 	return (
-		<section className="grid overflow-hidden rounded-lg border bg-card md:grid-cols-2 lg:grid-cols-4 lg:divide-x">
+		<section className="grid overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] backdrop-blur-[14px] md:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
 			{stats.map((stat) => {
 				const Icon = stat.icon;
 
@@ -91,7 +91,7 @@ export function ExecutiveStatsWidget({ financial }: ExecutiveStatsWidgetProps) {
 								<p className="truncate text-xs font-medium text-muted-foreground">{stat.label}</p>
 								<p className="mt-2 truncate text-2xl font-semibold tracking-tight tabular-nums text-foreground">{stat.value}</p>
 							</div>
-							<Icon className="size-4 shrink-0 text-muted-foreground" />
+							<span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon className="size-4" /></span>
 						</div>
 						<TrendLine trend={stat.trend} />
 					</div>

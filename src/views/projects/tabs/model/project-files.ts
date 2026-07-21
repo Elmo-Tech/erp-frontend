@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const DEFAULT_CATEGORY_CLASS = "bg-gray-100 text-gray-700 border-gray-200";
+const DEFAULT_CATEGORY_CLASS = "bg-muted text-muted-foreground border-border";
 
 export const projectFileCategoryOptions = [
 	{ value: "general", label: "General" },

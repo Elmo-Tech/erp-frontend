@@ -1,8 +1,12 @@
 import { LoginWidget } from "@/widgets/auth/ui/LoginWidget";
+import { ThemeToggle } from "@/widgets/layout/ui/ThemeToggle";
 
 export default function LoginPage() {
 	return (
-		<div className="flex min-h-screen w-full items-center justify-center bg-[radial-gradient(circle_at_15%_0%,var(--stripe-mesh-cream)_0%,transparent_34%),radial-gradient(circle_at_55%_0%,var(--stripe-mesh-lavender)_0%,transparent_32%),radial-gradient(circle_at_85%_8%,var(--stripe-mesh-ruby)_0%,transparent_28%),linear-gradient(180deg,#ffffff_0%,var(--stripe-canvas-soft)_58%,#ffffff_100%)] p-4 [--accent-foreground:#0d253d] [--accent:#f6f9fc] [--border:#e3e8ee] [--card-foreground:#0d253d] [--card:#ffffff] [--foreground:#0d253d] [--input:#a8c3de] [--muted-foreground:#64748d]">
+		<div className="relative isolate flex min-h-screen w-full items-center justify-center overflow-hidden px-4 py-12">
+			<div aria-hidden="true" className="pointer-events-none absolute -top-32 -left-32 -z-10 size-96 rounded-full bg-cyan/20 blur-[110px] dark:bg-cyan/15" />
+			<div aria-hidden="true" className="pointer-events-none absolute -right-32 -bottom-40 -z-10 size-[30rem] rounded-full bg-primary/20 blur-[120px] dark:bg-primary/25" />
+			<ThemeToggle className="absolute top-5 right-5 border border-border bg-surface-glass-strong shadow-sm backdrop-blur-md" />
 			<LoginWidget />
 		</div>
 	);

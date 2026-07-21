@@ -56,7 +56,7 @@ function CashPositionChart({ financial }: { financial?: ExecutiveFinancialSnapsh
 function WorkflowChart({ team }: { team?: TeamPerformanceSnapshot }) {
 	const tasks = team?.tasks;
 	const bars = [
-		{ label: "To do", value: tasks?.todo ?? 0, color: "bg-slate-400" },
+		{ label: "To do", value: tasks?.todo ?? 0, color: "bg-muted-foreground" },
 		{ label: "Active", value: tasks?.in_progress ?? 0, color: "bg-primary" },
 		{ label: "Review", value: tasks?.review ?? 0, color: "bg-amber-500" },
 		{ label: "Testing", value: tasks?.testing ?? 0, color: "bg-cyan-500" },

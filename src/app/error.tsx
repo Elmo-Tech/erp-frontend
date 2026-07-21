@@ -39,7 +39,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+		<div className="flex min-h-screen items-center justify-center p-4">
 			<Card className="w-full max-w-2xl">
 				<CardHeader>
 					<div className="flex items-center gap-2">
@@ -51,14 +51,14 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
 				<CardContent className="space-y-4">
 					{/* Error Message */}
-					<div className="rounded-lg bg-destructive/10 p-4">
+					<div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4">
 						<p className="text-sm font-medium text-destructive">{error.message || "An unexpected error occurred"}</p>
 						{error.digest && <p className="mt-1 text-xs text-muted-foreground">Error ID: {error.digest}</p>}
 					</div>
 
 					{/* Error Details (Development Only) */}
 					{process.env.NODE_ENV === "development" && (
-						<details className="rounded-lg bg-muted p-4">
+						<details className="rounded-xl border border-border bg-muted/70 p-4">
 							<summary className="cursor-pointer text-sm font-medium">Error Details (Development Only)</summary>
 							<div className="mt-2">
 								<p className="text-xs font-medium text-muted-foreground">Stack Trace:</p>
@@ -68,7 +68,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 					)}
 
 					{/* User Actions */}
-					<div className="rounded-lg bg-muted p-4">
+					<div className="rounded-xl border border-border bg-muted/70 p-4">
 						<p className="text-sm text-muted-foreground">You can try the following actions:</p>
 						<ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted-foreground">
 							<li>Refresh the page to try again</li>

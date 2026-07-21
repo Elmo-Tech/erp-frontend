@@ -28,7 +28,7 @@ interface KanbanColumnProps {
 
 // Subtle accent colour per stage for the header dot
 const STAGE_ACCENT: Record<PipelineStage, string> = {
-	new: "bg-slate-400",
+	new: "bg-muted-foreground",
 	meeting: "bg-blue-400",
 	proposal: "bg-violet-400",
 	quotation: "bg-amber-400",

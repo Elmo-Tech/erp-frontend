@@ -28,7 +28,7 @@ describe("milestone-swimlane-view", () => {
 		expect(view.progressLabel).toBe("42%");
 		expect(view.taskCountLabel).toBe("1 task");
 		expect(view.statusLabel).toBe("Pending");
-		expect(view.statusColorClass).toContain("bg-gray-100");
+		expect(view.statusColorClass).toContain("bg-muted");
 	});
 
 	it("uses fallback status and zero progress when optional backend fields are empty", () => {

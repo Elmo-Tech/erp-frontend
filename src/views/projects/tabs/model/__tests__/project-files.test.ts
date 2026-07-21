@@ -50,6 +50,6 @@ describe("project-files model", () => {
 
 		expect(formData.get("description")).toBe("Kickoff document");
 		expect(getProjectFileCategoryClass("document")).toContain("bg-blue-50");
-		expect(getProjectFileCategoryClass("unknown")).toContain("bg-gray-100");
+		expect(getProjectFileCategoryClass("unknown")).toContain("bg-muted");
 	});
 });

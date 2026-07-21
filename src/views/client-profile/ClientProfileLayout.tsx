@@ -37,7 +37,7 @@ const PILL_COLORS = [
 	"border-violet-200 bg-violet-50 text-violet-700",
 	"border-emerald-200 bg-emerald-50 text-emerald-700",
 	"border-amber-200 bg-amber-50 text-amber-700",
-	"border-slate-200 bg-slate-50 text-slate-700",
+	"border-border bg-muted text-muted-foreground",
 ];
 
 export default function ClientProfileLayout({ children, params }: ClientProfileLayoutProps) {
