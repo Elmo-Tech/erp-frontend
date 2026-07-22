@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FileText, PenLine, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useSalesPermissions } from "@/entities/user/model/permissions";
+import { MeetingsList } from "@/entities/meetings";
+import { useMeetingPermissions, useSalesPermissions } from "@/entities/user/model/permissions";
 import {
+	leadKeys,
 	useConvertLeadToProject,
 	useDeleteLead,
 	useGetLeadContracts,
@@ -118,6 +121,8 @@ function PipelineActionList({ title, singularTitle, documents, isLoading, status
 
 function LeadPipelineActionsContent({ lead, open, onOpenChange }: { lead: Lead; open: boolean; onOpenChange: (open: boolean) => void }) {
 	const permissions = useSalesPermissions();
+	const { canScheduleMeetings } = useMeetingPermissions();
+	const queryClient = useQueryClient();
 	const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
 	const proposalsQuery = useGetLeadProposals(lead.id, open && permissions.canViewLeads);
 	const quotationsQuery = useGetLeadQuotations(lead.id, open && permissions.canViewQuotations);
@@ -152,10 +157,16 @@ function LeadPipelineActionsContent({ lead, open, onOpenChange }: { lead: Lead; 
 			<DialogContent className="flex max-h-[88vh] w-full max-w-2xl flex-col">
 				<DialogHeader className="shrink-0">
 					<DialogTitle>Pipeline actions</DialogTitle>
-					<DialogDescription>Update approvals and signatures for {lead.name}. Stage movement remains on the Kanban card.</DialogDescription>
+					<DialogDescription>Update meetings, approvals, and signatures for {lead.name}. Stage movement remains on the Kanban card.</DialogDescription>
 				</DialogHeader>
 				<ScrollArea className="min-h-0 flex-1 pr-3">
 					<div className="space-y-6 py-1">
+						{canScheduleMeetings && (
+							<section className="space-y-2.5">
+								<h3 className="text-sm font-semibold">Meetings</h3>
+								<MeetingsList modelType="lead" modelId={lead.id} onStatusUpdated={() => queryClient.invalidateQueries({ queryKey: leadKeys.all })} />
+							</section>
+						)}
 						{permissions.canViewLeads && (
 							<PipelineActionList title="Proposals" singularTitle="Proposal" documents={proposalsQuery.data ?? []} isLoading={proposalsQuery.isLoading} statuses={SALES_STATUS_OPTIONS} canEdit={permissions.canEditLeads} isPending={updateProposal.isPending} onStatusChange={(proposalId, status) => updateProposal.mutate({ proposalId, payload: { status } }, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} />
 						)}

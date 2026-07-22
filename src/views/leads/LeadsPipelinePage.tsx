@@ -30,7 +30,7 @@ import { LeadDetailsSheet } from "@/widgets/leads-management";
 import { STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
 import type { Lead } from "@/features/leads/model/types";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
-import { useSalesPermissions } from "@/entities/user/model/permissions";
+import { useMeetingPermissions, useSalesPermissions } from "@/entities/user/model/permissions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stage badge colours
@@ -128,7 +128,8 @@ type ViewMode = "board" | "table";
 
 export default function LeadsPipelinePage() {
 	const { canCreateLeads, canEditLeads, canDeleteLeads, canConvertLeads, canCreateQuotations, canEditQuotations, canCreateContracts, canEditContracts, canSignContracts } = useSalesPermissions();
-	const canManagePipelineActions = canEditLeads || canDeleteLeads || canEditQuotations || canEditContracts || canSignContracts;
+	const { canScheduleMeetings } = useMeetingPermissions();
+	const canManagePipelineActions = canScheduleMeetings || canEditLeads || canDeleteLeads || canEditQuotations || canEditContracts || canSignContracts;
 	const [filters, setFilters] = useState<LeadFilters>({});
 	const leadsQuery = useGetLeads(filters);
 	const leads = leadsQuery.data ?? [];

@@ -71,9 +71,10 @@ interface UpdateStatusDialogProps {
 	modelId: number;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onStatusUpdated?: () => Promise<unknown> | void;
 }
 
-function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange }: UpdateStatusDialogProps) {
+function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange, onStatusUpdated }: UpdateStatusDialogProps) {
 	const { mutateAsync, isPending } = useUpdateMeetingStatus(modelType, modelId);
 	const statusesDict = useSettingsDictionary("meeting-statuses", open);
 	const statusOptions = statusesDict.options.length > 0 ? statusesDict.options : MEETING_STATUSES.map((status) => ({ value: status, label: MEETING_STATUS_LABELS[status] ?? status }));
@@ -101,6 +102,7 @@ function UpdateStatusDialog({ meeting, modelType, modelId, open, onOpenChange }:
 					completion_note: data.completionNote ?? "",
 				},
 			});
+			await onStatusUpdated?.();
 			toast.success("Meeting status updated.");
 			onOpenChange(false);
 		} catch (error) {
@@ -214,9 +216,10 @@ interface MeetingCardProps {
 	meeting: PolyMeeting;
 	modelType: MeetingModelType;
 	modelId: number;
+	onStatusUpdated?: () => Promise<unknown> | void;
 }
 
-function MeetingCard({ meeting, modelType, modelId }: MeetingCardProps) {
+function MeetingCard({ meeting, modelType, modelId, onStatusUpdated }: MeetingCardProps) {
 	const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 	const config = STATUS_CONFIG[meeting.status] ?? STATUS_CONFIG.scheduled;
 	const StatusIcon = config.icon;
@@ -244,6 +247,7 @@ function MeetingCard({ meeting, modelType, modelId }: MeetingCardProps) {
 									variant="ghost"
 									size="icon"
 									className="size-7"
+									aria-label={`Actions for ${meeting.title}`}
 								>
 									<MoreHorizontal className="size-4" />
 								</Button>
@@ -290,6 +294,7 @@ function MeetingCard({ meeting, modelType, modelId }: MeetingCardProps) {
 				modelId={modelId}
 				open={statusDialogOpen}
 				onOpenChange={setStatusDialogOpen}
+				onStatusUpdated={onStatusUpdated}
 			/>
 		</>
 	);
@@ -304,9 +309,11 @@ export interface MeetingsListProps {
 	modelType: MeetingModelType;
 	/** The ID of the parent model */
 	modelId: number;
+	/** Runs after a successful status update, before the status dialog closes. */
+	onStatusUpdated?: () => Promise<unknown> | void;
 }
 
-export function MeetingsList({ modelType, modelId }: MeetingsListProps) {
+export function MeetingsList({ modelType, modelId, onStatusUpdated }: MeetingsListProps) {
 	const { data: meetings, isLoading, isError } = useGetMeetings(modelType, modelId);
 
 	if (isLoading) {
@@ -338,6 +345,7 @@ export function MeetingsList({ modelType, modelId }: MeetingsListProps) {
 					meeting={meeting}
 					modelType={modelType}
 					modelId={modelId}
+					onStatusUpdated={onStatusUpdated}
 				/>
 			))}
 		</div>
