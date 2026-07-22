@@ -82,6 +82,16 @@ export interface UpdateLeadStageResponse {
 	};
 }
 
+export interface LeadPipelineReadiness {
+	stage: string;
+	document_type: "proposal" | "quotation" | "contract" | null;
+	has_task: boolean;
+	task_status: string | null;
+	has_document: boolean;
+	task_must_be_completed: boolean;
+	requires_document_upload: boolean;
+}
+
 export interface ConvertLeadResponse {
 	success: boolean;
 	message: string;
@@ -121,6 +131,12 @@ export interface ProposalTemplateOption {
 
 export async function getProposalTemplates(): Promise<ProposalTemplateOption[]> {
 	const response = await api.get<{ success: boolean; data: ProposalTemplateOption[] }>("/lead-proposal-templates");
+
+	return response.data.data;
+}
+
+export async function getLeadPipelineReadiness(leadId: number): Promise<LeadPipelineReadiness> {
+	const response = await api.get<{ success: boolean; data: LeadPipelineReadiness }>(`/leads/${leadId}/pipeline/readiness`);
 
 	return response.data.data;
 }

@@ -28,13 +28,13 @@ import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { usePipelineStore, selectActiveModal, selectPendingDrag } from "@/features/leads/model/usePipelineStore";
-import { PIPELINE_STAGES } from "@/features/leads/model/pipelineConstants";
+import { PIPELINE_STAGES, STAGE_LABELS } from "@/features/leads/model/pipelineConstants";
 import type { PipelineStage } from "@/features/leads/model/pipelineConstants";
-import type { Lead, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
+import type { Lead, ModalQueueItemType, StageModalPayload, StageModalResult } from "@/features/leads/model/types";
 import { getPipelineStageGateFailure } from "@/features/leads/model/pipelineGates";
 import { getPipelinePermissionFailure } from "@/features/leads/model/pipeline-permission-gates";
 import { StageModal } from "@/features/leads/ui/PipelineModals/StageModal";
-import { leadKeys, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
+import { getLeadPipelineReadiness, leadKeys, useConvertLeadToProject, useUpdateLeadStage } from "@/features/leads/api/leads.api";
 import { KanbanColumn } from "./KanbanColumn";
 import { LeadPipelineActionsDialog } from "./LeadPipelineActionsDialog";
 
@@ -70,7 +70,9 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 
 	// ── Local loading state (shown on the modal submit button) ────────────────
 	const [isCommitting, setIsCommitting] = useState(false);
+	const [isUploadingDocument, setIsUploadingDocument] = useState(false);
 	const [actionLead, setActionLead] = useState<Lead | null>(null);
+	const [requiredDocumentUpload, setRequiredDocumentUpload] = useState<{ leadId: number; stage: ModalQueueItemType } | null>(null);
 
 	const invalidateLeadQueries = useCallback(() => {
 		queryClient.invalidateQueries({ queryKey: leadKeys.all });
@@ -164,7 +166,7 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 	);
 
 	const beginStageTransition = useCallback(
-		(leadId: number, fromStage: PipelineStage, toStage: PipelineStage) => {
+		async (leadId: number, fromStage: PipelineStage, toStage: PipelineStage) => {
 			const permissionFailure = getPipelinePermissionFailure(fromStage, toStage, {
 				canEditLeads: canEdit,
 				canConvertLeads: canConvert,
@@ -174,6 +176,24 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 			if (permissionFailure) {
 				toast.error(permissionFailure);
 				return;
+			}
+
+			if (fromStage === "proposal" || fromStage === "quotation" || fromStage === "contract") {
+				try {
+					const readiness = await getLeadPipelineReadiness(leadId);
+					if (readiness.task_must_be_completed) {
+						toast.error(`Complete the ${readiness.document_type ?? fromStage} task before moving forward.`);
+						return;
+					}
+					if (readiness.requires_document_upload) {
+						setRequiredDocumentUpload({ leadId, stage: fromStage });
+						return;
+					}
+				} catch (error) {
+					console.error("[LeadsKanbanBoard] Failed to check pipeline readiness:", error);
+					toast.error("Could not verify whether the stage task is complete. Please try again.");
+					return;
+				}
 			}
 
 			const lead = leads.find((item) => item.id === leadId);
@@ -215,7 +235,7 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 			const leadId = Number(draggableId);
 			const fromStage = source.droppableId as PipelineStage;
 			const toStage = destination.droppableId as PipelineStage;
-			beginStageTransition(leadId, fromStage, toStage);
+			void beginStageTransition(leadId, fromStage, toStage);
 		},
 		[beginStageTransition],
 	);
@@ -224,7 +244,7 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 		(lead: Lead) => {
 			const currentStageIndex = PIPELINE_STAGES.indexOf(lead.stage);
 			const nextStage = PIPELINE_STAGES[currentStageIndex + 1];
-			if (nextStage) beginStageTransition(lead.id, lead.stage, nextStage);
+			if (nextStage) void beginStageTransition(lead.id, lead.stage, nextStage);
 		},
 		[beginStageTransition],
 	);
@@ -244,6 +264,30 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 			});
 		},
 		[activeModal, advanceQueue, commitStageUpdate],
+	);
+
+	const handleRequiredDocumentUpload = useCallback(
+		async (payload: StageModalPayload) => {
+			if (!requiredDocumentUpload || payload.mode !== "direct_upload") return;
+
+			setIsUploadingDocument(true);
+			try {
+				await updateLeadStageMutation.mutateAsync({
+					leadId: requiredDocumentUpload.leadId,
+					newStage: requiredDocumentUpload.stage,
+					stageResults: [{ stage: requiredDocumentUpload.stage, payload }],
+				});
+				toast.success(`${STAGE_LABELS[requiredDocumentUpload.stage]} uploaded. Review its status, then move the lead again.`);
+				setRequiredDocumentUpload(null);
+			} catch (error) {
+				console.error("[LeadsKanbanBoard] Stage document upload failed:", error);
+				toast.error("Failed to upload the stage document. Please try again.");
+			} finally {
+				setIsUploadingDocument(false);
+				invalidateLeadQueries();
+			}
+		},
+		[invalidateLeadQueries, requiredDocumentUpload, updateLeadStageMutation],
 	);
 
 	// ── Render ────────────────────────────────────────────────────────────────
@@ -276,6 +320,15 @@ export function LeadsKanbanBoard({ leads, canEdit, canConvert, canCreateQuotatio
 						cancelDrag();
 					}}
 					isLoading={isCommitting}
+				/>
+			)}
+
+			{requiredDocumentUpload && (
+				<StageModal
+					item={{ stage: requiredDocumentUpload.stage, isIntermediateSkip: false, requiresDocumentUpload: true }}
+					onSubmit={handleRequiredDocumentUpload}
+					onCancel={() => setRequiredDocumentUpload(null)}
+					isLoading={isUploadingDocument}
 				/>
 			)}
 

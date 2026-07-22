@@ -55,6 +55,10 @@ interface PipelineActionListProps {
 const SALES_STATUS_OPTIONS = ["draft", "sent", "accepted", "rejected", "skipped"];
 const CONTRACT_STATUS_OPTIONS = ["draft", "sent", "rejected", "skipped"];
 
+function actionableDocuments(documents: PipelineDocument[] | undefined): PipelineDocument[] {
+	return (documents ?? []).filter((document) => document.creation_type !== "task");
+}
+
 function notifyDocumentUpdated() {
 	toast.success("Pipeline document updated.");
 }
@@ -168,13 +172,13 @@ function LeadPipelineActionsContent({ lead, open, onOpenChange }: { lead: Lead; 
 							</section>
 						)}
 						{permissions.canViewLeads && (
-							<PipelineActionList title="Proposals" singularTitle="Proposal" documents={proposalsQuery.data ?? []} isLoading={proposalsQuery.isLoading} statuses={SALES_STATUS_OPTIONS} canEdit={permissions.canEditLeads} isPending={updateProposal.isPending} onStatusChange={(proposalId, status) => updateProposal.mutate({ proposalId, payload: { status } }, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} />
+							<PipelineActionList title="Proposals" singularTitle="Proposal" documents={actionableDocuments(proposalsQuery.data)} isLoading={proposalsQuery.isLoading} statuses={SALES_STATUS_OPTIONS} canEdit={permissions.canEditLeads} isPending={updateProposal.isPending} onStatusChange={(proposalId, status) => updateProposal.mutate({ proposalId, payload: { status } }, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} />
 						)}
 						{permissions.canViewQuotations && (
-							<PipelineActionList title="Quotations" singularTitle="Quotation" documents={quotationsQuery.data ?? []} isLoading={quotationsQuery.isLoading} statuses={SALES_STATUS_OPTIONS} canEdit={permissions.canEditQuotations} isPending={updateQuotation.isPending} onStatusChange={(quotationId, status) => updateQuotation.mutate({ quotationId, status }, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} />
+							<PipelineActionList title="Quotations" singularTitle="Quotation" documents={actionableDocuments(quotationsQuery.data)} isLoading={quotationsQuery.isLoading} statuses={SALES_STATUS_OPTIONS} canEdit={permissions.canEditQuotations} isPending={updateQuotation.isPending} onStatusChange={(quotationId, status) => updateQuotation.mutate({ quotationId, status }, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} />
 						)}
 						{permissions.canViewContracts && (
-							<PipelineActionList title="Contracts" singularTitle="Contract" documents={contractsQuery.data ?? []} isLoading={contractsQuery.isLoading} statuses={CONTRACT_STATUS_OPTIONS} canEdit={permissions.canEditContracts} isPending={updateContract.isPending || signContract.isPending} onStatusChange={(contractId, status) => updateContract.mutate({ contractId, payload: { status } }, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} canSign={permissions.canSignContracts} onSign={(contractId) => signContract.mutate(contractId, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} />
+							<PipelineActionList title="Contracts" singularTitle="Contract" documents={actionableDocuments(contractsQuery.data)} isLoading={contractsQuery.isLoading} statuses={CONTRACT_STATUS_OPTIONS} canEdit={permissions.canEditContracts} isPending={updateContract.isPending || signContract.isPending} onStatusChange={(contractId, status) => updateContract.mutate({ contractId, payload: { status } }, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} canSign={permissions.canSignContracts} onSign={(contractId) => signContract.mutate(contractId, { onSuccess: notifyDocumentUpdated, onError: notifyDocumentUpdateFailed })} />
 						)}
 					</div>
 				</ScrollArea>

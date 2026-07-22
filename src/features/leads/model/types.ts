@@ -39,6 +39,7 @@ export type ModalQueueItemType = "meeting" | "proposal" | "quotation" | "contrac
 export interface ModalQueueItem {
 	stage: ModalQueueItemType;
 	isIntermediateSkip: boolean;
+	requiresDocumentUpload?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

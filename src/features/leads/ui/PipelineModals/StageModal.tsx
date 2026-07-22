@@ -110,6 +110,12 @@ function defaultValuesForStage(stage: ModalQueueItem["stage"], isSkipOnly: boole
 	return { mode };
 }
 
+function defaultValuesForModal(modalItem: ModalQueueItem): Record<string, unknown> {
+	const defaults = defaultValuesForStage(modalItem.stage, modalItem.isIntermediateSkip);
+
+	return modalItem.requiresDocumentUpload ? { ...defaults, mode: "direct_upload" } : defaults;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Meeting modal — isolated 2-tab render
 // ─────────────────────────────────────────────────────────────────────────────
@@ -256,20 +262,21 @@ function MeetingStageModal({ item, onSubmit, onCancel, isLoading = false }: Meet
 function GenericStageModal({ item, onSubmit, onCancel, isLoading = false }: StageModalProps) {
 	const stageLabel = STAGE_LABELS[item.stage];
 	const isSkipOnly = item.isIntermediateSkip;
+	const requiresDocumentUpload = item.requiresDocumentUpload === true;
 	const isComplexStage = item.stage === "proposal" || item.stage === "quotation" || item.stage === "contract";
 
 	const form = useForm<NonMeetingModalValues>({
-		defaultValues: defaultValuesForStage(item.stage, isSkipOnly) as NonMeetingModalValues,
+		defaultValues: defaultValuesForModal(item) as NonMeetingModalValues,
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		resolver: zodResolver(schemaForStage(item.stage) as any),
 	});
 
 	const watchedMode = useWatch({ control: form.control, name: "mode" });
-	const currentMode = (watchedMode ?? (isSkipOnly ? "skip" : "task")) as "task" | "direct_upload" | "skip";
+	const currentMode = (watchedMode ?? (requiresDocumentUpload ? "direct_upload" : isSkipOnly ? "skip" : "task")) as "task" | "direct_upload" | "skip";
 
 	useEffect(() => {
-		form.reset(defaultValuesForStage(item.stage, isSkipOnly) as NonMeetingModalValues);
-	}, [item.stage, isSkipOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+		form.reset(defaultValuesForModal(item) as NonMeetingModalValues);
+	}, [item.stage, isSkipOnly, requiresDocumentUpload]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	const handleTabChange = (value: string) => {
 		form.reset({
@@ -347,7 +354,7 @@ function GenericStageModal({ item, onSubmit, onCancel, isLoading = false }: Stag
 		});
 	});
 
-	const submitLabel = currentMode === "skip" ? "Skip Stage" : currentMode === "direct_upload" ? "Upload & Continue" : "Create Task & Continue";
+	const submitLabel = requiresDocumentUpload ? "Upload Document" : currentMode === "skip" ? "Skip Stage" : currentMode === "direct_upload" ? "Upload & Continue" : "Create Task & Continue";
 
 	const DirectUploadContent = item.stage === "proposal" ? <ProposalDirectUploadTab /> : item.stage === "quotation" ? <QuotationDirectUploadTab /> : item.stage === "contract" ? <ContractDirectUploadTab /> : <DirectUploadTab />;
 
@@ -358,9 +365,13 @@ function GenericStageModal({ item, onSubmit, onCancel, isLoading = false }: Stag
 		>
 			<DialogContent className={`flex flex-col max-h-[90vh] ${isComplexStage ? "max-w-2xl w-full" : "max-w-lg w-full"}`}>
 				<DialogHeader className="shrink-0">
-					<DialogTitle>{isSkipOnly ? `Skip: ${stageLabel}` : stageLabel}</DialogTitle>
+					<DialogTitle>{requiresDocumentUpload ? `Upload ${stageLabel}` : isSkipOnly ? `Skip: ${stageLabel}` : stageLabel}</DialogTitle>
 					<DialogDescription>
-						{isSkipOnly ? `This stage was skipped. Please provide a reason for skipping "${stageLabel}".` : `Complete the "${stageLabel}" stage by creating a task, uploading a document, or skipping with a reason.`}
+						{requiresDocumentUpload
+							? `Upload the completed ${stageLabel} document before moving the lead forward.`
+							: isSkipOnly
+								? `This stage was skipped. Please provide a reason for skipping "${stageLabel}".`
+								: `Complete the "${stageLabel}" stage by creating a task, uploading a document, or skipping with a reason.`}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -369,11 +380,14 @@ function GenericStageModal({ item, onSubmit, onCancel, isLoading = false }: Stag
 						onSubmit={handleSubmit}
 						className="flex flex-col flex-1 min-h-0"
 					>
-						<Tabs
-							value={currentMode}
-							onValueChange={handleTabChange}
-							className="flex flex-col flex-1 min-h-0 w-full"
-						>
+						{requiresDocumentUpload ? (
+							<ScrollArea className="h-full max-h-[55vh] overflow-scroll pr-3 mt-4">{DirectUploadContent}</ScrollArea>
+						) : (
+							<Tabs
+								value={currentMode}
+								onValueChange={handleTabChange}
+								className="flex flex-col flex-1 min-h-0 w-full"
+							>
 							{/* Tab triggers */}
 							<TabsList className="w-full shrink-0">
 								{!isSkipOnly && (
@@ -428,7 +442,8 @@ function GenericStageModal({ item, onSubmit, onCancel, isLoading = false }: Stag
 									<SkipTab />
 								</ScrollArea>
 							</TabsContent>
-						</Tabs>
+							</Tabs>
+						)}
 
 						{/* Fixed footer */}
 						<DialogFooter className="shrink-0 gap-2 pt-4 mt-2 border-t">

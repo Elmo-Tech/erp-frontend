@@ -131,4 +131,30 @@ describe("LeadPipelineActionsDialog", () => {
 		await waitFor(() => expect(api.patch).toHaveBeenCalledWith("/meetings/41", { status: "completed", outcomeSummary: "Discovery completed." }));
 		await waitFor(() => expect(queryClient.getQueryState(leadKeys.list())?.isInvalidated).toBe(true));
 	});
+
+	it.each([
+		["proposals", "Proposal"],
+		["quotations", "Quotation"],
+		["contracts", "Contract"],
+	])("does not expose %s task placeholders as document actions", async (resource, documentTitle) => {
+		vi.mocked(api.get).mockImplementation(async (url) => ({
+			data: {
+				success: true,
+				data: url.endsWith(`/${resource}`)
+					? [{ id: 91, status: "draft", creation_type: "task", file_name: null, created_at: "2026-07-22T09:00:00.000Z" }]
+					: [],
+			},
+		}));
+		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const documentQueryKey = resource === "proposals" ? leadKeys.proposals(lead.id) : resource === "quotations" ? leadKeys.quotations(lead.id) : leadKeys.contracts(lead.id);
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<LeadPipelineActionsDialog lead={lead} open onOpenChange={() => undefined} />
+			</QueryClientProvider>,
+		);
+
+		await waitFor(() => expect(queryClient.getQueryState(documentQueryKey)?.status).toBe("success"));
+		expect(screen.queryByText(`${documentTitle} #91`)).not.toBeInTheDocument();
+	});
 });

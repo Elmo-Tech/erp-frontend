@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import api from "@/shared/api/base";
-import { deleteLead, getProposalTemplates, updateLeadQuotationStatus, updateLeadStage } from "../leads.api";
+import { deleteLead, getLeadPipelineReadiness, getProposalTemplates, updateLeadQuotationStatus, updateLeadStage } from "../leads.api";
 
 vi.mock("@/shared/api/base", () => ({
 	default: {
@@ -29,6 +29,22 @@ describe("leads API", () => {
 
 		await expect(getProposalTemplates()).resolves.toEqual(templates);
 		expect(mockedApi.get).toHaveBeenCalledWith("/lead-proposal-templates");
+	});
+
+	it("loads the current document-task readiness for a lead", async () => {
+		const readiness = {
+			stage: "proposal",
+			document_type: "proposal" as const,
+			has_task: true,
+			task_status: "done",
+			has_document: false,
+			task_must_be_completed: false,
+			requires_document_upload: true,
+		};
+		mockedApi.get.mockResolvedValueOnce({ data: { success: true, data: readiness } });
+
+		await expect(getLeadPipelineReadiness(7)).resolves.toEqual(readiness);
+		expect(mockedApi.get).toHaveBeenCalledWith("/leads/7/pipeline/readiness");
 	});
 
 	it("updates quotation status through the Kanban pipeline endpoint", async () => {
