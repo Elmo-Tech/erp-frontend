@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -12,9 +13,11 @@ import { TimeEntryData, useTimerStore } from "@/store/timerStore";
 import { getElapsedSeconds, formatDuration } from "@/lib/dateUtils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { projectPipelineKeys } from "@/features/projects/hooks/useProjectPipeline";
 
 export function NavbarTimer({ className }: { className?: string }) {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const { activeTimer, resumableTimer, setActiveTimer, setResumableTimer, isLoading } = useTimerStore();
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [pendingAction, setPendingAction] = useState<"pause" | "hold" | "end" | "resume" | null>(null);
@@ -33,7 +36,11 @@ export function NavbarTimer({ className }: { className?: string }) {
 
 	const handleNavigateToTask = useCallback(() => {
 		if (activeTimer && activeTimer.trackableType.includes("Task")) {
-			router.push(`/dashboard/my-tasks?highlight=${activeTimer.trackableId}`);
+			router.push(
+				activeTimer.trackableProjectId
+					? `/dashboard/projects/${activeTimer.trackableProjectId}`
+					: `/dashboard/my-tasks?highlight=${activeTimer.trackableId}`
+			);
 		}
 	}, [activeTimer, router]);
 
@@ -117,6 +124,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 			setResumableTimer(action === "end" ? null : response.data.data);
 			setHoldDialogOpen(false);
 			setHoldReason("");
+			await queryClient.invalidateQueries({ queryKey: projectPipelineKeys.all });
 			toast.success(action === "pause" ? "Timer paused" : action === "hold" ? "Task placed on hold" : "Timer ended");
 		} catch {
 			toast.error(`Failed to ${action} timer`);
@@ -133,6 +141,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 			const response = await api.post<{ data: TimeEntryData }>(`/time-entries/${resumableTimer.timeEntryId}/resume`);
 			setActiveTimer(response.data.data);
 			setResumableTimer(null);
+			await queryClient.invalidateQueries({ queryKey: projectPipelineKeys.all });
 			toast.success("Timer resumed");
 		} catch {
 			toast.error("Failed to resume timer");

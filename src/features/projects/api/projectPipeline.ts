@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { CreatePipelineTaskPayload, EditableWorkflowStage, PipelineTask, ProjectPipeline, ProjectWorkflowStage, WorkflowTemplate } from "../types/pipeline";
+import type { CreatePipelineTaskPayload, EditableWorkflowStage, PipelineTask, ProjectPipeline, ProjectWorkflowStage, UpdatePipelineTaskPayload, WorkflowTemplate } from "../types/pipeline";
 
 export const projectPipelineApi = {
 	get: async (projectId: number): Promise<ProjectPipeline> => {
@@ -9,6 +9,31 @@ export const projectPipelineApi = {
 
 	createTask: async (projectId: number, payload: CreatePipelineTaskPayload): Promise<PipelineTask> => {
 		const response = await api.post<{ data: PipelineTask }>(`/projects/${projectId}/pipeline/tasks`, payload);
+		return response.data.data;
+	},
+
+	updateTask: async (projectId: number, taskId: number, payload: UpdatePipelineTaskPayload): Promise<PipelineTask> => {
+		const response = await api.patch<{ data: PipelineTask }>(`/projects/${projectId}/pipeline/tasks/${taskId}`, payload);
+		return response.data.data;
+	},
+
+	deleteTask: async (projectId: number, taskId: number): Promise<void> => {
+		await api.delete(`/projects/${projectId}/pipeline/tasks/${taskId}`);
+	},
+
+	uploadTaskCover: async (projectId: number, taskId: number, coverImage: File): Promise<PipelineTask> => {
+		const formData = new FormData();
+		formData.append("coverImage", coverImage);
+		const response = await api.post<{ data: PipelineTask }>(`/projects/${projectId}/pipeline/tasks/${taskId}/cover`, formData, {
+			headers: {
+				"Content-Type": "multipart/form-data",
+			},
+		});
+		return response.data.data;
+	},
+
+	deleteTaskCover: async (projectId: number, taskId: number): Promise<PipelineTask> => {
+		const response = await api.delete<{ data: PipelineTask }>(`/projects/${projectId}/pipeline/tasks/${taskId}/cover`);
 		return response.data.data;
 	},
 

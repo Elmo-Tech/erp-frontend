@@ -103,7 +103,7 @@ export const useTimeEntriesByUser = (userId: number, enabled = true) => {
  */
 export const useStartTimer = () => {
 	const queryClient = useQueryClient();
-	const { setActiveTimer } = useTimerStore.getState();
+	const { setActiveTimer, setResumableTimer } = useTimerStore.getState();
 
 	return useMutation<TimeEntry, Error, StartTimerPayload>({
 		mutationFn: timeEntriesApi.start,
@@ -116,8 +116,10 @@ export const useStartTimer = () => {
 				trackableType: newTimeEntry.trackableType,
 				trackableId: newTimeEntry.trackableId,
 				trackableDisplayName: newTimeEntry.trackableDisplayName,
+				trackableProjectId: newTimeEntry.trackableProjectId,
 				isActive: true,
 			});
+			setResumableTimer(null);
 
 			// Invalidate active timer query to show the new active timer
 			queryClient.invalidateQueries({ queryKey: timeEntryKeys.active() });
@@ -143,6 +145,30 @@ export const useStartTimer = () => {
 		},
 		onError: (error) => {
 			console.error("Failed to start timer:", error);
+		},
+	});
+};
+
+export const useResumeTimer = () => {
+	const queryClient = useQueryClient();
+	const { setActiveTimer, setResumableTimer } = useTimerStore.getState();
+
+	return useMutation<TimeEntry, Error, number>({
+		mutationFn: timeEntriesApi.resume,
+		onSuccess: (resumedTimeEntry) => {
+			setActiveTimer({
+				timeEntryId: resumedTimeEntry.timeEntryId,
+				sessionId: resumedTimeEntry.sessionId,
+				startTime: resumedTimeEntry.startTime,
+				trackableType: resumedTimeEntry.trackableType,
+				trackableId: resumedTimeEntry.trackableId,
+				trackableDisplayName: resumedTimeEntry.trackableDisplayName,
+				trackableProjectId: resumedTimeEntry.trackableProjectId,
+				isActive: true,
+			});
+			setResumableTimer(null);
+			queryClient.invalidateQueries({ queryKey: timeEntryKeys.all });
+			queryClient.invalidateQueries({ queryKey: ["tasks"] });
 		},
 	});
 };

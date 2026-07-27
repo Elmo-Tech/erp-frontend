@@ -32,4 +32,4 @@ export { useSalesPerformance, useSourceAnalytics, useSalesPipeline, useRevenueFo
 export { useCalculatePricing } from "./useCalculatePricing";
 
 // Time entries hooks
-export { useTimeEntries, useActiveTimer, useStartTimer, useStopTimer, useTimeEntriesByTrackable, useTimeEntriesByUser, useIsTimerRunning, useCurrentTimeEntry, useActiveTimers, useStopTimerAdmin } from "./useTimeEntries";
+export { useTimeEntries, useActiveTimer, useStartTimer, useResumeTimer, useStopTimer, useTimeEntriesByTrackable, useTimeEntriesByUser, useIsTimerRunning, useCurrentTimeEntry, useActiveTimers, useStopTimerAdmin } from "./useTimeEntries";

@@ -66,6 +66,7 @@ export function TaskTimerWidget({ task }: TaskTimerWidgetProps) {
 				trackableType: "App\\Models\\Task",
 				trackableId: task.taskId,
 				trackableDisplayName: task.title,
+				trackableProjectId: task.projectId,
 				isActive: true,
 			});
 			toast.success("Timer started");

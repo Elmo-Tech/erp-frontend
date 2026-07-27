@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { DatePicker } from "@/components/shared/forms/DatePicker";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -11,48 +12,97 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useEmployees } from "@/features/hr/hooks/useEmployees";
-import { useCreatePipelineTask } from "../../hooks/useProjectPipeline";
-import type { ProjectWorkflowStage } from "../../types/pipeline";
+import {
+	useCreatePipelineTask,
+	useDeletePipelineTaskCover,
+	useUpdatePipelineTask,
+	useUploadPipelineTaskCover,
+} from "../../hooks/useProjectPipeline";
+import type { PipelineTask, ProjectWorkflowStage } from "../../types/pipeline";
 import { PipelineEmployeePicker } from "./PipelineEmployeePicker";
+import { PipelineTaskCoverField } from "./PipelineTaskCoverField";
 
 interface PipelineTaskDialogProps {
 	projectId: number;
 	stage: ProjectWorkflowStage | null;
+	stages: ProjectWorkflowStage[];
+	task?: PipelineTask | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-export function PipelineTaskDialog({ projectId, stage, open, onOpenChange }: PipelineTaskDialogProps) {
-	const mutation = useCreatePipelineTask(projectId);
+export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpenChange }: PipelineTaskDialogProps) {
+	const createTask = useCreatePipelineTask(projectId);
+	const updateTask = useUpdatePipelineTask(projectId);
+	const uploadCover = useUploadPipelineTaskCover(projectId);
+	const deleteCover = useDeletePipelineTaskCover(projectId);
 	const permissions = usePermissions();
 	const canAssignEmployees = permissions.canAssignTasks || permissions.canManageTasks;
 	const employees = useEmployees({ isActive: true, perPage: 100 }, canAssignEmployees && open);
-	const [title, setTitle] = useState("");
-	const [description, setDescription] = useState("");
-	const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
-	const [assignedUserIds, setAssignedUserIds] = useState<number[]>([]);
-	const [dueDate, setDueDate] = useState("");
-	const [estimatedHours, setEstimatedHours] = useState("");
+	const [title, setTitle] = useState(task?.title ?? "");
+	const [description, setDescription] = useState(task?.description ?? "");
+	const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">(task?.priority ?? "medium");
+	const [assignedUserIds, setAssignedUserIds] = useState<number[]>(task?.assignees.map((assignee) => assignee.userId) ?? []);
+	const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
+	const [estimatedHours, setEstimatedHours] = useState(task?.estimatedHours != null ? String(task.estimatedHours) : "");
+	const [workflowStageId, setWorkflowStageId] = useState(String(task?.workflowStageId ?? stage?.stageId ?? ""));
+	const [coverImage, setCoverImage] = useState<File | null>(null);
+	const [removeExistingCover, setRemoveExistingCover] = useState(false);
+	const isEditing = Boolean(task);
+	const isPending = createTask.isPending || updateTask.isPending || uploadCover.isPending || deleteCover.isPending;
+
+	const saveCoverImage = async (taskId: number) => {
+		if (coverImage) {
+			await uploadCover.mutateAsync({ taskId, coverImage });
+		} else if (removeExistingCover) {
+			await deleteCover.mutateAsync(taskId);
+		}
+	};
 
 	const submit = async (event: React.FormEvent) => {
 		event.preventDefault();
-		if (!stage) return;
+		const selectedStageId = Number(workflowStageId);
+		if (!selectedStageId) return;
+
+		let savedTask: PipelineTask;
+		try {
+			if (task) {
+				savedTask = await updateTask.mutateAsync({
+					taskId: task.taskId,
+					payload: {
+						workflowStageId: selectedStageId,
+						title: title.trim(),
+						description: description.trim() || null,
+						priority,
+						...(canAssignEmployees ? { assignedUserIds } : {}),
+						dueDate: dueDate || null,
+						estimatedHours: estimatedHours ? Number(estimatedHours) : null,
+					},
+				});
+			} else {
+				savedTask = await createTask.mutateAsync({
+					workflowStageId: selectedStageId,
+					title: title.trim(),
+					description: description.trim() || undefined,
+					priority,
+					assignedUserIds: assignedUserIds.length > 0 ? assignedUserIds : undefined,
+					dueDate: dueDate || undefined,
+					estimatedHours: estimatedHours ? Number(estimatedHours) : undefined,
+				});
+			}
+		} catch {
+			toast.error(isEditing ? "Could not update the task" : "Could not create the pipeline task");
+			return;
+		}
 
 		try {
-			await mutation.mutateAsync({
-				workflowStageId: stage.stageId,
-				title,
-				description: description || undefined,
-				priority,
-				assignedUserIds: assignedUserIds.length > 0 ? assignedUserIds : undefined,
-				dueDate: dueDate || undefined,
-				estimatedHours: estimatedHours ? Number(estimatedHours) : undefined,
-			});
-			toast.success("Task added to the pipeline");
-			onOpenChange(false);
+			await saveCoverImage(savedTask.taskId);
+			toast.success(isEditing ? "Task updated" : "Task added to the pipeline");
 		} catch {
-			toast.error("Could not create the pipeline task");
+			toast.warning("Task saved, but its cover image could not be updated");
 		}
+
+		onOpenChange(false);
 	};
 
 	return (
@@ -60,8 +110,12 @@ export function PipelineTaskDialog({ projectId, stage, open, onOpenChange }: Pip
 			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl!">
 				<form onSubmit={submit} className="space-y-5">
 					<DialogHeader>
-						<DialogTitle>Create task in {stage?.name}</DialogTitle>
-						<DialogDescription>This is a flat pipeline task. It does not create weekly tasks or subtasks.</DialogDescription>
+						<DialogTitle>{isEditing ? "Edit task" : `Create task in ${stage?.name ?? "pipeline"}`}</DialogTitle>
+						<DialogDescription>
+							{isEditing
+								? "Update the task fields, status, dates, and assignees."
+								: "Create one flat delivery task and assign the employees who will work on it."}
+						</DialogDescription>
 					</DialogHeader>
 
 					<div className="space-y-2">
@@ -74,7 +128,33 @@ export function PipelineTaskDialog({ projectId, stage, open, onOpenChange }: Pip
 						<Textarea id="pipeline-task-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} />
 					</div>
 
+					<PipelineTaskCoverField
+						currentCoverImageUrl={task?.coverImageUrl}
+						disabled={isPending}
+						onChange={(file, shouldRemoveExistingCover) => {
+							setCoverImage(file);
+							setRemoveExistingCover(shouldRemoveExistingCover);
+						}}
+					/>
+
 					<div className="grid gap-4 sm:grid-cols-2">
+						<div className="space-y-2">
+							<Label>Status</Label>
+							<Select value={workflowStageId} onValueChange={setWorkflowStageId}>
+								<SelectTrigger><SelectValue placeholder="Choose a status" /></SelectTrigger>
+								<SelectContent>
+									{stages.map((item) => (
+										<SelectItem key={item.stageId} value={String(item.stageId)}>
+											<span className="flex items-center gap-2">
+												<span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+												{item.name}
+											</span>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+
 						<div className="space-y-2">
 							<Label>Priority</Label>
 							<Select value={priority} onValueChange={(value) => setPriority(value as typeof priority)}>
@@ -89,8 +169,8 @@ export function PipelineTaskDialog({ projectId, stage, open, onOpenChange }: Pip
 						</div>
 
 						<div className="space-y-2">
-							<Label htmlFor="pipeline-task-due-date">Due date</Label>
-							<Input id="pipeline-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
+							<Label>Due date</Label>
+							<DatePicker value={dueDate} onChange={setDueDate} placeholder="Choose a due date" />
 						</div>
 
 						<div className="space-y-2">
@@ -118,9 +198,9 @@ export function PipelineTaskDialog({ projectId, stage, open, onOpenChange }: Pip
 
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-						<Button type="submit" disabled={!title.trim() || mutation.isPending}>
-							{mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-							Create task
+						<Button type="submit" disabled={!title.trim() || !workflowStageId || isPending}>
+							{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+							{isEditing ? "Save changes" : "Create task"}
 						</Button>
 					</DialogFooter>
 				</form>

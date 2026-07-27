@@ -11,6 +11,7 @@ export interface TimeEntry {
 	trackableId: number;
 	trackableType: TrackableType;
 	trackableDisplayName: string;
+	trackableProjectId?: number | null;
 	startTime: string;
 	endTime?: string;
 	durationMinutes?: number;

@@ -9,6 +9,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
 import { FormInput } from "@/components/shared/forms/FormInput";
+import { FormDatePicker } from "@/components/shared/forms/FormDatePicker";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { DataTable } from "@/components/shared/data-display/DataTable";
 import { Badge } from "@/components/ui/badge";
@@ -119,17 +120,15 @@ export function PointsReportDialog({ open, onClose }: PointsReportDialogProps) {
 						className="space-y-4"
 					>
 						<div className="grid grid-cols-2 gap-4">
-							<FormInput
+							<FormDatePicker
 								control={form.control}
 								name="dateFrom"
 								label="From Date"
-								type="date"
 							/>
-							<FormInput
+							<FormDatePicker
 								control={form.control}
 								name="dateTo"
 								label="To Date"
-								type="date"
 							/>
 						</div>
 

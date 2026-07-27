@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FormDialog } from "@/components/shared";
-import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/shared/forms/DatePicker";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,13 +55,8 @@ export function CreateInvoiceDialog({ open, onOpenChange, onCreateInvoice, isLoa
 		>
 			<div className="space-y-4">
 				<div className="space-y-2">
-					<Label htmlFor="invoiceDueDate">Due Date</Label>
-					<Input
-						id="invoiceDueDate"
-						type="date"
-						value={dueDate}
-						onChange={(e) => setDueDate(e.target.value)}
-					/>
+					<Label>Due Date</Label>
+					<DatePicker value={dueDate} onChange={setDueDate} placeholder="Choose a due date" />
 				</div>
 				<div className="space-y-2">
 					<Label htmlFor="invoiceNotes">Notes (Optional)</Label>

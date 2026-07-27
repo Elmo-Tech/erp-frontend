@@ -3,6 +3,7 @@
 import { UseFormReturn } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { FormInput } from "@/components/shared/forms/FormInput";
+import { FormDatePicker } from "@/components/shared/forms/FormDatePicker";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { CreateInvoiceFormData } from "../../../schemas/invoiceSchema";
@@ -50,11 +51,10 @@ export function InvoiceFormFields({ form, projectOptions }: InvoiceFormFieldsPro
 					options={currencyOptions}
 				/>
 
-				<FormInput<CreateInvoiceFormData>
+				<FormDatePicker<CreateInvoiceFormData>
 					control={form.control}
 					name="dueDate"
 					label="Due Date"
-					type="date"
 				/>
 
 				<FormTextarea<CreateInvoiceFormData>

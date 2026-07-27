@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { projectPipelineApi } from "../api/projectPipeline";
-import type { CreatePipelineTaskPayload, EditableWorkflowStage } from "../types/pipeline";
+import type { CreatePipelineTaskPayload, EditableWorkflowStage, UpdatePipelineTaskPayload } from "../types/pipeline";
 
 export const projectPipelineKeys = {
 	all: ["project-pipeline"] as const,
@@ -29,6 +29,44 @@ export const useMovePipelineTask = (projectId: number) => {
 
 	return useMutation({
 		mutationFn: ({ taskId, workflowStageId }: { taskId: number; workflowStageId: number }) => projectPipelineApi.moveTask(projectId, taskId, workflowStageId),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+	});
+};
+
+export const useUpdatePipelineTask = (projectId: number) => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ taskId, payload }: { taskId: number; payload: UpdatePipelineTaskPayload }) =>
+			projectPipelineApi.updateTask(projectId, taskId, payload),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+	});
+};
+
+export const useDeletePipelineTask = (projectId: number) => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (taskId: number) => projectPipelineApi.deleteTask(projectId, taskId),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+	});
+};
+
+export const useUploadPipelineTaskCover = (projectId: number) => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ taskId, coverImage }: { taskId: number; coverImage: File }) =>
+			projectPipelineApi.uploadTaskCover(projectId, taskId, coverImage),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+	});
+};
+
+export const useDeletePipelineTaskCover = (projectId: number) => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (taskId: number) => projectPipelineApi.deleteTaskCover(projectId, taskId),
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
 	});
 };

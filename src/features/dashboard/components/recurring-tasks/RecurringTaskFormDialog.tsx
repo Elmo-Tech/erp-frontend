@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RecurringTaskConfig, RecurringTaskFormData } from "../../types";
 import { recurringTaskSchema } from "../../schemas";
@@ -9,6 +9,7 @@ import { useCreateRecurringTask, useUpdateRecurringTask } from "../../hooks";
 import { useTasks } from "../../hooks/useTasks";
 import { FrequencySelector } from "./FrequencySelector";
 import { DaysOfWeekSelector } from "./DaysOfWeekSelector";
+import { FormDatePicker } from "@/components/shared";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -17,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface RecurringTaskFormDialogProps {
 	open: boolean;
@@ -26,7 +28,6 @@ interface RecurringTaskFormDialogProps {
 
 export function RecurringTaskFormDialog({ open, onOpenChange, config }: RecurringTaskFormDialogProps) {
 	const isEditMode = !!config;
-	const [selectedFrequency, setSelectedFrequency] = useState<string>("daily");
 
 	const createMutation = useCreateRecurringTask();
 	const updateMutation = useUpdateRecurringTask(config?.id || 0);
@@ -43,6 +44,8 @@ export function RecurringTaskFormDialog({ open, onOpenChange, config }: Recurrin
 			isActive: true,
 		},
 	});
+	const frequency = useWatch({ control: form.control, name: "frequency" });
+	const interval = useWatch({ control: form.control, name: "interval" });
 
 	// Reset form when config changes
 	useEffect(() => {
@@ -58,7 +61,6 @@ export function RecurringTaskFormDialog({ open, onOpenChange, config }: Recurrin
 				maxOccurrences: config.maxOccurrences || undefined,
 				isActive: config.isActive,
 			});
-			setSelectedFrequency(config.frequency);
 		} else {
 			form.reset({
 				templateTaskId: 0,
@@ -68,7 +70,6 @@ export function RecurringTaskFormDialog({ open, onOpenChange, config }: Recurrin
 				startDate: new Date().toISOString().split("T")[0],
 				isActive: true,
 			});
-			setSelectedFrequency("daily");
 		}
 	}, [config, form]);
 
@@ -81,12 +82,11 @@ export function RecurringTaskFormDialog({ open, onOpenChange, config }: Recurrin
 			}
 			form.reset();
 			onOpenChange(false);
-		} catch (error) {
-			// Error handled by mutation
+		} catch {
+			toast.error(isEditMode ? "Could not update the recurring task" : "Could not create the recurring task");
 		}
 	};
 
-	const frequency = form.watch("frequency");
 	const showDaysOfWeek = frequency === "weekly";
 	const showDayOfMonth = ["monthly", "quarterly", "yearly"].includes(frequency);
 
@@ -150,10 +150,9 @@ export function RecurringTaskFormDialog({ open, onOpenChange, config }: Recurrin
 									<FormItem>
 										<FrequencySelector
 											frequency={field.value}
-											interval={form.watch("interval") ?? 1}
+											interval={interval ?? 1}
 											onFrequencyChange={(freq) => {
 												field.onChange(freq);
-												setSelectedFrequency(freq);
 												// Reset conditional fields
 												if (freq !== "weekly") {
 													form.setValue("daysOfWeek", []);
@@ -213,39 +212,16 @@ export function RecurringTaskFormDialog({ open, onOpenChange, config }: Recurrin
 
 							{/* Date Range */}
 							<div className="grid grid-cols-2 gap-4">
-								<FormField
+								<FormDatePicker
 									control={form.control}
 									name="startDate"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Start Date</FormLabel>
-											<FormControl>
-												<Input
-													type="date"
-													{...field}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
+									label="Start Date"
 								/>
 
-								<FormField
+								<FormDatePicker
 									control={form.control}
 									name="endDate"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>End Date (Optional)</FormLabel>
-											<FormControl>
-												<Input
-													type="date"
-													{...field}
-													value={field.value || ""}
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
+									label="End Date (Optional)"
 								/>
 							</div>
 

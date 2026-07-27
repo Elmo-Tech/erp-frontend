@@ -2,7 +2,7 @@
 
 import { FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
 import { Form } from "@/components/ui/form";
-import { FormInput, FormTextarea, FormSelect } from "@/components/shared";
+import { FormDatePicker, FormInput, FormTextarea, FormSelect } from "@/components/shared";
 import { ProjectStatus } from "../../../types/project";
 
 const statusOptions = [
@@ -40,11 +40,10 @@ export function ProjectFormFields<TFormValues extends FieldValues>({ form, showR
 					rows={3}
 				/>
 
-				<FormInput
+				<FormDatePicker
 					control={form.control}
 					name={"deadline" as FieldPath<TFormValues>}
 					label="Deadline"
-					type="date"
 				/>
 
 				<FormSelect

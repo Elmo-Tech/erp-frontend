@@ -1,9 +1,9 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form } from "@/components/ui/form";
-import { FormDialog, FormSelect, FormTextarea, FormInput } from "@/components/shared";
+import { FormDatePicker, FormDialog, FormSelect, FormTextarea, FormInput } from "@/components/shared";
 import { useCompleteMeetingWithFeedback } from "../../../hooks/useLeads";
 import { toast } from "sonner";
 import { meetingFeedbackSchema, MeetingFeedbackFormData, MeetingOutcome, MeetingOutcomeLabels } from "../../../schemas/meetingFeedbackSchema";
@@ -36,7 +36,7 @@ export function MeetingFeedbackDialog({ open, onOpenChange, meeting, leadId, tea
 		},
 	});
 
-	const feedbackValue = form.watch("feedback");
+	const feedbackValue = useWatch({ control: form.control, name: "feedback" });
 	const feedbackLength = feedbackValue?.length || 0;
 	const isValid = feedbackLength >= 20;
 
@@ -108,11 +108,10 @@ export function MeetingFeedbackDialog({ open, onOpenChange, meeting, leadId, tea
 						placeholder="e.g., Send proposal, Schedule follow-up call"
 					/>
 
-					<FormInput
+					<FormDatePicker
 						control={form.control}
 						name="followUpDate"
 						label="Follow-up Date (Optional)"
-						type="date"
 						placeholder="Select a follow-up date"
 					/>
 				</div>

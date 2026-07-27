@@ -7,6 +7,7 @@ export interface TimeEntryData {
 	trackableType: string;
 	trackableId: number;
 	trackableDisplayName: string;
+	trackableProjectId?: number | null;
 	isActive: boolean;
 	lastHeartbeatAt?: string;
 	stopReason?: "pause" | "hold" | "end" | "connection_lost" | "admin_stop" | null;

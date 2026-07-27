@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { DatePicker } from "@/components/shared/forms/DatePicker";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,7 +105,7 @@ export const CreateContractDialog: React.FC<CreateContractDialogProps> = ({ open
 	const approvedQuotations = useMemo(() => {
 		if (!quotationsData?.quotations) return [];
 		return quotationsData.quotations.filter((q) => q.status === QuotationStatus.APPROVED);
-	}, [quotationsData?.quotations]);
+	}, [quotationsData]);
 
 	// Calculate milestone validation
 	const milestoneValidation = useMemo(() => {
@@ -256,16 +257,6 @@ export const CreateContractDialog: React.FC<CreateContractDialogProps> = ({ open
 		}
 	}, [open]);
 
-	// Pre-fill title when quotation is selected
-	useEffect(() => {
-		if (selectedQuotationId && approvedQuotations.length > 0) {
-			const quotation = approvedQuotations.find((q) => q.quotationId === selectedQuotationId);
-			if (quotation && !title) {
-				setTitle(`Contract - ${quotation.quotationNumber}`);
-			}
-		}
-	}, [selectedQuotationId, approvedQuotations, title]);
-
 	return (
 		<Dialog
 			open={open}
@@ -328,7 +319,14 @@ export const CreateContractDialog: React.FC<CreateContractDialogProps> = ({ open
 										<Label>Select Quotation</Label>
 										<Select
 											value={selectedQuotationId?.toString() || ""}
-											onValueChange={(value) => setSelectedQuotationId(parseInt(value))}
+											onValueChange={(value) => {
+												const quotationId = parseInt(value);
+												setSelectedQuotationId(quotationId);
+												const quotation = approvedQuotations.find((item) => item.quotationId === quotationId);
+												if (quotation && !title) {
+													setTitle(`Contract - ${quotation.quotationNumber}`);
+												}
+											}}
 										>
 											<SelectTrigger>
 												<SelectValue placeholder="Select an approved quotation" />
@@ -472,24 +470,14 @@ export const CreateContractDialog: React.FC<CreateContractDialogProps> = ({ open
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 								{/* Start Date */}
 								<div className="space-y-2">
-									<Label htmlFor="startDate">Start Date</Label>
-									<Input
-										id="startDate"
-										type="date"
-										value={startDate}
-										onChange={(e) => setStartDate(e.target.value)}
-									/>
+									<Label>Start Date</Label>
+									<DatePicker value={startDate} onChange={setStartDate} placeholder="Choose a start date" />
 								</div>
 
 								{/* End Date */}
 								<div className="space-y-2">
-									<Label htmlFor="endDate">End Date</Label>
-									<Input
-										id="endDate"
-										type="date"
-										value={endDate}
-										onChange={(e) => setEndDate(e.target.value)}
-									/>
+									<Label>End Date</Label>
+									<DatePicker value={endDate} onChange={setEndDate} placeholder="Choose an end date" />
 								</div>
 							</div>
 						</CardContent>

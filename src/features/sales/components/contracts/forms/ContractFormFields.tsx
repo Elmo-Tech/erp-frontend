@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FormInput } from "@/components/shared/forms/FormInput";
+import { FormDatePicker } from "@/components/shared/forms/FormDatePicker";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { MilestoneTriggerType } from "../../../types/contract";
@@ -104,17 +105,15 @@ export function ContractFormFields({ control, quotationOptions, activeTab, onTab
 				</div>
 
 				<div className="grid grid-cols-2 gap-4">
-					<FormInput
+					<FormDatePicker
 						control={control}
 						name="startDate"
 						label="Start Date"
-						type="date"
 					/>
-					<FormInput
+					<FormDatePicker
 						control={control}
 						name="endDate"
 						label="End Date"
-						type="date"
 					/>
 				</div>
 
@@ -308,11 +307,10 @@ export function ContractFormFields({ control, quotationOptions, activeTab, onTab
 											min={0}
 											max={100}
 										/>
-										<FormInput
+										<FormDatePicker
 											control={control}
 											name={`milestones.${index}.dueDate`}
 											label="Due Date"
-											type="date"
 										/>
 									</div>
 									<FormInput
