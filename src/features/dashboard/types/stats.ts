@@ -12,6 +12,12 @@ export interface AdminDashboardStats {
 	workHoursChange: number;
 	activeClients: number;
 	clientsChange: number;
+	activeProjects: number;
+	completedProjects: number;
+	openTasks: number;
+	overdueTasks: number;
+	employeesCount: number;
+	todayAttendance: number;
 }
 
 // Manager Stats
@@ -84,12 +90,23 @@ export interface RecentActivity {
 	type: "task" | "project" | "file" | "quotation" | "time";
 }
 
+export interface DeliveryTimelineItem {
+	id: string;
+	entityType: "project" | "task";
+	title: string;
+	startDate: string;
+	endDate: string;
+	projectId: number;
+	projectName: string;
+}
+
 // Role-based Dashboard Responses
 export interface AdminDashboardOverview {
 	role: "admin";
 	stats: AdminDashboardStats;
 	recentProjects: RecentProject[];
 	recentActivities: RecentActivity[];
+	timeline: DeliveryTimelineItem[];
 }
 
 export interface ManagerDashboardOverview {

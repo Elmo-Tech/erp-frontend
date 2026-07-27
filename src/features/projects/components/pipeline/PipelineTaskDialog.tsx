@@ -53,7 +53,7 @@ export function PipelineTaskDialog({ projectId, stage, members, open, onOpenChan
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl!">
 				<form onSubmit={submit} className="space-y-5">
 					<DialogHeader>
 						<DialogTitle>Create task in {stage?.name}</DialogTitle>

@@ -110,7 +110,7 @@ export function WorkflowSettingsDialog({ projectId, stages, canManageTemplates, 
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl!">
 				<DialogHeader>
 					<DialogTitle>Project workflow</DialogTitle>
 					<DialogDescription>These stages belong to this project. Templates copy stages into a project instead of linking all projects to one mutable list.</DialogDescription>
@@ -118,23 +118,29 @@ export function WorkflowSettingsDialog({ projectId, stages, canManageTemplates, 
 
 				<div className="space-y-3">
 					{draft.map((stage, index) => (
-						<div key={stage.stageId ?? stage.slug} className="grid gap-3 border-b pb-3 md:grid-cols-[48px_1fr_150px_90px_100px] md:items-end">
-							<Input aria-label={`${stage.name} color`} type="color" className="h-10 p-1" value={stage.color} onChange={(event) => patchStage(index, { color: event.target.value })} />
+						<div key={stage.stageId ?? stage.slug} className="grid gap-3 rounded-lg border p-4 lg:grid-cols-[64px_minmax(180px,1fr)_180px_120px_auto] lg:items-end">
+							<div className="space-y-1">
+								<Label htmlFor={`workflow-stage-color-${index}`}>Color</Label>
+								<Input id={`workflow-stage-color-${index}`} aria-label={`${stage.name} color`} type="color" className="h-10 w-full p-1" value={stage.color} onChange={(event) => patchStage(index, { color: event.target.value })} />
+							</div>
 							<div className="space-y-1">
 								<Label htmlFor={`workflow-stage-${index}`}>Stage name</Label>
 								<Input id={`workflow-stage-${index}`} value={stage.name} onChange={(event) => patchStage(index, { name: event.target.value })} />
 							</div>
-							<Select value={stage.category} onValueChange={(value) => patchStage(index, { category: value as WorkflowStageCategory })}>
-								<SelectTrigger><SelectValue /></SelectTrigger>
-								<SelectContent>
-									{categories.map((category) => <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>)}
-								</SelectContent>
-							</Select>
+							<div className="space-y-1">
+								<Label>Category</Label>
+								<Select value={stage.category} onValueChange={(value) => patchStage(index, { category: value as WorkflowStageCategory })}>
+									<SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+									<SelectContent>
+										{categories.map((category) => <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>)}
+									</SelectContent>
+								</Select>
+							</div>
 							<label className="flex h-10 items-center gap-2 text-sm">
 								<Checkbox checked={stage.isTerminal} onCheckedChange={(checked) => patchStage(index, { isTerminal: checked === true })} />
 								Terminal
 							</label>
-							<div className="flex">
+							<div className="flex justify-end">
 								<Button type="button" variant="ghost" size="icon" aria-label={`Move ${stage.name} up`} onClick={() => move(index, -1)} disabled={index === 0}><ArrowUp className="h-4 w-4" /></Button>
 								<Button type="button" variant="ghost" size="icon" aria-label={`Move ${stage.name} down`} onClick={() => move(index, 1)} disabled={index === draft.length - 1}><ArrowDown className="h-4 w-4" /></Button>
 								<Button type="button" variant="ghost" size="icon" aria-label={`Remove ${stage.name}`} onClick={() => setDraft((current) => current.filter((_, stageIndex) => stageIndex !== index))} disabled={draft.length <= 2}><Trash2 className="h-4 w-4" /></Button>

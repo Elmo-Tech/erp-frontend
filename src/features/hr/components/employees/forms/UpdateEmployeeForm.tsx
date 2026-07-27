@@ -120,7 +120,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			onSubmit={form.handleSubmit(handleSubmit)}
 			isLoading={updateEmployee.isPending}
 			isSubmitDisabled={!form.formState.isValid}
-			size="lg"
+			size="xxxl"
 		>
 			<Form {...form}>
 				<EmployeeFormFields

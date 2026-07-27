@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import "vis-timeline/styles/vis-timeline-graph2d.min.css";
 import "./globals.css";
 import { Providers } from "./providers";
 import { TABLES_APP_NAME } from "@/config/simplification";

@@ -9,9 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "../hooks/useProjects";
 import { UpdateProjectForm } from "./projects";
-import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab } from "./tabs";
+import { FilesTab, HistoryTab } from "./tabs";
 import { ProjectPipelineTab } from "./pipeline";
-import { ArrowLeft, Calendar, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Columns3 } from "lucide-react";
+import { ArrowLeft, Calendar, ListTodo, Clock, Pencil, Users, FileText, History, Columns3 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
@@ -25,11 +25,11 @@ interface ProjectDetailsTabsProps {
 export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 	const router = useRouter();
 	const { data: project, isLoading } = useProject(projectId);
-	const [activeTab, setActiveTab] = useState("overview");
+	const [activeTab, setActiveTab] = useState("pipeline");
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 
 	// Permission checks
-	const { canEditProjects, canViewTasks, canViewProjectMembers, canViewProjectFiles, canViewWiki, canViewProjectHistory, canViewProjectBudget, canViewChangeRequests } = usePermissions();
+	const { canManageProjects, canEditProjects, canViewTasks, canViewProjectFiles, canViewProjectHistory, canViewProjectBudget } = usePermissions();
 
 	if (isLoading) {
 		return (
@@ -68,7 +68,6 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 		);
 	}
 
-	const membersCount = project.members?.length || 0;
 	const filesCount = project.files?.length || 0;
 	const canShowFinancials = canViewProjectBudget && isModuleEnabled(moduleKeys.financials);
 	const canShowUIApproval = isModuleEnabled(moduleKeys.uiApproval);
@@ -146,8 +145,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 				onValueChange={setActiveTab}
 				className="space-y-4"
 			>
-				<TabsList>
-					<TabsTrigger value="overview">Overview</TabsTrigger>
+				<TabsList className="h-auto flex-wrap justify-start">
 					{canViewTasks && (
 						<TabsTrigger
 							value="pipeline"
@@ -157,25 +155,8 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 							Pipeline
 						</TabsTrigger>
 					)}
-					{canViewTasks && (
-						<TabsTrigger
-							value="tasks"
-							className="gap-2"
-						>
-							<ListTodo className="h-4 w-4" />
-							Legacy Tasks
-						</TabsTrigger>
-					)}
-					{canViewProjectMembers && (
-						<TabsTrigger
-							value="team"
-							className="gap-2"
-						>
-							<Users className="h-4 w-4" />
-							Team ({membersCount})
-						</TabsTrigger>
-					)}
-					{canViewProjectFiles && (
+					{canManageProjects && <TabsTrigger value="overview">Overview</TabsTrigger>}
+					{canManageProjects && canViewProjectFiles && (
 						<TabsTrigger
 							value="files"
 							className="gap-2"
@@ -184,16 +165,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 							Files ({filesCount})
 						</TabsTrigger>
 					)}
-					{canViewWiki && (
-						<TabsTrigger
-							value="wiki"
-							className="gap-2"
-						>
-							<BookOpen className="h-4 w-4" />
-							Wiki
-						</TabsTrigger>
-					)}
-					{canViewProjectHistory && (
+					{canManageProjects && canViewProjectHistory && (
 						<TabsTrigger
 							value="history"
 							className="gap-2"
@@ -202,19 +174,10 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 							History
 						</TabsTrigger>
 					)}
-					{canViewChangeRequests && (
-						<TabsTrigger
-							value="change-requests"
-							className="gap-2"
-						>
-							<FileEdit className="h-4 w-4" />
-							CRs
-						</TabsTrigger>
-					)}
 				</TabsList>
 
 				{/* Overview Tab */}
-				<TabsContent
+				{canManageProjects && <TabsContent
 					value="overview"
 					className="space-y-4"
 				>
@@ -258,15 +221,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 												<Badge variant="outline">{member.role}</Badge>
 											</div>
 										))}
-										{project.members.length > 5 && (
-											<Button
-												variant="link"
-												className="p-0 h-auto"
-												onClick={() => setActiveTab("team")}
-											>
-												View all {project.members.length} members
-											</Button>
-										)}
+										{project.members.length > 5 && <p className="text-sm text-muted-foreground">+{project.members.length - 5} more members</p>}
 									</div>
 								) : (
 									<p className="text-sm text-muted-foreground">No team members assigned</p>
@@ -274,7 +229,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 							</CardContent>
 						</Card>
 					</div>
-				</TabsContent>
+				</TabsContent>}
 
 				{/* Tasks Tab */}
 				{canViewTasks && (
@@ -283,22 +238,8 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 					</TabsContent>
 				)}
 
-				{/* Legacy Tasks Tab */}
-				{canViewTasks && (
-					<TabsContent value="tasks">
-						<TasksTab projectId={projectId} />
-					</TabsContent>
-				)}
-
-				{/* Team Tab */}
-				{canViewProjectMembers && (
-					<TabsContent value="team">
-						<TeamTab projectId={projectId} />
-					</TabsContent>
-				)}
-
 				{/* Files Tab */}
-				{canViewProjectFiles && (
+				{canManageProjects && canViewProjectFiles && (
 					<TabsContent value="files">
 						<FilesTab
 							projectId={projectId}
@@ -309,24 +250,10 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 					</TabsContent>
 				)}
 
-				{/* Wiki Tab */}
-				{canViewWiki && (
-					<TabsContent value="wiki">
-						<WikiTab projectId={projectId} />
-					</TabsContent>
-				)}
-
 				{/* History Tab */}
-				{canViewProjectHistory && (
+				{canManageProjects && canViewProjectHistory && (
 					<TabsContent value="history">
 						<HistoryTab projectId={projectId} />
-					</TabsContent>
-				)}
-
-				{/* Change Requests Tab */}
-				{canViewChangeRequests && (
-					<TabsContent value="change-requests">
-						<ChangeRequestsTab projectId={projectId} />
 					</TabsContent>
 				)}
 

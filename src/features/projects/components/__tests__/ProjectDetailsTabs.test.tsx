@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectDetailsTabs } from "../ProjectDetailsTabs";
 import { ProjectStatus } from "@/features/projects/types/project";
 
@@ -33,16 +33,16 @@ vi.mock("../../hooks/useProjects", () => ({
 	}),
 }));
 
+let isAdminWorkspace = true;
+
 vi.mock("@/features/admin/hooks/usePermissions", () => ({
 	usePermissions: () => ({
+		canManageProjects: isAdminWorkspace,
 		canEditProjects: false,
 		canViewTasks: true,
-		canViewProjectMembers: true,
 		canViewProjectFiles: true,
-		canViewWiki: true,
 		canViewProjectHistory: true,
 		canViewProjectBudget: false,
-		canViewChangeRequests: false,
 	}),
 }));
 
@@ -51,18 +51,42 @@ vi.mock("@/components/shared/StatusBadge", () => ({
 }));
 
 vi.mock("../tabs", () => ({
-	TeamTab: () => <div>Team tab</div>,
-	TasksTab: () => <div>Tasks tab</div>,
-	WikiTab: () => <div>Wiki tab</div>,
 	FilesTab: () => <div>Files tab</div>,
 	HistoryTab: () => <div>History tab</div>,
-	ChangeRequestsTab: () => <div>CR tab</div>,
+}));
+
+vi.mock("../pipeline", () => ({
+	ProjectPipelineTab: () => <div>Pipeline board</div>,
+}));
+
+vi.mock("../projects", () => ({
+	UpdateProjectForm: () => null,
 }));
 
 describe("ProjectDetailsTabs", () => {
-	it("shows the project Wiki tab when the user can view wiki", () => {
+	beforeEach(() => {
+		isAdminWorkspace = true;
+	});
+
+	it("opens the pipeline first and keeps only the streamlined admin tabs", () => {
 		render(<ProjectDetailsTabs projectId={1} />);
 
-		expect(screen.getByRole("tab", { name: /wiki/i })).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: /pipeline/i })).toHaveAttribute("data-state", "active");
+		expect(screen.getByText("Pipeline board")).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: /overview/i })).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: /files/i })).toBeInTheDocument();
+		expect(screen.getByRole("tab", { name: /history/i })).toBeInTheDocument();
+		expect(screen.queryByRole("tab", { name: /legacy tasks/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole("tab", { name: /wiki/i })).not.toBeInTheDocument();
+	});
+
+	it("shows assigned-project users only the pipeline tab", () => {
+		isAdminWorkspace = false;
+
+		render(<ProjectDetailsTabs projectId={1} />);
+
+		expect(screen.getAllByRole("tab")).toHaveLength(1);
+		expect(screen.getByRole("tab", { name: /pipeline/i })).toBeInTheDocument();
+		expect(screen.getByText("Pipeline board")).toBeInTheDocument();
 	});
 });

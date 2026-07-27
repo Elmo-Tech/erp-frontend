@@ -11,6 +11,8 @@ import { FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, 
 import Link from "next/link";
 import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview } from "@/features/dashboard/types";
 import { getRoleLabel } from "@/config/simplification";
+import { DashboardOperationsCharts } from "@/features/dashboard/components/DashboardOperationsCharts";
+import { DeliveryTimeline } from "@/features/dashboard/components/DeliveryTimeline";
 
 export default function DashboardPage() {
 	const { user } = useAuthStore();
@@ -97,6 +99,8 @@ function AdminDashboard({ data }: { data: AdminDashboardOverview }) {
 	return (
 		<>
 			<StatsGrid stats={stats} />
+			<DashboardOperationsCharts stats={data.stats} />
+			<DeliveryTimeline entries={data.timeline ?? []} />
 			<div className="grid gap-4 md:grid-cols-2">
 				<RecentProjectsCard projects={data?.recentProjects ?? []} />
 				<RecentActivitiesCard activities={data?.recentActivities ?? []} />

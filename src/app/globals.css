@@ -127,3 +127,50 @@
 		@apply bg-background text-foreground;
 	}
 }
+
+@layer components {
+	.delivery-timeline .vis-timeline {
+		border: 0;
+		color: var(--foreground);
+		font-family: var(--font-geist-sans);
+	}
+
+	.delivery-timeline .vis-panel,
+	.delivery-timeline .vis-time-axis .vis-grid.vis-minor,
+	.delivery-timeline .vis-time-axis .vis-grid.vis-major {
+		border-color: var(--border);
+	}
+
+	.delivery-timeline .vis-label,
+	.delivery-timeline .vis-time-axis .vis-text {
+		color: var(--muted-foreground);
+	}
+
+	.delivery-timeline .vis-labelset .vis-label,
+	.delivery-timeline .vis-panel.vis-center,
+	.delivery-timeline .vis-panel.vis-left {
+		background: var(--card);
+	}
+
+	.delivery-timeline .vis-item {
+		border-radius: var(--radius-sm);
+		font-size: 0.75rem;
+		font-weight: 600;
+	}
+
+	.delivery-timeline .vis-item.delivery-project {
+		border-color: var(--chart-3);
+		background: color-mix(in oklch, var(--chart-2) 22%, var(--card));
+		color: var(--foreground);
+	}
+
+	.delivery-timeline .vis-item.delivery-task {
+		border-color: var(--chart-5);
+		background: color-mix(in oklch, var(--chart-4) 18%, var(--card));
+		color: var(--foreground);
+	}
+
+	.delivery-timeline .vis-current-time {
+		background-color: var(--destructive);
+	}
+}

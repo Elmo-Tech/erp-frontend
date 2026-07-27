@@ -21,8 +21,8 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 	const hourlyRate = calculateHourlyRate(salary === "" ? null : Number(salary), workHoursPerDay);
 
 	return (
-		<div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+		<div className="space-y-5">
+			<div className="grid gap-4 md:grid-cols-2">
 				<FormInput
 					control={control}
 					name="name"
@@ -38,7 +38,7 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 				/>
 			</div>
 
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid gap-4 md:grid-cols-2">
 				<FormInput
 					control={control}
 					name="password"
@@ -64,7 +64,7 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 				description="Determines which tasks the employee can see and work on"
 			/>
 
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid gap-4 md:grid-cols-3">
 				<FormInput
 					control={control}
 					name="salary"
@@ -97,7 +97,7 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 				</div>
 			</div>
 
-			<div className="grid grid-cols-3 gap-4">
+			<div className="grid gap-4 md:grid-cols-3">
 				<FormInput
 					control={control}
 					name="workHoursPerDay"

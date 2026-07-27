@@ -116,7 +116,7 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 			onSubmit={form.handleSubmit(handleSubmit)}
 			isLoading={createEmployee.isPending}
 			isSubmitDisabled={!form.formState.isValid}
-			size="lg"
+			size="xxxl"
 		>
 			<Form {...form}>
 				<EmployeeFormFields
