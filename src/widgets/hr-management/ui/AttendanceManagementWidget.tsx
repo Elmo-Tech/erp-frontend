@@ -14,6 +14,7 @@ import { Button } from "@/shared/ui/button";
 import { DataTable, type Column } from "@/shared/ui/data-display/DataTable";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/shared/ui/dropdown-menu";
 import { Input } from "@/shared/ui/input";
+import { DatePicker } from "@/shared/ui/forms/DatePicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { cn } from "@/shared/lib/utils";
 
@@ -135,8 +136,8 @@ function AttendanceFiltersBar({ filters, search, onSearchChange, onFilterChange,
 					{Object.entries(STATUS_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
 				</SelectContent>
 			</Select>
-			<Input type="date" aria-label="From date" value={filters.from ?? ""} onChange={(event) => onFilterChange("from", event.target.value || undefined)} />
-			<Input type="date" aria-label="To date" value={filters.to ?? ""} onChange={(event) => onFilterChange("to", event.target.value || undefined)} />
+			<DatePicker ariaLabel="From date" value={filters.from ?? ""} onChange={(value) => onFilterChange("from", value || undefined)} />
+			<DatePicker ariaLabel="To date" value={filters.to ?? ""} onChange={(value) => onFilterChange("to", value || undefined)} />
 			<Button type="button" variant="outline" size="sm" className="h-9" onClick={onReset}><RotateCcw className="size-3.5" />Reset</Button>
 		</div>
 	);

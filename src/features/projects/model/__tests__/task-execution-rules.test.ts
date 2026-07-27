@@ -15,6 +15,9 @@ const noAccess = {
 const deniedActions: TaskAllowedActions = {
 	edit: false,
 	delete: false,
+	execute: false,
+	startTimer: false,
+	stopTimer: false,
 	changeStatus: false,
 	complete: false,
 	reopen: false,

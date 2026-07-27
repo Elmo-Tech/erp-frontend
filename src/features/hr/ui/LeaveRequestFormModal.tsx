@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
-import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
@@ -146,18 +146,16 @@ export function LeaveRequestFormModal({ open, onClose, editTarget }: LeaveReques
 					/>
 
 					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-						<FormInput
+						<FormDatePicker
 							control={form.control}
 							name="start_date"
 							label="Start Date"
-							type="date"
 							disabled={isPending}
 						/>
-						<FormInput
+						<FormDatePicker
 							control={form.control}
 							name="end_date"
 							label="End Date"
-							type="date"
 							disabled={isPending}
 						/>
 					</div>

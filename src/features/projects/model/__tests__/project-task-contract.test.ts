@@ -66,6 +66,9 @@ describe("project task contract", () => {
 		const allowedActions = {
 			edit: true,
 			delete: false,
+			execute: true,
+			startTimer: true,
+			stopTimer: true,
 			changeStatus: true,
 			complete: false,
 			reopen: false,

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
@@ -155,11 +156,10 @@ export function PayrollTransactionFormModal({ open, onClose, editTarget }: Payro
 						/>
 					</div>
 
-					<FormInput
+					<FormDatePicker
 						control={form.control}
 						name="transaction_date"
 						label="Transaction Date"
-						type="date"
 						disabled={isPending}
 					/>
 

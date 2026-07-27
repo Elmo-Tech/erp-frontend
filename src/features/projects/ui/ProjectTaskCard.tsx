@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useAuthStore } from "@/entities/user/model/auth.store";
 import { Card } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/utils";
-import { useToggleTaskTimer } from "../api/execution.api";
+import { useTaskTimerLifecycle, type TaskTimerLifecycleAction } from "../api/execution.api";
 import type { ProjectTask } from "../api/execution.api";
 import { buildTaskCardView } from "../model/task-card-view";
 import { ProjectTaskCardBody } from "./ProjectTaskCardBody";
@@ -42,23 +43,24 @@ function useLiveTimer(startTime: string | null | undefined, isRunning: boolean) 
 }
 
 export function ProjectTaskCard({ task, projectId, onClick, canEdit = false, canDelete = false, onEdit, onDelete }: ProjectTaskCardProps) {
-	const toggleTimer = useToggleTaskTimer();
-	const view = buildTaskCardView(task);
+	const timerLifecycle = useTaskTimerLifecycle();
+	const currentUserId = useAuthStore((state) => state.user?.userId);
+	const view = buildTaskCardView(task, currentUserId);
 	const elapsedSeconds = useLiveTimer(view.runningEntry?.startTime, view.isRunning);
 	const canEditTask = task.allowedActions?.edit ?? canEdit;
 	const canDeleteTask = task.allowedActions?.delete ?? canDelete;
 
-	const handleTimerToggle = useCallback(
-		(event: React.MouseEvent) => {
+	const handleTimerAction = useCallback(
+		(event: React.MouseEvent, action: TaskTimerLifecycleAction) => {
 			event.stopPropagation();
-			toggleTimer.mutate(
-				{ projectId, taskId: task.taskId },
+			timerLifecycle.mutate(
+				{ projectId, taskId: task.taskId, action },
 				{
-					onError: () => toast.error("Failed to toggle timer. Please try again."),
+					onError: () => toast.error("Timer action failed. Please try again."),
 				},
 			);
 		},
-		[toggleTimer, projectId, task.taskId],
+		[timerLifecycle, projectId, task.taskId],
 	);
 
 	const handleEdit = useCallback(
@@ -91,6 +93,14 @@ export function ProjectTaskCard({ task, projectId, onClick, canEdit = false, can
 			}}
 			className={cn("cursor-pointer gap-3 py-0 select-none transition-all", view.cardStatusClass)}
 		>
+			{task.coverImageUrl && (
+				<div
+					role="img"
+					aria-label={`${task.title} cover`}
+					className="h-32 w-full rounded-t-xl bg-cover bg-center"
+					style={{ backgroundImage: `url("${task.coverImageUrl}")` }}
+				/>
+			)}
 			<ProjectTaskCardHeader
 				task={task}
 				view={view}
@@ -107,8 +117,8 @@ export function ProjectTaskCard({ task, projectId, onClick, canEdit = false, can
 				task={task}
 				view={view}
 				elapsedSeconds={elapsedSeconds}
-				isTimerPending={toggleTimer.isPending}
-				onTimerToggle={handleTimerToggle}
+				isTimerPending={timerLifecycle.isPending}
+				onTimerAction={handleTimerAction}
 			/>
 		</Card>
 	);

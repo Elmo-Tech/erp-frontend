@@ -4,18 +4,27 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { useDeleteProjectTask, useUpdateProjectTask, type ProjectTask } from "@/features/projects/api/execution.api";
-import { addTaskFormDefaults, addTaskSchema, buildEditTaskFormDefaults, mapEditTaskFormToPayload, type EditTaskFormData } from "./project-task-forms";
+import { useDeleteProjectTask, useUpdateProjectTask, useUploadTaskCover, type ProjectTask } from "@/features/projects/api/execution.api";
+import {
+	addTaskFormDefaults,
+	addTaskSchema,
+	buildEditTaskFormDefaults,
+	mapEditTaskFormToPayload,
+	mapEditTaskFormToPayloadWithoutAssignments,
+	type EditTaskFormData,
+} from "./project-task-forms";
 
 interface UseProjectTaskMetadataActionsOptions {
 	projectId: number;
+	canAssignTasks: boolean;
 	onTaskDeleted?: (task: ProjectTask) => void;
 }
 
-export function useProjectTaskMetadataActions({ projectId, onTaskDeleted }: UseProjectTaskMetadataActionsOptions) {
+export function useProjectTaskMetadataActions({ projectId, canAssignTasks, onTaskDeleted }: UseProjectTaskMetadataActionsOptions) {
 	const [editingTask, setEditingTask] = useState<ProjectTask | null>(null);
 	const [deletingTask, setDeletingTask] = useState<ProjectTask | null>(null);
 	const updateTask = useUpdateProjectTask();
+	const uploadCover = useUploadTaskCover();
 	const deleteTask = useDeleteProjectTask();
 
 	const editTaskForm = useForm<EditTaskFormData>({
@@ -37,11 +46,21 @@ export function useProjectTaskMetadataActions({ projectId, onTaskDeleted }: UseP
 		if (!editingTask) return;
 
 		try {
-			await updateTask.mutateAsync({
+			const payload = canAssignTasks
+				? mapEditTaskFormToPayload(data)
+				: mapEditTaskFormToPayloadWithoutAssignments(data);
+			const updatedTask = await updateTask.mutateAsync({
 				projectId,
 				taskId: editingTask.taskId,
-				payload: mapEditTaskFormToPayload(data),
+				payload,
 			});
+			if (data.coverImage) {
+				await uploadCover.mutateAsync({
+					projectId,
+					taskId: updatedTask.taskId,
+					coverImage: data.coverImage,
+				});
+			}
 			toast.success("Task updated.");
 			closeEditTaskDialog();
 		} catch {
@@ -71,7 +90,7 @@ export function useProjectTaskMetadataActions({ projectId, onTaskDeleted }: UseP
 		setDeletingTask,
 		submitEditTask,
 		confirmDeleteTask,
-		isUpdatingTask: updateTask.isPending,
+		isUpdatingTask: updateTask.isPending || uploadCover.isPending,
 		isDeletingTask: deleteTask.isPending,
 	};
 }

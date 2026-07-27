@@ -42,8 +42,11 @@ export function formatTaskLoggedTime(totalMinutes: number): string {
 	return `${hours}h ${minutes}m`;
 }
 
-export function buildTaskCardView(task: ProjectTask): TaskCardView {
-	const runningEntry = task.timeEntries?.find((entry) => entry.isRunning) ?? null;
+export function buildTaskCardView(task: ProjectTask, currentUserId?: number): TaskCardView {
+	const runningEntry =
+		task.timeEntries?.find(
+			(entry) => entry.isRunning && (currentUserId === undefined || entry.userId === currentUserId),
+		) ?? null;
 	const deliverables = task.deliverables ?? [];
 	const totalDeliverables = deliverables.length;
 	const completedDeliverables = deliverables.filter((deliverable) => deliverable.isCompleted).length;

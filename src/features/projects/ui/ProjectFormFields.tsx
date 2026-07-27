@@ -3,6 +3,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { Form } from "@/shared/ui/form";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect, type SelectOption } from "@/shared/ui/forms/FormSelect";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
@@ -60,11 +61,10 @@ export function ProjectFormFields({ form, clientOptions, lockClient = false }: P
 						min={0}
 					/>
 
-					<FormInput
+					<FormDatePicker
 						control={form.control}
 						name="deadline"
 						label="Deadline"
-						type="date"
 					/>
 				</div>
 

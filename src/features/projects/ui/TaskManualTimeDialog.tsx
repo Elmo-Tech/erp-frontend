@@ -5,6 +5,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import type { ManualTimeFormData } from "../model/use-task-manual-time-dialog";
 
@@ -31,11 +32,10 @@ export function TaskManualTimeDialog({ open, form, isEditing, isLoading, onOpenC
 		>
 			<Form {...form}>
 				<div className="flex flex-col gap-4">
-					<FormInput
+					<FormDatePicker
 						control={form.control}
 						name="date"
 						label="Date"
-						type="date"
 					/>
 					<div className="grid grid-cols-2 gap-3">
 						<FormInput

@@ -6,9 +6,11 @@ export const ExecutionTaskStatus = {
 	BACKLOG: "backlog",
 	TO_DO: "to_do",
 	IN_PROGRESS: "in_progress",
+	ON_HOLD: "on_hold",
 	IN_REVIEW: "in_review",
 	QA: "qa",
 	DONE: "done",
+	CANCELLED: "cancelled",
 } as const;
 
 export type ExecutionTaskStatusValue = (typeof ExecutionTaskStatus)[keyof typeof ExecutionTaskStatus];
@@ -17,27 +19,33 @@ export const ExecutionTaskStatusLabels: Record<ExecutionTaskStatusValue, string>
 	backlog: "Backlog",
 	to_do: "To Do",
 	in_progress: "In Progress",
+	on_hold: "On Hold",
 	in_review: "In Review",
 	qa: "QA",
 	done: "Done",
+	cancelled: "Cancelled",
 };
 
 export const ExecutionTaskStatusColors: Record<ExecutionTaskStatusValue, string> = {
 	backlog: "bg-muted text-muted-foreground border-border",
 	to_do: "bg-muted text-muted-foreground border-border",
 	in_progress: "bg-blue-100 text-blue-700 border-blue-200",
+	on_hold: "bg-orange-100 text-orange-700 border-orange-200",
 	in_review: "bg-yellow-100 text-yellow-700 border-yellow-200",
 	qa: "bg-purple-100 text-purple-700 border-purple-200",
 	done: "bg-emerald-100 text-emerald-700 border-emerald-200",
+	cancelled: "bg-red-100 text-red-700 border-red-200",
 };
 
 export const EXECUTION_TASK_STATUS_OPTIONS = [
 	{ value: ExecutionTaskStatus.BACKLOG, label: "Backlog" },
 	{ value: ExecutionTaskStatus.TO_DO, label: "To Do" },
 	{ value: ExecutionTaskStatus.IN_PROGRESS, label: "In Progress" },
+	{ value: ExecutionTaskStatus.ON_HOLD, label: "On Hold" },
 	{ value: ExecutionTaskStatus.IN_REVIEW, label: "In Review" },
 	{ value: ExecutionTaskStatus.QA, label: "QA" },
 	{ value: ExecutionTaskStatus.DONE, label: "Done" },
+	{ value: ExecutionTaskStatus.CANCELLED, label: "Cancelled" },
 ] as const;
 
 export interface TaskAssignee {
@@ -49,6 +57,9 @@ export interface TaskAssignee {
 export interface TaskAllowedActions {
 	edit: boolean;
 	delete: boolean;
+	execute: boolean;
+	startTimer: boolean;
+	stopTimer: boolean;
 	changeStatus: boolean;
 	complete: boolean;
 	reopen: boolean;
@@ -58,12 +69,38 @@ export interface TaskAllowedActions {
 	toggleDeliverable: boolean;
 }
 
+export interface ProjectWorkflowStage {
+	stageId: number;
+	name: string;
+	status: ExecutionTaskStatusValue;
+	color: string;
+	position: number;
+	isTerminal: boolean;
+	taskCount?: number;
+}
+
+export interface WorkflowTemplate {
+	templateId: number;
+	name: string;
+	isDefault: boolean;
+	stages: ProjectWorkflowStage[];
+}
+
+export interface ProjectWorkflow {
+	stages: ProjectWorkflowStage[];
+	allowedActions: {
+		manage: boolean;
+		manageTemplates: boolean;
+	};
+}
+
 export interface ProjectTask {
 	taskId: number;
 	projectId: number;
 	milestoneId: number | null;
 	title: string;
 	description: string | null;
+	coverImageUrl?: string | null;
 	status: string;
 	statusLabel: string | null;
 	priority: TaskPriority;
@@ -71,10 +108,15 @@ export interface ProjectTask {
 	startDate?: string | null;
 	dueDate?: string | null;
 	assigneeId: number | null;
+	assigneeIds?: number[];
+	workflowStageId?: number | null;
+	pipelinePosition?: number;
 	isInBacklog: boolean;
 	totalLoggedMinutes: number;
 	allowedActions?: TaskAllowedActions;
 	assignee?: TaskAssignee | null;
+	assignees?: TaskAssignee[];
+	workflowStage?: ProjectWorkflowStage | null;
 	milestone?: {
 		milestoneId: number;
 		title: string;
@@ -138,6 +180,7 @@ export function mapProjectTaskResource(resource: RawProjectTaskResource): Projec
 		milestoneId: resource.milestoneId,
 		title: resource.title,
 		description: resource.description,
+		coverImageUrl: resource.coverImageUrl,
 		status: resource.status,
 		statusLabel: resource.statusLabel,
 		priority: resource.priority ?? TaskPriority.MEDIUM,
@@ -145,10 +188,15 @@ export function mapProjectTaskResource(resource: RawProjectTaskResource): Projec
 		startDate: resource.startDate,
 		dueDate: resource.dueDate,
 		assigneeId: resource.assigneeId,
+		assigneeIds: resource.assigneeIds,
+		workflowStageId: resource.workflowStageId,
+		pipelinePosition: resource.pipelinePosition,
 		isInBacklog: resource.isInBacklog,
 		totalLoggedMinutes: resource.totalLoggedMinutes,
 		allowedActions: resource.allowedActions,
 		assignee: resource.assignee,
+		assignees: resource.assignees,
+		workflowStage: resource.workflowStage,
 		milestone: resource.milestone,
 		project: resource.project,
 		deliverables: mapTaskDeliverableList(resource.deliverables),

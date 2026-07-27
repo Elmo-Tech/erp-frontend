@@ -1,10 +1,15 @@
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
+import { useTaskPermissions } from "@/entities/user/model/permissions";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
+import { FormMultiCombobox } from "@/shared/ui/forms/FormMultiCombobox";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/shared/ui/form";
+import { Input } from "@/shared/ui/input";
 import { TaskPriority, TaskPriorityLabels } from "@/shared/lib/statusHelpers";
 import type { AddTaskFormData } from "../model/project-task-forms";
 import type { ProjectTaskFilterOption } from "../model/project-tasks-filters";
@@ -17,6 +22,8 @@ interface ProjectTaskFormFieldsProps {
 }
 
 export function ProjectTaskFormFields({ form, isMembersLoading, milestoneOptions, assigneeOptions }: ProjectTaskFormFieldsProps) {
+	const { canAssignTasks } = useTaskPermissions();
+
 	return (
 		<div className="flex flex-col gap-4">
 			<TaskSummaryFields form={form} />
@@ -25,6 +32,7 @@ export function ProjectTaskFormFields({ form, isMembersLoading, milestoneOptions
 				isMembersLoading={isMembersLoading}
 				milestoneOptions={milestoneOptions}
 				assigneeOptions={assigneeOptions}
+				canAssignTasks={canAssignTasks}
 			/>
 			<TaskScheduleFields form={form} />
 		</div>
@@ -56,11 +64,13 @@ function TaskAssignmentFields({
 	isMembersLoading,
 	milestoneOptions,
 	assigneeOptions,
+	canAssignTasks,
 }: {
 	form: UseFormReturn<AddTaskFormData>;
 	isMembersLoading: boolean;
 	milestoneOptions: ProjectTaskFilterOption[];
 	assigneeOptions: ProjectTaskFilterOption[];
+	canAssignTasks: boolean;
 }) {
 	return (
 		<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -73,16 +83,19 @@ function TaskAssignmentFields({
 				emptyText="No milestone found."
 				options={milestoneOptions}
 			/>
-			<FormCombobox
-				control={form.control}
-				name="assigneeId"
-				label="Assignee (optional)"
-				placeholder={isMembersLoading ? "Loading members…" : "Unassigned"}
-				searchPlaceholder="Search team members…"
-				emptyText="No member found."
-				options={assigneeOptions}
-				disabled={isMembersLoading}
-			/>
+			{canAssignTasks && (
+				<FormMultiCombobox
+					control={form.control}
+					name="assigneeIds"
+					label="Assignees"
+					placeholder={isMembersLoading ? "Loading employees…" : "Select employees…"}
+					searchPlaceholder="Search employees…"
+					emptyText="No active employee found."
+					options={assigneeOptions}
+					disabled={isMembersLoading}
+					description="The first employee is the primary owner. Everyone selected is added to the project automatically."
+				/>
+			)}
 		</div>
 	);
 }
@@ -110,17 +123,33 @@ function TaskScheduleFields({ form }: { form: UseFormReturn<AddTaskFormData> }) 
 				min={0}
 				step={0.5}
 			/>
-			<FormInput
+			<FormDatePicker
 				control={form.control}
 				name="startDate"
 				label="Start date"
-				type="date"
 			/>
-			<FormInput
+			<FormDatePicker
 				control={form.control}
 				name="dueDate"
 				label="Due date"
-				type="date"
+			/>
+			<FormField
+				control={form.control}
+				name="coverImage"
+				render={({ field: { onChange } }) => (
+					<FormItem className="sm:col-span-2">
+						<FormLabel>Cover image (optional)</FormLabel>
+						<FormControl>
+							<Input
+								type="file"
+								accept="image/png,image/jpeg,image/webp"
+								onChange={(event) => onChange(event.target.files?.[0])}
+							/>
+						</FormControl>
+						<p className="text-xs text-muted-foreground">Shown at the top of the pipeline card. Maximum 5 MB.</p>
+						<FormMessage />
+					</FormItem>
+				)}
 			/>
 		</div>
 	);

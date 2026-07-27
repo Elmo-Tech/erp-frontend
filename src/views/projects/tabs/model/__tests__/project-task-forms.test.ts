@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildAddTaskFormDefaults, buildEditTaskFormDefaults, mapAddMilestoneFormToPayload, mapAddTaskFormToPayload, mapEditTaskFormToPayload } from "../project-task-forms";
+import {
+	buildAddTaskFormDefaults,
+	buildEditTaskFormDefaults,
+	mapAddMilestoneFormToPayload,
+	mapAddTaskFormToPayload,
+	mapEditTaskFormToPayload,
+	mapEditTaskFormToPayloadWithoutAssignments,
+} from "../project-task-forms";
 import { ExecutionTaskStatus, type ProjectTask } from "@/features/projects/api/execution.api";
 import { TaskPriority } from "@/shared/lib/statusHelpers";
 
@@ -39,9 +46,24 @@ describe("project task forms model", () => {
 		vi.setSystemTime(new Date(2026, 6, 12, 9, 30));
 
 		expect(buildAddTaskFormDefaults(7)).toMatchObject({
-			assigneeId: "7",
+			assigneeIds: ["7"],
 			startDate: "2026-07-12",
 		});
+	});
+
+	it("omits assignee changes when edit access does not include task assignment", () => {
+		const formData = {
+			title: "Permission-safe task",
+			description: "",
+			milestoneId: "",
+			assigneeIds: ["7"],
+			estimatedHours: undefined,
+			startDate: "2026-07-27",
+			dueDate: "",
+			priority: "medium" as const,
+		};
+
+		expect(mapEditTaskFormToPayloadWithoutAssignments(formData)).not.toHaveProperty("assigneeIds");
 	});
 
 	it("maps milestone form data to the backend payload", () => {
@@ -54,7 +76,7 @@ describe("project task forms model", () => {
 				title: "Build Login",
 				description: "   ",
 				milestoneId: "",
-				assigneeId: "",
+				assigneeIds: [],
 				estimatedHours: undefined,
 				startDate: "",
 				dueDate: "",
@@ -64,7 +86,7 @@ describe("project task forms model", () => {
 			title: "Build Login",
 			description: undefined,
 			milestoneId: null,
-			assigneeId: null,
+			assigneeIds: [],
 			estimatedHours: null,
 			startDate: null,
 			dueDate: null,
@@ -78,7 +100,7 @@ describe("project task forms model", () => {
 				title: "Build Login",
 				description: "  Acceptance criteria  ",
 				milestoneId: "12",
-				assigneeId: "7",
+				assigneeIds: ["7", "9"],
 				estimatedHours: 2.5,
 				startDate: "2026-06-01",
 				dueDate: "2026-06-05",
@@ -88,7 +110,7 @@ describe("project task forms model", () => {
 			title: "Build Login",
 			description: "Acceptance criteria",
 			milestoneId: 12,
-			assigneeId: 7,
+			assigneeIds: [7, 9],
 			estimatedHours: 2.5,
 			startDate: "2026-06-01",
 			dueDate: "2026-06-05",
@@ -103,6 +125,7 @@ describe("project task forms model", () => {
 					description: "Existing description",
 					milestoneId: 12,
 					assigneeId: 7,
+					assigneeIds: [7, 9],
 					estimatedHours: 3.5,
 					startDate: "2026-06-01",
 					dueDate: "2026-06-05",
@@ -113,11 +136,12 @@ describe("project task forms model", () => {
 			title: "Build Login",
 			description: "Existing description",
 			milestoneId: "12",
-			assigneeId: "7",
+			assigneeIds: ["7", "9"],
 			estimatedHours: 3.5,
 			startDate: "2026-06-01",
 			dueDate: "2026-06-05",
 			priority: "high",
+			coverImage: undefined,
 		});
 	});
 
@@ -127,7 +151,7 @@ describe("project task forms model", () => {
 				title: "Updated Login",
 				description: "",
 				milestoneId: "",
-				assigneeId: "7",
+				assigneeIds: ["7", "9"],
 				estimatedHours: undefined,
 				startDate: "",
 				dueDate: "2026-06-05",
@@ -137,7 +161,7 @@ describe("project task forms model", () => {
 			title: "Updated Login",
 			description: null,
 			milestoneId: null,
-			assigneeId: 7,
+			assigneeIds: [7, 9],
 			estimatedHours: null,
 			startDate: null,
 			dueDate: "2026-06-05",

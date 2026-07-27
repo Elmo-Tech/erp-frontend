@@ -16,10 +16,11 @@ export const addTaskSchema = z.object({
 	description: z.string().optional(),
 	priority: z.enum(taskPriorities),
 	milestoneId: z.string().optional(),
-	assigneeId: z.string().optional(),
+	assigneeIds: z.array(z.string()).max(20),
 	estimatedHours: optionalNumberInput().optional().pipe(z.number().min(0).optional()),
 	startDate: z.string().optional(),
 	dueDate: z.string().optional(),
+	coverImage: z.custom<File>().optional(),
 });
 export type AddTaskFormData = z.infer<typeof addTaskSchema>;
 export type EditTaskFormData = AddTaskFormData;
@@ -33,16 +34,17 @@ export const addTaskFormDefaults: AddTaskFormData = {
 	description: "",
 	priority: "medium",
 	milestoneId: "",
-	assigneeId: "",
+	assigneeIds: [],
 	estimatedHours: undefined,
 	startDate: "",
 	dueDate: "",
+	coverImage: undefined,
 };
 
 export function buildAddTaskFormDefaults(currentUserId?: number | null): AddTaskFormData {
 	return {
 		...addTaskFormDefaults,
-		assigneeId: currentUserId ? String(currentUserId) : "",
+		assigneeIds: currentUserId ? [String(currentUserId)] : [],
 		startDate: format(new Date(), "yyyy-MM-dd"),
 	};
 }
@@ -57,10 +59,11 @@ export function mapAddTaskFormToPayload(data: AddTaskFormData): CreateTaskPayloa
 		description: data.description?.trim() || undefined,
 		priority: data.priority as TaskPriority,
 		milestoneId: data.milestoneId ? Number(data.milestoneId) : null,
-		assigneeId: data.assigneeId ? Number(data.assigneeId) : null,
+		assigneeIds: data.assigneeIds.map(Number),
 		estimatedHours: data.estimatedHours ?? null,
 		startDate: data.startDate || null,
 		dueDate: data.dueDate || null,
+		...(data.coverImage ? { coverImage: data.coverImage } : {}),
 	};
 }
 
@@ -70,22 +73,33 @@ export function buildEditTaskFormDefaults(task: ProjectTask): EditTaskFormData {
 		description: task.description ?? "",
 		priority: task.priority ?? "medium",
 		milestoneId: task.milestoneId ? String(task.milestoneId) : "",
-		assigneeId: task.assigneeId ? String(task.assigneeId) : "",
+		assigneeIds: (task.assigneeIds?.length ? task.assigneeIds : task.assigneeId ? [task.assigneeId] : []).map(String),
 		estimatedHours: task.estimatedHours ?? undefined,
 		startDate: task.startDate ?? "",
 		dueDate: task.dueDate ?? "",
+		coverImage: undefined,
 	};
 }
 
-export function mapEditTaskFormToPayload(data: EditTaskFormData): UpdateTaskPayload {
+function mapEditTaskMetadataToPayload(data: EditTaskFormData): UpdateTaskPayload {
 	return {
 		title: data.title,
 		description: data.description?.trim() || null,
 		priority: data.priority as TaskPriority,
 		milestoneId: data.milestoneId ? Number(data.milestoneId) : null,
-		assigneeId: data.assigneeId ? Number(data.assigneeId) : null,
 		estimatedHours: data.estimatedHours ?? null,
 		startDate: data.startDate || null,
 		dueDate: data.dueDate || null,
 	};
+}
+
+export function mapEditTaskFormToPayload(data: EditTaskFormData): UpdateTaskPayload {
+	return {
+		...mapEditTaskMetadataToPayload(data),
+		assigneeIds: data.assigneeIds.map(Number),
+	};
+}
+
+export function mapEditTaskFormToPayloadWithoutAssignments(data: EditTaskFormData): UpdateTaskPayload {
+	return mapEditTaskMetadataToPayload(data);
 }

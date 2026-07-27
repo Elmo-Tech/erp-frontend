@@ -25,6 +25,7 @@ import { useMemo } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Video } from "lucide-react";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { FormTagSelector, type FormTagOption } from "@/shared/ui/forms/FormTagSelector";
@@ -89,11 +90,10 @@ export function MeetingScheduleTab() {
 
 			{/* ── Row 2: Date | Time ────────────────────────────────────────── */}
 			<div className="grid grid-cols-2 gap-4">
-				<FormInput
+				<FormDatePicker
 					control={control}
 					name="date"
 					label="Date"
-					type="date"
 				/>
 				<FormInput
 					control={control}

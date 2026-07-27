@@ -56,7 +56,7 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 	const searchParams = useSearchParams();
 	const initialTaskId = Number(searchParams.get("taskId") ?? 0) || null;
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
-	const [activeTab, setActiveTab] = useState(initialTaskId ? "tasks" : "overview");
+	const [activeTab, setActiveTab] = useState("tasks");
 	const { canEditProjects } = useProjectPermissions();
 
 
@@ -148,8 +148,8 @@ export function ProjectDetailsView({ projectId }: ProjectDetailsViewProps) {
 				className="flex flex-col gap-4"
 			>
 				<TabsList className="w-fit">
+					<TabsTrigger value="tasks">Pipeline</TabsTrigger>
 					<TabsTrigger value="overview">Overview</TabsTrigger>
-					<TabsTrigger value="tasks">Tasks</TabsTrigger>
 					<TabsTrigger value="meetings">Meetings</TabsTrigger>
 					<TabsTrigger value="notes">Notes</TabsTrigger>
 					<TabsTrigger value="team">Team</TabsTrigger>

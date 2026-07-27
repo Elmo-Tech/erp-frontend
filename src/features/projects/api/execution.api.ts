@@ -58,8 +58,11 @@ import {
 	type Milestone,
 	type ProjectTask,
 	type ProjectTaskFilters,
+	type ProjectWorkflow,
+	type ProjectWorkflowStage,
 	type RawProjectTaskResource,
 	type TaskListData,
+	type WorkflowTemplate,
 } from "../model/project-task-contract";
 import {
 	buildProjectTimelineQuery,
@@ -105,9 +108,12 @@ export type {
 	ProjectTask,
 	ProjectTaskFilters,
 	RawProjectTaskResource,
+	ProjectWorkflow,
+	ProjectWorkflowStage,
 	TaskAllowedActions,
 	TaskAssignee,
 	TaskListData,
+	WorkflowTemplate,
 } from "../model/project-task-contract";
 export { buildProjectTimelineQuery, mapProjectTimelineResponse } from "../model/project-timeline-contract";
 export type {
@@ -151,6 +157,8 @@ export const executionKeys = {
 	myActiveTasks: () => ["project-execution", "tasks", "my-active"] as const,
 	taskControl: () => ["project-execution", "tasks", "control"] as const,
 	timeline: (filters: ProjectTimelineFilters) => ["project-execution", "timeline", filters] as const,
+	workflow: (projectId: number) => [...projectKeys.detail(projectId), "workflow"] as const,
+	workflowTemplates: () => ["project-execution", "workflow-templates"] as const,
 };
 
 function invalidateProjectTaskLists(queryClient: QueryClient, projectId: number) {
@@ -215,6 +223,105 @@ export async function getProjectTasks(projectId: number, filters?: ProjectTaskFi
 	const response = await api.get<ApiEnvelope<TaskListData>>(url);
 
 	return mapProjectTaskListData(response.data.data);
+}
+
+export function useProjectWorkflow(projectId: number) {
+	return useQuery({
+		queryKey: executionKeys.workflow(projectId),
+		queryFn: async () => {
+			const response = await api.get<ApiEnvelope<ProjectWorkflow>>(`/projects/${projectId}/workflow`);
+			return response.data.data;
+		},
+		enabled: Number.isFinite(projectId) && projectId > 0,
+		staleTime: 60 * 1000,
+	});
+}
+
+export function useWorkflowTemplates(enabled = true) {
+	return useQuery({
+		queryKey: executionKeys.workflowTemplates(),
+		queryFn: async () => {
+			const response = await api.get<ApiEnvelope<{ templates: WorkflowTemplate[] }>>("/projects/workflow-templates");
+			return response.data.data.templates;
+		},
+		enabled,
+		staleTime: 5 * 60 * 1000,
+	});
+}
+
+export interface WorkflowStagePayload {
+	id?: number;
+	name: string;
+	status: ExecutionTaskStatusValue;
+	color: string;
+	isTerminal: boolean;
+}
+
+export function useUpdateProjectWorkflow() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectWorkflowStage[], Error, { projectId: number; stages: WorkflowStagePayload[] }>({
+		mutationFn: async ({ projectId, stages }) => {
+			const response = await api.put<ApiEnvelope<{ stages: ProjectWorkflowStage[] }>>(`/projects/${projectId}/workflow`, { stages });
+			return response.data.data.stages;
+		},
+		onSuccess: (_stages, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.workflow(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
+		},
+	});
+}
+
+export function useApplyWorkflowTemplate() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectWorkflowStage[], Error, { projectId: number; templateId: number }>({
+		mutationFn: async ({ projectId, templateId }) => {
+			const response = await api.post<ApiEnvelope<{ stages: ProjectWorkflowStage[] }>>(`/projects/${projectId}/workflow/apply-template`, { templateId });
+			return response.data.data.stages;
+		},
+		onSuccess: (_stages, { projectId }) => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.workflow(projectId) });
+			invalidateProjectTaskLists(queryClient, projectId);
+		},
+	});
+}
+
+export function useCreateWorkflowTemplate() {
+	const queryClient = useQueryClient();
+
+	return useMutation<WorkflowTemplate, Error, { name: string; stages: WorkflowStagePayload[] }>({
+		mutationFn: async ({ name, stages }) => {
+			const response = await api.post<ApiEnvelope<WorkflowTemplate>>("/projects/workflow-templates", {
+				name,
+				stages,
+			});
+			return response.data.data;
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: executionKeys.workflowTemplates() });
+		},
+	});
+}
+
+export function useMoveProjectTask() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectTask, Error, { projectId: number; taskId: number; workflowStageId: number; position: number }>({
+		mutationFn: async ({ projectId, taskId, workflowStageId, position }) => {
+			const response = await api.patch<ApiEnvelope<RawProjectTaskResource>>(`/projects/${projectId}/tasks/${taskId}/move`, {
+				workflowStageId,
+				position,
+			});
+			return mapProjectTaskResource(response.data.data);
+		},
+		onSuccess: (task, { projectId }) => {
+			replaceCachedProjectTask(queryClient, task);
+			invalidateProjectTaskLists(queryClient, projectId);
+			queryClient.invalidateQueries({ queryKey: executionKeys.workflow(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.activeTimeEntry() });
+		},
+	});
 }
 
 export async function getMyActiveProjectTasks(): Promise<ProjectTask[]> {
@@ -310,6 +417,25 @@ export function useToggleTaskTimer() {
 			queryClient.invalidateQueries({ queryKey: ["personal-tasks"] });
 			queryClient.invalidateQueries({ queryKey: hrKeys.attendance() });
 			queryClient.invalidateQueries({ queryKey: hrKeys.teamPulse() });
+		},
+	});
+}
+
+export type TaskTimerLifecycleAction = "start" | "hold" | "resume" | "end";
+
+export function useTaskTimerLifecycle() {
+	const queryClient = useQueryClient();
+
+	return useMutation<void, Error, { projectId: number; taskId: number; action: TaskTimerLifecycleAction }>({
+		mutationFn: async ({ projectId, taskId, action }) => {
+			await api.post(`/projects/${projectId}/tasks/${taskId}/time-entries/lifecycle`, { action });
+		},
+		onSuccess: (_data, { projectId }) => {
+			invalidateProjectTaskLists(queryClient, projectId);
+			queryClient.invalidateQueries({ queryKey: executionKeys.workflow(projectId) });
+			queryClient.invalidateQueries({ queryKey: executionKeys.activeTimeEntry() });
+			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
+			queryClient.invalidateQueries({ queryKey: hrKeys.attendance() });
 		},
 	});
 }
@@ -525,9 +651,12 @@ export interface CreateTaskPayload {
 	startDate?: string | null;
 	dueDate?: string | null;
 	assigneeId?: number | null;
+	assigneeIds?: number[];
+	workflowStageId?: number | null;
+	coverImage?: File | null;
 }
 
-export type UpdateTaskPayload = Partial<Omit<CreateTaskPayload, "description">> & {
+export type UpdateTaskPayload = Partial<Omit<CreateTaskPayload, "description" | "coverImage">> & {
 	description?: string | null;
 	status?: ExecutionTaskStatusValue;
 	reason?: string | null;
@@ -543,15 +672,33 @@ export function useCreateTask() {
 
 	return useMutation<ProjectTask, Error, CreateTaskVars>({
 		mutationFn: async ({ projectId, payload }) => {
-			const response = await api.post<ApiEnvelope<ProjectTask>>(`/projects/${projectId}/tasks`, payload);
-			return response.data.data;
+			const requestPayload = payload.coverImage ? buildCreateTaskFormData(payload) : payload;
+			const response = await api.post<ApiEnvelope<RawProjectTaskResource>>(`/projects/${projectId}/tasks`, requestPayload);
+			return mapProjectTaskResource(response.data.data);
 		},
 		onSuccess: (_data, { projectId }) => {
 			invalidateProjectTaskLists(queryClient, projectId);
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+			queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
 		},
 	});
+}
+
+function buildCreateTaskFormData(payload: CreateTaskPayload): FormData {
+	const formData = new FormData();
+	formData.append("title", payload.title);
+	if (payload.description) formData.append("description", payload.description);
+	if (payload.priority) formData.append("priority", payload.priority);
+	if (payload.estimatedHours != null) formData.append("estimatedHours", String(payload.estimatedHours));
+	if (payload.startDate) formData.append("startDate", payload.startDate);
+	if (payload.dueDate) formData.append("dueDate", payload.dueDate);
+	if (payload.milestoneId) formData.append("milestoneId", String(payload.milestoneId));
+	if (payload.workflowStageId) formData.append("workflowStageId", String(payload.workflowStageId));
+	payload.assigneeIds?.forEach((id) => formData.append("assigneeIds[]", String(id)));
+	if (payload.coverImage) formData.append("coverImage", payload.coverImage);
+
+	return formData;
 }
 
 interface UpdateTaskVars {
@@ -576,6 +723,7 @@ export function useUpdateProjectTask() {
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
+			queryClient.invalidateQueries({ queryKey: projectKeys.members(projectId) });
 		},
 	});
 }
@@ -599,6 +747,38 @@ export function useDeleteProjectTask() {
 			queryClient.invalidateQueries({ queryKey: executionKeys.milestones(projectId) });
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			queryClient.invalidateQueries({ queryKey: executionKeys.myActiveTasks() });
+		},
+	});
+}
+
+export function useUploadTaskCover() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectTask, Error, { projectId: number; taskId: number; coverImage: File }>({
+		mutationFn: async ({ projectId, taskId, coverImage }) => {
+			const formData = new FormData();
+			formData.append("coverImage", coverImage);
+			const response = await api.post<ApiEnvelope<RawProjectTaskResource>>(`/projects/${projectId}/tasks/${taskId}/cover`, formData);
+			return mapProjectTaskResource(response.data.data);
+		},
+		onSuccess: (task, { projectId }) => {
+			replaceCachedProjectTask(queryClient, task);
+			invalidateProjectTaskLists(queryClient, projectId);
+		},
+	});
+}
+
+export function useDeleteTaskCover() {
+	const queryClient = useQueryClient();
+
+	return useMutation<ProjectTask, Error, { projectId: number; taskId: number }>({
+		mutationFn: async ({ projectId, taskId }) => {
+			const response = await api.delete<ApiEnvelope<RawProjectTaskResource>>(`/projects/${projectId}/tasks/${taskId}/cover`);
+			return mapProjectTaskResource(response.data.data);
+		},
+		onSuccess: (task, { projectId }) => {
+			replaceCachedProjectTask(queryClient, task);
+			invalidateProjectTaskLists(queryClient, projectId);
 		},
 	});
 }

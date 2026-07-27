@@ -30,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { Separator } from "@/shared/ui/separator";
@@ -705,7 +706,7 @@ function AdminPersonalTasksCard({ userId, month, year }: { userId: number; month
 							/>
 						</div>
 						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<FormInput control={taskForm.control} name="dueDate" label="Due date" type="date" />
+							<FormDatePicker control={taskForm.control} name="dueDate" label="Due date" />
 							<FormInput control={taskForm.control} name="estimatedMinutes" label="Estimated minutes" type="number" min={1} />
 						</div>
 					</div>

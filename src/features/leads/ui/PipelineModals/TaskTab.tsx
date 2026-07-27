@@ -9,7 +9,7 @@
 
 import { useMemo } from "react";
 import { useFormContext } from "react-hook-form";
-import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { useGetInternalUsers } from "@/entities/user/api/user.api";
@@ -49,11 +49,10 @@ export function TaskTab() {
 			/>
 
 			{/* Deadline */}
-			<FormInput
+			<FormDatePicker
 				control={control}
 				name="deadline"
 				label="Deadline *"
-				type="date"
 			/>
 
 			{/* Notes */}

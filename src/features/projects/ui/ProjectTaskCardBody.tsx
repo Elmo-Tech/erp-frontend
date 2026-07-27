@@ -30,18 +30,28 @@ export function ProjectTaskCardBody({ task, view }: ProjectTaskCardBodyProps) {
 					</div>
 				)}
 
-				{task.assignee ? (
-					<div className="flex items-center gap-1.5">
-						<Avatar className="size-5">
-							{task.assignee.avatar && (
-								<AvatarImage
-									src={task.assignee.avatar}
-									alt={task.assignee.name}
-								/>
-							)}
-							<AvatarFallback className="text-[9px]">{getTaskAssigneeInitials(task.assignee.name)}</AvatarFallback>
-						</Avatar>
-						<span className="max-w-[80px] truncate text-xs text-muted-foreground">{task.assignee.name}</span>
+				{(task.assignees?.length ?? 0) > 0 || task.assignee ? (
+					<div className="flex items-center">
+						{(task.assignees?.length ? task.assignees : task.assignee ? [task.assignee] : []).slice(0, 4).map((assignee, index) => (
+							<Avatar
+								key={assignee.userId}
+								className={cn("size-6 border-2 border-card", index > 0 && "-ml-2")}
+								title={assignee.name}
+							>
+								{assignee.avatar && (
+									<AvatarImage
+										src={assignee.avatar}
+										alt={assignee.name}
+									/>
+								)}
+								<AvatarFallback className="text-[9px]">{getTaskAssigneeInitials(assignee.name)}</AvatarFallback>
+							</Avatar>
+						))}
+						{(task.assignees?.length ?? 0) > 4 && (
+							<span className="-ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+								+{(task.assignees?.length ?? 0) - 4}
+							</span>
+						)}
 					</div>
 				) : (
 					<div className="flex items-center gap-1 text-xs text-muted-foreground/40">

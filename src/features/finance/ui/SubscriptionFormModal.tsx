@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { useCreateSubscription, useUpdateSubscription } from "@/features/finance/model/use-finance-actions";
@@ -159,11 +160,10 @@ export function SubscriptionFormModal({ open, onClose, editTarget }: Subscriptio
 
 					{/* ── Next Billing Date & Status ── */}
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-						<FormInput
+						<FormDatePicker
 							control={form.control}
 							name="nextBillingDate"
 							label="Next Billing Date"
-							type="date"
 							disabled={isPending}
 						/>
 						<FormSelect

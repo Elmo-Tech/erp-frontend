@@ -48,7 +48,7 @@ export function ProjectTaskMetadataDialogs({
 				submitLabel="Save Task"
 				isLoading={isUpdatingTask}
 				onSubmit={onEditSubmit}
-				size="md"
+				size="xxl"
 			>
 				<Form {...editTaskForm}>
 					<ProjectTaskFormFields

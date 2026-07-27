@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { Skeleton } from "@/shared/ui/skeleton";
@@ -201,11 +202,10 @@ export function PersonalTasksWidget({ className }: PersonalTasksWidgetProps) {
 							rows={3}
 						/>
 						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<FormInput
+							<FormDatePicker
 								control={form.control}
 								name="dueDate"
 								label="Due date"
-								type="date"
 							/>
 							<FormSelect
 								control={form.control}

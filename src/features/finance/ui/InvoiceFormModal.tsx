@@ -9,6 +9,7 @@ import { Form } from "@/shared/ui/form";
 import { Button } from "@/shared/ui/button";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { FormInput } from "@/shared/ui/forms/FormInput";
+import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect } from "@/shared/ui/forms/FormSelect";
 import { FormTextarea } from "@/shared/ui/forms/FormTextarea";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
@@ -234,18 +235,16 @@ export function InvoiceFormModal({ open, onClose, editTarget }: InvoiceFormModal
 
 					{/* ── Dates ── */}
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-						<FormInput
+						<FormDatePicker
 							control={form.control}
 							name="issueDate"
 							label="Issue Date"
-							type="date"
 							disabled={isPending}
 						/>
-						<FormInput
+						<FormDatePicker
 							control={form.control}
 							name="dueDate"
 							label="Due Date"
-							type="date"
 							disabled={isPending}
 						/>
 					</div>

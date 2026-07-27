@@ -37,7 +37,7 @@ export function ProjectAddTaskDialog({
 			submitLabel="Create Task"
 			isLoading={isLoading}
 			onSubmit={onSubmit}
-			size="md"
+			size="xxl"
 		>
 			<Form {...form}>
 				<ProjectTaskFormFields

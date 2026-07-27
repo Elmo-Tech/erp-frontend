@@ -1,14 +1,17 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, FolderKanban } from "lucide-react";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { TaskExecutionSheet } from "@/features/projects/ui/TaskExecutionSheet";
-import { useMilestones, useProjectTasks, useProjectMembers } from "@/features/projects/api/execution.api";
+import { useMilestones, useProjectTasks, useProjectMembers, useProjectWorkflow } from "@/features/projects/api/execution.api";
 import type { ProjectTask, ProjectTaskFilters } from "@/features/projects/api/execution.api";
 import { useAuthStore } from "@/entities/user/model/auth.store";
+import { useGetInternalUsers } from "@/entities/user/api/user.api";
 import { useTaskPermissions } from "@/entities/user/model/permissions";
-import { groupProjectTasksByMilestone, resolveProjectTaskForSheet, toggleCollapsedSection } from "./model/project-tasks-board";
+import { resolveProjectTaskForSheet } from "./model/project-tasks-board";
 import { buildProjectTaskFilterOptions } from "./model/project-tasks-filters";
 import { getTaskMetadataPermissions } from "./model/project-task-permissions";
 import { useProjectTaskCreationDialogs } from "./model/use-project-task-creation-dialogs";
@@ -16,9 +19,13 @@ import { useProjectTaskMetadataActions } from "./model/use-project-task-metadata
 import { ProjectTaskCreationDialogs } from "./ui/ProjectTaskCreationDialogs";
 import { ProjectTaskMetadataDialogs } from "./ui/ProjectTaskMetadataDialogs";
 import { ProjectTaskFiltersBar } from "./ui/ProjectTaskFiltersBar";
-import { ProjectTasksActionHeader, ProjectTasksEmptyState } from "./ui/ProjectTasksActions";
+import { ProjectTasksActionHeader } from "./ui/ProjectTasksActions";
 import { ProjectTasksBoard } from "./ui/ProjectTasksBoard";
 import { ProjectTasksLoadingState } from "./ui/ProjectTasksLoadingState";
+import { ProjectWorkflowSettingsDialog } from "./ui/ProjectWorkflowSettingsDialog";
+import { projectApi } from "@/entities/project/api/project.api";
+import { projectKeys } from "@/entities/project/model/query-keys";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Props
@@ -36,9 +43,12 @@ interface ProjectTasksTabProps {
 export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTasksTabProps) {
 	const [selectedTask, setSelectedTask] = useState<ProjectTask | null>(null);
 	const [sheetOpen, setSheetOpen] = useState(false);
-	const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 	const [dismissedInitialTask, setDismissedInitialTask] = useState(false);
 	const [taskFilters, setTaskFilters] = useState<ProjectTaskFilters>({});
+	const router = useRouter();
+	const canManageAllProjects = useAuthStore((s) => s.hasPermission("manage_all_projects"));
+	const canManageProjects = useAuthStore((s) => s.hasPermission("manage_projects"));
+	const { canManageTasks, canCreateTasks, canEditTasks, canDeleteTasks, canAssignTasks } = useTaskPermissions();
 	const handleDeletedTask = useCallback(
 		(task: ProjectTask) => {
 			if (selectedTask?.taskId === task.taskId) {
@@ -51,16 +61,20 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 
 	const milestonesQuery = useMilestones(projectId);
 	const tasksQuery = useProjectTasks(projectId, taskFilters);
+	const workflowQuery = useProjectWorkflow(projectId);
 	const membersQuery = useProjectMembers(projectId);
+	const employeesQuery = useGetInternalUsers(canAssignTasks);
+	const projectsQuery = useQuery({
+		queryKey: [...projectKeys.all, "pipeline-switcher"],
+		queryFn: () => projectApi.getProjects({ perPage: 100 }),
+		staleTime: 5 * 60 * 1000,
+	});
 	const creationDialogs = useProjectTaskCreationDialogs(projectId);
 	const metadataActions = useProjectTaskMetadataActions({
 		projectId,
+		canAssignTasks,
 		onTaskDeleted: handleDeletedTask,
 	});
-
-	const canManageAllProjects = useAuthStore((s) => s.hasPermission("manage_all_projects"));
-	const canManageProjects = useAuthStore((s) => s.hasPermission("manage_projects"));
-	const { canManageTasks, canCreateTasks, canEditTasks, canDeleteTasks } = useTaskPermissions();
 
 	const canAddMilestones = canManageAllProjects || canManageProjects;
 	const canAddTasks = canManageAllProjects || canManageTasks || canCreateTasks;
@@ -74,13 +88,13 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 	const allTasks = tasksQuery.data ?? [];
 
 	// ── Loading ──────────────────────────────────────────────────────────────
-	if (milestonesQuery.isLoading || tasksQuery.isLoading) {
+	if (milestonesQuery.isLoading || tasksQuery.isLoading || workflowQuery.isLoading) {
 		return <ProjectTasksLoadingState />;
 	}
 
 	// ── Error ────────────────────────────────────────────────────────────────
-	if (milestonesQuery.error || tasksQuery.error) {
-		const message = (milestonesQuery.error ?? tasksQuery.error)?.message ?? "Failed to load project tasks.";
+	if (milestonesQuery.error || tasksQuery.error || workflowQuery.error) {
+		const message = (milestonesQuery.error ?? tasksQuery.error ?? workflowQuery.error)?.message ?? "Failed to load project tasks.";
 		return (
 			<Alert variant="destructive">
 				<AlertCircle className="size-4" />
@@ -90,11 +104,16 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 	}
 
 	const milestones = milestonesQuery.data ?? [];
-	const { tasksByMilestone, backlogTasks } = groupProjectTasksByMilestone(allTasks);
+	const workflow = workflowQuery.data;
 	const filterOptions = buildProjectTaskFilterOptions({
 		milestones,
 		members: membersQuery.data ?? [],
 	});
+	const assigneeOptions = (employeesQuery.data?.users ?? []).map((employee) => ({
+		value: String(employee.id),
+		label: employee.name,
+		description: [employee.email, employee.role].filter(Boolean).join(" · "),
+	}));
 
 	const liveSelectedTask = resolveProjectTaskForSheet({
 		tasks: allTasks,
@@ -116,12 +135,40 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 		}
 	};
 
-	const toggleSection = (key: string) => {
-		setCollapsedSections((current) => toggleCollapsedSection(current, key));
-	};
-
 	return (
 		<>
+			<div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-3">
+				<div className="flex items-center gap-2">
+					<FolderKanban className="size-4 text-muted-foreground" />
+					<Select
+						value={String(projectId)}
+						onValueChange={(value) => router.push(`/dashboard/projects/${value}`)}
+					>
+						<SelectTrigger className="min-w-64">
+							<SelectValue placeholder={projectsQuery.isLoading ? "Loading projects…" : "Switch project"} />
+						</SelectTrigger>
+						<SelectContent>
+							{(projectsQuery.data?.projects ?? []).map((project) => (
+								<SelectItem
+									key={project.projectId}
+									value={String(project.projectId)}
+								>
+									{project.title}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				{workflow && (
+					<ProjectWorkflowSettingsDialog
+						projectId={projectId}
+						stages={workflow.stages}
+						canManage={workflow.allowedActions.manage}
+						canManageTemplates={workflow.allowedActions.manageTemplates}
+					/>
+				)}
+			</div>
+
 			<ProjectTasksActionHeader
 				milestoneCount={milestones.length}
 				taskCount={allTasks.length}
@@ -137,25 +184,15 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 				onFiltersChange={setTaskFilters}
 			/>
 
-			{milestones.length === 0 && allTasks.length === 0 ? (
-				<ProjectTasksEmptyState
-					canAddMilestones={canAddMilestones}
-					canAddTasks={canAddTasks}
-					onAddMilestone={creationDialogs.openMilestoneDialog}
-					onAddTask={creationDialogs.openTaskDialog}
-				/>
-			) : (
+			{workflow && (
 				<ProjectTasksBoard
 					projectId={projectId}
-					milestones={milestones}
-					tasksByMilestone={tasksByMilestone}
-					backlogTasks={backlogTasks}
-					collapsedSections={collapsedSections}
+					stages={workflow.stages}
+					tasks={allTasks}
 					permissions={taskMetadataPermissions}
 					onTaskClick={handleTaskClick}
 					onTaskEdit={metadataActions.openEditTaskDialog}
 					onTaskDelete={metadataActions.setDeletingTask}
-					onToggleSection={toggleSection}
 				/>
 			)}
 
@@ -174,9 +211,9 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 				taskOpen={creationDialogs.taskOpen}
 				isCreatingMilestone={creationDialogs.isCreatingMilestone}
 				isCreatingTask={creationDialogs.isCreatingTask}
-				isMembersLoading={membersQuery.isLoading}
+				isMembersLoading={employeesQuery.isLoading}
 				milestoneOptions={filterOptions.milestones}
-				assigneeOptions={filterOptions.assignees}
+				assigneeOptions={assigneeOptions}
 				milestoneForm={creationDialogs.milestoneForm}
 				taskForm={creationDialogs.taskForm}
 				onMilestoneOpenChange={creationDialogs.setMilestoneOpen}
@@ -190,9 +227,9 @@ export function ProjectTasksTab({ projectId, initialTaskId = null }: ProjectTask
 				editTaskForm={metadataActions.editTaskForm}
 				isUpdatingTask={metadataActions.isUpdatingTask}
 				isDeletingTask={metadataActions.isDeletingTask}
-				isMembersLoading={membersQuery.isLoading}
+				isMembersLoading={employeesQuery.isLoading}
 				milestoneOptions={filterOptions.milestones}
-				assigneeOptions={filterOptions.assignees}
+				assigneeOptions={assigneeOptions}
 				onEditOpenChange={(open) => {
 					if (!open) metadataActions.closeEditTaskDialog();
 				}}

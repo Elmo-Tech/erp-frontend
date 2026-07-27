@@ -3,7 +3,7 @@
 import type { UseFormReturn } from "react-hook-form";
 import { Video } from "lucide-react";
 import { Form } from "@/shared/ui/form";
-import { FormInput, FormSelect, FormTagSelector, type FormTagOption, type SelectOption } from "@/shared/ui/forms";
+import { FormDatePicker, FormInput, FormSelect, FormTagSelector, type FormTagOption, type SelectOption } from "@/shared/ui/forms";
 import { FormCombobox } from "@/shared/ui/forms/FormCombobox";
 import { LocationType, LocationTypeLabels, MeetingType, MeetingTypeLabels, type ScheduleMeetingFormData } from "../model/meeting.schema";
 
@@ -63,11 +63,10 @@ export function ScheduleMeetingForm({ form, projectOptions = [], meetingTypeOpti
 				</div>
 
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-					<FormInput
+					<FormDatePicker
 						control={form.control}
 						name="date"
 						label="Date"
-						type="date"
 						disabled={disabled}
 					/>
 					<FormInput
