@@ -9,6 +9,7 @@ vi.mock("@/features/projects/hooks/useProjects", () => ({
 
 vi.mock("@/features/clients/hooks/useClients", () => ({
 	useClients: vi.fn(),
+	useClient: vi.fn(() => ({ data: undefined, isLoading: false })),
 }));
 
 import { useClients } from "@/features/clients/hooks/useClients";
@@ -69,9 +70,8 @@ describe("CreateProjectForm", () => {
 		);
 
 		expect(screen.getByText("Client")).toBeInTheDocument();
-		expect(screen.getByText("The Tables Company")).toBeInTheDocument();
-
-		fireEvent.click(screen.getByText("The Tables Company"));
+		fireEvent.click(screen.getByRole("combobox", { name: "Client" }));
+		fireEvent.click(await screen.findByText("The Tables Company"));
 		fireEvent.change(screen.getByLabelText("Project Title"), { target: { value: "Website rebuild" } });
 		const submitButton = screen.getByRole("button", { name: "Create Project" });
 

@@ -25,6 +25,7 @@ export const PriorityBorderColors: Record<TaskPriority, string> = {
 export const StatusColors: Record<TaskStatus, string> = {
 	[TaskStatus.TODO]: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 	[TaskStatus.IN_PROGRESS]: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
+	[TaskStatus.ON_HOLD]: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
 	[TaskStatus.REVIEW]: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",
 	[TaskStatus.TESTING]: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
 	[TaskStatus.COMPLETED]: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
@@ -45,6 +46,13 @@ export const KanbanColumns = [
 		color: "bg-blue-50/50 dark:bg-blue-950/30",
 		headerColor: "text-blue-600 dark:text-blue-400",
 		borderColor: "border-blue-200 dark:border-blue-800",
+	},
+	{
+		status: TaskStatus.ON_HOLD,
+		label: "On Hold",
+		color: "bg-orange-50/50 dark:bg-orange-950/30",
+		headerColor: "text-orange-600 dark:text-orange-400",
+		borderColor: "border-orange-200 dark:border-orange-800",
 	},
 	{
 		status: TaskStatus.REVIEW,

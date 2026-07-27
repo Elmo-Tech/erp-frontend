@@ -12,6 +12,7 @@ export interface Employee {
 	role: string;
 	specialization?: string;
 	workHoursPerDay: number;
+	monthlyWorkHours?: number;
 	workStartTime: string;
 	expectedClockOut: string | null;
 	graceDaysAllowed: number;

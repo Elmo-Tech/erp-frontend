@@ -1,7 +1,10 @@
 "use client";
 
-import { Control } from "react-hook-form";
+import { Control, useWatch } from "react-hook-form";
 import { FormInput, FormSelect, FormSwitch } from "@/components/shared";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { calculateHourlyRate, calculateMonthlyWorkHours } from "../../../lib/salary-rate";
 
 interface EmployeeFormFieldsProps {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -12,9 +15,14 @@ interface EmployeeFormFieldsProps {
 }
 
 export function EmployeeFormFields({ control, isEditing, roleOptions, specializationOptions }: EmployeeFormFieldsProps) {
+	const salary = useWatch({ control, name: "salary" });
+	const workHoursPerDay = Number(useWatch({ control, name: "workHoursPerDay" }) || 0);
+	const monthlyWorkHours = calculateMonthlyWorkHours(workHoursPerDay);
+	const hourlyRate = calculateHourlyRate(salary === "" ? null : Number(salary), workHoursPerDay);
+
 	return (
 		<div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
 				<FormInput
 					control={control}
 					name="name"
@@ -65,14 +73,28 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 					min={0}
 					step={100}
 				/>
-				<FormInput
-					control={control}
-					name="internalHourlyCost"
-					label="Internal Hourly Cost"
-					type="number"
-					min={0}
-					step={1}
-				/>
+				<div className="space-y-2">
+					<Label htmlFor="monthly-work-hours">Monthly Work Hours</Label>
+					<Input
+						id="monthly-work-hours"
+						value={monthlyWorkHours.toFixed(2)}
+						readOnly
+						aria-readonly="true"
+						className="bg-muted"
+					/>
+					<p className="text-xs text-muted-foreground">5 working days/week × average weeks/month</p>
+				</div>
+				<div className="space-y-2">
+					<Label htmlFor="calculated-hourly-rate">Hourly Rate</Label>
+					<Input
+						id="calculated-hourly-rate"
+						value={hourlyRate?.toFixed(2) ?? ""}
+						placeholder="Calculated from salary"
+						readOnly
+						aria-readonly="true"
+						className="bg-muted"
+					/>
+				</div>
 			</div>
 
 			<div className="grid grid-cols-3 gap-4">

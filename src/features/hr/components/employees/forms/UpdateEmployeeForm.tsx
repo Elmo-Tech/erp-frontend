@@ -92,8 +92,6 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			if (data.workHoursPerDay !== employee.workHoursPerDay) payload.workHoursPerDay = data.workHoursPerDay;
 			if (data.workStartTime !== employee.workStartTime?.slice(0, 5)) payload.workStartTime = data.workStartTime;
 			if (data.graceDaysAllowed !== employee.graceDaysAllowed) payload.graceDaysAllowed = data.graceDaysAllowed;
-			if (data.internalHourlyCost !== employee.internalHourlyCost) payload.internalHourlyCost = data.internalHourlyCost;
-
 			if (Object.keys(payload).length > 0) {
 				await updateEmployee.mutateAsync({ id: employee.userId, payload });
 				toast.success("Employee updated successfully");

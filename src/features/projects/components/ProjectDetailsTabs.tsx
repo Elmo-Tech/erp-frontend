@@ -10,7 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useProject } from "../hooks/useProjects";
 import { UpdateProjectForm } from "./projects";
 import { TeamTab, TasksTab, WikiTab, FilesTab, HistoryTab, ChangeRequestsTab } from "./tabs";
-import { ArrowLeft, Calendar, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit } from "lucide-react";
+import { ProjectPipelineTab } from "./pipeline";
+import { ArrowLeft, Calendar, ListTodo, Clock, Pencil, Users, FileText, BookOpen, History, FileEdit, Columns3 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
@@ -149,11 +150,20 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 					<TabsTrigger value="overview">Overview</TabsTrigger>
 					{canViewTasks && (
 						<TabsTrigger
+							value="pipeline"
+							className="gap-2"
+						>
+							<Columns3 className="h-4 w-4" />
+							Pipeline
+						</TabsTrigger>
+					)}
+					{canViewTasks && (
+						<TabsTrigger
 							value="tasks"
 							className="gap-2"
 						>
 							<ListTodo className="h-4 w-4" />
-							Tasks
+							Legacy Tasks
 						</TabsTrigger>
 					)}
 					{canViewProjectMembers && (
@@ -267,6 +277,13 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 				</TabsContent>
 
 				{/* Tasks Tab */}
+				{canViewTasks && (
+					<TabsContent value="pipeline">
+						<ProjectPipelineTab projectId={projectId} />
+					</TabsContent>
+				)}
+
+				{/* Legacy Tasks Tab */}
 				{canViewTasks && (
 					<TabsContent value="tasks">
 						<TasksTab projectId={projectId} />

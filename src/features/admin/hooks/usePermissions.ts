@@ -18,6 +18,8 @@ export const ADMIN_PERMISSIONS = {
 	CREATE_USERS: "create_users",
 	EDIT_USERS: "edit_users",
 	DELETE_USERS: "delete_users",
+	ASSIGN_USER_ROLES: "assign_user_roles",
+	MANAGE_PROTECTED_USERS: "manage_protected_users",
 
 	// Role Management
 	MANAGE_ROLES: "manage_roles",
@@ -40,6 +42,10 @@ export const ADMIN_PERMISSIONS = {
 	EDIT_PROJECTS: "edit_projects",
 	DELETE_PROJECTS: "delete_projects",
 	APPROVE_PROJECT_UI: "approve_project_ui",
+	VIEW_ALL_PROJECTS: "view_all_projects",
+	MANAGE_ALL_PROJECTS: "manage_all_projects",
+	MANAGE_PROJECT_WORKFLOWS: "manage_project_workflows",
+	MANAGE_WORKFLOW_TEMPLATES: "manage_workflow_templates",
 
 	// Project Members
 	MANAGE_PROJECT_MEMBERS: "manage_project_members",
@@ -304,6 +310,10 @@ export const usePermissions = () => {
 			canEditProjects: hasPermission(ADMIN_PERMISSIONS.EDIT_PROJECTS),
 			canDeleteProjects: hasPermission(ADMIN_PERMISSIONS.DELETE_PROJECTS),
 			canApproveProjectUI: hasPermission(ADMIN_PERMISSIONS.APPROVE_PROJECT_UI),
+			canViewAllProjects: hasPermission(ADMIN_PERMISSIONS.VIEW_ALL_PROJECTS),
+			canManageAllProjects: hasPermission(ADMIN_PERMISSIONS.MANAGE_ALL_PROJECTS),
+			canManageProjectWorkflows: hasPermission(ADMIN_PERMISSIONS.MANAGE_PROJECT_WORKFLOWS),
+			canManageWorkflowTemplates: hasPermission(ADMIN_PERMISSIONS.MANAGE_WORKFLOW_TEMPLATES),
 
 			// Project Members
 			canManageProjectMembers: hasPermission(ADMIN_PERMISSIONS.MANAGE_PROJECT_MEMBERS),

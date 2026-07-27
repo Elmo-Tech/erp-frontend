@@ -127,6 +127,7 @@ export function MyTasksPage() {
 		const grouped: Record<TaskStatus, Task[]> = {
 			[TaskStatus.TODO]: [],
 			[TaskStatus.IN_PROGRESS]: [],
+			[TaskStatus.ON_HOLD]: [],
 			[TaskStatus.REVIEW]: [],
 			[TaskStatus.TESTING]: [],
 			[TaskStatus.COMPLETED]: [],

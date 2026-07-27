@@ -10,7 +10,7 @@ import { useMyAssignedTasks } from "../hooks/useTasks";
 import { useTaskChildren } from "../hooks/useTaskTree";
 import { useAuthStore } from "@/store/authStore";
 import { TaskFilters, Task, TaskStatus, TaskType, TaskPriority, TaskStatusLabels, TaskTypeLabels, TaskTypeColors, TaskPriorityLabels, TaskChildrenResponse } from "../types/task";
-import { Search, Clock, User, Calendar, CheckCircle2, ChevronRight, ChevronDown, AlertCircle, Circle, Timer, Play } from "lucide-react";
+import { Search, Clock, User, Calendar, CheckCircle2, ChevronRight, ChevronDown, AlertCircle, Circle, Timer, Play, CirclePause } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { format, isPast, isToday } from "date-fns";
@@ -30,6 +30,7 @@ const PriorityIndicator: Record<TaskPriority, string> = {
 const StatusIcon: Record<TaskStatus, React.ReactNode> = {
 	[TaskStatus.TODO]: <Circle className="h-4 w-4 text-slate-400" />,
 	[TaskStatus.IN_PROGRESS]: <Timer className="h-4 w-4 text-blue-500 animate-pulse" />,
+	[TaskStatus.ON_HOLD]: <CirclePause className="h-4 w-4 text-orange-500" />,
 	[TaskStatus.REVIEW]: <AlertCircle className="h-4 w-4 text-amber-500" />,
 	[TaskStatus.TESTING]: <CheckCircle2 className="h-4 w-4 text-purple-500" />,
 	[TaskStatus.COMPLETED]: <CheckCircle2 className="h-4 w-4 text-green-500" />,

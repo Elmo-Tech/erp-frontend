@@ -7,12 +7,16 @@ export enum TrackableType {
 export interface TimeEntry {
 	timeEntryId: number;
 	userId: number;
+	sessionId: string;
 	trackableId: number;
 	trackableType: TrackableType;
 	trackableDisplayName: string;
 	startTime: string;
 	endTime?: string;
 	durationMinutes?: number;
+	lastHeartbeatAt?: string;
+	stopReason?: "pause" | "hold" | "end" | "connection_lost" | "admin_stop" | null;
+	resumedFromId?: number | null;
 	user?: {
 		userId: number;
 		name: string;

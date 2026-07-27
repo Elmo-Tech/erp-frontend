@@ -6,6 +6,27 @@ import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 const LOGIN_ROUTE = "/login";
+let nextRateLimitToastAt = 0;
+
+function getRetryAfterSeconds(error: AxiosError): number | null {
+	const rawValue = error.response?.headers?.["retry-after"];
+
+	if (typeof rawValue === "number") {
+		return Math.max(1, Math.ceil(rawValue));
+	}
+
+	if (typeof rawValue !== "string") {
+		return null;
+	}
+
+	const seconds = Number(rawValue);
+	if (Number.isFinite(seconds)) {
+		return Math.max(1, Math.ceil(seconds));
+	}
+
+	const retryDate = Date.parse(rawValue);
+	return Number.isNaN(retryDate) ? null : Math.max(1, Math.ceil((retryDate - Date.now()) / 1000));
+}
 
 function clearClientAuthState() {
 	if (typeof window === "undefined") {
@@ -92,7 +113,19 @@ export const handleApiResponseError = (error: AxiosError) => {
 		redirectToLogin();
 	}
 
-	toast.error(handleApiError(error));
+	if (error.response?.status === 429) {
+		const retryAfter = getRetryAfterSeconds(error);
+		const now = Date.now();
+
+		if (now >= nextRateLimitToastAt) {
+			toast.error("Too many requests", {
+				description: retryAfter ? `Please wait ${retryAfter} seconds, then try again.` : "Please wait a moment, then try again.",
+			});
+			nextRateLimitToastAt = now + Math.max(5, retryAfter ?? 5) * 1000;
+		}
+	} else {
+		toast.error(handleApiError(error));
+	}
 
 	return Promise.reject(error);
 };

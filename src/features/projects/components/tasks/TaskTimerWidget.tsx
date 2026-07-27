@@ -53,7 +53,7 @@ export function TaskTimerWidget({ task }: TaskTimerWidgetProps) {
 	const handleStartTimer = async () => {
 		setIsLoading(true);
 		try {
-			const response = await api.post<{ data: { timeEntryId: number; startTime: string } }>("/time-entries/start", {
+			const response = await api.post<{ data: { timeEntryId: number; sessionId: string; startTime: string } }>("/time-entries/start", {
 				trackableType: "task",
 				trackableId: task.taskId,
 			});
@@ -61,6 +61,7 @@ export function TaskTimerWidget({ task }: TaskTimerWidgetProps) {
 			// Update global store immediately
 			setActiveTimer({
 				timeEntryId: response.data.data.timeEntryId,
+				sessionId: response.data.data.sessionId,
 				startTime: response.data.data.startTime,
 				trackableType: "App\\Models\\Task",
 				trackableId: task.taskId,

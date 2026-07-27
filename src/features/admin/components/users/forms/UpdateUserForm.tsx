@@ -12,6 +12,7 @@ import { UserFormFields } from "./UserFormFields";
 import { toast } from "sonner";
 import { getRoleLabel } from "@/config/simplification";
 import { Form } from "@/components/ui/form";
+import { useAuthStore } from "@/store/authStore";
 
 interface UpdateUserFormProps {
 	open: boolean;
@@ -24,6 +25,7 @@ export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUs
 	const updateUser = useUpdateUser();
 	const { data: rolesData } = useRoles();
 	const { data: specializationsData } = useUserSpecializations();
+	const canManageProtectedUsers = useAuthStore((state) => state.hasPermission("manage_protected_users"));
 
 	const form = useForm<UpdateUserFormData>({
 		resolver: zodResolver(updateUserSchema),
@@ -78,10 +80,12 @@ export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUs
 	};
 
 	const roleOptions =
-		rolesData?.roles?.map((role) => ({
+		rolesData?.roles
+			?.filter((role) => role.name !== "super-admin" || canManageProtectedUsers)
+			.map((role) => ({
 			value: role.name,
 			label: getRoleLabel(role.name),
-		})) || [];
+			})) || [];
 
 	const specializationOptions = [
 		...(specializationsData?.data?.map((spec) => ({

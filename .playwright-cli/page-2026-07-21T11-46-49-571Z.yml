@@ -1,0 +1,84 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - complementary [ref=f1e3]:
+      - generic [ref=f1e4]:
+        - link "Elmo ERP Elmo ERP" [ref=f1e5] [cursor=pointer]:
+          - /url: /dashboard
+          - img "Elmo ERP" [ref=f1e7]
+          - generic [ref=f1e8]: Elmo ERP
+        - button [ref=f1e9] [cursor=pointer]
+      - navigation [ref=f1e10]:
+        - generic [ref=f1e11]:
+          - heading "Overview" [level=3] [ref=f1e12]
+          - link "My Workspace" [ref=f1e15] [cursor=pointer]:
+            - /url: /dashboard/my-workspace
+      - paragraph [ref=f1e23]: © 2026 Elmo ERP
+    - generic [ref=f1e24]:
+      - banner [ref=f1e25]:
+        - generic [ref=f1e26]:
+          - button "Search" [disabled]
+        - generic [ref=f1e27]:
+          - button "Check-In" [ref=f1e28] [cursor=pointer]
+          - button "Open task timer" [ref=f1e29] [cursor=pointer]:
+            - generic [ref=f1e30]: Tasks
+          - button "Switch to light theme" [ref=f1e31] [cursor=pointer]
+          - button "Notifications" [ref=f1e33] [cursor=pointer]
+          - button "DR Design Reviewer founder" [ref=f1e34] [cursor=pointer]:
+            - generic [ref=f1e35]: DR
+            - generic [ref=f1e37]:
+              - generic [ref=f1e38]: Design Reviewer
+              - generic [ref=f1e39]: founder
+      - main [ref=f1e40]:
+        - generic [ref=f1e41]:
+          - generic [ref=f1e42]:
+            - heading "My Workspace" [level=1] [ref=f1e43]
+            - paragraph [ref=f1e44]: Tuesday, 21 Jul 2026
+          - generic [ref=f1e45]:
+            - generic [ref=f1e46]:
+              - generic [ref=f1e47]: Attendance Control
+              - generic [ref=f1e53]:
+                - generic [ref=f1e54]:
+                  - paragraph [ref=f1e55]: Ready
+                  - paragraph [ref=f1e56]: Not checked in
+                - button "Check In" [ref=f1e57] [cursor=pointer]
+            - generic [ref=f1e58]:
+              - generic [ref=f1e59]:
+                - paragraph [ref=f1e61]: My Points
+                - generic [ref=f1e64]:
+                  - paragraph [ref=f1e65]: "0"
+                  - paragraph [ref=f1e66]: Net across recent transactions
+              - generic [ref=f1e67]:
+                - paragraph [ref=f1e69]: Completed Tasks
+                - generic [ref=f1e76]:
+                  - paragraph [ref=f1e77]: "0"
+                  - paragraph [ref=f1e78]: Project + personal tasks
+            - generic [ref=f1e79]:
+              - generic [ref=f1e81]:
+                - heading "Weekly work rhythm" [level=2] [ref=f1e82]
+                - paragraph [ref=f1e83]: Logged time compared with expected hours on recorded days
+              - generic [ref=f1e86]:
+                - generic [ref=f1e87]: No attendance recorded this week.
+                - generic [ref=f1e89]:
+                  - generic [ref=f1e90]:
+                    - paragraph [ref=f1e91]: Coverage
+                    - paragraph [ref=f1e92]: 0%
+                    - paragraph [ref=f1e93]: of expected time
+                  - generic [ref=f1e94]:
+                    - paragraph [ref=f1e95]: Late
+                    - paragraph [ref=f1e96]: 0m
+                    - paragraph [ref=f1e97]: this week
+                  - generic [ref=f1e98]:
+                    - paragraph [ref=f1e99]: Stopped
+                    - paragraph [ref=f1e100]: 0h 0m
+                    - paragraph [ref=f1e101]: without logged work
+            - generic [ref=f1e102]: Daily Brief
+            - generic [ref=f1e113]:
+              - generic [ref=f1e114]: Personal Tasks
+              - link "Open my tasks" [ref=f1e124] [cursor=pointer]:
+                - /url: /dashboard/my-tasks
+                - text: Open My Tasks
+            - generic [ref=f1e125]: My Active Tasks
+  - region "Notifications alt+T"
+  - button "Open Tanstack query devtools" [ref=f1e186] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=f1e240] [cursor=pointer]
+  - alert [ref=f1e244]

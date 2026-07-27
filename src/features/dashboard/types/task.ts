@@ -203,6 +203,7 @@ export interface Task {
 	canStartTimer: boolean; // Timer only allowed on leaf tasks (no children)
 	hasChildren: boolean;
 	internalReviewerNotes?: string; // Only present if user has view_internal_notes permission
+	holdReason?: string | null;
 
 	// Delivery tracking
 	completedAt: string | null;

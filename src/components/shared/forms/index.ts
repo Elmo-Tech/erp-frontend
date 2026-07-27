@@ -8,5 +8,6 @@ export * from "./FormTextarea";
 export * from "./FormSwitch";
 export * from "./FormDatePicker";
 export * from "./FormCheckboxGroup";
+export * from "./FormCombobox";
 export * from "./TagInput";
 export * from "./DatePicker";

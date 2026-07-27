@@ -4,3 +4,4 @@ export { projectHistoryApi } from "./projectHistory";
 export { projectMembersApi } from "./projectMembers";
 export { changeRequestsApi } from "./changeRequests";
 export { milestonesApi } from "./milestones";
+export { projectPipelineApi } from "./projectPipeline";

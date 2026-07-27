@@ -24,6 +24,31 @@ export const timeEntriesApi = {
 		return response.data.data;
 	},
 
+	pause: async (): Promise<TimeEntry> => {
+		const response = await api.post<{ data: TimeEntry }>("/time-entries/pause");
+		return response.data.data;
+	},
+
+	hold: async (reason: string): Promise<TimeEntry> => {
+		const response = await api.post<{ data: TimeEntry }>("/time-entries/hold", { reason });
+		return response.data.data;
+	},
+
+	end: async (): Promise<TimeEntry> => {
+		const response = await api.post<{ data: TimeEntry }>("/time-entries/end");
+		return response.data.data;
+	},
+
+	resume: async (timeEntryId: number): Promise<TimeEntry> => {
+		const response = await api.post<{ data: TimeEntry }>(`/time-entries/${timeEntryId}/resume`);
+		return response.data.data;
+	},
+
+	getResumable: async (): Promise<TimeEntry | null> => {
+		const response = await api.get<{ data: TimeEntry | null }>("/time-entries/resumable");
+		return response.data.data;
+	},
+
 	/**
 	 * Get all time entries with optional filtering and pagination
 	 * Requirement 8.3: GET /api/v1/time-entries endpoint to list time entries with filtering

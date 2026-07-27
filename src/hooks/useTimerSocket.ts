@@ -3,20 +3,11 @@
 import { useEffect, useCallback, useRef } from "react";
 import { getEcho } from "@/lib/echo";
 import { useAuthStore } from "@/store/authStore";
-import { useTimerStore } from "@/store/timerStore";
+import { TimeEntryData, useTimerStore } from "@/store/timerStore";
 import api from "@/lib/axios";
 
-interface TimeEntryData {
-	timeEntryId: number;
-	startTime: string;
-	trackableType: string;
-	trackableId: number;
-	trackableDisplayName: string;
-	isActive: boolean;
-}
-
 interface TimerUpdateEvent {
-	action: "started" | "stopped";
+	action: string;
 	timeEntry: TimeEntryData | null;
 }
 
@@ -25,25 +16,71 @@ let isInitialized = false;
 // Hook to initialize WebSocket connection (call once in layout/provider)
 export function useTimerSocketInit() {
 	const { user } = useAuthStore();
-	const { setActiveTimer, setIsLoading, setIsConnected } = useTimerStore();
+	const { activeTimer, setActiveTimer, setResumableTimer, setIsLoading, setIsConnected } = useTimerStore();
 	const channelRef = useRef<unknown>(null);
 
 	// Initial fetch
 	const fetchActiveTimer = useCallback(async () => {
 		try {
-			const response = await api.get<{ data: TimeEntryData | null }>("/time-entries/active");
-			const data = response.data.data;
-			if (data && data.isActive) {
-				setActiveTimer(data);
+			const [activeResponse, resumableResponse] = await Promise.all([
+				api.get<{ data: TimeEntryData | null }>("/time-entries/active"),
+				api.get<{ data: TimeEntryData | null }>("/time-entries/resumable"),
+			]);
+			const activeData = activeResponse.data.data;
+			if (activeData && activeData.isActive) {
+				setActiveTimer(activeData);
+				setResumableTimer(null);
 			} else {
 				setActiveTimer(null);
+				setResumableTimer(resumableResponse.data.data);
 			}
 		} catch {
 			setActiveTimer(null);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [setActiveTimer, setIsLoading]);
+	}, [setActiveTimer, setIsLoading, setResumableTimer]);
+
+	useEffect(() => {
+		if (!activeTimer?.sessionId) {
+			return;
+		}
+
+		const sendHeartbeat = async () => {
+			if (!navigator.onLine) {
+				return;
+			}
+
+			try {
+				await api.post("/time-entries/heartbeat", {
+					timeEntryId: activeTimer.timeEntryId,
+					sessionId: activeTimer.sessionId,
+				});
+			} catch (error: unknown) {
+				const status = (error as { response?: { status?: number } }).response?.status;
+				if (status === 409) {
+					await fetchActiveTimer();
+				}
+			}
+		};
+
+		const handleVisibilityOrOnline = () => {
+			if (document.visibilityState === "visible" && navigator.onLine) {
+				void sendHeartbeat();
+			}
+		};
+
+		void sendHeartbeat();
+		const interval = window.setInterval(sendHeartbeat, 45_000);
+		document.addEventListener("visibilitychange", handleVisibilityOrOnline);
+		window.addEventListener("online", handleVisibilityOrOnline);
+
+		return () => {
+			window.clearInterval(interval);
+			document.removeEventListener("visibilitychange", handleVisibilityOrOnline);
+			window.removeEventListener("online", handleVisibilityOrOnline);
+		};
+	}, [activeTimer?.sessionId, activeTimer?.timeEntryId, fetchActiveTimer]);
 
 	// Subscribe to WebSocket
 	useEffect(() => {
@@ -71,8 +108,10 @@ export function useTimerSocketInit() {
 				console.log("[Timer] Received event:", event);
 				if (event.action === "started" && event.timeEntry) {
 					setActiveTimer(event.timeEntry);
-				} else if (event.action === "stopped") {
+					setResumableTimer(null);
+				} else {
 					setActiveTimer(null);
+					void fetchActiveTimer();
 				}
 			})
 			.subscribed(() => {
@@ -92,26 +131,31 @@ export function useTimerSocketInit() {
 				isInitialized = false;
 			}
 		};
-	}, [user?.userId, fetchActiveTimer, setActiveTimer, setIsConnected]);
+	}, [user?.userId, fetchActiveTimer, setActiveTimer, setIsConnected, setResumableTimer]);
 }
 
 // Hook to use timer state (use in any component)
 export function useRealtimeTimer() {
-	const { activeTimer, isLoading, isConnected, setActiveTimer } = useTimerStore();
+	const { activeTimer, resumableTimer, isLoading, isConnected, setActiveTimer, setResumableTimer } = useTimerStore();
 
 	const refetch = useCallback(async () => {
 		try {
-			const response = await api.get<{ data: TimeEntryData | null }>("/time-entries/active");
-			const data = response.data.data;
+			const [activeResponse, resumableResponse] = await Promise.all([
+				api.get<{ data: TimeEntryData | null }>("/time-entries/active"),
+				api.get<{ data: TimeEntryData | null }>("/time-entries/resumable"),
+			]);
+			const data = activeResponse.data.data;
 			if (data && data.isActive) {
 				setActiveTimer(data);
+				setResumableTimer(null);
 			} else {
 				setActiveTimer(null);
+				setResumableTimer(resumableResponse.data.data);
 			}
 		} catch {
 			setActiveTimer(null);
 		}
-	}, [setActiveTimer]);
+	}, [setActiveTimer, setResumableTimer]);
 
-	return { activeTimer, setActiveTimer, isLoading, isConnected, refetch };
+	return { activeTimer, resumableTimer, setActiveTimer, setResumableTimer, isLoading, isConnected, refetch };
 }

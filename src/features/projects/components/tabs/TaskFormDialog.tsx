@@ -20,7 +20,7 @@ const taskSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	description: z.string().optional(),
 	acceptanceCriteria: z.string().optional(),
-	status: z.enum([TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW, TaskStatus.TESTING, TaskStatus.COMPLETED]),
+	status: z.enum([TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.ON_HOLD, TaskStatus.REVIEW, TaskStatus.TESTING, TaskStatus.COMPLETED]),
 	type: z.enum([TaskType.MAIN, TaskType.WEEKLY, TaskType.SUBTASK]),
 	priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.URGENT]),
 	assignedTo: z.string().optional(),

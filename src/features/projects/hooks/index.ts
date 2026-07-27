@@ -34,3 +34,13 @@ export {
 
 // Milestones hooks
 export { useMilestone, useCreateMilestoneInvoice, useLinkMilestoneInvoice, useMarkMilestonePaid, milestoneKeys } from "./useMilestones";
+export {
+	useProjectPipeline,
+	useCreatePipelineTask,
+	useMovePipelineTask,
+	useWorkflowTemplates,
+	useUpdateProjectWorkflow,
+	useApplyWorkflowTemplate,
+	useCreateWorkflowTemplate,
+	projectPipelineKeys,
+} from "./useProjectPipeline";

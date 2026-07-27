@@ -13,6 +13,7 @@ import { useRoles } from "@/features/admin/hooks/useRoles";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getRoleLabel } from "@/config/simplification";
+import { useAuthStore } from "@/store/authStore";
 
 export function EmployeesWrapper() {
 	const [search, setSearch] = useState("");
@@ -27,10 +28,14 @@ export function EmployeesWrapper() {
 	});
 
 	const { data: rolesData } = useRoles();
+	const canManageProtectedUsers = useAuthStore((state) => state.hasPermission("manage_protected_users"));
 	const deactivateEmployee = useDeactivateEmployee();
 	const activateEmployee = useActivateEmployee();
 
-	const roleOptions = rolesData?.roles?.map((role) => ({ value: role.name, label: getRoleLabel(role.name) })) || [];
+	const roleOptions =
+		rolesData?.roles
+			?.filter((role) => role.name !== "super-admin" || canManageProtectedUsers)
+			.map((role) => ({ value: role.name, label: getRoleLabel(role.name) })) || [];
 
 	const handleEdit = (employee: Employee) => {
 		setSelectedEmployee(employee);

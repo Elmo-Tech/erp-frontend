@@ -1,0 +1,41 @@
+import api from "@/lib/axios";
+import type { CreatePipelineTaskPayload, EditableWorkflowStage, PipelineTask, ProjectPipeline, ProjectWorkflowStage, WorkflowTemplate } from "../types/pipeline";
+
+export const projectPipelineApi = {
+	get: async (projectId: number): Promise<ProjectPipeline> => {
+		const response = await api.get<{ data: ProjectPipeline }>(`/projects/${projectId}/pipeline`);
+		return response.data.data;
+	},
+
+	createTask: async (projectId: number, payload: CreatePipelineTaskPayload): Promise<PipelineTask> => {
+		const response = await api.post<{ data: PipelineTask }>(`/projects/${projectId}/pipeline/tasks`, payload);
+		return response.data.data;
+	},
+
+	moveTask: async (projectId: number, taskId: number, workflowStageId: number): Promise<PipelineTask> => {
+		const response = await api.patch<{ data: PipelineTask }>(`/projects/${projectId}/pipeline/tasks/${taskId}/stage`, {
+			workflowStageId,
+		});
+		return response.data.data;
+	},
+
+	updateStages: async (projectId: number, stages: EditableWorkflowStage[]): Promise<ProjectWorkflowStage[]> => {
+		const response = await api.put<{ data: { stages: ProjectWorkflowStage[] } }>(`/projects/${projectId}/pipeline/stages`, { stages });
+		return response.data.data.stages;
+	},
+
+	getTemplates: async (): Promise<WorkflowTemplate[]> => {
+		const response = await api.get<{ data: { templates: WorkflowTemplate[] } }>("/workflow-templates");
+		return response.data.data.templates;
+	},
+
+	applyTemplate: async (projectId: number, templateId: number): Promise<ProjectWorkflowStage[]> => {
+		const response = await api.post<{ data: { stages: ProjectWorkflowStage[] } }>(`/projects/${projectId}/pipeline/templates/${templateId}`);
+		return response.data.data.stages;
+	},
+
+	createTemplate: async (payload: { name: string; description?: string; stages: EditableWorkflowStage[] }): Promise<WorkflowTemplate> => {
+		const response = await api.post<{ data: WorkflowTemplate }>("/workflow-templates", payload);
+		return response.data.data;
+	},
+};

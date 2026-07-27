@@ -111,6 +111,7 @@ export const useStartTimer = () => {
 			// Update global timer store immediately for real-time UI
 			setActiveTimer({
 				timeEntryId: newTimeEntry.timeEntryId,
+				sessionId: newTimeEntry.sessionId,
 				startTime: newTimeEntry.startTime,
 				trackableType: newTimeEntry.trackableType,
 				trackableId: newTimeEntry.trackableId,

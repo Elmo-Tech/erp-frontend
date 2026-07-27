@@ -25,6 +25,7 @@ import { CreateRoleDialog } from "./CreateRoleDialog";
 import { DeleteRoleDialog } from "./DeleteRoleDialog";
 import { PermissionCheckbox } from "./PermissionCheckbox";
 import { getRoleLabel } from "@/config/simplification";
+import { useAuthStore } from "@/store/authStore";
 
 interface RolesMatrixProps {
 	className?: string;
@@ -37,6 +38,7 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 	const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+	const canManageProtectedRoles = useAuthStore((state) => state.hasPermission("manage_protected_users"));
 
 	const { data: rolesData, isLoading: isLoadingRoles, error: rolesError } = useRoles();
 	const { data: permissionsData, isLoading: isLoadingPermissions, error: permissionsError } = usePermissions();
@@ -123,7 +125,7 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 
 	const handlePermissionToggle = useCallback(
 		async (role: Role, permissionName: string, currentlyHasPermission: boolean) => {
-			if (isProtectedRole(role)) {
+			if (isProtectedRole(role) && !canManageProtectedRoles) {
 				toast.error("Cannot modify protected role", {
 					description: `The "${role.name}" role is protected and cannot be modified.`,
 				});
@@ -150,7 +152,7 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 				setUpdatingCell(null);
 			}
 		},
-		[isProtectedRole, updateRoleMutation]
+		[canManageProtectedRoles, isProtectedRole, updateRoleMutation]
 	);
 
 	// Loading state
@@ -229,7 +231,9 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 						<ShieldCheck className="h-5 w-5" />
 						Roles & Permissions Matrix
 					</CardTitle>
-					<CardDescription>Manage role permissions by toggling checkboxes. Protected roles cannot be modified.</CardDescription>
+					<CardDescription>
+						Manage role permissions by toggling checkboxes. Protected role names cannot be renamed or deleted.
+					</CardDescription>
 				</div>
 				<Button onClick={() => setCreateDialogOpen(true)}>
 					<Plus className="h-4 w-4 mr-2" />
@@ -304,6 +308,7 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 											{roles.map((role) => {
 												const hasPermission = roleHasPermission(role, permission.name);
 												const isProtected = isProtectedRole(role);
+												const isLocked = isProtected && !canManageProtectedRoles;
 												const cellKey = `${role.id}-${permission.name}`;
 												const isUpdating = updatingCell === cellKey;
 
@@ -315,7 +320,7 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 														<div className="flex justify-center items-center">
 															<PermissionCheckbox
 																hasPermission={hasPermission}
-																isProtected={isProtected}
+																isProtected={isLocked}
 																isUpdating={isUpdating}
 																isGlobalUpdating={updateRoleMutation.isPending}
 																permissionName={permission.name}

@@ -1,0 +1,27 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e2]:
+    - button "Switch to dark theme" [ref=f4e3] [cursor=pointer]
+    - generic [ref=f4e5]:
+      - generic [ref=f4e6]:
+        - img "Elmo ERP" [ref=f4e8]
+        - heading "Elmo ERP" [level=1] [ref=f4e9]
+        - paragraph [ref=f4e10]: A focused command center for projects, clients, finance, and team operations.
+      - generic [ref=f4e11]:
+        - generic [ref=f4e12]:
+          - generic [ref=f4e13]: Welcome back
+          - generic [ref=f4e14]: Sign in to continue to your workspace
+        - generic [ref=f4e16]:
+          - generic [ref=f4e17]:
+            - generic [ref=f4e18]: Email
+            - textbox "Email" [ref=f4e20]:
+              - /placeholder: example@company.com
+          - generic [ref=f4e21]:
+            - generic [ref=f4e22]: Password
+            - generic [ref=f4e23]:
+              - textbox "Password" [ref=f4e24]:
+                - /placeholder: ••••••••
+              - button "Show password" [ref=f4e26] [cursor=pointer]
+          - button "Sign In" [ref=f4e27] [cursor=pointer]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f4e33] [cursor=pointer]
+  - alert [ref=f4e37]

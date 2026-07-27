@@ -1,0 +1,23 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - img "Elmo ERP" [ref=e5]
+      - heading "Elmo ERP" [level=1] [ref=e6]
+      - paragraph [ref=e7]: Enterprise Resource Planning System
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: Welcome Back
+        - generic [ref=e11]: Sign in to access your dashboard
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - generic [ref=e15]: Email
+          - textbox "Email" [ref=e17]:
+            - /placeholder: example@company.com
+        - generic [ref=e18]:
+          - generic [ref=e19]: Password
+          - generic [ref=e20]:
+            - textbox "Password" [ref=e21]:
+              - /placeholder: ••••••••
+            - button "Show password" [ref=e23] [cursor=pointer]
+        - button "Sign In" [ref=e24] [cursor=pointer]
+  - region "Notifications alt+T"

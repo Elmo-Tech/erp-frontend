@@ -90,7 +90,6 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 				workHoursPerDay: data.workHoursPerDay,
 				workStartTime: data.workStartTime,
 				graceDaysAllowed: data.graceDaysAllowed,
-				internalHourlyCost: data.internalHourlyCost ?? undefined,
 			});
 			toast.success("Employee created successfully");
 			onOpenChange(false);

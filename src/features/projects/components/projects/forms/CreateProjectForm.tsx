@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,10 +10,8 @@ import { useClients } from "@/features/clients/hooks/useClients";
 import { ProjectStatus } from "../../../types/project";
 import { ProjectFormFields } from "./ProjectFormFields";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import type { Client } from "@/features/clients/types";
+import { FormCombobox } from "@/components/shared/forms";
+import { useClient } from "@/features/clients/hooks/useClients";
 
 const projectSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -117,33 +115,40 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 
 function ClientPicker({ selectedClientId, onSelect }: { selectedClientId?: number; onSelect: (clientId: number) => void }) {
 	const [search, setSearch] = useState("");
-	const { data, isLoading } = useClients({ search: search || undefined, perPage: 10 });
-	const clients = data?.clients ?? [];
+	const [debouncedSearch, setDebouncedSearch] = useState("");
+	const { data, isLoading } = useClients({ search: debouncedSearch || undefined, perPage: 25 });
+	const { data: selectedClient } = useClient(selectedClientId ?? 0, Boolean(selectedClientId));
+
+	useEffect(() => {
+		const timeout = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+		return () => window.clearTimeout(timeout);
+	}, [search]);
+
+	const options = useMemo(() => {
+		const clients = data?.clients ?? [];
+		const uniqueClients = selectedClient
+			? [selectedClient, ...clients.filter((client) => client.clientId !== selectedClient.clientId)]
+			: clients;
+
+		return uniqueClients.map((client) => ({
+			value: String(client.clientId),
+			label: client.name,
+		}));
+	}, [data?.clients, selectedClient]);
 
 	return (
-		<div className="space-y-2">
-			<Label htmlFor="project-client-search">Client</Label>
-			<Input
-				id="project-client-search"
-				value={search}
-				onChange={(event) => setSearch(event.target.value)}
-				placeholder="Search clients..."
-			/>
-			<div className="max-h-36 space-y-1 overflow-y-auto rounded-md border p-1">
-				{isLoading && <p className="px-2 py-1 text-sm text-muted-foreground">Loading clients...</p>}
-				{!isLoading && clients.length === 0 && <p className="px-2 py-1 text-sm text-muted-foreground">No clients found</p>}
-				{clients.map((client: Client) => (
-					<Button
-						key={client.clientId}
-						type="button"
-						variant={selectedClientId === client.clientId ? "default" : "ghost"}
-						className="w-full justify-start"
-						onClick={() => onSelect(client.clientId)}
-					>
-						<span className="truncate">{client.name}</span>
-					</Button>
-				))}
-			</div>
-		</div>
+		<FormCombobox
+			id="project-client"
+			label="Client"
+			value={selectedClientId ? String(selectedClientId) : undefined}
+			options={options}
+			onValueChange={(value) => onSelect(Number(value))}
+			searchValue={search}
+			onSearchChange={setSearch}
+			placeholder="Select a client"
+			searchPlaceholder="Search clients..."
+			emptyMessage="No clients found"
+			isLoading={isLoading}
+		/>
 	);
 }

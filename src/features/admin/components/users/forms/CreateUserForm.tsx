@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { getRoleLabel } from "@/config/simplification";
 import { handleApiError } from "@/lib/errorHandling";
 import { Form } from "@/components/ui/form";
+import { useAuthStore } from "@/store/authStore";
 
 interface CreateUserFormProps {
 	open: boolean;
@@ -23,6 +24,7 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 	const createUser = useCreateUser();
 	const { data: rolesData } = useRoles();
 	const { data: specializationsData } = useUserSpecializations();
+	const canManageProtectedUsers = useAuthStore((state) => state.hasPermission("manage_protected_users"));
 
 	const form = useForm<CreateUserFormData>({
 		resolver: zodResolver(createUserSchema),
@@ -72,10 +74,12 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 	};
 
 	const roleOptions =
-		rolesData?.roles?.map((role) => ({
+		rolesData?.roles
+			?.filter((role) => role.name !== "super-admin" || canManageProtectedUsers)
+			.map((role) => ({
 			value: role.name,
 			label: getRoleLabel(role.name),
-		})) || [];
+			})) || [];
 
 	const specializationOptions = [
 		...(specializationsData?.data?.map((spec) => ({
