@@ -3,17 +3,18 @@
 import { useMemo, useState } from "react";
 import { DndContext, DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, Clock3, GripVertical, Plus, Settings2, UserRound } from "lucide-react";
+import { Calendar, Clock3, GripVertical, Plus, Settings2, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FormCombobox } from "@/components/shared/forms";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { useProject, useProjects } from "../../hooks/useProjects";
+import { useProjects } from "../../hooks/useProjects";
 import { useMovePipelineTask, useProjectPipeline } from "../../hooks/useProjectPipeline";
 import type { PipelineTask, ProjectWorkflowStage } from "../../types/pipeline";
 import { PipelineTaskDialog } from "./PipelineTaskDialog";
@@ -50,7 +51,26 @@ function DraggableTaskCard({ task, disabled }: { task: PipelineTask; disabled: b
 					<Badge className={cn("border-0 capitalize", priorityClasses[task.priority])}>{task.priority}</Badge>
 					{task.estimatedHours != null && <Badge variant="outline"><Clock3 className="mr-1 h-3 w-3" />{task.estimatedHours}h</Badge>}
 				</div>
-				{task.assignee && <p className="flex items-center gap-1 text-xs text-muted-foreground"><UserRound className="h-3 w-3" />{task.assignee.name}</p>}
+				{task.assignees.length > 0 && (
+					<div className="flex items-center gap-2 text-xs text-muted-foreground">
+						<div className="flex -space-x-1.5">
+							{task.assignees.slice(0, 3).map((assignee) => (
+								<Avatar key={assignee.userId} className="h-6 w-6 border-2 border-card">
+									<AvatarImage src={assignee.avatar} alt="" />
+									<AvatarFallback className="text-[8px]">{assignee.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+								</Avatar>
+							))}
+						</div>
+						<span className="flex min-w-0 items-center gap-1">
+							<UsersRound className="h-3 w-3 shrink-0" />
+							<span className="truncate">
+								{task.assignees.length === 1
+									? task.assignees[0].name
+									: `${task.assignees.length} employees`}
+							</span>
+						</span>
+					</div>
+				)}
 				{task.dueDate && <p className="flex items-center gap-1 text-xs text-muted-foreground"><Calendar className="h-3 w-3" />{task.dueDate}</p>}
 			</CardContent>
 		</Card>
@@ -81,7 +101,6 @@ function PipelineColumn({ stage, canMove, canCreate, onCreate }: { stage: Projec
 export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 	const router = useRouter();
 	const pipeline = useProjectPipeline(projectId);
-	const project = useProject(projectId);
 	const projects = useProjects({ perPage: 100 });
 	const moveTask = useMovePipelineTask(projectId);
 	const permissions = usePermissions();
@@ -147,7 +166,7 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 				)}
 			</div>
 
-			<p className="text-sm text-muted-foreground">Flat delivery board inspired by Jira and ClickUp. The legacy Main / Weekly / Subtask view remains available in the Legacy Tasks tab.</p>
+			<p className="text-sm text-muted-foreground">A focused delivery board for flat tasks. Assigning an employee to a task automatically gives them access to this project.</p>
 
 			<DndContext sensors={sensors} onDragEnd={handleDragEnd}>
 				<div className="flex gap-4 overflow-x-auto pb-4">
@@ -167,7 +186,6 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 				<PipelineTaskDialog
 					projectId={projectId}
 					stage={taskStage}
-					members={project.data?.members ?? []}
 					open
 					onOpenChange={(open) => !open && setTaskStage(null)}
 				/>

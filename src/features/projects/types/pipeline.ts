@@ -4,6 +4,7 @@ export interface PipelineAssignee {
 	userId: number;
 	name: string;
 	avatar?: string;
+	isPrimary?: boolean;
 }
 
 export interface PipelineTask {
@@ -15,6 +16,7 @@ export interface PipelineTask {
 	priority: "low" | "medium" | "high" | "urgent";
 	assignedTo?: number | null;
 	assignee?: PipelineAssignee | null;
+	assignees: PipelineAssignee[];
 	dueDate?: string | null;
 	estimatedHours?: number | null;
 	position: number;
@@ -56,7 +58,7 @@ export interface CreatePipelineTaskPayload {
 	workflowStageId: number;
 	title: string;
 	description?: string;
-	assignedTo?: number;
+	assignedUserIds?: number[];
 	dueDate?: string;
 	estimatedHours?: number;
 	priority?: PipelineTask["priority"];

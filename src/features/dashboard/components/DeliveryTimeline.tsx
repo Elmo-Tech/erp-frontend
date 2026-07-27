@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { DataGroup, DataItem, Timeline as VisTimeline, TimelineOptions } from "vis-timeline";
+import { useEffect, useMemo, useRef } from "react";
+import { CalendarDays, FolderKanban, ListTodo, LocateFixed, Maximize2, Minus, Plus } from "lucide-react";
+import type { DataGroup, DataItem, Timeline as VisTimeline, TimelineAnimationOptions, TimelineOptions } from "vis-timeline";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DeliveryTimelineItem } from "../types";
 
@@ -60,39 +63,104 @@ async function createDeliveryTimeline(container: HTMLDivElement, entries: Delive
 	return timeline;
 }
 
+function timelineAnimation(): TimelineAnimationOptions {
+	const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+	return {
+		animation: reduceMotion ? false : { duration: 180, easingFunction: "easeOutQuad" },
+	};
+}
+
 export function DeliveryTimeline({ entries }: DeliveryTimelineProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
+	const timelineRef = useRef<VisTimeline | null>(null);
+	const summary = useMemo(() => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const nextDate = entries
+			.map((entry) => toLocalDate(entry.endDate))
+			.filter((date) => date >= today)
+			.sort((left, right) => left.getTime() - right.getTime())[0];
+
+		return {
+			projects: entries.filter((entry) => entry.entityType === "project").length,
+			tasks: entries.filter((entry) => entry.entityType === "task").length,
+			nextDate: nextDate?.toLocaleDateString(undefined, { day: "numeric", month: "short" }),
+		};
+	}, [entries]);
 
 	useEffect(() => {
 		if (!containerRef.current || entries.length === 0) return;
 
 		let disposed = false;
-		let timeline: VisTimeline | undefined;
 		const container = containerRef.current;
 
 		void createDeliveryTimeline(container, entries).then((createdTimeline) => {
 			if (disposed) {
 				createdTimeline.destroy();
 			} else {
-				timeline = createdTimeline;
+				timelineRef.current = createdTimeline;
 			}
 		});
 
 		return () => {
 			disposed = true;
-			timeline?.destroy();
+			timelineRef.current?.destroy();
+			timelineRef.current = null;
 		};
 	}, [entries]);
 
+	const fitTimeline = () => timelineRef.current?.fit(timelineAnimation());
+	const showToday = () => timelineRef.current?.moveTo(new Date(), timelineAnimation());
+	const zoomIn = () => timelineRef.current?.zoomIn(0.25, timelineAnimation());
+	const zoomOut = () => timelineRef.current?.zoomOut(0.25, timelineAnimation());
+
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Delivery timeline</CardTitle>
-				<CardDescription>Project deadlines and task delivery windows. Drag to move through time and scroll to zoom.</CardDescription>
+		<Card className="overflow-hidden">
+			<CardHeader className="gap-4 border-b bg-muted/20">
+				<div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+					<div className="space-y-2">
+						<div className="flex flex-wrap items-center gap-2">
+							<CardTitle>Delivery timeline</CardTitle>
+							<Badge variant="secondary" className="font-normal">Interactive</Badge>
+						</div>
+						<CardDescription>Project windows and task deadlines in one interactive view.</CardDescription>
+					</div>
+					{entries.length > 0 && (
+						<div className="flex flex-wrap items-center gap-2">
+							<Button type="button" variant="outline" size="sm" onClick={showToday}>
+								<LocateFixed />
+								Today
+							</Button>
+							<div className="flex items-center rounded-md border bg-background p-0.5 shadow-xs">
+								<Button type="button" variant="ghost" size="icon-sm" onClick={zoomOut} aria-label="Zoom timeline out" title="Zoom out">
+									<Minus />
+								</Button>
+								<Button type="button" variant="ghost" size="icon-sm" onClick={zoomIn} aria-label="Zoom timeline in" title="Zoom in">
+									<Plus />
+								</Button>
+								<Button type="button" variant="ghost" size="icon-sm" onClick={fitTimeline} aria-label="Fit all timeline items" title="Fit all">
+									<Maximize2 />
+								</Button>
+							</div>
+						</div>
+					)}
+				</div>
+				{entries.length > 0 && (
+					<div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+						<span className="flex items-center gap-1.5"><FolderKanban className="h-3.5 w-3.5 text-[var(--chart-3)]" />{summary.projects} projects</span>
+						<span className="flex items-center gap-1.5"><ListTodo className="h-3.5 w-3.5 text-[var(--chart-5)]" />{summary.tasks} tasks</span>
+						{summary.nextDate && <span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Next due {summary.nextDate}</span>}
+						<span className="ml-auto hidden items-center gap-4 sm:flex">
+							<span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[var(--chart-3)]" />Projects</span>
+							<span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[var(--chart-5)]" />Tasks</span>
+						</span>
+					</div>
+				)}
 			</CardHeader>
-			<CardContent>
+			<CardContent className="pt-6">
 				{entries.length > 0 ? (
-					<div ref={containerRef} className="delivery-timeline min-w-0 overflow-hidden rounded-lg border" role="img" aria-label="Interactive timeline of project deadlines and task delivery dates" />
+					<div ref={containerRef} className="delivery-timeline min-w-0 overflow-hidden rounded-xl border bg-card shadow-xs" role="region" aria-label="Interactive timeline of project deadlines and task delivery dates" />
 				) : (
 					<div className="flex h-48 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">Add project deadlines and task due dates to populate the timeline</div>
 				)}

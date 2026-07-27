@@ -146,31 +146,82 @@
 		color: var(--muted-foreground);
 	}
 
+	.delivery-timeline .vis-time-axis .vis-text {
+		font-size: 0.6875rem;
+		font-weight: 500;
+	}
+
 	.delivery-timeline .vis-labelset .vis-label,
 	.delivery-timeline .vis-panel.vis-center,
 	.delivery-timeline .vis-panel.vis-left {
 		background: var(--card);
 	}
 
+	.delivery-timeline .vis-labelset .vis-label {
+		font-size: 0.75rem;
+		font-weight: 650;
+		letter-spacing: 0.01em;
+	}
+
+	.delivery-timeline .vis-labelset .vis-label .vis-inner {
+		align-items: center;
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.delivery-timeline .vis-labelset .vis-label .vis-inner::before {
+		background: var(--chart-3);
+		border-radius: 9999px;
+		content: "";
+		height: 0.5rem;
+		width: 0.5rem;
+	}
+
+	.delivery-timeline .vis-labelset .vis-label:nth-child(2) .vis-inner::before {
+		background: var(--chart-5);
+	}
+
 	.delivery-timeline .vis-item {
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-md);
+		box-shadow: 0 1px 2px oklch(0 0 0 / 8%);
 		font-size: 0.75rem;
 		font-weight: 600;
+		transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+	}
+
+	.delivery-timeline .vis-item:hover {
+		box-shadow: 0 5px 14px oklch(0 0 0 / 12%);
+		transform: translateY(-1px);
+	}
+
+	.delivery-timeline .vis-item.vis-selected {
+		box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 24%, transparent);
 	}
 
 	.delivery-timeline .vis-item.delivery-project {
 		border-color: var(--chart-3);
-		background: color-mix(in oklch, var(--chart-2) 22%, var(--card));
+		background: color-mix(in oklch, var(--chart-3) 16%, var(--card));
 		color: var(--foreground);
 	}
 
 	.delivery-timeline .vis-item.delivery-task {
 		border-color: var(--chart-5);
-		background: color-mix(in oklch, var(--chart-4) 18%, var(--card));
+		background: color-mix(in oklch, var(--chart-5) 13%, var(--card));
 		color: var(--foreground);
 	}
 
 	.delivery-timeline .vis-current-time {
 		background-color: var(--destructive);
+		width: 2px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.delivery-timeline .vis-item {
+			transition: none;
+		}
+
+		.delivery-timeline .vis-item:hover {
+			transform: none;
+		}
 	}
 }

@@ -9,24 +9,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
+import { useEmployees } from "@/features/hr/hooks/useEmployees";
 import { useCreatePipelineTask } from "../../hooks/useProjectPipeline";
-import type { ProjectMember } from "../../types/project";
 import type { ProjectWorkflowStage } from "../../types/pipeline";
+import { PipelineEmployeePicker } from "./PipelineEmployeePicker";
 
 interface PipelineTaskDialogProps {
 	projectId: number;
 	stage: ProjectWorkflowStage | null;
-	members: ProjectMember[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-export function PipelineTaskDialog({ projectId, stage, members, open, onOpenChange }: PipelineTaskDialogProps) {
+export function PipelineTaskDialog({ projectId, stage, open, onOpenChange }: PipelineTaskDialogProps) {
 	const mutation = useCreatePipelineTask(projectId);
+	const permissions = usePermissions();
+	const canAssignEmployees = permissions.canAssignTasks || permissions.canManageTasks;
+	const employees = useEmployees({ isActive: true, perPage: 100 }, canAssignEmployees && open);
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
-	const [assignedTo, setAssignedTo] = useState("unassigned");
+	const [assignedUserIds, setAssignedUserIds] = useState<number[]>([]);
 	const [dueDate, setDueDate] = useState("");
 	const [estimatedHours, setEstimatedHours] = useState("");
 
@@ -40,7 +44,7 @@ export function PipelineTaskDialog({ projectId, stage, members, open, onOpenChan
 				title,
 				description: description || undefined,
 				priority,
-				assignedTo: assignedTo === "unassigned" ? undefined : Number(assignedTo),
+				assignedUserIds: assignedUserIds.length > 0 ? assignedUserIds : undefined,
 				dueDate: dueDate || undefined,
 				estimatedHours: estimatedHours ? Number(estimatedHours) : undefined,
 			});
@@ -85,21 +89,6 @@ export function PipelineTaskDialog({ projectId, stage, members, open, onOpenChan
 						</div>
 
 						<div className="space-y-2">
-							<Label>Assignee</Label>
-							<Select value={assignedTo} onValueChange={setAssignedTo}>
-								<SelectTrigger><SelectValue /></SelectTrigger>
-								<SelectContent>
-									<SelectItem value="unassigned">Unassigned</SelectItem>
-									{members.map((member) => (
-										<SelectItem key={member.userId} value={String(member.userId)}>
-											{member.user?.name ?? `User #${member.userId}`}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
-
-						<div className="space-y-2">
 							<Label htmlFor="pipeline-task-due-date">Due date</Label>
 							<Input id="pipeline-task-due-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
 						</div>
@@ -108,6 +97,23 @@ export function PipelineTaskDialog({ projectId, stage, members, open, onOpenChan
 							<Label htmlFor="pipeline-task-hours">Estimated hours</Label>
 							<Input id="pipeline-task-hours" type="number" min="0" step="0.25" value={estimatedHours} onChange={(event) => setEstimatedHours(event.target.value)} />
 						</div>
+					</div>
+
+					<div className="space-y-2">
+						<Label>Assigned employees</Label>
+						{canAssignEmployees ? (
+							<>
+								<PipelineEmployeePicker
+									employees={employees.data?.employees ?? []}
+									selectedUserIds={assignedUserIds}
+									onSelectionChange={setAssignedUserIds}
+									isLoading={employees.isLoading}
+								/>
+								<p className="text-xs text-muted-foreground">Selected employees are added to this project automatically, so they can see it and work on the task.</p>
+							</>
+						) : (
+							<p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">You can create an unassigned task. Assigning employees requires task assignment permission.</p>
+						)}
 					</div>
 
 					<DialogFooter>
