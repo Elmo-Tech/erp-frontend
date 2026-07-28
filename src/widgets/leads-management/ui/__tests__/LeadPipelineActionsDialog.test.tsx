@@ -74,6 +74,27 @@ describe("LeadPipelineActionsDialog", () => {
 		await waitFor(() => expect(api.post).toHaveBeenCalledWith("/leads/17/convert"));
 	});
 
+	it("layers lead deletion confirmation above the pipeline actions dialog", async () => {
+		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<LeadPipelineActionsDialog lead={lead} open onOpenChange={() => undefined} />
+			</QueryClientProvider>,
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "Delete lead" }));
+
+		const pipelineDialog = document.querySelector('[data-slot="dialog-content"]');
+		const confirmationOverlay = document.querySelector('[data-slot="alert-dialog-overlay"]');
+		const confirmationDialog = await screen.findByRole("alertdialog", { name: "Delete lead?" });
+
+		expect(pipelineDialog).not.toBeNull();
+		expect(pipelineDialog).toHaveClass("z-[60]");
+		expect(confirmationOverlay).toHaveClass("z-[70]");
+		expect(confirmationDialog).toHaveClass("z-[70]");
+	});
+
 	it("exposes a scheduled lead meeting so its status can be updated from Kanban", async () => {
 		useAuthStore.setState({
 			permissions: [
