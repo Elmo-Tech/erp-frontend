@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { ProjectStatus, type Project } from "@/entities/project/model/types";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
+import { Form } from "@/shared/ui/form";
 import { createDirectProjectSchema, toChangedUpdateProjectPayload, type CreateDirectProjectFormData } from "../model/project.schema";
 import { useUpdateProject } from "../model/use-project-actions";
 import { ProjectFormFields } from "./ProjectFormFields";
@@ -102,28 +103,29 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 			isLoading={updateProject.isPending}
 			size="xxl"
 		>
-			<ProjectFormFields
-				form={form}
-				clientOptions={clientOptions}
-				lockClient
-			/>
+			<Form {...form}>
+				<ProjectFormFields
+					form={form}
+					clientOptions={clientOptions}
+					lockClient
+				/>
 
-			{/* Conditional reason field */}
-			{requiresReason && (
-				<div className="space-y-3">
-					<Alert>
-						<AlertCircle className="h-4 w-4" />
-						<AlertDescription>You are changing the budget or deadline. Please provide a reason for this change.</AlertDescription>
-					</Alert>
-					<FormTextarea
-						control={form.control}
-						name="reason"
-						label="Reason for change"
-						placeholder="Explain why the budget or deadline is being changed..."
-						rows={3}
-					/>
-				</div>
-			)}
+				{requiresReason && (
+					<div className="space-y-3">
+						<Alert>
+							<AlertCircle className="h-4 w-4" />
+							<AlertDescription>You are changing the budget or deadline. Please provide a reason for this change.</AlertDescription>
+						</Alert>
+						<FormTextarea
+							control={form.control}
+							name="reason"
+							label="Reason for change"
+							placeholder="Explain why the budget or deadline is being changed..."
+							rows={3}
+						/>
+					</div>
+				)}
+			</Form>
 		</FormDialog>
 	);
 }

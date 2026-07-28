@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { clientApi } from "@/entities/client/api/client.api";
 import { clientKeys } from "@/entities/client/model/query-keys";
 import { ProjectStatus } from "@/entities/project/model/types";
+import { Form } from "@/shared/ui/form";
 import { FormDialog } from "@/shared/ui/dialogs/FormDialog";
 import { createDirectProjectSchema, type CreateDirectProjectFormData, toCreateDirectProjectPayload } from "../model/project.schema";
 import { useCreateDirectProject } from "../model/use-project-actions";
@@ -93,11 +94,13 @@ export function CreateProjectForm({ open, onOpenChange, clientId, clientName, on
 			isSubmitDisabled={!clientId && clientsQuery.isLoading}
 			size="xxl"
 		>
-			<ProjectFormFields
-				form={form}
-				clientOptions={clientOptions}
-				lockClient={Boolean(clientId)}
-			/>
+			<Form {...form}>
+				<ProjectFormFields
+					form={form}
+					clientOptions={clientOptions}
+					lockClient={Boolean(clientId)}
+				/>
+			</Form>
 		</FormDialog>
 	);
 }

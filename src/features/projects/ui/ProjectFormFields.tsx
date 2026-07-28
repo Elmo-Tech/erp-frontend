@@ -1,7 +1,6 @@
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
-import { Form } from "@/shared/ui/form";
 import { FormInput } from "@/shared/ui/forms/FormInput";
 import { FormDatePicker } from "@/shared/ui/forms/FormDatePicker";
 import { FormSelect, type SelectOption } from "@/shared/ui/forms/FormSelect";
@@ -23,59 +22,57 @@ const STATUS_OPTIONS = Object.values(ProjectStatus).map((status) => ({
 
 export function ProjectFormFields({ form, clientOptions, lockClient = false }: ProjectFormFieldsProps) {
 	return (
-		<Form {...form}>
-			<div className="flex flex-col gap-4">
-				<FormCombobox
-					control={form.control}
-					name="clientId"
-					label="Client"
-					placeholder="Select client…"
-					searchPlaceholder="Search clients…"
-					emptyText="No client found."
-					options={clientOptions}
-					disabled={lockClient}
-				/>
+		<div className="flex flex-col gap-4">
+			<FormCombobox
+				control={form.control}
+				name="clientId"
+				label="Client"
+				placeholder="Select client…"
+				searchPlaceholder="Search clients…"
+				emptyText="No client found."
+				options={clientOptions}
+				disabled={lockClient}
+			/>
 
+			<FormInput
+				control={form.control}
+				name="title"
+				label="Project title"
+				placeholder="Website redesign"
+			/>
+
+			<FormTextarea
+				control={form.control}
+				name="description"
+				label="Description"
+				placeholder="Scope, goals, or internal notes"
+				rows={3}
+			/>
+
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<FormInput
 					control={form.control}
-					name="title"
-					label="Project title"
-					placeholder="Website redesign"
+					name="budget"
+					label="Budget"
+					type="number"
+					placeholder="0.00"
+					min={0}
 				/>
 
-				<FormTextarea
+				<FormDatePicker
 					control={form.control}
-					name="description"
-					label="Description"
-					placeholder="Scope, goals, or internal notes"
-					rows={3}
-				/>
-
-				<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-					<FormInput
-						control={form.control}
-						name="budget"
-						label="Budget"
-						type="number"
-						placeholder="0.00"
-						min={0}
-					/>
-
-					<FormDatePicker
-						control={form.control}
-						name="deadline"
-						label="Deadline"
-					/>
-				</div>
-
-				<FormSelect
-					control={form.control}
-					name="status"
-					label="Status"
-					placeholder="Select status…"
-					options={STATUS_OPTIONS}
+					name="deadline"
+					label="Deadline"
 				/>
 			</div>
-		</Form>
+
+			<FormSelect
+				control={form.control}
+				name="status"
+				label="Status"
+				placeholder="Select status…"
+				options={STATUS_OPTIONS}
+			/>
+		</div>
 	);
 }
