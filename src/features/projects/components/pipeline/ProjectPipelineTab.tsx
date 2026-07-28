@@ -89,9 +89,12 @@ function DraggableTaskCard({ task, dragDisabled, timerState, actions }: Draggabl
 	return (
 		<article
 			ref={setNodeRef}
-			style={{ transform: CSS.Translate.toString(transform) }}
+			style={{
+				transform: CSS.Translate.toString(transform),
+				willChange: isDragging ? "transform" : undefined,
+			}}
 			className={cn(
-				"group overflow-hidden rounded-lg border bg-card p-3 shadow-xs transition-[border-color,box-shadow,transform] duration-200 hover:border-foreground/20 hover:shadow-md",
+				"group overflow-hidden rounded-lg border bg-card p-3 shadow-xs transition-[border-color,box-shadow] duration-200 hover:border-foreground/20 hover:shadow-md",
 				isDragging && "z-20 rotate-1 opacity-60 shadow-lg"
 			)}
 		>

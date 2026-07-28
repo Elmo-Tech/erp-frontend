@@ -29,7 +29,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 
 	// Permission checks
-	const { canManageProjects, canEditProjects, canViewTasks, canViewProjectFiles, canViewProjectHistory, canViewProjectBudget } = usePermissions();
+	const { canManageProjects, canEditProjects, canViewTasks, canViewProjectFiles, canViewProjectHistory } = usePermissions();
 
 	if (isLoading) {
 		return (
@@ -41,14 +41,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 						<Skeleton className="h-4 w-48" />
 					</div>
 				</div>
-				<div className="grid gap-4 md:grid-cols-4">
-					{[1, 2, 3, 4].map((i) => (
-						<Skeleton
-							key={i}
-							className="h-24"
-						/>
-					))}
-				</div>
+				<Skeleton className="h-9 w-72" />
 				<Skeleton className="h-64" />
 			</div>
 		);
@@ -69,8 +62,8 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 	}
 
 	const filesCount = project.files?.length || 0;
-	const canShowFinancials = canViewProjectBudget && isModuleEnabled(moduleKeys.financials);
 	const canShowUIApproval = isModuleEnabled(moduleKeys.uiApproval);
+	const visibleActiveTab = activeTab === "pipeline" && !canViewTasks ? "overview" : activeTab;
 
 	return (
 		<div className="space-y-6">
@@ -102,46 +95,9 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 				)}
 			</div>
 
-			{/* Quick Stats */}
-			<div className={`grid gap-4 ${canShowFinancials ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
-				<Card>
-					<CardContent className="pt-6">
-						<div className="flex items-center gap-2">
-							<Calendar className="h-4 w-4 text-muted-foreground" />
-							<span className="text-sm text-muted-foreground">Deadline</span>
-						</div>
-						<p className="text-2xl font-bold">{project.deadline ? format(new Date(project.deadline), "MMM d, yyyy") : "Not set"}</p>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardContent className="pt-6">
-						<div className="flex items-center gap-2">
-							<ListTodo className="h-4 w-4 text-muted-foreground" />
-							<span className="text-sm text-muted-foreground">Progress</span>
-						</div>
-						<p className="text-2xl font-bold">{project.progress || 0}%</p>
-						<Progress
-							value={project.progress || 0}
-							className="mt-2 h-2"
-						/>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardContent className="pt-6">
-						<div className="flex items-center gap-2">
-							<Clock className="h-4 w-4 text-muted-foreground" />
-							<span className="text-sm text-muted-foreground">Time Spent</span>
-						</div>
-						<p className="text-2xl font-bold">
-							{Math.floor((project.totalTimeSpent || 0) / 60)}h {(project.totalTimeSpent || 0) % 60}m
-						</p>
-					</CardContent>
-				</Card>
-			</div>
-
 			{/* Tabs */}
 			<Tabs
-				value={activeTab}
+				value={visibleActiveTab}
 				onValueChange={setActiveTab}
 				className="space-y-4"
 			>
@@ -179,11 +135,47 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 				{/* Overview Tab */}
 				{canManageProjects && <TabsContent
 					value="overview"
-					className="space-y-4"
+					className="space-y-6"
 				>
+					<div className="grid gap-4 md:grid-cols-3">
+						<Card>
+							<CardContent>
+								<div className="flex items-center gap-2">
+									<Calendar className="h-4 w-4 text-muted-foreground" />
+									<span className="text-sm text-muted-foreground">Deadline</span>
+								</div>
+								<p className="text-2xl font-bold">{project.deadline ? format(new Date(project.deadline), "MMM d, yyyy") : "Not set"}</p>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardContent>
+								<div className="flex items-center gap-2">
+									<ListTodo className="h-4 w-4 text-muted-foreground" />
+									<span className="text-sm text-muted-foreground">Progress</span>
+								</div>
+								<p className="text-2xl font-bold">{project.progress || 0}%</p>
+								<Progress
+									value={project.progress || 0}
+									className="mt-2 h-2"
+								/>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardContent>
+								<div className="flex items-center gap-2">
+									<Clock className="h-4 w-4 text-muted-foreground" />
+									<span className="text-sm text-muted-foreground">Time Spent</span>
+								</div>
+								<p className="text-2xl font-bold">
+									{Math.floor((project.totalTimeSpent || 0) / 60)}h {(project.totalTimeSpent || 0) % 60}m
+								</p>
+							</CardContent>
+						</Card>
+					</div>
+
 					<div className="grid gap-4 md:grid-cols-2">
 						<Card>
-							<CardContent className="pt-6 space-y-4">
+							<CardContent className="space-y-4">
 								<h3 className="font-semibold">Project Details</h3>
 								<div className="space-y-3">
 									<div>
@@ -205,7 +197,7 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 						</Card>
 
 						<Card>
-							<CardContent className="pt-6 space-y-4">
+							<CardContent className="space-y-4">
 								<h3 className="font-semibold flex items-center gap-2">
 									<Users className="h-4 w-4" />
 									Team Members
