@@ -55,6 +55,30 @@ describe("RolesPage", () => {
 			expect(mockedApi.put).toHaveBeenCalledWith("/admin/roles/5", { permissions: ["create_tasks"] });
 		});
 	});
+
+	it("shows task deliverable permissions returned by the role API", async () => {
+		mockedApi.get.mockImplementation((url: string) => {
+			if (url === "/admin/roles") {
+				return Promise.resolve({ data: { data: [{ id: 5, name: "dev", permissions: [] }] } });
+			}
+
+			return Promise.resolve({
+				data: {
+					data: [
+						{
+							name: "create_project_task_deliverables",
+							description: "Create task deliverables",
+							group: "Task Deliverables",
+						},
+					],
+				},
+			});
+		});
+
+		renderWithQueryClient(<RolesPage />);
+
+		expect(await screen.findByRole("checkbox", { name: "create_project_task_deliverables for dev" })).toBeInTheDocument();
+	});
 });
 
 function renderWithQueryClient(children: ReactNode) {

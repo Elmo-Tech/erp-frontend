@@ -31,6 +31,7 @@ const GROUP_ORDER: string[] = [
 	"Project Members",
 	"Project Files",
 	"Task Management",
+	"Task Deliverables",
 	"Sales — Leads",
 	"Sales — Quotations",
 	"Sales — Contracts",
@@ -74,7 +75,12 @@ function sortedGroups(permissions: Permission[]): [string, Permission[]][] {
 		return acc;
 	}, {});
 
-	return GROUP_ORDER.filter((g) => g in map).map((g) => [g, map[g]]);
+	const orderedGroups = GROUP_ORDER.filter((group) => group in map);
+	const unlistedGroups = Object.keys(map)
+		.filter((group) => !GROUP_ORDER.includes(group))
+		.sort();
+
+	return [...orderedGroups, ...unlistedGroups].map((group) => [group, map[group]]);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
