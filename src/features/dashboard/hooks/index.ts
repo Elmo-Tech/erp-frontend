@@ -9,6 +9,7 @@ export * from "./useTaskTree";
 export * from "./useTaskDependencies";
 export * from "./useTaskTemplates";
 export * from "./useRecurringTasks";
+export * from "./useTaskSupervision";
 
 // Attendance hooks
 export * from "./useAttendance";

@@ -183,6 +183,10 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 										<p className="font-medium">{project.client?.name || "No client assigned"}</p>
 									</div>
 									<div>
+										<p className="text-sm text-muted-foreground">Project Type</p>
+										<p className="font-medium">{project.projectType?.label || "Not set"}</p>
+									</div>
+									<div>
 										<p className="text-sm text-muted-foreground">Description</p>
 										<p className="font-medium">{project.description || "No description"}</p>
 									</div>

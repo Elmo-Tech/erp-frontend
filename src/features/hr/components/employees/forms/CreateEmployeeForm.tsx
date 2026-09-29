@@ -1,14 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FormDialog } from "@/components/shared";
 import { Form } from "@/components/ui/form";
-import { useCreateEmployee } from "../../../hooks";
+import { useCreateEmployee, useUploadEmployeeAvatar } from "../../../hooks";
 import { useUserSpecializations } from "@/features/admin/hooks/useEnums";
+import type { Employee } from "../../../types";
 import { EmployeeFormFields } from "./EmployeeFormFields";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errorHandling";
 
 const employeeSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -26,6 +29,20 @@ const employeeSchema = z.object({
 
 type EmployeeFormData = z.infer<typeof employeeSchema>;
 
+const defaultEmployeeValues: EmployeeFormData = {
+	name: "",
+	email: "",
+	password: "",
+	role: "",
+	specialization: "",
+	isActive: true,
+	salary: null,
+	workHoursPerDay: 8,
+	workStartTime: "10:00",
+	graceDaysAllowed: 5,
+	internalHourlyCost: null,
+};
+
 interface CreateEmployeeFormProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
@@ -35,51 +52,31 @@ interface CreateEmployeeFormProps {
 
 export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }: CreateEmployeeFormProps) {
 	const createEmployee = useCreateEmployee();
+	const uploadEmployeeAvatar = useUploadEmployeeAvatar();
 	const { data: specializationsData } = useUserSpecializations();
+	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
 	const form = useForm<EmployeeFormData>({
 		resolver: zodResolver(employeeSchema),
-		defaultValues: {
-			name: "",
-			email: "",
-			password: "",
-			role: "",
-			specialization: "",
-			isActive: true,
-			salary: null,
-			workHoursPerDay: 8,
-			workStartTime: "10:00",
-			graceDaysAllowed: 5,
-			internalHourlyCost: null,
-		},
+		defaultValues: defaultEmployeeValues,
 	});
 
-	const resetForm = () => {
-		form.reset({
-			name: "",
-			email: "",
-			password: "",
-			role: "",
-			specialization: "",
-			isActive: true,
-			salary: null,
-			workHoursPerDay: 8,
-			workStartTime: "10:00",
-			graceDaysAllowed: 5,
-			internalHourlyCost: null,
-		});
-	};
+	useEffect(() => {
+		if (open) {
+			form.reset(defaultEmployeeValues);
+			setAvatarFile(null);
+		}
+	}, [form, open]);
 
 	const handleOpenChange = (isOpen: boolean) => {
-		if (isOpen) {
-			resetForm();
-		}
 		onOpenChange(isOpen);
 	};
 
 	const handleSubmit = async (data: EmployeeFormData) => {
+		let employee: Employee;
+
 		try {
-			await createEmployee.mutateAsync({
+			employee = await createEmployee.mutateAsync({
 				name: data.name,
 				email: data.email,
 				password: data.password,
@@ -91,12 +88,27 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 				workStartTime: data.workStartTime,
 				graceDaysAllowed: data.graceDaysAllowed,
 			});
-			toast.success("Employee created successfully");
-			onOpenChange(false);
-			onSuccess?.();
-		} catch {
-			toast.error("Failed to create employee");
+		} catch (error) {
+			toast.error(handleApiError(error));
+			return;
 		}
+
+		if (avatarFile) {
+			try {
+				await uploadEmployeeAvatar.mutateAsync({ id: employee.userId, avatar: avatarFile });
+			} catch (error) {
+				toast.error("Employee was created, but the photo could not be uploaded.", {
+					description: `${handleApiError(error)} You can add the photo by editing the employee.`,
+				});
+				onOpenChange(false);
+				onSuccess?.();
+				return;
+			}
+		}
+
+		toast.success("Employee created successfully");
+		onOpenChange(false);
+		onSuccess?.();
 	};
 
 	const specializationOptions = [
@@ -114,7 +126,7 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 			description="Add a new employee to the system"
 			submitLabel="Create"
 			onSubmit={form.handleSubmit(handleSubmit)}
-			isLoading={createEmployee.isPending}
+			isLoading={createEmployee.isPending || uploadEmployeeAvatar.isPending}
 			isSubmitDisabled={!form.formState.isValid}
 			size="xxxl"
 		>
@@ -124,6 +136,9 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 					isEditing={false}
 					roleOptions={roles}
 					specializationOptions={specializationOptions}
+					avatarFile={avatarFile}
+					disabled={createEmployee.isPending || uploadEmployeeAvatar.isPending}
+					onAvatarChange={setAvatarFile}
 				/>
 			</Form>
 		</FormDialog>

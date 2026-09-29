@@ -68,11 +68,11 @@ export interface UpdateEmployeePayload {
 	role?: string;
 	specialization?: string;
 	isActive?: boolean;
-	salary?: number;
+	salary?: number | null;
 	workHoursPerDay?: number;
 	workStartTime?: string;
 	graceDaysAllowed?: number;
-	internalHourlyCost?: number;
+	internalHourlyCost?: number | null;
 	skills?: string[];
 	avatar?: string;
 }

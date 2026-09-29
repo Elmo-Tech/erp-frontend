@@ -5,6 +5,7 @@ import { FormInput, FormSelect, FormSwitch } from "@/components/shared";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { calculateHourlyRate, calculateMonthlyWorkHours } from "../../../lib/salary-rate";
+import { EmployeeAvatarField } from "./EmployeeAvatarField";
 
 interface EmployeeFormFieldsProps {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -12,16 +13,29 @@ interface EmployeeFormFieldsProps {
 	isEditing: boolean;
 	roleOptions: { value: string; label: string }[];
 	specializationOptions: { value: string; label: string }[];
+	avatarFile: File | null;
+	currentAvatarUrl?: string | null;
+	disabled?: boolean;
+	onAvatarChange: (file: File | null) => void;
 }
 
-export function EmployeeFormFields({ control, isEditing, roleOptions, specializationOptions }: EmployeeFormFieldsProps) {
+export function EmployeeFormFields({ control, isEditing, roleOptions, specializationOptions, avatarFile, currentAvatarUrl, disabled, onAvatarChange }: EmployeeFormFieldsProps) {
 	const salary = useWatch({ control, name: "salary" });
+	const employeeName = useWatch({ control, name: "name" });
 	const workHoursPerDay = Number(useWatch({ control, name: "workHoursPerDay" }) || 0);
 	const monthlyWorkHours = calculateMonthlyWorkHours(workHoursPerDay);
 	const hourlyRate = calculateHourlyRate(salary === "" ? null : Number(salary), workHoursPerDay);
 
 	return (
 		<div className="space-y-5">
+			<EmployeeAvatarField
+				currentAvatarUrl={currentAvatarUrl}
+				employeeName={employeeName}
+				selectedFile={avatarFile}
+				disabled={disabled}
+				onChange={onAvatarChange}
+			/>
+
 			<div className="grid gap-4 md:grid-cols-2">
 				<FormInput
 					control={control}

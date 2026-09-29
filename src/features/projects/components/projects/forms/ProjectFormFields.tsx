@@ -3,6 +3,7 @@
 import { FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { FormDatePicker, FormInput, FormTextarea, FormSelect } from "@/components/shared";
+import type { SelectOption } from "@/components/shared/forms/FormSelect";
 import { ProjectStatus } from "../../../types/project";
 
 const statusOptions = [
@@ -19,9 +20,11 @@ const statusOptions = [
 interface ProjectFormFieldsProps<TFormValues extends FieldValues> {
 	form: UseFormReturn<TFormValues>;
 	showReasonField?: boolean;
+	projectTypeOptions: SelectOption[];
+	isProjectTypesLoading?: boolean;
 }
 
-export function ProjectFormFields<TFormValues extends FieldValues>({ form, showReasonField }: ProjectFormFieldsProps<TFormValues>) {
+export function ProjectFormFields<TFormValues extends FieldValues>({ form, showReasonField, projectTypeOptions, isProjectTypesLoading }: ProjectFormFieldsProps<TFormValues>) {
 	return (
 		<Form {...form}>
 			<div className="space-y-4">
@@ -38,6 +41,16 @@ export function ProjectFormFields<TFormValues extends FieldValues>({ form, showR
 					label="Description"
 					placeholder="Enter project description"
 					rows={3}
+				/>
+
+				<FormSelect
+					control={form.control}
+					name={"projectTypeId" as FieldPath<TFormValues>}
+					label="Project Type"
+					placeholder={isProjectTypesLoading ? "Loading project types..." : "Select project type"}
+					options={projectTypeOptions}
+					disabled={isProjectTypesLoading}
+					parseValue={(value) => Number(value)}
 				/>
 
 				<FormDatePicker

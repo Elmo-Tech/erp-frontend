@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Activity, AlertCircle, CheckCircle, Clock, FolderKanban } from "lucide-react";
 import { useAdminOverview } from "../hooks/useAdminStats";
 import { useAdminPermissions } from "../hooks";
+import { TaskSupervisionReport } from "./reports/TaskSupervisionReport";
 
 interface MetricCardProps {
 	title: string;
@@ -69,19 +70,20 @@ export const AdminDashboard: React.FC = () => {
 
 	if (isLoading) {
 		return (
-			<div className="container mx-auto p-6">
+			<div className="container mx-auto p-6 space-y-6">
 				<div className="mb-6">
 					<h1 className="text-3xl font-bold">Reports</h1>
 					<p className="text-muted-foreground">Operational project and attendance overview</p>
 				</div>
 				<DashboardSkeleton />
+				<TaskSupervisionReport />
 			</div>
 		);
 	}
 
 	if (error) {
 		return (
-			<div className="container mx-auto p-6">
+			<div className="container mx-auto p-6 space-y-6">
 				<div className="mb-6">
 					<h1 className="text-3xl font-bold">Reports</h1>
 					<p className="text-muted-foreground">Operational project and attendance overview</p>
@@ -90,18 +92,20 @@ export const AdminDashboard: React.FC = () => {
 					<AlertCircle className="h-4 w-4" />
 					<AlertDescription>Failed to load dashboard data: {error.message}</AlertDescription>
 				</Alert>
+				<TaskSupervisionReport />
 			</div>
 		);
 	}
 
 	if (!data) {
 		return (
-			<div className="container mx-auto p-6">
+			<div className="container mx-auto p-6 space-y-6">
 				<div className="mb-6">
 					<h1 className="text-3xl font-bold">Reports</h1>
 					<p className="text-muted-foreground">Operational project and attendance overview</p>
 				</div>
 				<div className="flex items-center justify-center h-[300px] text-muted-foreground">No dashboard data available</div>
+				<TaskSupervisionReport />
 			</div>
 		);
 	}
@@ -204,6 +208,8 @@ export const AdminDashboard: React.FC = () => {
 					</CardContent>
 				</Card>
 			</div>
+
+			<TaskSupervisionReport />
 		</div>
 	);
 };

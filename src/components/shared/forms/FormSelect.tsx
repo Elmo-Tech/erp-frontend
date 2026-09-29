@@ -20,9 +20,10 @@ interface FormSelectProps<T extends FieldValues> {
 	disabled?: boolean;
 	className?: string;
 	onValueChange?: (value: string) => void;
+	parseValue?: (value: string) => unknown;
 }
 
-export function FormSelect<T extends FieldValues>({ control, name, label, placeholder = "Select an option", description, options, disabled = false, className, onValueChange }: FormSelectProps<T>) {
+export function FormSelect<T extends FieldValues>({ control, name, label, placeholder = "Select an option", description, options, disabled = false, className, onValueChange, parseValue }: FormSelectProps<T>) {
 	return (
 		<FormField
 			control={control}
@@ -31,9 +32,9 @@ export function FormSelect<T extends FieldValues>({ control, name, label, placeh
 				<FormItem className={className}>
 					{label && <FormLabel>{label}</FormLabel>}
 					<Select
-						value={field.value?.toString() ?? ""}
-						onValueChange={(value) => {
-							field.onChange(value);
+					value={field.value?.toString() ?? ""}
+					onValueChange={(value) => {
+						field.onChange(parseValue ? parseValue(value) : value);
 							onValueChange?.(value);
 						}}
 						disabled={disabled}

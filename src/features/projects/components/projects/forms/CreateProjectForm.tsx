@@ -12,6 +12,7 @@ import { ProjectFormFields } from "./ProjectFormFields";
 import { toast } from "sonner";
 import { FormCombobox } from "@/components/shared/forms";
 import { useClient } from "@/features/clients/hooks/useClients";
+import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
 
 const projectSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -19,6 +20,7 @@ const projectSchema = z.object({
 	budget: z.number().min(0, "Budget must be positive"),
 	deadline: z.string().optional(),
 	status: z.nativeEnum(ProjectStatus),
+	projectTypeId: z.number().int().positive().optional(),
 	reason: z.string().optional(),
 });
 
@@ -33,7 +35,14 @@ interface CreateProjectFormProps {
 
 export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: CreateProjectFormProps) {
 	const createProject = useCreateDirectProject();
+	const { data: projectTypesResponse, isLoading: isProjectTypesLoading } = useLookupOptions("project_type");
 	const [selectedClientId, setSelectedClientId] = useState<number | undefined>(clientId && clientId > 0 ? clientId : undefined);
+	const projectTypeOptions = useMemo(
+		() => (projectTypesResponse?.data ?? [])
+			.filter((projectType) => projectType.is_active)
+			.map((projectType) => ({ value: String(projectType.id), label: projectType.label })),
+		[projectTypesResponse?.data]
+	);
 
 	const form = useForm<ProjectFormData>({
 		resolver: zodResolver(projectSchema),
@@ -44,6 +53,7 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 			budget: 0,
 			deadline: "",
 			status: ProjectStatus.DRAFT,
+			projectTypeId: undefined,
 			reason: "",
 		},
 	});
@@ -56,6 +66,7 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 			budget: 0,
 			deadline: "",
 			status: ProjectStatus.DRAFT,
+			projectTypeId: undefined,
 			reason: "",
 		});
 	};
@@ -82,6 +93,7 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 				budget: data.budget,
 				deadline: data.deadline || undefined,
 				status: data.status,
+				projectTypeId: data.projectTypeId,
 			});
 			toast.success("Project created successfully");
 			onOpenChange(false);
@@ -108,7 +120,11 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 					onSelect={setSelectedClientId}
 				/>
 			)}
-			<ProjectFormFields form={form} />
+			<ProjectFormFields
+				form={form}
+				projectTypeOptions={projectTypeOptions}
+				isProjectTypesLoading={isProjectTypesLoading}
+			/>
 		</FormDialog>
 	);
 }

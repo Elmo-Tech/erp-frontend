@@ -16,6 +16,7 @@ import { TaskTestScenariosSection } from "./TaskTestScenariosSection";
 import { TaskActivitySection } from "./TaskActivitySection";
 import { TaskTimerWidget } from "./TaskTimerWidget";
 import { TaskTimeEntriesSection } from "./TaskTimeEntriesSection";
+import { TaskSupervisionSection } from "./TaskSupervisionSection";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Clock, AlertCircle, CheckCircle2, Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -207,9 +208,10 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 							onValueChange={setActiveTab}
 							className="flex-1 flex flex-col min-h-0 overflow-hidden"
 						>
-							<TabsList className="mx-6 shrink-0 grid grid-cols-5">
+							<TabsList className="mx-6 shrink-0 grid h-auto grid-cols-3 sm:grid-cols-6">
 								<TabsTrigger value="details">Details</TabsTrigger>
 								<TabsTrigger value="assignees">Team ({task.assignees?.length || 0})</TabsTrigger>
+								<TabsTrigger value="supervision">Supervision</TabsTrigger>
 								<TabsTrigger value="tests">Tests ({testScenarios?.length || 0})</TabsTrigger>
 								<TabsTrigger value="time">Time</TabsTrigger>
 								<TabsTrigger value="activity">Activity</TabsTrigger>
@@ -310,6 +312,13 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 									className="p-6 pt-4 m-0"
 								>
 									<TaskAssigneesSection task={task} />
+								</TabsContent>
+
+								<TabsContent
+									value="supervision"
+									className="p-6 pt-4 m-0"
+								>
+									<TaskSupervisionSection task={task} />
 								</TabsContent>
 
 								<TabsContent

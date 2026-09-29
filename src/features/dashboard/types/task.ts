@@ -6,6 +6,7 @@
 // Re-export enums from centralized statusHelpers
 export { TaskStatus, TaskStatusLabels, TaskStatusColors, TaskPriority, TaskPriorityLabels, TaskPriorityColors, DeliverableStatus, DeliverableStatusLabels, DeliverableStatusColors } from "@/lib/statusHelpers";
 import { TaskStatus, TaskPriority, DeliverableStatus } from "@/lib/statusHelpers";
+import type { TaskSupervisionUser } from "./taskSupervision";
 
 /**
  * Task type enum matching backend TaskType
@@ -185,6 +186,7 @@ export interface Task {
 	projectId: number;
 	parentId: number | null;
 	assignedTo: number | null;
+	supervisorId: number | null;
 	title: string;
 	description: string;
 	acceptanceCriteria: string;
@@ -214,6 +216,7 @@ export interface Task {
 
 	assignee?: SimpleAssignee;
 	assignees?: TaskAssignee[];
+	supervisor: TaskSupervisionUser | null;
 	teamAssignees?: TaskAssignee[] | null; // Available team members from Main Task (for Weekly/Subtasks only)
 	tags?: Tag[];
 	testScenarios?: TaskTestScenario[];

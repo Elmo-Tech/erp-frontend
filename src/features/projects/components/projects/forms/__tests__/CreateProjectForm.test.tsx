@@ -12,11 +12,17 @@ vi.mock("@/features/clients/hooks/useClients", () => ({
 	useClient: vi.fn(() => ({ data: undefined, isLoading: false })),
 }));
 
+vi.mock("@/features/settings/hooks/useLookupOptions", () => ({
+	useLookupOptions: vi.fn(),
+}));
+
 import { useClients } from "@/features/clients/hooks/useClients";
 import { useCreateDirectProject } from "@/features/projects/hooks/useProjects";
+import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
 
 const mockUseClients = vi.mocked(useClients);
 const mockUseCreateDirectProject = vi.mocked(useCreateDirectProject);
+const mockUseLookupOptions = vi.mocked(useLookupOptions);
 const mutateAsync = vi.fn();
 
 const renderWithClient = (ui: React.ReactNode) => {
@@ -34,6 +40,17 @@ describe("CreateProjectForm", () => {
 			mutateAsync,
 			isPending: false,
 		} as unknown as ReturnType<typeof useCreateDirectProject>);
+		mockUseLookupOptions.mockReturnValue({
+			data: {
+				success: true,
+				message: "Project types retrieved",
+				data: [
+					{ id: 3, label: "Website", value: "website", is_active: true },
+					{ id: 4, label: "Legacy", value: "legacy", is_active: false },
+				],
+			},
+			isLoading: false,
+		} as ReturnType<typeof useLookupOptions>);
 		mockUseClients.mockReturnValue({
 			data: {
 				clients: [
@@ -72,6 +89,10 @@ describe("CreateProjectForm", () => {
 		expect(screen.getByText("Client")).toBeInTheDocument();
 		fireEvent.click(screen.getByRole("combobox", { name: "Client" }));
 		fireEvent.click(await screen.findByText("The Tables Company"));
+		fireEvent.click(screen.getByRole("combobox", { name: "Project Type" }));
+		const websiteOption = await screen.findByRole("option", { name: "Website" });
+		expect(screen.queryByRole("option", { name: "Legacy" })).not.toBeInTheDocument();
+		fireEvent.click(websiteOption);
 		fireEvent.change(screen.getByLabelText("Project Title"), { target: { value: "Website rebuild" } });
 		const submitButton = screen.getByRole("button", { name: "Create Project" });
 
@@ -79,9 +100,10 @@ describe("CreateProjectForm", () => {
 		fireEvent.click(submitButton);
 
 		await waitFor(() => expect(mutateAsync).toHaveBeenCalledWith(
-			expect.objectContaining({
-				clientId: 7,
-				title: "Website rebuild",
+				expect.objectContaining({
+					clientId: 7,
+					projectTypeId: 3,
+					title: "Website rebuild",
 			})
 		));
 	});

@@ -5,8 +5,16 @@ import { projectKeys } from "./useProjects";
 
 export const projectDriveKeys = {
 	all: ["project-drive"] as const,
+	status: () => [...projectDriveKeys.all, "status"] as const,
 	files: (projectId: number) => [...projectDriveKeys.all, projectId, "files"] as const,
 	folders: (projectId: number, search?: string) => [...projectDriveKeys.all, projectId, "folders", search || ""] as const,
+};
+
+export const useGoogleDriveStatus = () => {
+	return useQuery({
+		queryKey: projectDriveKeys.status(),
+		queryFn: projectDriveApi.getStatus,
+	});
 };
 
 export const useProjectDriveFiles = (projectId: number, enabled: boolean) => {

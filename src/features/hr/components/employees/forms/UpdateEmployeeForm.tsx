@@ -1,15 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FormDialog } from "@/components/shared";
 import { Form } from "@/components/ui/form";
-import { useUpdateEmployee } from "../../../hooks";
+import { useUpdateEmployee, useUploadEmployeeAvatar } from "../../../hooks";
 import { useUserSpecializations } from "@/features/admin/hooks/useEnums";
-import type { Employee } from "../../../types";
+import type { Employee, UpdateEmployeePayload } from "../../../types";
 import { EmployeeFormFields } from "./EmployeeFormFields";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errorHandling";
 
 const employeeSchema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -37,7 +39,9 @@ interface UpdateEmployeeFormProps {
 
 export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], onSuccess }: UpdateEmployeeFormProps) {
 	const updateEmployee = useUpdateEmployee();
+	const uploadEmployeeAvatar = useUploadEmployeeAvatar();
 	const { data: specializationsData } = useUserSpecializations();
+	const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
 	const form = useForm<EmployeeFormData>({
 		resolver: zodResolver(employeeSchema),
@@ -55,6 +59,12 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			internalHourlyCost: employee.internalHourlyCost,
 		},
 	});
+
+	useEffect(() => {
+		if (open) {
+			setAvatarFile(null);
+		}
+	}, [open]);
 
 	const setFormData = (emp: Employee) => {
 		form.reset({
@@ -80,27 +90,49 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 	};
 
 	const handleSubmit = async (data: EmployeeFormData) => {
+		const payload: UpdateEmployeePayload = {};
+		if (data.name !== employee.name) payload.name = data.name;
+		if (data.email !== employee.email) payload.email = data.email;
+		if (data.password) payload.password = data.password;
+		if (data.role !== employee.role) payload.role = data.role;
+		if (data.specialization !== employee.specialization) payload.specialization = data.specialization;
+		if (data.isActive !== employee.isActive) payload.isActive = data.isActive;
+		if (data.salary !== employee.salary) payload.salary = data.salary;
+		if (data.workHoursPerDay !== employee.workHoursPerDay) payload.workHoursPerDay = data.workHoursPerDay;
+		if (data.workStartTime !== employee.workStartTime?.slice(0, 5)) payload.workStartTime = data.workStartTime;
+		if (data.graceDaysAllowed !== employee.graceDaysAllowed) payload.graceDaysAllowed = data.graceDaysAllowed;
+		if (data.internalHourlyCost !== employee.internalHourlyCost) payload.internalHourlyCost = data.internalHourlyCost;
+
 		try {
-			const payload: Record<string, unknown> = {};
-			if (data.name !== employee.name) payload.name = data.name;
-			if (data.email !== employee.email) payload.email = data.email;
-			if (data.password) payload.password = data.password;
-			if (data.role !== employee.role) payload.role = data.role;
-			if (data.specialization !== employee.specialization) payload.specialization = data.specialization;
-			if (data.isActive !== employee.isActive) payload.isActive = data.isActive;
-			if (data.salary !== employee.salary) payload.salary = data.salary;
-			if (data.workHoursPerDay !== employee.workHoursPerDay) payload.workHoursPerDay = data.workHoursPerDay;
-			if (data.workStartTime !== employee.workStartTime?.slice(0, 5)) payload.workStartTime = data.workStartTime;
-			if (data.graceDaysAllowed !== employee.graceDaysAllowed) payload.graceDaysAllowed = data.graceDaysAllowed;
 			if (Object.keys(payload).length > 0) {
 				await updateEmployee.mutateAsync({ id: employee.userId, payload });
-				toast.success("Employee updated successfully");
 			}
-			onOpenChange(false);
-			onSuccess?.();
-		} catch {
-			toast.error("Failed to update employee");
+		} catch (error) {
+			toast.error(handleApiError(error));
+			return;
 		}
+
+		if (avatarFile) {
+			try {
+				await uploadEmployeeAvatar.mutateAsync({ id: employee.userId, avatar: avatarFile });
+			} catch (error) {
+				toast.error(
+					Object.keys(payload).length > 0
+						? "Employee details were updated, but the photo could not be uploaded."
+						: "The employee photo could not be uploaded.",
+					{ description: handleApiError(error) }
+				);
+				onOpenChange(false);
+				onSuccess?.();
+				return;
+			}
+		}
+
+		if (Object.keys(payload).length > 0 || avatarFile) {
+			toast.success("Employee updated successfully");
+		}
+		onOpenChange(false);
+		onSuccess?.();
 	};
 
 	const specializationOptions = [
@@ -118,7 +150,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			description="Update employee details"
 			submitLabel="Update"
 			onSubmit={form.handleSubmit(handleSubmit)}
-			isLoading={updateEmployee.isPending}
+			isLoading={updateEmployee.isPending || uploadEmployeeAvatar.isPending}
 			isSubmitDisabled={!form.formState.isValid}
 			size="xxxl"
 		>
@@ -128,6 +160,10 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 					isEditing={true}
 					roleOptions={roles}
 					specializationOptions={specializationOptions}
+					avatarFile={avatarFile}
+					currentAvatarUrl={employee.avatar}
+					disabled={updateEmployee.isPending || uploadEmployeeAvatar.isPending}
+					onAvatarChange={setAvatarFile}
 				/>
 			</Form>
 		</FormDialog>

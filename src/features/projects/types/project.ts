@@ -33,10 +33,20 @@ export interface ProjectCreatedByUser {
 	avatar?: string;
 }
 
+export interface ProjectType {
+	projectTypeId: number;
+	label: string;
+	value: string;
+	color?: string | null;
+	icon?: string | null;
+	isActive?: boolean;
+}
+
 export interface Project {
 	tasks: ProjectTask[];
 	projectId: number;
 	clientId: number;
+	projectTypeId?: number | null;
 	quotationId: number | null;
 	title: string;
 	description: string | null;
@@ -50,6 +60,7 @@ export interface Project {
 	progress?: number;
 	totalTimeSpent?: number;
 	client?: ProjectClient;
+	projectType?: ProjectType | null;
 	contract?: ProjectContract;
 	createdByUser?: ProjectCreatedByUser;
 	quotation?: {
@@ -125,6 +136,7 @@ export interface CreateProjectPayload {
 
 export interface CreateDirectProjectPayload {
 	clientId: number;
+	projectTypeId?: number;
 	title: string;
 	description?: string;
 	budget: number;
@@ -133,6 +145,7 @@ export interface CreateDirectProjectPayload {
 }
 
 export interface UpdateProjectPayload {
+	projectTypeId?: number;
 	title?: string;
 	description?: string;
 	status?: ProjectStatus;
@@ -163,6 +176,7 @@ export interface ProjectFilters {
 	search?: string;
 	status?: ProjectStatus;
 	clientId?: number;
+	projectTypeId?: number;
 	page?: number;
 	perPage?: number;
 }

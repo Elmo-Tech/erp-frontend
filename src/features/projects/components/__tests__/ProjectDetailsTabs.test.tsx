@@ -14,6 +14,7 @@ vi.mock("../../hooks/useProjects", () => ({
 		data: {
 			projectId: 1,
 			clientId: 1,
+			projectTypeId: 3,
 			quotationId: null,
 			title: "QA Project",
 			description: "",
@@ -21,6 +22,7 @@ vi.mock("../../hooks/useProjects", () => ({
 			previousStatus: null,
 			budget: 100,
 			deadline: "2026-07-31T00:00:00.000Z",
+			projectType: { projectTypeId: 3, label: "Website", value: "website" },
 			progress: 40,
 			totalTimeSpent: 125,
 			uiApprovedAt: null,
@@ -102,6 +104,8 @@ describe("ProjectDetailsTabs", () => {
 		expect(screen.getByText("40%")).toBeInTheDocument();
 		expect(screen.getByText("Time Spent")).toBeInTheDocument();
 		expect(screen.getByText("2h 5m")).toBeInTheDocument();
+		expect(screen.getByText("Project Type")).toBeInTheDocument();
+		expect(screen.getByText("Website")).toBeInTheDocument();
 	});
 
 	it("shows assigned-project users only the pipeline tab", () => {

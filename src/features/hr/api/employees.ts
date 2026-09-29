@@ -31,6 +31,18 @@ export const employeesApi = {
 		return response.data.data;
 	},
 
+	uploadAvatar: async (id: number, avatar: File): Promise<Employee> => {
+		const formData = new FormData();
+		formData.append("avatar", avatar);
+
+		const response = await api.post<{ data: Employee }>(`${BASE_URL}/${id}/avatar`, formData, {
+			headers: {
+				"Content-Type": "multipart/form-data",
+			},
+		});
+		return response.data.data;
+	},
+
 	getPerformance: async (id: number, year?: number, month?: number): Promise<EmployeePerformance> => {
 		const params: Record<string, number> = {};
 		if (year) params.year = year;

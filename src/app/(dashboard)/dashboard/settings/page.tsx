@@ -4,8 +4,14 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LookupOptionsManager } from '@/features/settings/components/LookupOptionsManager';
 import { TagsManager } from '@/features/settings/components/TagsManager';
+import { GoogleDriveSettings } from '@/features/settings/components/GoogleDriveSettings';
+import { HrPoliciesSettings } from '@/features/hr/components/HrPoliciesSettings';
+import { LeaveTypesSettings } from '@/features/hr/components/LeaveTypesSettings';
+import { useAuthStore } from '@/store/authStore';
 
 export default function SettingsPage() {
+  const canManageLeaveTypes = useAuthStore((state) => state.hasPermission('manage_leave_types'));
+
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
@@ -18,12 +24,16 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="specializations" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="specializations">Specializations</TabsTrigger>
-          <TabsTrigger value="categories">Task Categories</TabsTrigger>
-          <TabsTrigger value="project_statuses">Project Statuses</TabsTrigger>
-          <TabsTrigger value="task_statuses">Task Statuses</TabsTrigger>
-          <TabsTrigger value="tags">Tags</TabsTrigger>
+        <TabsList className="h-auto w-full flex-wrap justify-start">
+           <TabsTrigger value="specializations">Specializations</TabsTrigger>
+           <TabsTrigger value="categories">Task Categories</TabsTrigger>
+           <TabsTrigger value="project_types">Project Types</TabsTrigger>
+           <TabsTrigger value="project_statuses">Project Statuses</TabsTrigger>
+            <TabsTrigger value="task_statuses">Task Statuses</TabsTrigger>
+            <TabsTrigger value="tags">Tags</TabsTrigger>
+			<TabsTrigger value="google_drive">Google Drive</TabsTrigger>
+            <TabsTrigger value="hr_policies">HR Policies</TabsTrigger>
+            {canManageLeaveTypes && <TabsTrigger value="leave_types">Leave Types</TabsTrigger>}
         </TabsList>
         
         <TabsContent value="specializations" className="space-y-4">
@@ -39,6 +49,14 @@ export default function SettingsPage() {
             type="task_category" 
             title="Task Categories" 
             description="Manage the categories used to classify tasks. Categories help organize and filter tasks by type of work." 
+          />
+        </TabsContent>
+
+        <TabsContent value="project_types" className="space-y-4">
+          <LookupOptionsManager
+            type="project_type"
+            title="Project Types"
+            description="Manage the types used to classify projects. Active types are available when creating and editing projects."
           />
         </TabsContent>
 
@@ -61,6 +79,20 @@ export default function SettingsPage() {
         <TabsContent value="tags" className="space-y-4">
           <TagsManager />
         </TabsContent>
+
+		<TabsContent value="google_drive" className="space-y-4">
+			<GoogleDriveSettings />
+		</TabsContent>
+
+        <TabsContent value="hr_policies" className="space-y-4">
+          <HrPoliciesSettings />
+        </TabsContent>
+
+        {canManageLeaveTypes && (
+          <TabsContent value="leave_types" className="space-y-4">
+            <LeaveTypesSettings />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

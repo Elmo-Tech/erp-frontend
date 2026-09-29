@@ -14,6 +14,7 @@ import { getElapsedSeconds, formatDuration } from "@/lib/dateUtils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { projectPipelineKeys } from "@/features/projects/hooks/useProjectPipeline";
+import { useActiveTimerTabBehavior } from "@/hooks/useActiveTimerTabBehavior";
 
 export function NavbarTimer({ className }: { className?: string }) {
 	const router = useRouter();
@@ -25,12 +26,12 @@ export function NavbarTimer({ className }: { className?: string }) {
 	const [holdReason, setHoldReason] = useState("");
 	const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
 	const [mounted, setMounted] = useState(false);
-	const originalTitle = useRef("");
 	const lastReminderBucket = useRef(0);
+
+	useActiveTimerTabBehavior(activeTimer, elapsedSeconds);
 
 	useEffect(() => {
 		setMounted(true);
-		originalTitle.current = document.title;
 		setNotificationPermission("Notification" in window ? Notification.permission : "unsupported");
 	}, []);
 
@@ -64,26 +65,9 @@ export function NavbarTimer({ className }: { className?: string }) {
 
 	useEffect(() => {
 		if (!activeTimer) {
-			document.title = originalTitle.current || document.title;
 			lastReminderBucket.current = 0;
-			return;
 		}
-
-		const updateTitle = () => {
-			document.title =
-				document.visibilityState === "hidden"
-					? `⏱ ${formatDuration(elapsedSeconds)} · Timer running`
-					: originalTitle.current;
-		};
-
-		updateTitle();
-		document.addEventListener("visibilitychange", updateTitle);
-
-		return () => {
-			document.removeEventListener("visibilitychange", updateTitle);
-			document.title = originalTitle.current;
-		};
-	}, [activeTimer, elapsedSeconds]);
+	}, [activeTimer]);
 
 	useEffect(() => {
 		if (

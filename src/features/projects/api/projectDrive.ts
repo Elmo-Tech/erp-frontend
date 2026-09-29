@@ -1,12 +1,39 @@
 import api from "@/lib/axios";
 import { ProjectDriveFile, ProjectDriveFolder } from "../types/project";
 
+export interface GoogleDriveStatus {
+	connected: boolean;
+	accountEmail: string | null;
+	expiresAt: string | null;
+	reason: string | null;
+}
+
+type GoogleDriveStatusPayload = Partial<GoogleDriveStatus>;
+
+const normalizeOptionalText = (value: unknown): string | null => {
+	return typeof value === "string" && value.trim() ? value.trim() : null;
+};
+
+export const normalizeGoogleDriveStatus = (status: GoogleDriveStatusPayload): GoogleDriveStatus => {
+	return {
+		connected: status.connected === true,
+		accountEmail: normalizeOptionalText(status.accountEmail),
+		expiresAt: normalizeOptionalText(status.expiresAt),
+		reason: normalizeOptionalText(status.reason),
+	};
+};
+
 export const projectDriveApi = {
 	getOAuthUrl: async (state?: string): Promise<{ url: string; connected: boolean }> => {
 		const response = await api.get<{ data: { url: string; connected: boolean } }>("/google-drive/oauth-url", {
 			params: state ? { state } : undefined,
 		});
 		return response.data.data;
+	},
+
+	getStatus: async (): Promise<GoogleDriveStatus> => {
+		const response = await api.get<{ data: GoogleDriveStatusPayload }>("/google-drive/status");
+		return normalizeGoogleDriveStatus(response.data.data);
 	},
 
 	completeOAuth: async (code: string): Promise<void> => {

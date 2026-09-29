@@ -24,6 +24,9 @@ export const projectsApi = {
 		if (filters?.clientId) {
 			params.append("filter[clientId]", filters.clientId.toString());
 		}
+		if (filters?.projectTypeId) {
+			params.append("filter[projectTypeId]", filters.projectTypeId.toString());
+		}
 		if (filters?.page) {
 			params.append("page", filters.page.toString());
 		}

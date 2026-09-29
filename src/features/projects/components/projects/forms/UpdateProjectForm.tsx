@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,12 +9,14 @@ import { useUpdateProject } from "../../../hooks/useProjects";
 import { Project, ProjectStatus } from "../../../types/project";
 import { ProjectFormFields } from "./ProjectFormFields";
 import { toast } from "sonner";
+import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
 
 const projectSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	description: z.string().optional(),
 	deadline: z.string().optional(),
 	status: z.nativeEnum(ProjectStatus),
+	projectTypeId: z.number().int().positive().optional(),
 	reason: z.string().optional(),
 });
 
@@ -28,6 +31,20 @@ interface UpdateProjectFormProps {
 
 export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: UpdateProjectFormProps) {
 	const updateProject = useUpdateProject();
+	const { data: projectTypesResponse, isLoading: isProjectTypesLoading } = useLookupOptions("project_type");
+	const projectTypeOptions = useMemo(() => {
+		const projectTypes = projectTypesResponse?.data ?? [];
+		const options = projectTypes
+			.filter((projectType) => projectType.is_active)
+			.map((projectType) => ({ value: String(projectType.id), label: projectType.label }));
+		const currentProjectType = projectTypes.find((projectType) => projectType.id === project.projectTypeId);
+
+		if (currentProjectType && !currentProjectType.is_active) {
+			options.push({ value: String(currentProjectType.id), label: `${currentProjectType.label} (Inactive)` });
+		}
+
+		return options;
+	}, [project.projectTypeId, projectTypesResponse?.data]);
 
 	const form = useForm<ProjectFormData>({
 		resolver: zodResolver(projectSchema),
@@ -37,6 +54,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 			description: project.description || "",
 			deadline: project.deadline || "",
 			status: project.status,
+			projectTypeId: project.projectTypeId ?? undefined,
 			reason: "",
 		},
 	});
@@ -49,6 +67,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 			description: projectData.description || "",
 			deadline: projectData.deadline || "",
 			status: projectData.status,
+			projectTypeId: projectData.projectTypeId ?? undefined,
 			reason: "",
 		});
 	};
@@ -75,6 +94,7 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 					description: data.description,
 					deadline: data.deadline || undefined,
 					status: data.status,
+					projectTypeId: data.projectTypeId,
 					reason: data.reason || undefined,
 				},
 			});
@@ -102,6 +122,8 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 			<ProjectFormFields
 				form={form}
 				showReasonField={showReasonField}
+				projectTypeOptions={projectTypeOptions}
+				isProjectTypesLoading={isProjectTypesLoading}
 			/>
 		</FormDialog>
 	);

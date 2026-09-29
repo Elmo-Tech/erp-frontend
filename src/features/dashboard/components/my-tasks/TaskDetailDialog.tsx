@@ -19,6 +19,7 @@ import { useTimerStore } from "@/store/timerStore";
 import { TrackableType } from "@/features/sales/types";
 import { toast } from "sonner";
 import { getRoleLabel } from "@/config/simplification";
+import { TaskSupervisionSection } from "@/features/projects/components/tasks/TaskSupervisionSection";
 
 interface TaskDetailDialogProps {
 	task: Task | null;
@@ -100,6 +101,7 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 				{task.tags && task.tags.length > 0 && <TaskTagsSection tags={task.tags} />}
 				{hasSubtasks && task.children && <TaskSubtasksSection subtasks={task.children} />}
 				{task.assignees && task.assignees.length > 0 && <TaskAssigneesSection assignees={task.assignees} />}
+				<TaskSupervisionSection task={task} />
 			</div>
 
 			<div className="flex justify-end gap-2 pt-4 border-t">

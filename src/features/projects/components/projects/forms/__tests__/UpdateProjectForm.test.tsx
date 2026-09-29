@@ -9,6 +9,10 @@ vi.mock("@/features/projects/hooks/useProjects", () => ({
 	useUpdateProject: () => ({ mutateAsync, isPending: false }),
 }));
 
+vi.mock("@/features/settings/hooks/useLookupOptions", () => ({
+	useLookupOptions: () => ({ data: { data: [] }, isLoading: false }),
+}));
+
 vi.mock("@/components/shared", () => ({
 	FormDialog: ({ children, onSubmit, submitLabel, isSubmitDisabled }: { children: React.ReactNode; onSubmit: () => void; submitLabel: string; isSubmitDisabled: boolean }) => (
 		<div>
@@ -48,9 +52,10 @@ describe("UpdateProjectForm", () => {
 				open
 				onOpenChange={vi.fn()}
 				project={{
-					projectId: 1,
-					clientId: 1,
-					quotationId: null,
+				projectId: 1,
+				clientId: 1,
+				projectTypeId: 3,
+				quotationId: null,
 					title: "QA Project",
 					description: "",
 					status: ProjectStatus.ACTIVE,
@@ -75,8 +80,9 @@ describe("UpdateProjectForm", () => {
 		await waitFor(() =>
 			expect(mutateAsync).toHaveBeenCalledWith({
 				id: 1,
-				payload: expect.not.objectContaining({ budget: expect.anything() }),
+				payload: expect.objectContaining({ projectTypeId: 3 }),
 			})
 		);
+		expect(mutateAsync.mock.calls[0][0].payload).not.toHaveProperty("budget");
 	});
 });

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Clock, MoreVertical, Calendar, Edit, UserX, UserCheck } from "lucide-react";
+import { BanknoteArrowDown, Clock, Clock3, MoreVertical, Calendar, CalendarDays, CircleDollarSign, Edit, FileText, Timer, UserX, UserCheck, WalletCards } from "lucide-react";
 import type { Employee } from "../types";
 import { cn } from "@/lib/utils";
 import { getRoleLabel } from "@/config/simplification";
@@ -14,9 +14,32 @@ interface EmployeeCardProps {
 	employee: Employee;
 	onEdit?: (employee: Employee) => void;
 	onToggleStatus?: (employee: Employee) => void;
+	onManageContracts?: (employee: Employee) => void;
+	onManageLeaves?: (employee: Employee) => void;
+	onManageShortPermissions?: (employee: Employee) => void;
+	onManageOvertimeRequests?: (employee: Employee) => void;
+	onManageDirectDeductions?: (employee: Employee) => void;
+	onManageAdvances?: (employee: Employee) => void;
+	onManagePartialPays?: (employee: Employee) => void;
+	onManageLateDeductions?: (employee: Employee) => void;
+	onManageDocuments?: (employee: Employee) => void;
 }
 
-export function EmployeeCard({ employee, onEdit, onToggleStatus }: EmployeeCardProps) {
+export function EmployeeCard({ employee, onEdit, onToggleStatus, onManageContracts, onManageLeaves, onManageShortPermissions, onManageOvertimeRequests, onManageDirectDeductions, onManageAdvances, onManagePartialPays, onManageLateDeductions, onManageDocuments }: EmployeeCardProps) {
+	const hasActions = Boolean(
+		onEdit ||
+			onToggleStatus ||
+			onManageContracts ||
+			onManageLeaves ||
+			onManageShortPermissions ||
+			onManageOvertimeRequests ||
+			onManageDirectDeductions ||
+			onManageAdvances ||
+			onManagePartialPays ||
+			onManageLateDeductions ||
+			onManageDocuments
+	);
+
 	const formatTime = (time: string | null) => {
 		if (!time) return "-";
 		const hours = parseInt(time.slice(0, 2));
@@ -45,7 +68,7 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus }: EmployeeCardP
 					</div>
 					<div className="flex items-center gap-2">
 						<Badge variant={employee.isActive ? "default" : "secondary"}>{employee.isActive ? "Active" : "Inactive"}</Badge>
-						<DropdownMenu>
+						{hasActions && <DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button
 									variant="ghost"
@@ -60,6 +83,60 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus }: EmployeeCardP
 									<DropdownMenuItem onClick={() => onEdit(employee)}>
 										<Edit className="h-4 w-4 mr-2" />
 										Edit
+									</DropdownMenuItem>
+								)}
+								{onManageContracts && (
+									<DropdownMenuItem onClick={() => onManageContracts(employee)}>
+										<FileText className="h-4 w-4 mr-2" />
+										Contracts
+									</DropdownMenuItem>
+								)}
+								{onManageLeaves && (
+									<DropdownMenuItem onClick={() => onManageLeaves(employee)}>
+									<CalendarDays className="h-4 w-4 mr-2" />
+									Leave requests
+								</DropdownMenuItem>
+							)}
+								{onManageShortPermissions && (
+									<DropdownMenuItem onClick={() => onManageShortPermissions(employee)}>
+										<Clock3 className="h-4 w-4 mr-2" />
+										Short permissions
+									</DropdownMenuItem>
+								)}
+								{onManageOvertimeRequests && (
+									<DropdownMenuItem onClick={() => onManageOvertimeRequests(employee)}>
+										<Timer className="h-4 w-4 mr-2" />
+										Overtime
+									</DropdownMenuItem>
+								)}
+								{onManageDirectDeductions && (
+									<DropdownMenuItem onClick={() => onManageDirectDeductions(employee)}>
+										<BanknoteArrowDown className="h-4 w-4 mr-2" />
+										Direct deductions
+									</DropdownMenuItem>
+								)}
+								{onManageAdvances && (
+									<DropdownMenuItem onClick={() => onManageAdvances(employee)}>
+										<CircleDollarSign className="h-4 w-4 mr-2" />
+										Advances
+									</DropdownMenuItem>
+								)}
+								{onManagePartialPays && (
+									<DropdownMenuItem onClick={() => onManagePartialPays(employee)}>
+										<WalletCards className="h-4 w-4 mr-2" />
+										Partial pay
+									</DropdownMenuItem>
+								)}
+								{onManageLateDeductions && (
+									<DropdownMenuItem onClick={() => onManageLateDeductions(employee)}>
+										<Clock className="h-4 w-4 mr-2" />
+										Late deductions
+									</DropdownMenuItem>
+								)}
+								{onManageDocuments && (
+									<DropdownMenuItem onClick={() => onManageDocuments(employee)}>
+										<FileText className="h-4 w-4 mr-2" />
+										Documents
 									</DropdownMenuItem>
 								)}
 								{onToggleStatus && (
@@ -78,7 +155,7 @@ export function EmployeeCard({ employee, onEdit, onToggleStatus }: EmployeeCardP
 									</DropdownMenuItem>
 								)}
 							</DropdownMenuContent>
-						</DropdownMenu>
+						</DropdownMenu>}
 					</div>
 				</div>
 			</CardHeader>

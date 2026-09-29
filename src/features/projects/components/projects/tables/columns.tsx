@@ -63,6 +63,11 @@ export function getProjectsColumns(options: ProjectColumnsOptions = {}): Column<
 				),
 		},
 		{
+			key: "projectType",
+			header: "Type",
+			render: (project) => <span className={project.projectType ? "font-medium" : "text-muted-foreground"}>{project.projectType?.label || "Not set"}</span>,
+		},
+		{
 			key: "status",
 			header: "Status",
 			render: (project) => <ProjectStatusBadge status={project.status} />,
