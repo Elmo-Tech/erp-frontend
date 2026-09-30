@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { FormCheckboxGroup, FormInput, FormSelect, FormTextarea } from "@/components/shared";
 import { handleApiError } from "@/lib/errorHandling";
@@ -16,12 +16,11 @@ import { useCreateEmploymentContract, useEmploymentContracts, useUpdateEmploymen
 import { buildEmploymentContractPayload, deriveContractEndDate, employmentContractSchema, getDefaultEmploymentContractFormValues, isValidContractDate, toEmploymentContractFormValues } from "../lib/employment-contract";
 import { employmentContractWorkDays, type EmploymentContract, type EmploymentContractFormValues, type EmploymentContractStatus } from "../types/employment-contract";
 
-interface EmployeeContractsDialogProps {
+interface EmployeeContractsPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 type DialogMode = "overview" | "create" | "edit";
@@ -122,10 +121,10 @@ function ContractSummary({ contract, canManage, onEdit }: { contract: Employment
 	);
 }
 
-export function EmployeeContractsDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeeContractsDialogProps) {
+export function EmployeeContractsPanel({ employeeId, employeeName, canManage, isActive }: EmployeeContractsPanelProps) {
 	const [mode, setMode] = useState<DialogMode>("overview");
 	const [editingContract, setEditingContract] = useState<EmploymentContract | null>(null);
-	const contractsQuery = useEmploymentContracts(employeeId, open && canManage);
+	const contractsQuery = useEmploymentContracts(employeeId, isActive && canManage);
 	const createContract = useCreateEmploymentContract();
 	const updateContract = useUpdateEmploymentContract();
 	const form = useForm<EmploymentContractFormValues>({
@@ -161,11 +160,6 @@ export function EmployeeContractsDialog({ employeeId, employeeName, open, onOpen
 		setMode("overview");
 	};
 
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) returnToOverview();
-		onOpenChange(isOpen);
-	};
-
 	const handleSubmit = async (values: EmploymentContractFormValues) => {
 		const payload = buildEmploymentContractPayload(values);
 
@@ -188,20 +182,15 @@ export function EmployeeContractsDialog({ employeeId, employeeName, open, onOpen
 	const isFormVisible = mode !== "overview";
 
 	return (
-		<Dialog
-			open={open}
-			onOpenChange={handleOpenChange}
-		>
-			<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-				<DialogHeader>
-					<DialogTitle>{isFormVisible ? (mode === "edit" ? "Edit employment contract" : "New employment contract") : `Employment contracts: ${employeeName}`}</DialogTitle>
-					<DialogDescription>
-						{isFormVisible
-							? "Set the terms and schedule for this employment agreement."
-							: "Review the current agreement and its renewal history. End dates displayed here are confirmed by the server."}
-					</DialogDescription>
-				</DialogHeader>
-
+		<div className="space-y-5">
+			<div>
+				<h2 className="text-lg font-semibold">{isFormVisible ? (mode === "edit" ? "Edit employment contract" : "New employment contract") : `Employment contracts for ${employeeName}`}</h2>
+				<p className="text-sm text-muted-foreground">
+					{isFormVisible
+						? "Set the terms and schedule for this employment agreement."
+						: "Review the current agreement and its renewal history. End dates displayed here are confirmed by the server."}
+				</p>
+			</div>
 				{isFormVisible ? (
 					<Form {...form}>
 						<form
@@ -426,7 +415,6 @@ export function EmployeeContractsDialog({ employeeId, employeeName, open, onOpen
 						</div>
 					</div>
 				)}
-			</DialogContent>
-		</Dialog>
+		</div>
 	);
 }

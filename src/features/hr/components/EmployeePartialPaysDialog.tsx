@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,12 +23,11 @@ import { buildEmployeePartialPayPayload, employeePartialPayFormSchema, formatEmp
 import type { EmploymentContract, EmploymentContractWorkDay } from "../types/employment-contract";
 import type { EmployeePartialPay, EmployeePartialPayCalculation, EmployeePartialPayFormValues, EmployeePartialPayKind, EmployeePartialPayStatus, EmployeePartialPaySummary } from "../types/employee-partial-pays";
 
-interface EmployeePartialPaysDialogProps {
+interface EmployeePartialPaysPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 type EmployeePartialPayAction = "approve" | "cancel";
@@ -205,7 +204,7 @@ function PartialPayRecordDetails({ partialPay, canManage, isActioning, onAction 
 	);
 }
 
-export function EmployeePartialPaysDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeePartialPaysDialogProps) {
+export function EmployeePartialPaysPanel({ employeeId, employeeName, canManage, isActive }: EmployeePartialPaysPanelProps) {
 	const currentPeriod = getCurrentEmployeePartialPayPeriod();
 	const [year, setYear] = useState(currentPeriod.year);
 	const [month, setMonth] = useState(currentPeriod.month);
@@ -214,8 +213,8 @@ export function EmployeePartialPaysDialog({ employeeId, employeeName, open, onOp
 	const [pendingAction, setPendingAction] = useState<PendingEmployeePartialPayAction | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [reviewNote, setReviewNote] = useState("");
-	const partialPaysQuery = useEmployeePartialPays(employeeId, year, month, open && canManage);
-	const contractsQuery = useEmploymentContracts(employeeId, open && canManage);
+	const partialPaysQuery = useEmployeePartialPays(employeeId, year, month, isActive && canManage);
+	const contractsQuery = useEmploymentContracts(employeeId, isActive && canManage);
 	const previewPartialPay = usePreviewEmployeePartialPay();
 	const createPartialPay = useCreateEmployeePartialPay();
 	const approvePartialPay = useApproveEmployeePartialPay();
@@ -252,15 +251,6 @@ export function EmployeePartialPaysDialog({ employeeId, employeeName, open, onOp
 		setPendingAction(null);
 		setActionError(null);
 		setReviewNote("");
-	};
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) {
-			setPreview(null);
-			setRequestError(null);
-			resetAction();
-		}
-		onOpenChange(isOpen);
 	};
 
 	const handlePreview = async (values: EmployeePartialPayFormValues) => {
@@ -335,12 +325,11 @@ export function EmployeePartialPaysDialog({ employeeId, employeeName, open, onOp
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
-					<DialogHeader>
-						<DialogTitle>Partial pay: {employeeName}</DialogTitle>
-						<DialogDescription>Preview, create, and review first-month or termination partial-pay records for the selected payroll period.</DialogDescription>
-					</DialogHeader>
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold">Partial pay for {employeeName}</h2>
+					<p className="text-sm text-muted-foreground">Preview, create, and review first-month or termination partial-pay records for the selected payroll period.</p>
+				</div>
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 						<div>
@@ -471,8 +460,7 @@ export function EmployeePartialPaysDialog({ employeeId, employeeName, open, onOp
 							</section>
 						</div>
 					) : null}
-				</DialogContent>
-			</Dialog>
+			</div>
 
 			<AlertDialog open={Boolean(pendingAction)} onOpenChange={(isOpen) => !isOpen && resetAction()}>
 				<AlertDialogContent>

@@ -12,14 +12,15 @@ export { EmployeesWrapper } from "./wrappers";
 // OTHER COMPONENTS
 // ============================================
 export { EmployeeCard } from "./EmployeeCard";
+export { EmployeeDetailsSheet } from "./EmployeeDetailsSheet";
 export { EmployeePerformanceDialog } from "./EmployeePerformanceDialog";
 export { HrPoliciesSettings } from "./HrPoliciesSettings";
-export { EmployeeContractsDialog } from "./EmployeeContractsDialog";
-export { EmployeeLeavesDialog } from "./EmployeeLeavesDialog";
-export { EmployeeShortPermissionsDialog } from "./EmployeeShortPermissionsDialog";
-export { EmployeeOvertimeRequestsDialog } from "./EmployeeOvertimeRequestsDialog";
-export { EmployeeDirectDeductionsDialog } from "./EmployeeDirectDeductionsDialog";
-export { EmployeeLateDeductionsDialog } from "./EmployeeLateDeductionsDialog";
-export { EmployeeDocumentsDialog } from "./EmployeeDocumentsDialog";
-export { EmployeeAdvancesDialog } from "./EmployeeAdvancesDialog";
-export { EmployeePartialPaysDialog } from "./EmployeePartialPaysDialog";
+export { EmployeeContractsPanel } from "./EmployeeContractsDialog";
+export { EmployeeLeavesPanel } from "./EmployeeLeavesDialog";
+export { EmployeeShortPermissionsPanel } from "./EmployeeShortPermissionsDialog";
+export { EmployeeOvertimeRequestsPanel } from "./EmployeeOvertimeRequestsDialog";
+export { EmployeeDirectDeductionsPanel } from "./EmployeeDirectDeductionsDialog";
+export { EmployeeLateDeductionsPanel } from "./EmployeeLateDeductionsDialog";
+export { EmployeeDocumentsPanel } from "./EmployeeDocumentsDialog";
+export { EmployeeAdvancesPanel } from "./EmployeeAdvancesDialog";
+export { EmployeePartialPaysPanel } from "./EmployeePartialPaysDialog";

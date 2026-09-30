@@ -7,7 +7,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,12 +17,11 @@ import { useEmployeeLateDeductions, useEvaluateEmployeeLateDeductions, useOverri
 import { buildLateDeductionOverridePayload, formatLateDeductionOccurrence, lateDeductionOverrideSchema } from "../lib/late-deductions";
 import type { LateDeductionOverrideFormValues, LateDeductionRecord, LateDeductionStatus, LateDeductionsSummary } from "../types/late-deductions";
 
-interface EmployeeLateDeductionsDialogProps {
+interface EmployeeLateDeductionsPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 const statusLabels: Record<LateDeductionStatus, string> = {
@@ -185,7 +183,7 @@ function LateDeductionDetails({ record, canManage, isOverriding, onOverride }: {
 	);
 }
 
-export function EmployeeLateDeductionsDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeeLateDeductionsDialogProps) {
+export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManage, isActive }: EmployeeLateDeductionsPanelProps) {
 	const today = new Date();
 	const [year, setYear] = useState(today.getFullYear());
 	const [month, setMonth] = useState(today.getMonth() + 1);
@@ -193,7 +191,7 @@ export function EmployeeLateDeductionsDialog({ employeeId, employeeName, open, o
 	const [overrideAmount, setOverrideAmount] = useState<number | "">("");
 	const [overrideReason, setOverrideReason] = useState("");
 	const [overrideAttempted, setOverrideAttempted] = useState(false);
-	const lateDeductionsQuery = useEmployeeLateDeductions(employeeId, year, month, open && canManage);
+	const lateDeductionsQuery = useEmployeeLateDeductions(employeeId, year, month, isActive && canManage);
 	const evaluateLateDeductions = useEvaluateEmployeeLateDeductions();
 	const overrideLateDeduction = useOverrideLateDeduction();
 	const records = [...(lateDeductionsQuery.data?.records ?? [])].sort((left, right) => right.attendanceDate.localeCompare(left.attendanceDate) || right.id - left.id);
@@ -209,11 +207,6 @@ export function EmployeeLateDeductionsDialog({ employeeId, employeeName, open, o
 		setOverrideAmount("");
 		setOverrideReason("");
 		setOverrideAttempted(false);
-	};
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) resetOverride();
-		onOpenChange(isOpen);
 	};
 
 	const openOverrideDialog = (record: LateDeductionRecord) => {
@@ -254,12 +247,11 @@ export function EmployeeLateDeductionsDialog({ employeeId, employeeName, open, o
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-					<DialogHeader>
-						<DialogTitle>Late deductions: {employeeName}</DialogTitle>
-						<DialogDescription>Evaluate attendance-based late deductions and review their payroll adjustments for a selected month.</DialogDescription>
-					</DialogHeader>
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold">Late deductions for {employeeName}</h2>
+					<p className="text-sm text-muted-foreground">Evaluate attendance-based late deductions and review their payroll adjustments for a selected month.</p>
+				</div>
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 						<div>
@@ -345,8 +337,7 @@ export function EmployeeLateDeductionsDialog({ employeeId, employeeName, open, o
 							</section>
 						</div>
 					) : null}
-				</DialogContent>
-			</Dialog>
+			</div>
 
 			<AlertDialog open={Boolean(pendingOverride)} onOpenChange={(isOpen) => !isOpen && resetOverride()}>
 				<AlertDialogContent>

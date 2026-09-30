@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,12 +21,11 @@ import { useApproveEmployeeOvertimeRequest, useCancelEmployeeOvertimeRequest, us
 import { buildEmployeeOvertimeRequestPayload, calculateOvertimeDurationMinutes, formatOvertimeCurrency, formatOvertimeMinutes, getCurrentOvertimePeriod, getDefaultOvertimeRequestFormValues, getOvertimeStatusLabel, isValidOvertimeDate, overtimeRequestSchema } from "../lib/overtime-requests";
 import type { EmployeeOvertimeRequest, EmployeeOvertimeRequestStatus, EmployeeOvertimeSummary, OvertimeRequestFormValues } from "../types/overtime-requests";
 
-interface EmployeeOvertimeRequestsDialogProps {
+interface EmployeeOvertimeRequestsPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 type OvertimeReviewAction = "approve" | "reject" | "cancel";
@@ -194,7 +193,7 @@ function OvertimeRequestDetails({ request, canManage, isReviewing, onReview }: {
 	);
 }
 
-export function EmployeeOvertimeRequestsDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeeOvertimeRequestsDialogProps) {
+export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canManage, isActive }: EmployeeOvertimeRequestsPanelProps) {
 	const currentPeriod = getCurrentOvertimePeriod();
 	const [year, setYear] = useState(currentPeriod.year);
 	const [month, setMonth] = useState(currentPeriod.month);
@@ -202,7 +201,7 @@ export function EmployeeOvertimeRequestsDialog({ employeeId, employeeName, open,
 	const [reviewNote, setReviewNote] = useState("");
 	const [requestError, setRequestError] = useState<string | null>(null);
 	const [reviewError, setReviewError] = useState<string | null>(null);
-	const overtimeQuery = useEmployeeOvertimeRequests(employeeId, year, month, open && canManage);
+	const overtimeQuery = useEmployeeOvertimeRequests(employeeId, year, month, isActive && canManage);
 	const createOvertime = useCreateEmployeeOvertimeRequest();
 	const approveOvertime = useApproveEmployeeOvertimeRequest();
 	const rejectOvertime = useRejectEmployeeOvertimeRequest();
@@ -224,16 +223,6 @@ export function EmployeeOvertimeRequestsDialog({ employeeId, employeeName, open,
 	const tomorrow = new Date();
 	tomorrow.setHours(0, 0, 0, 0);
 	tomorrow.setDate(tomorrow.getDate() + 1);
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) {
-			setPendingReview(null);
-			setReviewNote("");
-			setRequestError(null);
-			setReviewError(null);
-		}
-		onOpenChange(isOpen);
-	};
 
 	const openReviewDialog = (request: EmployeeOvertimeRequest, action: OvertimeReviewAction) => {
 		setPendingReview({ request, action });
@@ -283,12 +272,11 @@ export function EmployeeOvertimeRequestsDialog({ employeeId, employeeName, open,
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
-					<DialogHeader>
-						<DialogTitle>Overtime: {employeeName}</DialogTitle>
-						<DialogDescription>Submit and review overtime preapproval requests for the selected period.</DialogDescription>
-					</DialogHeader>
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold">Overtime for {employeeName}</h2>
+					<p className="text-sm text-muted-foreground">Submit and review overtime preapproval requests for the selected period.</p>
+				</div>
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 						<div>
@@ -413,8 +401,7 @@ export function EmployeeOvertimeRequestsDialog({ employeeId, employeeName, open,
 							</section>
 						</div>
 					) : null}
-				</DialogContent>
-			</Dialog>
+			</div>
 
 			<AlertDialog open={Boolean(pendingReview)} onOpenChange={(isOpen) => {
 				if (!isOpen) {

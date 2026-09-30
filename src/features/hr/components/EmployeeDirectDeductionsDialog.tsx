@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,12 +21,11 @@ import { useActiveDirectDeductionTypes, useApproveEmployeeDirectDeduction, useCa
 import { buildDirectEmployeeDeductionPayload, directEmployeeDeductionFormSchema, getDefaultDirectEmployeeDeductionFormValues, isValidDirectDeductionDate } from "../lib/direct-employee-deductions";
 import type { DirectEmployeeDeduction, DirectEmployeeDeductionFormValues, DirectEmployeeDeductionStatus } from "../types/direct-employee-deductions";
 
-interface EmployeeDirectDeductionsDialogProps {
+interface EmployeeDirectDeductionsPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 type DirectDeductionReviewAction = "approve" | "reject" | "cancel";
@@ -166,14 +165,14 @@ function DirectDeductionDetails({ deduction, isReviewing, onReview }: { deductio
 	);
 }
 
-export function EmployeeDirectDeductionsDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeeDirectDeductionsDialogProps) {
+export function EmployeeDirectDeductionsPanel({ employeeId, employeeName, canManage, isActive }: EmployeeDirectDeductionsPanelProps) {
 	const today = new Date();
 	const [year, setYear] = useState(today.getFullYear());
 	const [month, setMonth] = useState(today.getMonth() + 1);
 	const [pendingReview, setPendingReview] = useState<PendingDirectDeductionReview | null>(null);
 	const [reviewNote, setReviewNote] = useState("");
-	const deductionsQuery = useEmployeeDirectDeductions(employeeId, year, month, open && canManage);
-	const deductionTypesQuery = useActiveDirectDeductionTypes(open && canManage);
+	const deductionsQuery = useEmployeeDirectDeductions(employeeId, year, month, isActive && canManage);
+	const deductionTypesQuery = useActiveDirectDeductionTypes(isActive && canManage);
 	const createDeduction = useCreateEmployeeDirectDeduction();
 	const approveDeduction = useApproveEmployeeDirectDeduction();
 	const rejectDeduction = useRejectEmployeeDirectDeduction();
@@ -192,14 +191,6 @@ export function EmployeeDirectDeductionsDialog({ employeeId, employeeName, open,
 	const isRequesting = createDeduction.isPending;
 	const isRequestDisabled = isRequesting || deductionTypesQuery.isLoading || deductionTypesQuery.isError || deductionTypes.length === 0;
 	const yearOptions = Array.from({ length: 11 }, (_, index) => today.getFullYear() - 5 + index);
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) {
-			setPendingReview(null);
-			setReviewNote("");
-		}
-		onOpenChange(isOpen);
-	};
 
 	const openReviewDialog = (deduction: DirectEmployeeDeduction, action: DirectDeductionReviewAction) => {
 		setPendingReview({ deduction, action });
@@ -245,12 +236,11 @@ export function EmployeeDirectDeductionsDialog({ employeeId, employeeName, open,
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-					<DialogHeader>
-						<DialogTitle>Direct deductions: {employeeName}</DialogTitle>
-						<DialogDescription>Create and review fixed employee deductions for a selected payroll month.</DialogDescription>
-					</DialogHeader>
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold">Direct deductions for {employeeName}</h2>
+					<p className="text-sm text-muted-foreground">Create and review fixed employee deductions for a selected payroll month.</p>
+				</div>
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 						<div>
@@ -398,8 +388,7 @@ export function EmployeeDirectDeductionsDialog({ employeeId, employeeName, open,
 							</section>
 						</div>
 					) : null}
-				</DialogContent>
-			</Dialog>
+			</div>
 
 			<AlertDialog
 				open={Boolean(pendingReview)}

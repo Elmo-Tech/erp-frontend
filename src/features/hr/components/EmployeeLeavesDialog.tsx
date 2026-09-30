@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,12 +21,11 @@ import { useApproveEmployeeLeave, useCancelEmployeeLeave, useCreateEmployeeLeave
 import { buildEmployeeLeavePayload, getDefaultLeaveRequestFormValues, isValidLeaveDate, leaveRequestSchema } from "../lib/leave-management";
 import type { EmployeeLeave, EmployeeLeaveStatus, LeaveRequestFormValues } from "../types/leave-management";
 
-interface EmployeeLeavesDialogProps {
+interface EmployeeLeavesPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 type LeaveReviewAction = "approve" | "reject" | "cancel";
@@ -143,13 +142,13 @@ function LeaveRequestSummary({ leave, canManage, isReviewing, onReview }: { leav
 	);
 }
 
-export function EmployeeLeavesDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeeLeavesDialogProps) {
+export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isActive }: EmployeeLeavesPanelProps) {
 	const currentYear = new Date().getFullYear();
 	const [year, setYear] = useState(currentYear);
 	const [pendingReview, setPendingReview] = useState<PendingLeaveReview | null>(null);
 	const [reviewNote, setReviewNote] = useState("");
-	const leavesQuery = useEmployeeLeaves(employeeId, year, open && canManage);
-	const leaveTypesQuery = useLeaveTypes(open && canManage);
+	const leavesQuery = useEmployeeLeaves(employeeId, year, isActive && canManage);
+	const leaveTypesQuery = useLeaveTypes(isActive && canManage);
 	const createLeave = useCreateEmployeeLeave();
 	const approveLeave = useApproveEmployeeLeave();
 	const rejectLeave = useRejectEmployeeLeave();
@@ -168,14 +167,6 @@ export function EmployeeLeavesDialog({ employeeId, employeeName, open, onOpenCha
 	const isRequesting = createLeave.isPending;
 	const isRequestDisabled = isRequesting || leaveTypesQuery.isLoading || leaveTypesQuery.isError || leaveTypes.length === 0;
 	const yearOptions = Array.from({ length: 11 }, (_, index) => currentYear - 5 + index);
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) {
-			setPendingReview(null);
-			setReviewNote("");
-		}
-		onOpenChange(isOpen);
-	};
 
 	const handleRequestSubmit = async (values: LeaveRequestFormValues) => {
 		try {
@@ -213,15 +204,11 @@ export function EmployeeLeavesDialog({ employeeId, employeeName, open, onOpenCha
 
 	return (
 		<>
-			<Dialog
-				open={open}
-				onOpenChange={handleOpenChange}
-			>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-					<DialogHeader>
-						<DialogTitle>Leave requests: {employeeName}</DialogTitle>
-						<DialogDescription>Submit and review time-off requests for the selected year.</DialogDescription>
-					</DialogHeader>
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold">Leave requests for {employeeName}</h2>
+					<p className="text-sm text-muted-foreground">Submit and review time-off requests for the selected year.</p>
+				</div>
 
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div>
@@ -451,8 +438,7 @@ export function EmployeeLeavesDialog({ employeeId, employeeName, open, onOpenCha
 							</section>
 						</div>
 					)}
-				</DialogContent>
-			</Dialog>
+			</div>
 
 			<AlertDialog
 				open={Boolean(pendingReview)}

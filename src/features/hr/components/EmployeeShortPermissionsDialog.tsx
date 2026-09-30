@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,12 +22,11 @@ import { useApproveEmployeeShortPermission, useCancelEmployeeShortPermission, us
 import { buildEmployeeShortPermissionPayload, calculatePermissionDurationMinutes, formatPermissionDuration, getCurrentPermissionMonth, getDefaultShortPermissionRequestFormValues, isValidPermissionDate, shortPermissionRequestSchema } from "../lib/short-permissions";
 import type { EmployeeShortPermission, EmployeeShortPermissionStatus, PermissionAllowance, PermissionCompensationType, ShortPermissionRequestFormValues } from "../types/short-permissions";
 
-interface EmployeeShortPermissionsDialogProps {
+interface EmployeeShortPermissionsPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 type ShortPermissionReviewAction = "approve" | "reject" | "cancel";
@@ -183,12 +182,12 @@ function ShortPermissionSummary({ permission, canManage, isReviewing, onReview }
 	);
 }
 
-export function EmployeeShortPermissionsDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeeShortPermissionsDialogProps) {
+export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canManage, isActive }: EmployeeShortPermissionsPanelProps) {
 	const [month, setMonth] = useState(() => getCurrentPermissionMonth());
 	const [pendingReview, setPendingReview] = useState<PendingShortPermissionReview | null>(null);
 	const [compensationType, setCompensationType] = useState<PermissionCompensationType | "">("");
 	const [reviewNote, setReviewNote] = useState("");
-	const shortPermissionsQuery = useEmployeeShortPermissions(employeeId, month, open && canManage);
+	const shortPermissionsQuery = useEmployeeShortPermissions(employeeId, month, isActive && canManage);
 	const createShortPermission = useCreateEmployeeShortPermission();
 	const approveShortPermission = useApproveEmployeeShortPermission();
 	const rejectShortPermission = useRejectEmployeeShortPermission();
@@ -209,15 +208,6 @@ export function EmployeeShortPermissionsDialog({ employeeId, employeeName, open,
 	const isRequesting = createShortPermission.isPending;
 	const availableAllowanceMinutes = Math.max(allowance?.remainingMinutes ?? 0, 0);
 	const paidApprovalOverageMinutes = pendingReview?.action === "approve" && allowance ? Math.max(0, pendingReview.permission.durationMinutes - availableAllowanceMinutes) : 0;
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) {
-			setPendingReview(null);
-			setCompensationType("");
-			setReviewNote("");
-		}
-		onOpenChange(isOpen);
-	};
 
 	const openReviewDialog = (permission: EmployeeShortPermission, action: ShortPermissionReviewAction) => {
 		setPendingReview({ permission, action });
@@ -267,15 +257,11 @@ export function EmployeeShortPermissionsDialog({ employeeId, employeeName, open,
 
 	return (
 		<>
-			<Dialog
-				open={open}
-				onOpenChange={handleOpenChange}
-			>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-					<DialogHeader>
-						<DialogTitle>Short permissions: {employeeName}</DialogTitle>
-						<DialogDescription>Submit and review short time-away requests for the selected month.</DialogDescription>
-					</DialogHeader>
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold">Short permissions for {employeeName}</h2>
+					<p className="text-sm text-muted-foreground">Submit and review short time-away requests for the selected month.</p>
+				</div>
 
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div>
@@ -432,8 +418,7 @@ export function EmployeeShortPermissionsDialog({ employeeId, employeeName, open,
 							</section>
 						</div>
 					) : null}
-				</DialogContent>
-			</Dialog>
+			</div>
 
 			<AlertDialog
 				open={Boolean(pendingReview)}

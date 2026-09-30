@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,12 +22,11 @@ import { useApproveEmployeeAdvance, useCancelEmployeeAdvance, useCreateEmployeeA
 import { buildEmployeeAdvancePayload, employeeAdvanceFormSchema, formatEmployeeAdvanceAmount, getCurrentEmployeeAdvancePeriod, getDefaultEmployeeAdvanceFormValues, getEmployeeAdvanceStatusLabel, isScheduledEmployeeAdvanceSettlement, isValidEmployeeAdvanceAmount } from "../lib/employee-advances";
 import type { EmployeeAdvance, EmployeeAdvanceFormValues, EmployeeAdvancePolicySnapshot, EmployeeAdvanceSettlement, EmployeeAdvanceStatus, EmployeeAdvanceSummary } from "../types/employee-advances";
 
-interface EmployeeAdvancesDialogProps {
+interface EmployeeAdvancesPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 type EmployeeAdvanceAction = "approve" | "reject" | "cancel" | "disburse" | "settle";
@@ -233,7 +232,7 @@ function EmployeeAdvanceDetails({ advance, canManage, isActioning, onAction }: {
 	);
 }
 
-export function EmployeeAdvancesDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeeAdvancesDialogProps) {
+export function EmployeeAdvancesPanel({ employeeId, employeeName, canManage, isActive }: EmployeeAdvancesPanelProps) {
 	const currentPeriod = getCurrentEmployeeAdvancePeriod();
 	const [year, setYear] = useState(currentPeriod.year);
 	const [month, setMonth] = useState(currentPeriod.month);
@@ -243,7 +242,7 @@ export function EmployeeAdvancesDialog({ employeeId, employeeName, open, onOpenC
 	const [reviewNote, setReviewNote] = useState("");
 	const [approvedAmount, setApprovedAmount] = useState("");
 	const [reference, setReference] = useState("");
-	const advancesQuery = useEmployeeAdvances(employeeId, year, month, open && canManage);
+	const advancesQuery = useEmployeeAdvances(employeeId, year, month, isActive && canManage);
 	const createAdvance = useCreateEmployeeAdvance();
 	const approveAdvance = useApproveEmployeeAdvance();
 	const rejectAdvance = useRejectEmployeeAdvance();
@@ -270,14 +269,6 @@ export function EmployeeAdvancesDialog({ employeeId, employeeName, open, onOpenC
 		setReviewNote("");
 		setApprovedAmount("");
 		setReference("");
-	};
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) {
-			setRequestError(null);
-			resetAction();
-		}
-		onOpenChange(isOpen);
 	};
 
 	const openActionDialog = (advance: EmployeeAdvance, action: EmployeeAdvanceAction, settlement?: EmployeeAdvanceSettlement) => {
@@ -365,12 +356,11 @@ export function EmployeeAdvancesDialog({ employeeId, employeeName, open, onOpenC
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
-					<DialogHeader>
-						<DialogTitle>Advances: {employeeName}</DialogTitle>
-						<DialogDescription>Submit, approve, disburse, and track employee advance recovery for the selected period.</DialogDescription>
-					</DialogHeader>
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold">Advances for {employeeName}</h2>
+					<p className="text-sm text-muted-foreground">Submit, approve, disburse, and track employee advance recovery for the selected period.</p>
+				</div>
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 						<div>
@@ -471,8 +461,7 @@ export function EmployeeAdvancesDialog({ employeeId, employeeName, open, onOpenC
 							</section>
 						</div>
 					) : null}
-				</DialogContent>
-			</Dialog>
+			</div>
 
 			<AlertDialog open={Boolean(pendingAction)} onOpenChange={(isOpen) => !isOpen && resetAction()}>
 				<AlertDialogContent>

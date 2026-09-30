@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { handleApiError } from "@/lib/errorHandling";
@@ -16,12 +16,11 @@ import { employeeDocumentAcceptAttribute, validateEmployeeDocumentFile, validate
 import { useDeleteEmployeeDocument, useEmployeeDocuments, useUploadEmployeeDocument } from "../hooks/useEmployeeDocuments";
 import type { EmployeeDocument } from "../types/employee-document";
 
-interface EmployeeDocumentsDialogProps {
+interface EmployeeDocumentsPanelProps {
 	employeeId: number;
 	employeeName: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
 	canManage: boolean;
+	isActive: boolean;
 }
 
 function formatFileSize(size: number): string {
@@ -45,14 +44,14 @@ function DocumentIcon({ document }: { document: EmployeeDocument }) {
 	return <FileText className="h-5 w-5 text-muted-foreground" />;
 }
 
-export function EmployeeDocumentsDialog({ employeeId, employeeName, open, onOpenChange, canManage }: EmployeeDocumentsDialogProps) {
+export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, isActive }: EmployeeDocumentsPanelProps) {
 	const [name, setName] = useState("");
 	const [documentType, setDocumentType] = useState("");
 	const [file, setFile] = useState<File | null>(null);
 	const [fileInputKey, setFileInputKey] = useState(0);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 	const [pendingDelete, setPendingDelete] = useState<EmployeeDocument | null>(null);
-	const documentsQuery = useEmployeeDocuments(employeeId, open && canManage);
+	const documentsQuery = useEmployeeDocuments(employeeId, isActive && canManage);
 	const uploadDocument = useUploadEmployeeDocument();
 	const deleteDocument = useDeleteEmployeeDocument();
 	const documents = [...(documentsQuery.data ?? [])].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
@@ -63,11 +62,6 @@ export function EmployeeDocumentsDialog({ employeeId, employeeName, open, onOpen
 		setFile(null);
 		setFileInputKey((key) => key + 1);
 		setUploadError(null);
-	};
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (!isOpen) setPendingDelete(null);
-		onOpenChange(isOpen);
 	};
 
 	const handleFileChange = (selectedFile: File | null) => {
@@ -118,12 +112,11 @@ export function EmployeeDocumentsDialog({ employeeId, employeeName, open, onOpen
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-					<DialogHeader>
-						<DialogTitle>Documents: {employeeName}</DialogTitle>
-						<DialogDescription>Upload, download, and securely manage documents stored for this employee.</DialogDescription>
-					</DialogHeader>
+			<div className="space-y-5">
+				<div>
+					<h2 className="text-lg font-semibold">Documents for {employeeName}</h2>
+					<p className="text-sm text-muted-foreground">Upload, download, and securely manage documents stored for this employee.</p>
+				</div>
 
 					<section className="space-y-3">
 						<div>
@@ -217,8 +210,7 @@ export function EmployeeDocumentsDialog({ employeeId, employeeName, open, onOpen
 							</div>
 						)}
 					</section>
-				</DialogContent>
-			</Dialog>
+			</div>
 
 			<AlertDialog open={Boolean(pendingDelete)} onOpenChange={(isOpen) => { if (!isOpen) setPendingDelete(null); }}>
 				<AlertDialogContent>
