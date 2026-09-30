@@ -13,10 +13,6 @@ export function isValidLateDeductionPeriod(year: number, month: number): boolean
 	return Number.isInteger(year) && year >= 1000 && year <= 9999 && Number.isInteger(month) && month >= 1 && month <= 12;
 }
 
-export function toLateDeductionMonth(month: number): string {
-	return String(month).padStart(2, "0");
-}
-
 export function formatLateDeductionOccurrence(occurrenceNumber: number | null): string {
 	if (occurrenceNumber === null) return "Not applicable";
 	return occurrenceNumber >= 4 ? "4+" : String(occurrenceNumber);

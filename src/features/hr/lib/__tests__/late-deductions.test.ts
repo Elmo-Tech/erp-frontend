@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLateDeductionOverridePayload, formatLateDeductionOccurrence, isValidLateDeductionPeriod, lateDeductionOverrideSchema, toLateDeductionMonth } from "../late-deductions";
+import { buildLateDeductionOverridePayload, formatLateDeductionOccurrence, isValidLateDeductionPeriod, lateDeductionOverrideSchema } from "../late-deductions";
 import type { LateDeductionOverrideFormValues } from "../../types/late-deductions";
 
 const override: LateDeductionOverrideFormValues = {
@@ -8,10 +8,9 @@ const override: LateDeductionOverrideFormValues = {
 };
 
 describe("late deduction helpers", () => {
-	it("validates reporting periods and serializes month values for the API", () => {
+	it("validates reporting periods", () => {
 		expect(isValidLateDeductionPeriod(2026, 5)).toBe(true);
 		expect(isValidLateDeductionPeriod(2026, 13)).toBe(false);
-		expect(toLateDeductionMonth(5)).toBe("05");
 	});
 
 	it("labels the capped fourth monthly occurrence as 4+", () => {

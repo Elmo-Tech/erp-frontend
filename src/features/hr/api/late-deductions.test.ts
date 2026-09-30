@@ -29,7 +29,7 @@ describe("lateDeductionsApi", () => {
 		await expect(lateDeductionsApi.getEmployeeLateDeductions(12, 2026, 5)).resolves.toEqual(result);
 		await expect(lateDeductionsApi.evaluateEmployeeLateDeductions(12, 2026, 5)).resolves.toEqual(result);
 
-		expect(api.get).toHaveBeenCalledWith("/employees/12/late-deductions", { params: { year: 2026, month: "05" } });
+		expect(api.get).toHaveBeenCalledWith("/employees/12/late-deductions", { params: { year: 2026, month: 5 } });
 		expect(api.post).toHaveBeenCalledWith("/employees/12/late-deductions/evaluate", { year: 2026, month: 5 });
 	});
 

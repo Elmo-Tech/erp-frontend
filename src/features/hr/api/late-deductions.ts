@@ -1,10 +1,9 @@
 import api from "@/lib/axios";
-import { toLateDeductionMonth } from "../lib/late-deductions";
 import type { EvaluateLateDeductionsPayload, LateDeductionRecord, LateDeductionsResponse, OverrideLateDeductionPayload } from "../types/late-deductions";
 
 export const lateDeductionsApi = {
 	getEmployeeLateDeductions: async (employeeId: number, year: number, month: number): Promise<LateDeductionsResponse> => {
-		const response = await api.get(`/employees/${employeeId}/late-deductions`, { params: { year, month: toLateDeductionMonth(month) } });
+		const response = await api.get(`/employees/${employeeId}/late-deductions`, { params: { year, month } });
 		return response.data.data;
 	},
 

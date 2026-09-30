@@ -29,7 +29,7 @@ describe("employeeAdvancesApi", () => {
 		await expect(employeeAdvancesApi.getEmployeeAdvances(12, 2026, 5)).resolves.toEqual(list);
 		await expect(employeeAdvancesApi.getEmployeeAdvance(8)).resolves.toEqual(advance);
 
-		expect(api.get).toHaveBeenNthCalledWith(1, "/employees/12/advances", { params: { year: 2026, month: "05" } });
+		expect(api.get).toHaveBeenNthCalledWith(1, "/employees/12/advances", { params: { year: 2026, month: 5 } });
 		expect(api.get).toHaveBeenNthCalledWith(2, "/employee-advances/8");
 	});
 

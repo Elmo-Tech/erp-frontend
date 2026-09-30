@@ -3,7 +3,7 @@ import type { ApproveEmployeeAdvancePayload, CreateEmployeeAdvancePayload, Disbu
 
 export const employeeAdvancesApi = {
 	getEmployeeAdvances: async (employeeId: number, year: number, month: number): Promise<EmployeeAdvancesResponse> => {
-		const response = await api.get(`/employees/${employeeId}/advances`, { params: { year, month: String(month).padStart(2, "0") } });
+		const response = await api.get(`/employees/${employeeId}/advances`, { params: { year, month } });
 		return response.data.data;
 	},
 
