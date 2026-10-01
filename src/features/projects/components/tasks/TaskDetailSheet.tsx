@@ -18,7 +18,7 @@ import { TaskTimerWidget } from "./TaskTimerWidget";
 import { TaskTimeEntriesSection } from "./TaskTimeEntriesSection";
 import { TaskSupervisionSection } from "./TaskSupervisionSection";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { Clock, AlertCircle, CheckCircle2, Calendar, TrendingUp, TrendingDown } from "lucide-react";
+import { Clock, AlertCircle, CheckCircle2, Calendar, TrendingUp, TrendingDown, UserRoundCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -76,12 +76,12 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 	const { data: task, isLoading } = useTask(taskId ?? 0, !!taskId && open);
 	const { data: activities } = useTaskActivities(taskId ?? 0, !!taskId && open);
 	const { data: testScenarios } = useTestScenarios(taskId ?? 0, !!taskId && open);
-	const { canEditMainTasks, canEditWeeklyTasks, canEditSubtasks } = usePermissions();
+	const { canEditMainTasks, canEditWeeklyTasks, canEditSubtasks, canManageTasks } = usePermissions();
 
 	if (!taskId) return null;
 
 	// Determine if user can edit this specific task based on its type
-	const canEditThisTask = task && onEdit && ((task.type === TaskType.MAIN && canEditMainTasks) || (task.type === TaskType.WEEKLY && canEditWeeklyTasks) || (task.type === TaskType.SUBTASK && canEditSubtasks));
+	const canEditThisTask = task && onEdit && (canManageTasks || (task.type === TaskType.MAIN && canEditMainTasks) || (task.type === TaskType.WEEKLY && canEditWeeklyTasks) || (task.type === TaskType.SUBTASK && canEditSubtasks));
 
 	const formatTimeSpent = (minutes: number) => {
 		const hours = Math.floor(minutes / 60);
@@ -99,14 +99,14 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 			open={open}
 			onOpenChange={onOpenChange}
 		>
-			<SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col h-full overflow-hidden">
+			<SheetContent className="w-full sm:max-w-3xl! p-0 flex flex-col h-full overflow-hidden">
 				{isLoading ? (
 					<div className="flex items-center justify-center h-full">
 						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
 					</div>
 				) : task ? (
 					<div className="flex flex-col h-full overflow-hidden">
-						<SheetHeader className="p-6 pb-0 shrink-0">
+						<SheetHeader className="p-6 pr-12 pb-0 shrink-0">
 							<div className="flex items-start justify-between gap-4">
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-2 mb-2">
@@ -114,14 +114,14 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 											priority={task.priority}
 											size="sm"
 										/>
-										<TaskTypeBadge
+										{!task.isPipelineTask && <TaskTypeBadge
 											type={task.type}
 											size="sm"
-										/>
-										<TaskStatusBadge
+										/>}
+										{task.workflowStage ? <Badge variant="outline" style={{ borderColor: task.workflowStage.color }}>{task.workflowStage.name}</Badge> : <TaskStatusBadge
 											status={task.status}
 											size="sm"
-										/>
+										/>}
 										{task.taskCategory && (
 											<TaskCategoryBadge
 												category={task.taskCategory}
@@ -148,10 +148,15 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 								)}
 							</div>
 						</SheetHeader>
+						<div className="mx-6 mt-3 flex items-center gap-2 rounded-md bg-muted/40 p-3 text-sm">
+							<UserRoundCheck className="h-4 w-4 text-muted-foreground" />
+							<span>Supervisor: <strong>{task.supervisor?.name ?? "Not assigned"}</strong></span>
+							<Button variant="link" size="sm" className="ml-auto h-auto p-0" onClick={() => setActiveTab("supervision")}>Manage supervision</Button>
+						</div>
 
 						{/* Timer Widget - Only show for leaf tasks (no children) */}
 						{task.canStartTimer && (
-							<div className="px-6 py-4">
+							<div className="px-6 py-3">
 								<TaskTimerWidget task={task} />
 							</div>
 						)}
@@ -232,6 +237,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 										)}
 
 										{/* Acceptance Criteria */}
+										{task.holdReason && <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm"><strong>On hold:</strong> {task.holdReason}</div>}
 										{task.acceptanceCriteria && (
 											<div>
 												<h4 className="text-sm font-medium mb-2">Acceptance Criteria</h4>

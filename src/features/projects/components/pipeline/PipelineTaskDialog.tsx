@@ -12,6 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useEmployees } from "@/features/hr/hooks/useEmployees";
+import { useAuthStore } from "@/store/authStore";
+import { handleApiError } from "@/lib/errorHandling";
+import { getViableSupervisorCandidates } from "@/features/dashboard/lib/taskSupervision";
+import { useProjectMembers } from "../../hooks/useProjectMembers";
 import {
 	useCreatePipelineTask,
 	useDeletePipelineTaskCover,
@@ -38,11 +42,20 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 	const deleteCover = useDeletePipelineTaskCover(projectId);
 	const permissions = usePermissions();
 	const canAssignEmployees = permissions.canAssignTasks || permissions.canManageTasks;
-	const employees = useEmployees({ isActive: true, perPage: 100 }, canAssignEmployees && open);
+	const role = useAuthStore((state) => state.role);
+	const canAssignSupervisor = permissions.canManageTaskTeam || role === "admin" || role === "super-admin";
+	const employees = useEmployees({ isActive: true, perPage: 100 }, (canAssignEmployees || canAssignSupervisor) && open);
+	const members = useProjectMembers(projectId, canAssignSupervisor && open);
 	const [title, setTitle] = useState(task?.title ?? "");
 	const [description, setDescription] = useState(task?.description ?? "");
 	const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">(task?.priority ?? "medium");
 	const [assignedUserIds, setAssignedUserIds] = useState<number[]>(task?.assignees.map((assignee) => assignee.userId) ?? []);
+	const [supervisorId, setSupervisorId] = useState(task?.supervisorId ? String(task.supervisorId) : "none");
+	const supervisorCandidates = getViableSupervisorCandidates([
+		...(employees.data?.employees ?? []),
+		...(members.data?.members.map((member) => member.user ?? { userId: member.userId, name: `User ${member.userId}` }) ?? []),
+		task?.supervisor,
+	]);
 	const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
 	const [estimatedHours, setEstimatedHours] = useState(task?.estimatedHours != null ? String(task.estimatedHours) : "");
 	const [workflowStageId, setWorkflowStageId] = useState(String(task?.workflowStageId ?? stage?.stageId ?? ""));
@@ -75,6 +88,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 						description: description.trim() || null,
 						priority,
 						...(canAssignEmployees ? { assignedUserIds } : {}),
+						...(canAssignSupervisor ? { supervisorId: supervisorId === "none" ? null : Number(supervisorId) } : {}),
 						dueDate: dueDate || null,
 						estimatedHours: estimatedHours ? Number(estimatedHours) : null,
 					},
@@ -86,12 +100,13 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 					description: description.trim() || undefined,
 					priority,
 					assignedUserIds: assignedUserIds.length > 0 ? assignedUserIds : undefined,
+					...(canAssignSupervisor ? { supervisorId: supervisorId === "none" ? null : Number(supervisorId) } : {}),
 					dueDate: dueDate || undefined,
 					estimatedHours: estimatedHours ? Number(estimatedHours) : undefined,
 				});
 			}
-		} catch {
-			toast.error(isEditing ? "Could not update the task" : "Could not create the pipeline task");
+		} catch (error) {
+			toast.error(handleApiError(error));
 			return;
 		}
 
@@ -195,6 +210,21 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 							<p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">You can create an unassigned task. Assigning employees requires task assignment permission.</p>
 						)}
 					</div>
+
+					{canAssignSupervisor && (
+						<div className="space-y-2">
+							<Label htmlFor="pipeline-task-supervisor">Supervisor</Label>
+							<Select value={supervisorId} onValueChange={setSupervisorId} disabled={isPending}>
+								<SelectTrigger id="pipeline-task-supervisor"><SelectValue placeholder="Choose a supervisor" /></SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">No supervisor</SelectItem>
+									{supervisorCandidates.map((candidate) => <SelectItem key={candidate.userId} value={String(candidate.userId)}>{candidate.name}</SelectItem>)}
+								</SelectContent>
+							</Select>
+							<p className="text-xs text-muted-foreground">Choose an active employee or project member. The supervisor is added to the project and tracks supervision separately from work.</p>
+							{(employees.isError || members.isError) && <p className="text-xs text-destructive">Some supervisor candidates could not be loaded. <button type="button" className="underline" onClick={() => { employees.refetch(); members.refetch(); }}>Try again</button></p>}
+						</div>
+					)}
 
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

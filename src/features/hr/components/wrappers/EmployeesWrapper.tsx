@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Users } from "lucide-react";
 import { useEmployees, useDeactivateEmployee, useActivateEmployee } from "../../hooks";
 import { EmployeeCard } from "../EmployeeCard";
-import { EmployeeDetailsSheet } from "../EmployeeDetailsSheet";
 import { CreateEmployeeForm, UpdateEmployeeForm } from "../employees";
 import type { Employee } from "../../types";
 import { useRoles } from "@/features/admin/hooks/useRoles";
@@ -17,11 +17,11 @@ import { getRoleLabel } from "@/config/simplification";
 import { useAuthStore } from "@/store/authStore";
 
 export function EmployeesWrapper() {
+	const router = useRouter();
 	const [search, setSearch] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
 	const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-	const [showEmployeeDetailsSheet, setShowEmployeeDetailsSheet] = useState(false);
 	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
 	const { data, isLoading } = useEmployees({
@@ -42,18 +42,11 @@ export function EmployeesWrapper() {
 
 	const handleEdit = (employee: Employee) => {
 		setSelectedEmployee(employee);
-		setShowEmployeeDetailsSheet(false);
 		setShowUpdateDialog(true);
 	};
 
 	const handleOpenEmployeeDetails = (employee: Employee) => {
-		setSelectedEmployee(employee);
-		setShowEmployeeDetailsSheet(true);
-	};
-
-	const handleEmployeeDetailsOpenChange = (isOpen: boolean) => {
-		setShowEmployeeDetailsSheet(isOpen);
-		if (!isOpen) setSelectedEmployee(null);
+		router.push(`/dashboard/employees/${employee.userId}`);
 	};
 
 	const handleToggleStatus = async (employee: Employee) => {
@@ -160,16 +153,6 @@ export function EmployeesWrapper() {
 					open={showCreateDialog}
 					onOpenChange={setShowCreateDialog}
 					roles={roleOptions}
-				/>
-			)}
-
-			{selectedEmployee && (
-				<EmployeeDetailsSheet
-					employee={selectedEmployee}
-					open={showEmployeeDetailsSheet}
-					onOpenChange={handleEmployeeDetailsOpenChange}
-					canManage={canManageEmployees}
-					onEdit={handleEdit}
 				/>
 			)}
 

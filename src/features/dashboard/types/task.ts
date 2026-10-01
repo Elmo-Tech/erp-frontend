@@ -206,6 +206,8 @@ export interface Task {
 	hasChildren: boolean;
 	internalReviewerNotes?: string; // Only present if user has view_internal_notes permission
 	holdReason?: string | null;
+	isPipelineTask?: boolean;
+	workflowStage?: { stageId: number; name: string; color: string; category: string; isTerminal: boolean };
 
 	// Delivery tracking
 	completedAt: string | null;

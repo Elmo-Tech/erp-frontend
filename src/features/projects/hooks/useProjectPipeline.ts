@@ -13,6 +13,7 @@ export const useProjectPipeline = (projectId: number) =>
 		queryKey: projectPipelineKeys.detail(projectId),
 		queryFn: () => projectPipelineApi.get(projectId),
 		enabled: projectId > 0,
+		refetchInterval: 30_000,
 	});
 
 export const useCreatePipelineTask = (projectId: number) => {
@@ -20,7 +21,11 @@ export const useCreatePipelineTask = (projectId: number) => {
 
 	return useMutation({
 		mutationFn: (payload: CreatePipelineTaskPayload) => projectPipelineApi.createTask(projectId, payload),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+		onSuccess: () => Promise.all([
+			queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+			queryClient.invalidateQueries({ queryKey: ["projectMembers"] }),
+			queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+		]),
 	});
 };
 
@@ -29,7 +34,10 @@ export const useMovePipelineTask = (projectId: number) => {
 
 	return useMutation({
 		mutationFn: ({ taskId, workflowStageId }: { taskId: number; workflowStageId: number }) => projectPipelineApi.moveTask(projectId, taskId, workflowStageId),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+		onSuccess: () => Promise.all([
+			queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+			queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+		]),
 	});
 };
 
@@ -39,7 +47,12 @@ export const useUpdatePipelineTask = (projectId: number) => {
 	return useMutation({
 		mutationFn: ({ taskId, payload }: { taskId: number; payload: UpdatePipelineTaskPayload }) =>
 			projectPipelineApi.updateTask(projectId, taskId, payload),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+		onSuccess: () => Promise.all([
+			queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+			queryClient.invalidateQueries({ queryKey: ["projectMembers"] }),
+			queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+			queryClient.invalidateQueries({ queryKey: ["task-supervision"] }),
+		]),
 	});
 };
 

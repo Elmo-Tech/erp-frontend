@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { DndContext, DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { format, isBefore, parseISO, startOfToday } from "date-fns";
-import { CalendarDays, Clock3, Flag, GripVertical, Loader2, MoreHorizontal, Pencil, Play, Plus, Settings2, Square, Trash2, UsersRound } from "lucide-react";
+import { CalendarDays, Clock3, Flag, GripVertical, MoreHorizontal, Pencil, Plus, Settings2, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FormCombobox } from "@/components/shared/forms";
@@ -22,12 +22,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
-import { useResumeTimer, useStartTimer, useStopTimer } from "@/features/sales/hooks";
-import { TrackableType } from "@/features/sales/types";
 import { useAuthStore } from "@/store/authStore";
-import { useTimerStore } from "@/store/timerStore";
+import { TaskWorkControls } from "../tasks/TaskWorkControls";
+import { TaskDetailSheet } from "../tasks/TaskDetailSheet";
 import { useProjects } from "../../hooks/useProjects";
 import { useDeletePipelineTask, useMovePipelineTask, useProjectPipeline } from "../../hooks/useProjectPipeline";
 import type { PipelineTask, ProjectWorkflowStage } from "../../types/pipeline";
@@ -44,47 +44,28 @@ const priorityClasses: Record<PipelineTask["priority"], string> = {
 interface DraggableTaskCardProps {
 	task: PipelineTask;
 	dragDisabled: boolean;
-	timerState: PipelineTimerState;
+	stage: ProjectWorkflowStage;
 	actions: PipelineTaskCardActions;
-}
-
-interface PipelineTimerState {
-	activeTaskId: number | null;
-	resumableTaskId: number | null;
-	hasActiveTimer: boolean;
-	hasResumableTimer: boolean;
-	isPending: boolean;
 }
 
 interface PipelineTaskCardActions {
 	canEdit: boolean;
 	canDelete: boolean;
 	canStartTimer: boolean;
+	onOpen: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
-	onStartTimer: () => void;
-	onResumeTimer: () => void;
-	onStopTimer: () => void;
 }
 
-function DraggableTaskCard({ task, dragDisabled, timerState, actions }: DraggableTaskCardProps) {
+export function DraggableTaskCard({ task, dragDisabled, stage, actions }: DraggableTaskCardProps) {
 	const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
 		id: `pipeline-task-${task.taskId}`,
 		data: { taskId: task.taskId, stageId: task.workflowStageId },
 		disabled: dragDisabled,
 	});
 	const dueDate = task.dueDate ? parseISO(task.dueDate) : null;
-	const isOverdue = dueDate ? isBefore(dueDate, startOfToday()) : false;
-	const isTimerRunning = timerState.activeTaskId === task.taskId;
-	const isTimerResumable = timerState.resumableTaskId === task.taskId;
-	const isAnotherTimerPending =
-		(timerState.hasActiveTimer && !isTimerRunning)
-		|| (timerState.hasResumableTimer && !isTimerResumable);
-	const timerActionLabel = isTimerRunning
-		? `End timer for ${task.title}`
-		: isTimerResumable
-			? `Resume timer for ${task.title}`
-			: `Start timer for ${task.title}`;
+	const isOverdue = !stage.isTerminal && dueDate ? isBefore(dueDate, startOfToday()) : false;
+	const minutes = task.totalTimeSpent ?? 0;
 
 	return (
 		<article
@@ -123,11 +104,9 @@ function DraggableTaskCard({ task, dragDisabled, timerState, actions }: Draggabl
 				<button
 					type="button"
 					className={cn(
-						"min-w-0 flex-1 text-left text-sm font-semibold leading-5 text-foreground",
-						actions.canEdit && "rounded-sm hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						"min-w-0 flex-1 rounded-sm text-left text-sm font-semibold leading-5 text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					)}
-					onClick={actions.canEdit ? actions.onEdit : undefined}
-					disabled={!actions.canEdit}
+					onClick={actions.onOpen}
 				>
 					{task.title}
 				</button>
@@ -138,7 +117,7 @@ function DraggableTaskCard({ task, dragDisabled, timerState, actions }: Draggabl
 								type="button"
 								variant="ghost"
 								size="icon"
-								className="-mr-1 -mt-1 h-7 w-7 shrink-0 opacity-60 transition-opacity hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:data-[state=open]:opacity-100"
+								className="-mr-1 -mt-1 h-7 w-7 shrink-0"
 								aria-label={`Actions for ${task.title}`}
 							>
 								<MoreHorizontal className="h-4 w-4" />
@@ -164,6 +143,10 @@ function DraggableTaskCard({ task, dragDisabled, timerState, actions }: Draggabl
 			</div>
 
 			{task.description && <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">{task.description}</p>}
+			<div className="mt-2 flex items-center justify-between gap-2">
+				<Badge variant="outline" className="text-[10px]" style={{ borderColor: stage.color }}>{stage.name}</Badge>
+				<span className="text-[10px] text-muted-foreground">#{task.taskId}</span>
+			</div>
 
 			<div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
 				<span className={cn("flex items-center gap-1 font-medium capitalize", priorityClasses[task.priority])}>
@@ -184,25 +167,22 @@ function DraggableTaskCard({ task, dragDisabled, timerState, actions }: Draggabl
 				)}
 			</div>
 
-			<div className="mt-3 flex min-h-7 items-center justify-between border-t pt-2.5">
+			<div className="mt-3 space-y-3 border-t pt-3">
+				<p className="flex items-center justify-between text-xs text-muted-foreground"><span>Logged work</span><span className="font-medium text-foreground">{Math.floor(minutes / 60)}h {minutes % 60}m{task.estimatedHours != null && ` / ${task.estimatedHours}h planned`}</span></p>
+				<div>
+					<p className="mb-1.5 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"><UsersRound className="h-3 w-3" />Assigned employees</p>
 				{task.assignees.length > 0 ? (
-					<div className="flex min-w-0 items-center gap-2">
-						<div className="flex -space-x-1.5">
-							{task.assignees.slice(0, 3).map((assignee) => (
-								<Avatar key={assignee.userId} className="h-6 w-6 border-2 border-card">
+					<div className="space-y-1.5">
+							{task.assignees.map((assignee) => (
+								<div key={assignee.userId} className="flex items-center gap-2 text-xs">
+								<Avatar className="h-6 w-6 border-2 border-card">
 									<AvatarImage src={assignee.avatar} alt={assignee.name} />
 									<AvatarFallback className="text-[8px]">{assignee.name.slice(0, 2).toUpperCase()}</AvatarFallback>
 								</Avatar>
+								<span className="min-w-0 flex-1 truncate">{assignee.name}</span>
+								{assignee.isPrimary && <span className="text-[10px] text-muted-foreground">Primary</span>}
+								</div>
 							))}
-							{task.assignees.length > 3 && (
-								<span className="relative flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-[9px] font-semibold">
-									+{task.assignees.length - 3}
-								</span>
-							)}
-						</div>
-						<span className="truncate text-xs text-muted-foreground">
-							{task.assignees.length === 1 ? task.assignees[0].name : `${task.assignees.length} assignees`}
-						</span>
 					</div>
 				) : (
 					<span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -210,32 +190,14 @@ function DraggableTaskCard({ task, dragDisabled, timerState, actions }: Draggabl
 						Unassigned
 					</span>
 				)}
-				<div className="flex shrink-0 items-center gap-1">
-					{(actions.canStartTimer || isTimerRunning || isTimerResumable) && (
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className={cn(
-								"h-7 w-7",
-								isTimerRunning && "bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 hover:text-emerald-800 dark:text-emerald-300"
-							)}
-							onClick={isTimerRunning ? actions.onStopTimer : isTimerResumable ? actions.onResumeTimer : actions.onStartTimer}
-							disabled={timerState.isPending || isAnotherTimerPending}
-							aria-label={timerActionLabel}
-							title={isTimerRunning ? "End timer" : isTimerResumable ? "Resume timer" : isAnotherTimerPending ? "Finish your current timer first" : "Start timer"}
-						>
-							{timerState.isPending ? (
-								<Loader2 className="h-3.5 w-3.5 animate-spin" />
-							) : isTimerRunning ? (
-								<Square className="h-3.5 w-3.5 fill-current" />
-							) : (
-								<Play className="h-3.5 w-3.5 fill-current" />
-							)}
-						</Button>
-					)}
-					<span className="text-[10px] font-medium text-muted-foreground">#{task.taskId}</span>
 				</div>
+				<div className="flex items-center gap-2 rounded-md bg-muted/40 p-2 text-xs">
+					<UserRoundCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+					<div className="min-w-0"><p className="text-[10px] text-muted-foreground">Supervisor</p><p className="truncate font-medium">{task.supervisor?.name ?? "Not assigned"}</p></div>
+				</div>
+				{task.holdReason && <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-xs">On hold: {task.holdReason}</p>}
+				<TaskWorkControls taskId={task.taskId} title={task.title} canWork={actions.canStartTimer} activeWorkTimers={task.activeWorkTimers} disabledReason={stage.isTerminal ? "This task is closed." : undefined} />
+				<Button type="button" variant="ghost" size="sm" className="h-7 w-full text-xs" onClick={actions.onOpen}>Open task details</Button>
 			</div>
 		</article>
 	);
@@ -252,25 +214,22 @@ interface PipelineCapabilities {
 
 interface PipelineColumnActions {
 	onCreate: () => void;
+	onOpen: (task: PipelineTask) => void;
 	onEdit: (task: PipelineTask) => void;
 	onDelete: (task: PipelineTask) => void;
-	onStartTimer: (task: PipelineTask) => void;
-	onResumeTimer: () => void;
-	onStopTimer: () => void;
 }
 
 interface PipelineColumnProps {
 	stage: ProjectWorkflowStage;
 	capabilities: PipelineCapabilities;
-	timerState: PipelineTimerState;
 	actions: PipelineColumnActions;
 }
 
-function PipelineColumn({ stage, capabilities, timerState, actions }: PipelineColumnProps) {
+function PipelineColumn({ stage, capabilities, actions }: PipelineColumnProps) {
 	const { setNodeRef, isOver } = useDroppable({ id: `pipeline-stage-${stage.stageId}`, data: { stageId: stage.stageId } });
 
 	return (
-		<section ref={setNodeRef} className={cn("w-[306px] shrink-0 rounded-xl bg-muted/40 p-2.5 transition-colors", isOver && "bg-primary/10 ring-2 ring-primary/20")}>
+		<section ref={setNodeRef} className={cn("w-[340px] shrink-0 rounded-xl bg-muted/40 p-2.5 transition-colors", isOver && "bg-primary/10 ring-2 ring-primary/20")}>
 			<header className="mb-2 flex h-10 items-center justify-between px-1">
 				<div className="flex items-center gap-2">
 					<span className="h-2.5 w-2.5 rounded-full shadow-xs" style={{ backgroundColor: stage.color }} />
@@ -287,16 +246,14 @@ function PipelineColumn({ stage, capabilities, timerState, actions }: PipelineCo
 							key={task.taskId}
 							task={task}
 							dragDisabled={!capabilities.canMove}
-							timerState={timerState}
+							stage={stage}
 							actions={{
 								canEdit: capabilities.canEdit,
 								canDelete: capabilities.canDelete,
 								canStartTimer: capabilities.canStartTimer && isAssignedToCurrentUser && !stage.isTerminal,
+								onOpen: () => actions.onOpen(task),
 								onEdit: () => actions.onEdit(task),
 								onDelete: () => actions.onDelete(task),
-								onStartTimer: () => actions.onStartTimer(task),
-								onResumeTimer: actions.onResumeTimer,
-								onStopTimer: actions.onStopTimer,
 							}}
 						/>
 					);
@@ -319,36 +276,19 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 	const projects = useProjects({ perPage: 100 });
 	const moveTask = useMovePipelineTask(projectId);
 	const deleteTask = useDeletePipelineTask(projectId);
-	const startTimer = useStartTimer();
-	const resumeTimer = useResumeTimer();
-	const stopTimer = useStopTimer();
 	const permissions = usePermissions();
 	const currentUserId = useAuthStore((state) => state.user?.userId);
-	const activeTimer = useTimerStore((state) => state.activeTimer);
-	const resumableTimer = useTimerStore((state) => state.resumableTimer);
 	const [projectSearch, setProjectSearch] = useState("");
 	const [taskDialog, setTaskDialog] = useState<{ stage: ProjectWorkflowStage; task?: PipelineTask } | null>(null);
 	const [taskToDelete, setTaskToDelete] = useState<PipelineTask | null>(null);
 	const [workflowOpen, setWorkflowOpen] = useState(false);
+	const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
 	const canCreate = permissions.canCreateMainTasks || permissions.canManageTasks;
 	const canMove = permissions.canEditMainTasks || permissions.canManageTasks;
 	const canEdit = permissions.canEditMainTasks || permissions.canManageTasks;
 	const canDelete = permissions.canDeleteTasks || permissions.canManageTasks;
-	const activeTaskId = activeTimer?.trackableType.toLowerCase().includes("task")
-		? Number(activeTimer.trackableId)
-		: null;
-	const resumableTaskId = resumableTimer?.trackableType.toLowerCase().includes("task")
-		? Number(resumableTimer.trackableId)
-		: null;
-	const timerState: PipelineTimerState = {
-		activeTaskId,
-		resumableTaskId,
-		hasActiveTimer: Boolean(activeTimer),
-		hasResumableTimer: Boolean(resumableTimer),
-		isPending: startTimer.isPending || resumeTimer.isPending || stopTimer.isPending,
-	};
 	const capabilities: PipelineCapabilities = {
 		canMove: canMove && !moveTask.isPending,
 		canCreate,
@@ -391,40 +331,6 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 		}
 	};
 
-	const handleStartTimer = async (task: PipelineTask) => {
-		try {
-			await startTimer.mutateAsync({
-				trackableType: TrackableType.TASK,
-				trackableId: task.taskId,
-			});
-			await pipeline.refetch();
-			toast.success(`Timer started for “${task.title}”`);
-		} catch {
-			toast.error("Could not start the timer");
-		}
-	};
-
-	const handleStopTimer = async () => {
-		try {
-			await stopTimer.mutateAsync();
-			toast.success("Timer ended");
-		} catch {
-			toast.error("Could not end the timer");
-		}
-	};
-
-	const handleResumeTimer = async () => {
-		if (!resumableTimer) return;
-
-		try {
-			await resumeTimer.mutateAsync(resumableTimer.timeEntryId);
-			await pipeline.refetch();
-			toast.success("Timer resumed");
-		} catch {
-			toast.error("Could not resume the timer");
-		}
-	};
-
 	if (pipeline.isLoading) {
 		return <div className="flex gap-4 overflow-hidden">{[1, 2, 3].map((item) => <Skeleton key={item} className="h-80 w-[290px] shrink-0" />)}</div>;
 	}
@@ -460,7 +366,7 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 
 			<div className="flex flex-col gap-1 border-b pb-3">
 				<h2 className="text-sm font-semibold">Project board</h2>
-				<p className="text-xs text-muted-foreground">Drag tasks between statuses, or use the task menu to edit details and assignees.</p>
+				<p className="text-xs text-muted-foreground">Open a task for its team, supervision, and time history. Manage work directly from each card.</p>
 			</div>
 
 			<DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -470,19 +376,24 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 							key={stage.stageId}
 							stage={stage}
 							capabilities={capabilities}
-							timerState={timerState}
 							actions={{
 								onCreate: () => setTaskDialog({ stage }),
+								onOpen: (task) => setSelectedTaskId(task.taskId),
 								onEdit: (task) => setTaskDialog({ stage, task }),
 								onDelete: setTaskToDelete,
-								onStartTimer: handleStartTimer,
-								onResumeTimer: handleResumeTimer,
-								onStopTimer: handleStopTimer,
 							}}
 						/>
 					))}
 				</div>
 			</DndContext>
+
+			{selectedTaskId && (
+				<TaskDetailSheet key={selectedTaskId} taskId={selectedTaskId} open onOpenChange={(open) => !open && setSelectedTaskId(null)} onEdit={canEdit ? (task) => {
+					const stage = pipeline.data.stages.find((item) => item.tasks.some((entry) => entry.taskId === task.taskId));
+					const pipelineTask = stage?.tasks.find((entry) => entry.taskId === task.taskId);
+					if (stage && pipelineTask) { setSelectedTaskId(null); setTaskDialog({ stage, task: pipelineTask }); }
+				} : undefined} />
+			)}
 
 			{taskDialog && (
 				<PipelineTaskDialog

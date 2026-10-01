@@ -61,6 +61,7 @@ export const useSetTaskSupervisor = () => {
 			queryClient.invalidateQueries({ queryKey: taskKeys.projectTasks(projectId) });
 			queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 			queryClient.invalidateQueries({ queryKey: [...taskKeys.all, "my-assigned"] });
+			queryClient.invalidateQueries({ queryKey: ["project-pipeline", projectId] });
 		},
 	});
 };

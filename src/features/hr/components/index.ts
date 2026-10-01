@@ -12,7 +12,7 @@ export { EmployeesWrapper } from "./wrappers";
 // OTHER COMPONENTS
 // ============================================
 export { EmployeeCard } from "./EmployeeCard";
-export { EmployeeDetailsSheet } from "./EmployeeDetailsSheet";
+export { EmployeeWorkspace } from "./EmployeeWorkspace";
 export { EmployeePerformanceDialog } from "./EmployeePerformanceDialog";
 export { HrPoliciesSettings } from "./HrPoliciesSettings";
 export { EmployeeContractsPanel } from "./EmployeeContractsDialog";

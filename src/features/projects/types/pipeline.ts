@@ -18,6 +18,10 @@ export interface PipelineTask {
 	assignedTo?: number | null;
 	assignee?: PipelineAssignee | null;
 	assignees: PipelineAssignee[];
+	supervisorId?: number | null;
+	supervisor?: PipelineAssignee | null;
+	totalTimeSpent?: number;
+	activeWorkTimers?: { userId: number; name: string; startTime: string }[];
 	dueDate?: string | null;
 	estimatedHours?: number | null;
 	position: number;
@@ -60,6 +64,7 @@ export interface CreatePipelineTaskPayload {
 	title: string;
 	description?: string;
 	assignedUserIds?: number[];
+	supervisorId?: number | null;
 	dueDate?: string;
 	estimatedHours?: number;
 	priority?: PipelineTask["priority"];
@@ -70,6 +75,7 @@ export interface UpdatePipelineTaskPayload {
 	title?: string;
 	description?: string | null;
 	assignedUserIds?: number[] | null;
+	supervisorId?: number | null;
 	dueDate?: string | null;
 	estimatedHours?: number | null;
 	priority?: PipelineTask["priority"];
