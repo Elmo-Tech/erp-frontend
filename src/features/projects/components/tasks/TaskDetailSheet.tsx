@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskStatusBadge, TaskTypeBadge, TaskPriorityBadge, TaskCategoryBadge } from "@/components/shared/StatusBadge";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +77,9 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 	const { data: activities } = useTaskActivities(taskId ?? 0, !!taskId && open);
 	const { data: testScenarios } = useTestScenarios(taskId ?? 0, !!taskId && open);
 	const { canEditMainTasks, canEditWeeklyTasks, canEditSubtasks, canManageTasks } = usePermissions();
+	const scenarios = testScenarios ?? task?.testScenarios ?? [];
+	const hasTests = scenarios.length > 0;
+	const selectedTab = activeTab === "tests" && !hasTests ? "details" : activeTab;
 
 	if (!taskId) return null;
 
@@ -147,6 +150,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 									</Button>
 								)}
 							</div>
+							<SheetDescription className="sr-only">Task details, assigned employees, supervision, and work history.</SheetDescription>
 						</SheetHeader>
 						<div className="mx-6 mt-3 flex items-center gap-2 rounded-md bg-muted/40 p-3 text-sm">
 							<UserRoundCheck className="h-4 w-4 text-muted-foreground" />
@@ -162,7 +166,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 						)}
 
 						{/* Quick Stats */}
-						<div className="px-6 grid grid-cols-3 gap-4">
+						<div className={cn("px-6 grid gap-4", hasTests ? "grid-cols-3" : "grid-cols-2")}>
 							<div className="bg-muted/50 rounded-lg p-3">
 								<div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
 									<Clock className="h-3 w-3" />
@@ -177,13 +181,13 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 								</div>
 								<p className="font-semibold">{formatTimeSpent(task.totalTimeSpent)}</p>
 							</div>
-							<div className="bg-muted/50 rounded-lg p-3">
+							{hasTests && <div className="bg-muted/50 rounded-lg p-3">
 								<div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
 									<CheckCircle2 className="h-3 w-3" />
 									Tests
 								</div>
 								<p className="font-semibold">{task.testCompletionPercentage}%</p>
-							</div>
+							</div>}
 						</div>
 
 						{/* Delivery Status */}
@@ -209,15 +213,15 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 
 						{/* Tabs */}
 						<Tabs
-							value={activeTab}
+							value={selectedTab}
 							onValueChange={setActiveTab}
 							className="flex-1 flex flex-col min-h-0 overflow-hidden"
 						>
-							<TabsList className="mx-6 shrink-0 grid h-auto grid-cols-3 sm:grid-cols-6">
+							<TabsList className={cn("mx-6 shrink-0 grid h-auto grid-cols-3", hasTests ? "sm:grid-cols-6" : "sm:grid-cols-5")}>
 								<TabsTrigger value="details">Details</TabsTrigger>
 								<TabsTrigger value="assignees">Team ({task.assignees?.length || 0})</TabsTrigger>
 								<TabsTrigger value="supervision">Supervision</TabsTrigger>
-								<TabsTrigger value="tests">Tests ({testScenarios?.length || 0})</TabsTrigger>
+								{hasTests && <TabsTrigger value="tests">Tests ({scenarios.length})</TabsTrigger>}
 								<TabsTrigger value="time">Time</TabsTrigger>
 								<TabsTrigger value="activity">Activity</TabsTrigger>
 							</TabsList>
@@ -327,15 +331,15 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 									<TaskSupervisionSection task={task} />
 								</TabsContent>
 
-								<TabsContent
+								{hasTests && <TabsContent
 									value="tests"
 									className="p-6 pt-4 m-0"
 								>
 									<TaskTestScenariosSection
 										task={task}
-										scenarios={testScenarios || []}
+										scenarios={scenarios}
 									/>
-								</TabsContent>
+								</TabsContent>}
 
 								<TabsContent
 									value="time"

@@ -66,6 +66,8 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 	const dueDate = task.dueDate ? parseISO(task.dueDate) : null;
 	const isOverdue = !stage.isTerminal && dueDate ? isBefore(dueDate, startOfToday()) : false;
 	const minutes = task.totalTimeSpent ?? 0;
+	const loggedTime = minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`;
+	const assigneeNames = task.assignees.map((assignee) => assignee.name).join(", ");
 
 	return (
 		<article
@@ -75,10 +77,16 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 				willChange: isDragging ? "transform" : undefined,
 			}}
 			className={cn(
-				"group overflow-hidden rounded-lg border bg-card p-3 shadow-xs transition-[border-color,box-shadow] duration-200 hover:border-foreground/20 hover:shadow-md",
+				"group relative isolate overflow-hidden rounded-lg border bg-card p-3 shadow-xs transition-[border-color,box-shadow] duration-200 hover:border-foreground/20 hover:shadow-md",
 				isDragging && "z-20 rotate-1 opacity-60 shadow-lg"
 			)}
 		>
+			<button
+				type="button"
+				className="absolute inset-0 z-10 cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+				aria-label={`Open task details: ${task.title}`}
+				onClick={actions.onOpen}
+			/>
 			{task.coverImageUrl && (
 				<div
 					aria-hidden="true"
@@ -90,7 +98,7 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 				<button
 					type="button"
 					className={cn(
-						"-ml-1 mt-0.5 rounded p-1 text-muted-foreground opacity-40 transition hover:bg-muted hover:opacity-100 focus-visible:opacity-100",
+						"relative z-20 -ml-1 mt-0.5 rounded p-1 text-muted-foreground opacity-40 transition hover:bg-muted hover:opacity-100 focus-visible:opacity-100",
 						!dragDisabled && "cursor-grab active:cursor-grabbing",
 						dragDisabled && "cursor-default"
 					)}
@@ -101,15 +109,9 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 				>
 					<GripVertical className="h-4 w-4" />
 				</button>
-				<button
-					type="button"
-					className={cn(
-						"min-w-0 flex-1 rounded-sm text-left text-sm font-semibold leading-5 text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-					)}
-					onClick={actions.onOpen}
-				>
+				<h3 className="min-w-0 flex-1 text-sm font-semibold leading-5 text-foreground group-hover:text-primary">
 					{task.title}
-				</button>
+				</h3>
 				{(actions.canEdit || actions.canDelete) && (
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
@@ -117,7 +119,7 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 								type="button"
 								variant="ghost"
 								size="icon"
-								className="-mr-1 -mt-1 h-7 w-7 shrink-0"
+								className="relative z-20 -mr-1 -mt-1 h-7 w-7 shrink-0"
 								aria-label={`Actions for ${task.title}`}
 							>
 								<MoreHorizontal className="h-4 w-4" />
@@ -153,10 +155,10 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 					<Flag className="h-3.5 w-3.5" />
 					{task.priority}
 				</span>
-				{task.estimatedHours != null && (
-					<span className="flex items-center gap-1 text-muted-foreground">
+				{(minutes > 0 || task.estimatedHours != null) && (
+					<span className="flex items-center gap-1 text-muted-foreground" aria-label={`${loggedTime} logged${task.estimatedHours != null ? ` of ${task.estimatedHours}h estimated` : ""}`}>
 						<Clock3 className="h-3.5 w-3.5" />
-						{task.estimatedHours}h
+						{loggedTime}{task.estimatedHours != null && ` / ${task.estimatedHours}h`}
 					</span>
 				)}
 				{dueDate && (
@@ -167,37 +169,30 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 				)}
 			</div>
 
-			<div className="mt-3 space-y-3 border-t pt-3">
-				<p className="flex items-center justify-between text-xs text-muted-foreground"><span>Logged work</span><span className="font-medium text-foreground">{Math.floor(minutes / 60)}h {minutes % 60}m{task.estimatedHours != null && ` / ${task.estimatedHours}h planned`}</span></p>
-				<div>
-					<p className="mb-1.5 flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground"><UsersRound className="h-3 w-3" />Assigned employees</p>
-				{task.assignees.length > 0 ? (
-					<div className="space-y-1.5">
-							{task.assignees.map((assignee) => (
-								<div key={assignee.userId} className="flex items-center gap-2 text-xs">
-								<Avatar className="h-6 w-6 border-2 border-card">
+			<div className="mt-3 space-y-2 border-t pt-2.5">
+				<div className="flex min-w-0 items-center gap-2 text-xs" title={assigneeNames || "Unassigned"}>
+					<UsersRound className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+					{task.assignees.length > 0 && (
+						<div className="flex shrink-0 -space-x-1.5">
+							{task.assignees.slice(0, 3).map((assignee) => (
+								<Avatar key={assignee.userId} className="h-5 w-5 border border-card">
 									<AvatarImage src={assignee.avatar} alt={assignee.name} />
 									<AvatarFallback className="text-[8px]">{assignee.name.slice(0, 2).toUpperCase()}</AvatarFallback>
 								</Avatar>
-								<span className="min-w-0 flex-1 truncate">{assignee.name}</span>
-								{assignee.isPrimary && <span className="text-[10px] text-muted-foreground">Primary</span>}
-								</div>
 							))}
-					</div>
-				) : (
-					<span className="flex items-center gap-1 text-xs text-muted-foreground">
-						<UsersRound className="h-3.5 w-3.5" />
-						Unassigned
-					</span>
-				)}
+						</div>
+					)}
+					<span className="min-w-0 truncate">{assigneeNames || "Unassigned"}</span>
 				</div>
-				<div className="flex items-center gap-2 rounded-md bg-muted/40 p-2 text-xs">
+				<div className="flex min-w-0 items-center gap-2 text-xs">
 					<UserRoundCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
-					<div className="min-w-0"><p className="text-[10px] text-muted-foreground">Supervisor</p><p className="truncate font-medium">{task.supervisor?.name ?? "Not assigned"}</p></div>
+					<span className="text-muted-foreground">Supervisor</span>
+					<span className="min-w-0 truncate font-medium">{task.supervisor?.name ?? "Not assigned"}</span>
 				</div>
 				{task.holdReason && <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-xs">On hold: {task.holdReason}</p>}
-				<TaskWorkControls taskId={task.taskId} title={task.title} canWork={actions.canStartTimer} activeWorkTimers={task.activeWorkTimers} disabledReason={stage.isTerminal ? "This task is closed." : undefined} />
-				<Button type="button" variant="ghost" size="sm" className="h-7 w-full text-xs" onClick={actions.onOpen}>Open task details</Button>
+				<div className="relative z-20">
+					<TaskWorkControls taskId={task.taskId} title={task.title} canWork={actions.canStartTimer} activeWorkTimers={task.activeWorkTimers} disabledReason={stage.isTerminal ? "This task is closed." : undefined} />
+				</div>
 			</div>
 		</article>
 	);
