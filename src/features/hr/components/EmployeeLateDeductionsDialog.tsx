@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { handleApiError } from "@/lib/errorHandling";
-import { useEmployeeLateDeductions, useEvaluateEmployeeLateDeductions, useOverrideLateDeduction } from "../hooks/useEmployeeLateDeductions";
+import { useEmployeeLateDeductions, useEvaluateEmployeeLateDeductions, useOverrideLateDeduction, useResetEmployeeLateDeductions } from "../hooks/useEmployeeLateDeductions";
 import { buildLateDeductionOverridePayload, formatLateDeductionOccurrence, lateDeductionOverrideSchema } from "../lib/late-deductions";
 import type { LateDeductionOverrideFormValues, LateDeductionRecord, LateDeductionStatus, LateDeductionsSummary } from "../types/late-deductions";
 
@@ -194,6 +194,7 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 	const lateDeductionsQuery = useEmployeeLateDeductions(employeeId, year, month, isActive && canManage);
 	const evaluateLateDeductions = useEvaluateEmployeeLateDeductions();
 	const overrideLateDeduction = useOverrideLateDeduction();
+	const resetLateDeductions = useResetEmployeeLateDeductions();
 	const records = [...(lateDeductionsQuery.data?.records ?? [])].sort((left, right) => right.attendanceDate.localeCompare(left.attendanceDate) || right.id - left.id);
 	const summary = lateDeductionsQuery.data?.summary;
 	const yearOptions = Array.from({ length: 11 }, (_, index) => today.getFullYear() - 5 + index);
@@ -220,6 +221,17 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 		try {
 			await evaluateLateDeductions.mutateAsync({ employeeId, year, month });
 			toast.success(`Late deductions evaluated for ${monthFormatter.format(new Date(2000, month - 1, 1))} ${year}`);
+		} catch (error) {
+			toast.error(handleApiError(error));
+		}
+	};
+
+	const handleReset = async () => {
+		const confirmed = window.confirm(`Reset late deductions for ${month}/${year}? Unprocessed records will be waived and counters restart. Processed payroll cannot be reset.`);
+		if (!confirmed) return;
+		try {
+			await resetLateDeductions.mutateAsync({ employeeId, year, month, reason: "Manual monthly reset from HR panel." });
+			toast.success("Late deductions reset for the month");
 		} catch (error) {
 			toast.error(handleApiError(error));
 		}
@@ -258,7 +270,7 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 							<h3 className="font-semibold">Payroll period</h3>
 							<p className="text-sm text-muted-foreground">Evaluation only creates records that are missing, so it is safe to run again.</p>
 						</div>
-						<div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+						<div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
 							<Select value={String(year)} onValueChange={(value) => setYear(Number(value))}>
 								<SelectTrigger aria-label="Late deductions year">
 									<SelectValue />
@@ -286,6 +298,10 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 							<Button type="button" onClick={() => void handleEvaluate()} disabled={evaluateLateDeductions.isPending}>
 								{evaluateLateDeductions.isPending && <Loader2 className="animate-spin" />}
 								Evaluate
+							</Button>
+							<Button type="button" variant="outline" onClick={() => void handleReset()} disabled={resetLateDeductions.isPending}>
+								{resetLateDeductions.isPending && <Loader2 className="animate-spin" />}
+								Reset month
 							</Button>
 						</div>
 					</div>

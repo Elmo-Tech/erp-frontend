@@ -18,6 +18,8 @@ vi.mock("./EmployeeLateDeductionsDialog", () => ({ EmployeeLateDeductionsPanel: 
 vi.mock("./EmployeeDirectDeductionsDialog", () => ({ EmployeeDirectDeductionsPanel: panelMock("direct-deductions-panel") }));
 vi.mock("./EmployeeAdvancesDialog", () => ({ EmployeeAdvancesPanel: panelMock("advances-panel") }));
 vi.mock("./EmployeePartialPaysDialog", () => ({ EmployeePartialPaysPanel: panelMock("partial-pays-panel") }));
+vi.mock("./EmployeeAttendancePanel", () => ({ EmployeeAttendancePanel: panelMock("attendance-panel") }));
+vi.mock("./EmployeeSupervisionPanel", () => ({ EmployeeSupervisionPanel: panelMock("supervision-panel") }));
 
 const employee: Employee = {
 	userId: 7,
@@ -45,7 +47,7 @@ describe("EmployeeWorkspace", () => {
 		render(<EmployeeWorkspace employee={employee} canManage onEdit={vi.fn()} />);
 
 		expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("data-state", "active");
-		expect(screen.getAllByRole("tab")).toHaveLength(10);
+		expect(screen.getAllByRole("tab")).toHaveLength(12);
 
 		fireEvent.mouseDown(screen.getByRole("tab", { name: "Contracts" }), { button: 0, ctrlKey: false });
 		expect(screen.getByRole("tab", { name: "Contracts" })).toHaveAttribute("data-state", "active");

@@ -32,6 +32,11 @@ export const leaveManagementApi = {
 		return response.data.data;
 	},
 
+	updateEmployeeLeave: async (id: number, payload: CreateEmployeeLeavePayload): Promise<EmployeeLeave> => {
+		const response = await api.put(`/employee-leaves/${id}`, payload);
+		return response.data.data;
+	},
+
 	approveEmployeeLeave: async (id: number, payload: ReviewEmployeeLeavePayload = {}): Promise<EmployeeLeave> => {
 		const response = await api.post(`/employee-leaves/${id}/approve`, payload);
 		return response.data.data;

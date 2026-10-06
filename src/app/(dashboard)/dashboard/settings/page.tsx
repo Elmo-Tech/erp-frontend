@@ -7,6 +7,7 @@ import { TagsManager } from '@/features/settings/components/TagsManager';
 import { GoogleDriveSettings } from '@/features/settings/components/GoogleDriveSettings';
 import { HrPoliciesSettings } from '@/features/hr/components/HrPoliciesSettings';
 import { LeaveTypesSettings } from '@/features/hr/components/LeaveTypesSettings';
+import { DeductionTypesSettings } from '@/features/hr/components/DeductionTypesSettings';
 import { useAuthStore } from '@/store/authStore';
 
 export default function SettingsPage() {
@@ -34,6 +35,8 @@ export default function SettingsPage() {
 			<TabsTrigger value="google_drive">Google Drive</TabsTrigger>
             <TabsTrigger value="hr_policies">HR Policies</TabsTrigger>
             {canManageLeaveTypes && <TabsTrigger value="leave_types">Leave Types</TabsTrigger>}
+            <TabsTrigger value="deduction_types">Deduction Types</TabsTrigger>
+            <TabsTrigger value="contract_durations">Contract Durations</TabsTrigger>
         </TabsList>
         
         <TabsContent value="specializations" className="space-y-4">
@@ -93,6 +96,18 @@ export default function SettingsPage() {
             <LeaveTypesSettings />
           </TabsContent>
         )}
+
+        <TabsContent value="deduction_types" className="space-y-4">
+          <DeductionTypesSettings />
+        </TabsContent>
+
+        <TabsContent value="contract_durations" className="space-y-4">
+          <LookupOptionsManager
+            type="contract_duration"
+            title="Contract Durations"
+            description="Manage preset contract lengths (e.g. 3, 6, 12, 24 months). The value is stored as months on the contract; presets here speed up entry."
+          />
+        </TabsContent>
       </Tabs>
     </div>
   );

@@ -92,11 +92,13 @@ function OvertimeSummary({ summary }: { summary: EmployeeOvertimeSummary }) {
 		{ label: "Payable amount", value: formatOvertimeCurrency(summary.payableAmount) },
 	];
 
+	const unrequestedCount = summary.unrequestedDaysCount ?? 0;
+
 	return (
 		<section className="space-y-3">
 			<div>
 				<h3 className="font-semibold">Period summary</h3>
-				<p className="text-sm text-muted-foreground">Totals reflect requests and recorded actual time for the selected period.</p>
+				<p className="text-sm text-muted-foreground">Totals reflect requests plus recorded late clock-outs with no request. Only approved time is payable.</p>
 			</div>
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				{cards.map((card) => (
@@ -106,6 +108,11 @@ function OvertimeSummary({ summary }: { summary: EmployeeOvertimeSummary }) {
 					</div>
 				))}
 			</div>
+			{unrequestedCount > 0 && (
+				<p className="text-sm text-amber-700 dark:text-amber-400">
+					{unrequestedCount} day{unrequestedCount === 1 ? "" : "s"} with extra time but no request ({formatOvertimeMinutes(summary.unrequestedMinutes ?? 0)}). Ask the employee to file, or leave it unpayable.
+				</p>
+			)}
 		</section>
 	);
 }

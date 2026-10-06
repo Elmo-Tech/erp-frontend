@@ -27,6 +27,9 @@ export interface EmployeeOvertimeSummary {
 	actualMinutes: number;
 	approvedMinutes: number;
 	unapprovedMinutes: number;
+	unrequestedMinutes?: number;
+	unrequestedDaysCount?: number;
+	unrequestedDays?: Array<{ date: string; extraMinutes: number }>;
 	payableAmount: number;
 	pendingCount: number;
 }

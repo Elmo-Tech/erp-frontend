@@ -225,6 +225,17 @@ export const ADMIN_PERMISSIONS = {
 	EDIT_MILESTONES: "edit_milestones",
 	DELETE_MILESTONES: "delete_milestones",
 	MANAGE_MILESTONES: "manage_milestones",
+
+	// HR granular (client section 15) — backend enforces with manage_employees fallback
+	MANAGE_EMPLOYEE_CONTRACTS: "manage_employee_contracts",
+	MANAGE_LEAVES: "manage_leaves",
+	MANAGE_PERMISSIONS: "manage_permissions",
+	MANAGE_DEDUCTIONS: "manage_deductions",
+	MANAGE_OVERTIME: "manage_overtime",
+	MANAGE_EMPLOYEE_DOCUMENTS: "manage_employee_documents",
+	MANAGE_SUPERVISION: "manage_supervision",
+	MANAGE_HR_SETTINGS: "manage_hr_settings",
+	MANAGE_LEAVE_TYPES: "manage_leave_types",
 } as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERMISSIONS];

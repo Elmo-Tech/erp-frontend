@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRoleLabel } from "@/config/simplification";
 import type { Employee } from "../types";
 import { EmployeeAdvancesPanel } from "./EmployeeAdvancesDialog";
+import { EmployeeAttendancePanel } from "./EmployeeAttendancePanel";
 import { EmployeeContractsPanel } from "./EmployeeContractsDialog";
 import { EmployeeDirectDeductionsPanel } from "./EmployeeDirectDeductionsDialog";
 import { EmployeeDocumentsPanel } from "./EmployeeDocumentsDialog";
@@ -17,9 +18,11 @@ import { EmployeeLeavesPanel } from "./EmployeeLeavesDialog";
 import { EmployeeOvertimeRequestsPanel } from "./EmployeeOvertimeRequestsDialog";
 import { EmployeePartialPaysPanel } from "./EmployeePartialPaysDialog";
 import { EmployeeShortPermissionsPanel } from "./EmployeeShortPermissionsDialog";
+import { EmployeeSupervisionPanel } from "./EmployeeSupervisionPanel";
 
 const workflows = [
 	{ value: "contracts", label: "Contracts", Panel: EmployeeContractsPanel },
+	{ value: "attendance", label: "Attendance", Panel: EmployeeAttendancePanel },
 	{ value: "documents", label: "Documents", Panel: EmployeeDocumentsPanel },
 	{ value: "leaves", label: "Leave", Panel: EmployeeLeavesPanel },
 	{ value: "permissions", label: "Short permissions", Panel: EmployeeShortPermissionsPanel },
@@ -28,6 +31,7 @@ const workflows = [
 	{ value: "deductions", label: "Direct deductions", Panel: EmployeeDirectDeductionsPanel },
 	{ value: "advances", label: "Advances", Panel: EmployeeAdvancesPanel },
 	{ value: "partial-pay", label: "Partial pay", Panel: EmployeePartialPaysPanel },
+	{ value: "supervision", label: "Supervision", Panel: EmployeeSupervisionPanel },
 ] as const;
 
 interface EmployeeWorkspaceProps {

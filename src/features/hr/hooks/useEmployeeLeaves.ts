@@ -44,6 +44,15 @@ export function useCreateEmployeeLeave() {
 	});
 }
 
+export function useUpdateEmployeeLeave() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ id, employeeId, payload }: { id: number; employeeId: number; payload: CreateEmployeeLeavePayload }) => leaveManagementApi.updateEmployeeLeave(id, payload),
+		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.employee(employeeId) }),
+	});
+}
+
 export function useCreateLeaveType() {
 	const queryClient = useQueryClient();
 

@@ -98,17 +98,15 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 					/>
 					<p className="text-xs text-muted-foreground">5 working days/week × average weeks/month</p>
 				</div>
-				<div className="space-y-2">
-					<Label htmlFor="calculated-hourly-rate">Hourly Rate</Label>
-					<Input
-						id="calculated-hourly-rate"
-						value={hourlyRate?.toFixed(2) ?? ""}
-						placeholder="Calculated from salary"
-						readOnly
-						aria-readonly="true"
-						className="bg-muted"
-					/>
-				</div>
+				<FormInput
+					control={control}
+					name="hourlyRate"
+					label="Hourly Rate (manual)"
+					type="number"
+					min={0}
+					step={0.25}
+					description={hourlyRate ? `Auto fallback ${hourlyRate.toFixed(2)} — leave empty to use it` : "Used for overtime pay"}
+				/>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-3">

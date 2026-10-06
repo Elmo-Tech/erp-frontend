@@ -35,3 +35,13 @@ export function useOverrideLateDeduction() {
 		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeLateDeductionKeys.employee(employeeId) }),
 	});
 }
+
+export function useResetEmployeeLateDeductions() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ employeeId, year, month, reason }: { employeeId: number; year: number; month: number; reason?: string }) =>
+			lateDeductionsApi.resetEmployeeLateDeductions(employeeId, year, month, reason),
+		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeLateDeductionKeys.employee(employeeId) }),
+	});
+}

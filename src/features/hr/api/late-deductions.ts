@@ -17,4 +17,9 @@ export const lateDeductionsApi = {
 		const response = await api.put(`/employee-late-deductions/${id}/override`, payload);
 		return response.data.data;
 	},
+
+	resetEmployeeLateDeductions: async (employeeId: number, year: number, month: number, reason?: string): Promise<LateDeductionsResponse> => {
+		const response = await api.post(`/employees/${employeeId}/late-deductions/reset`, { year, month, reason });
+		return response.data.data;
+	},
 };

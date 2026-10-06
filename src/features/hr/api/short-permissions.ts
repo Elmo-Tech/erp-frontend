@@ -12,6 +12,11 @@ export const shortPermissionsApi = {
 		return response.data.data;
 	},
 
+	updateEmployeeShortPermission: async (id: number, payload: CreateEmployeeShortPermissionPayload): Promise<EmployeeShortPermission> => {
+		const response = await api.put(`/employee-short-permissions/${id}`, payload);
+		return response.data.data;
+	},
+
 	approveEmployeeShortPermission: async (id: number, payload: ApproveEmployeeShortPermissionPayload): Promise<EmployeeShortPermission> => {
 		const response = await api.post(`/employee-short-permissions/${id}/approve`, payload);
 		return response.data.data;

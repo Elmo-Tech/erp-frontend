@@ -21,6 +21,7 @@ export interface Employee {
 	totalPoints: number;
 	skills: string[];
 	salary: number | null;
+	hourlyRate?: number | null;
 	totalDeductions: number | null;
 	internalHourlyCost: number | null;
 	createdAt: string;
@@ -54,6 +55,7 @@ export interface CreateEmployeePayload {
 	specialization?: string;
 	isActive?: boolean;
 	salary?: number;
+	hourlyRate?: number | null;
 	workHoursPerDay?: number;
 	workStartTime?: string;
 	graceDaysAllowed?: number;
@@ -69,6 +71,7 @@ export interface UpdateEmployeePayload {
 	specialization?: string;
 	isActive?: boolean;
 	salary?: number | null;
+	hourlyRate?: number | null;
 	workHoursPerDay?: number;
 	workStartTime?: string;
 	graceDaysAllowed?: number;

@@ -21,6 +21,7 @@ const employeeSchema = z.object({
 	specialization: z.string().optional(),
 	isActive: z.boolean(),
 	salary: z.number().min(0).optional().nullable(),
+	hourlyRate: z.number().min(0).optional().nullable(),
 	workHoursPerDay: z.number().min(1).max(24),
 	workStartTime: z.string(),
 	graceDaysAllowed: z.number().min(0).max(31),
@@ -53,6 +54,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			specialization: employee.specialization || "",
 			isActive: employee.isActive,
 			salary: employee.salary,
+			hourlyRate: employee.hourlyRate,
 			workHoursPerDay: employee.workHoursPerDay,
 			workStartTime: employee.workStartTime?.slice(0, 5) || "10:00",
 			graceDaysAllowed: employee.graceDaysAllowed,
@@ -75,6 +77,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			specialization: emp.specialization || "",
 			isActive: emp.isActive,
 			salary: emp.salary,
+			hourlyRate: emp.hourlyRate,
 			workHoursPerDay: emp.workHoursPerDay,
 			workStartTime: emp.workStartTime?.slice(0, 5) || "10:00",
 			graceDaysAllowed: emp.graceDaysAllowed,
@@ -98,6 +101,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 		if (data.specialization !== employee.specialization) payload.specialization = data.specialization;
 		if (data.isActive !== employee.isActive) payload.isActive = data.isActive;
 		if (data.salary !== employee.salary) payload.salary = data.salary;
+		if (data.hourlyRate !== employee.hourlyRate) payload.hourlyRate = data.hourlyRate;
 		if (data.workHoursPerDay !== employee.workHoursPerDay) payload.workHoursPerDay = data.workHoursPerDay;
 		if (data.workStartTime !== employee.workStartTime?.slice(0, 5)) payload.workStartTime = data.workStartTime;
 		if (data.graceDaysAllowed !== employee.graceDaysAllowed) payload.graceDaysAllowed = data.graceDaysAllowed;

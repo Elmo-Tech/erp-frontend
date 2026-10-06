@@ -27,6 +27,15 @@ export function useCreateEmployeeShortPermission() {
 	});
 }
 
+export function useUpdateEmployeeShortPermission() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ id, employeeId, payload }: { id: number; employeeId: number; payload: CreateEmployeeShortPermissionPayload }) => shortPermissionsApi.updateEmployeeShortPermission(id, payload),
+		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeShortPermissionKeys.employee(employeeId) }),
+	});
+}
+
 export function useApproveEmployeeShortPermission() {
 	const queryClient = useQueryClient();
 
