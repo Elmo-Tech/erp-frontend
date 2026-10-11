@@ -17,7 +17,7 @@ import type {
 	PayrollSummary,
 } from "../types/deductions-rewards";
 
-const BASE_URL = "/v1/hr";
+const BASE_URL = "/hr";
 
 // ==================== Deduction Types ====================
 
