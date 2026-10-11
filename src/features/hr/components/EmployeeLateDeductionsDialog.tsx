@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { handleApiError } from "@/lib/errorHandling";
+import { useAuthStore } from "@/store/authStore";
 import { useEmployeeLateDeductions, useEvaluateEmployeeLateDeductions, useOverrideLateDeduction, useResetEmployeeLateDeductions } from "../hooks/useEmployeeLateDeductions";
 import { buildLateDeductionOverridePayload, formatLateDeductionOccurrence, lateDeductionOverrideSchema } from "../lib/late-deductions";
 import type { LateDeductionOverrideFormValues, LateDeductionRecord, LateDeductionStatus, LateDeductionsSummary } from "../types/late-deductions";
@@ -104,7 +105,7 @@ function LateDeductionSummary({ summary }: { summary: LateDeductionsSummary }) {
 	);
 }
 
-function LateDeductionDetails({ record, canManage, isOverriding, onOverride }: { record: LateDeductionRecord; canManage: boolean; isOverriding: boolean; onOverride: (record: LateDeductionRecord) => void }) {
+function LateDeductionDetails({ record, canReview, isOverriding, onOverride }: { record: LateDeductionRecord; canReview: boolean; isOverriding: boolean; onOverride: (record: LateDeductionRecord) => void }) {
 	return (
 		<div className="rounded-lg border bg-muted/20 p-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -121,7 +122,7 @@ function LateDeductionDetails({ record, canManage, isOverriding, onOverride }: {
 						<p className="text-sm text-muted-foreground">Final amount</p>
 						<p className="text-lg font-semibold">{formatAmount(record.finalAmount)}</p>
 					</div>
-					{canManage && record.status !== "waived" && (
+					{canReview && record.status !== "waived" && (
 						<Button type="button" size="sm" variant="outline" disabled={isOverriding} onClick={() => onOverride(record)}>
 							<Pencil />
 							Override amount
@@ -195,6 +196,11 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 	const evaluateLateDeductions = useEvaluateEmployeeLateDeductions();
 	const overrideLateDeduction = useOverrideLateDeduction();
 	const resetLateDeductions = useResetEmployeeLateDeductions();
+	const currentUserId = useAuthStore((state) => state.user?.userId ?? 0);
+	// Nobody reviews their own deductions, not even managers: the backend
+	// rejects self-approval, so hide the actions instead of showing 403s.
+	const isOwnProfile = currentUserId !== 0 && currentUserId === employeeId;
+	const canReview = canManage && !isOwnProfile;
 	const records = [...(lateDeductionsQuery.data?.records ?? [])].sort((left, right) => right.attendanceDate.localeCompare(left.attendanceDate) || right.id - left.id);
 	const summary = lateDeductionsQuery.data?.summary;
 	const yearOptions = Array.from({ length: 11 }, (_, index) => today.getFullYear() - 5 + index);
@@ -265,6 +271,14 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 					<p className="text-sm text-muted-foreground">Evaluate attendance-based late deductions and review their payroll adjustments for a selected month.</p>
 				</div>
 
+					{isOwnProfile && (
+						<Alert>
+							<Info />
+							<AlertTitle>Your own profile</AlertTitle>
+							<AlertDescription>Evaluating, resetting, or overriding your own deductions requires another manager. History below is read-only.</AlertDescription>
+						</Alert>
+					)}
+
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 						<div>
 							<h3 className="font-semibold">Payroll period</h3>
@@ -295,14 +309,18 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 									))}
 								</SelectContent>
 							</Select>
-							<Button type="button" onClick={() => void handleEvaluate()} disabled={evaluateLateDeductions.isPending}>
-								{evaluateLateDeductions.isPending && <Loader2 className="animate-spin" />}
-								Evaluate
-							</Button>
-							<Button type="button" variant="outline" onClick={() => void handleReset()} disabled={resetLateDeductions.isPending}>
-								{resetLateDeductions.isPending && <Loader2 className="animate-spin" />}
-								Reset month
-							</Button>
+							{canReview && (
+								<>
+									<Button type="button" onClick={() => void handleEvaluate()} disabled={evaluateLateDeductions.isPending}>
+										{evaluateLateDeductions.isPending && <Loader2 className="animate-spin" />}
+										Evaluate
+									</Button>
+									<Button type="button" variant="outline" onClick={() => void handleReset()} disabled={resetLateDeductions.isPending}>
+										{resetLateDeductions.isPending && <Loader2 className="animate-spin" />}
+										Reset month
+									</Button>
+								</>
+							)}
 						</div>
 					</div>
 
@@ -340,7 +358,7 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 								{records.length > 0 ? (
 									<div className="space-y-3">
 										{records.map((record) => (
-											<LateDeductionDetails key={record.id} record={record} canManage={canManage} isOverriding={overrideLateDeduction.isPending} onOverride={openOverrideDialog} />
+											<LateDeductionDetails key={record.id} record={record} canReview={canReview} isOverriding={overrideLateDeduction.isPending} onOverride={openOverrideDialog} />
 										))}
 									</div>
 								) : (

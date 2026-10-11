@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { FormInput, FormSelect, FormTextarea } from "@/components/shared";
 import { handleApiError } from "@/lib/errorHandling";
+import { useAuthStore } from "@/store/authStore";
 import { useActiveDirectDeductionTypes, useApproveEmployeeDirectDeduction, useCancelEmployeeDirectDeduction, useCreateEmployeeDirectDeduction, useEmployeeDirectDeductions, useRejectEmployeeDirectDeduction } from "../hooks/useDirectEmployeeDeductions";
 import { buildDirectEmployeeDeductionPayload, directEmployeeDeductionFormSchema, getDefaultDirectEmployeeDeductionFormValues, isValidDirectDeductionDate } from "../lib/direct-employee-deductions";
 import type { DirectEmployeeDeduction, DirectEmployeeDeductionFormValues, DirectEmployeeDeductionStatus } from "../types/direct-employee-deductions";
@@ -107,7 +108,7 @@ function DirectDeductionSummary({ approvedAmount, pendingCount, approvedCount }:
 	);
 }
 
-function DirectDeductionDetails({ deduction, isReviewing, onReview }: { deduction: DirectEmployeeDeduction; isReviewing: boolean; onReview: (deduction: DirectEmployeeDeduction, action: DirectDeductionReviewAction) => void }) {
+function DirectDeductionDetails({ deduction, canReview, isReviewing, onReview }: { deduction: DirectEmployeeDeduction; canReview: boolean; isReviewing: boolean; onReview: (deduction: DirectEmployeeDeduction, action: DirectDeductionReviewAction) => void }) {
 	return (
 		<div className="rounded-lg border bg-muted/20 p-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -120,7 +121,7 @@ function DirectDeductionDetails({ deduction, isReviewing, onReview }: { deductio
 				</div>
 				<div className="flex flex-col items-start gap-2 sm:items-end">
 					<p className="text-lg font-semibold">{formatDeductionAmount(deduction.amount)}</p>
-					{deduction.status === "pending" && (
+					{deduction.status === "pending" && canReview && (
 						<div className="flex flex-wrap gap-2">
 							<Button type="button" size="sm" disabled={isReviewing} onClick={() => onReview(deduction, "approve")}>
 								<Check />
@@ -187,6 +188,11 @@ export function EmployeeDirectDeductionsPanel({ employeeId, employeeName, canMan
 	const pendingDeductions = deductions.filter((deduction) => deduction.status === "pending");
 	const historicalDeductions = deductions.filter((deduction) => deduction.status !== "pending");
 	const summary = deductionsQuery.data?.summary;
+	const currentUserId = useAuthStore((state) => state.user?.userId ?? 0);
+	// Nobody reviews their own deductions, not even managers: the backend
+	// rejects self-approval, so hide the actions instead of showing 403s.
+	const isOwnProfile = currentUserId !== 0 && currentUserId === employeeId;
+	const canReview = canManage && !isOwnProfile;
 	const isReviewing = approveDeduction.isPending || rejectDeduction.isPending || cancelDeduction.isPending;
 	const isRequesting = createDeduction.isPending;
 	const isRequestDisabled = isRequesting || deductionTypesQuery.isLoading || deductionTypesQuery.isError || deductionTypes.length === 0;
@@ -281,6 +287,15 @@ export function EmployeeDirectDeductionsPanel({ employeeId, employeeName, canMan
 						<AlertDescription>New direct deductions await approval. Approving one creates exactly one linked payroll adjustment.</AlertDescription>
 					</Alert>
 
+					{isOwnProfile && (
+						<Alert>
+							<Info />
+							<AlertTitle>Your own profile</AlertTitle>
+							<AlertDescription>Creating or reviewing deductions on your own record requires another manager. History below is read-only.</AlertDescription>
+						</Alert>
+					)}
+
+					{!isOwnProfile && (
 					<section className="space-y-3">
 						<div>
 							<h3 className="font-semibold">Create direct deduction</h3>
@@ -328,6 +343,7 @@ export function EmployeeDirectDeductionsPanel({ employeeId, employeeName, canMan
 							</form>
 						</Form>
 					</section>
+					)}
 
 					{deductionsQuery.isLoading ? (
 						<div className="space-y-3">
@@ -357,7 +373,7 @@ export function EmployeeDirectDeductionsPanel({ employeeId, employeeName, canMan
 								{pendingDeductions.length > 0 ? (
 									<div className="space-y-3">
 										{pendingDeductions.map((deduction) => (
-											<DirectDeductionDetails key={deduction.id} deduction={deduction} isReviewing={isReviewing} onReview={openReviewDialog} />
+											<DirectDeductionDetails key={deduction.id} deduction={deduction} canReview={canReview} isReviewing={isReviewing} onReview={openReviewDialog} />
 										))}
 									</div>
 								) : (
@@ -373,7 +389,7 @@ export function EmployeeDirectDeductionsPanel({ employeeId, employeeName, canMan
 								{historicalDeductions.length > 0 ? (
 									<div className="space-y-3">
 										{historicalDeductions.map((deduction) => (
-											<DirectDeductionDetails key={deduction.id} deduction={deduction} isReviewing={isReviewing} onReview={openReviewDialog} />
+											<DirectDeductionDetails key={deduction.id} deduction={deduction} canReview={canReview} isReviewing={isReviewing} onReview={openReviewDialog} />
 										))}
 									</div>
 								) : deductions.length === 0 ? (
