@@ -13,16 +13,26 @@ import { AttendanceFilters, Attendance } from "../types/attendance";
 import { AttendanceFormDialog } from "./AttendanceFormDialog";
 import { getAttendanceColumns } from "./columns/attendanceColumns";
 import { useEmployees } from "@/features/hr/hooks";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { EmployeeShortPermissionsPanel } from "@/features/hr/components/EmployeeShortPermissionsDialog";
+import { useAuthStore } from "@/store/authStore";
 
 export function AttendanceManagement() {
 	const [filters, setFilters] = useState<AttendanceFilters>({});
 	const [page, setPage] = useState(1);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
+	const [permissionsOpen, setPermissionsOpen] = useState(false);
+	const [permissionEmployeeId, setPermissionEmployeeId] = useState(0);
+	const [permissionMonth, setPermissionMonth] = useState<string | undefined>();
+	const currentUserId = useAuthStore((state) => state.user?.userId);
 
 	const { data, isLoading, error } = useAttendanceList(filters, page);
 	const { data: employeesData } = useEmployees({ perPage: 100 });
-	const { canManageAttendance, canViewAllAttendance } = usePermissions();
+	const { canManageAttendance, canViewAllAttendance, hasAnyPermission } = usePermissions();
+	const canReviewPermissions = hasAnyPermission(["manage_permissions", "manage_employees"]);
+	const permissionEmployee = employeesData?.employees.find((employee) => employee.userId === permissionEmployeeId);
 
 	const handleUserFilterChange = (value: string | undefined) => {
 		setFilters((prev) => ({
@@ -78,6 +88,11 @@ export function AttendanceManagement() {
 	const columns = getAttendanceColumns({
 		onEdit: handleEdit,
 		canManage: canManageAttendance,
+		onReviewPermissions: canReviewPermissions ? (attendance) => {
+			setPermissionEmployeeId(attendance.userId);
+			setPermissionMonth(attendance.date.slice(0, 7));
+			setPermissionsOpen(true);
+		} : undefined,
 	});
 
 	if (!canViewAllAttendance) {
@@ -116,12 +131,19 @@ export function AttendanceManagement() {
 				headerActions={
 					<FilterBar
 						actions={
-							canManageAttendance && (
+							<div className="flex gap-2">
+							{canReviewPermissions && <Button variant="outline" onClick={() => {
+								setPermissionEmployeeId(filters.userId ?? 0);
+								setPermissionMonth(undefined);
+								setPermissionsOpen(true);
+							}}>Review short permissions</Button>}
+							{canManageAttendance && (
 								<Button onClick={handleAdd}>
 									<Plus className="h-4 w-4 mr-2" />
 									Add Record
 								</Button>
-							)
+							)}
+							</div>
 						}
 					>
 						<FilterSelect
@@ -156,6 +178,17 @@ export function AttendanceManagement() {
 					attendance={editingAttendance}
 				/>
 			)}
+			{canReviewPermissions && <Dialog open={permissionsOpen} onOpenChange={setPermissionsOpen}>
+				<DialogContent className="max-w-4xl! max-h-[90vh] overflow-y-auto">
+					<DialogHeader><DialogTitle>Review short permissions</DialogTitle><DialogDescription>Select an employee to submit or approve paid and unpaid short permissions.</DialogDescription></DialogHeader>
+					<Label htmlFor="permission-employee">Employee</Label>
+					<select id="permission-employee" className="rounded-md border p-2" value={permissionEmployeeId} onChange={(event) => setPermissionEmployeeId(Number(event.target.value))}>
+						<option value={0}>Select an employee</option>
+						{employeesData?.employees.map((employee) => <option key={employee.userId} value={employee.userId}>{employee.name}</option>)}
+					</select>
+					{permissionEmployeeId === currentUserId ? <p className="text-sm text-muted-foreground">Your own requests must be approved by another manager. Use My Requests to submit them.</p> : permissionEmployee && <EmployeeShortPermissionsPanel key={`${permissionEmployeeId}-${permissionMonth}`} employeeId={permissionEmployeeId} employeeName={permissionEmployee.name} canManage isActive={permissionsOpen} initialMonth={permissionMonth} />}
+				</DialogContent>
+			</Dialog>}
 		</>
 	);
 }

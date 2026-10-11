@@ -35,6 +35,16 @@ export function getClientsColumns({ onView, onEdit, onDelete }: ClientsColumnsOp
 			render: (client) => client.phone || "-",
 		},
 		{
+			key: "website",
+			header: "Website",
+			render: (client) => client.website || "-",
+		},
+		{
+			key: "city",
+			header: "City",
+			render: (client) => client.city || "-",
+		},
+		{
 			key: "status",
 			header: "Status",
 			render: (client) => (

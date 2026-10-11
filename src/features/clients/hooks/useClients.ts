@@ -45,6 +45,10 @@ export const useUpdateClient = () => {
 		mutationFn: ({ id, payload }) => clientsApi.update(id, payload),
 		onSuccess: (client, { id }) => {
 			queryClient.setQueryData<Client>(clientKeys.detail(id), (previous) => ({ ...previous, ...client }));
+			queryClient.setQueriesData<ClientListResponse>({ queryKey: clientKeys.lists() }, (previous) => previous ? {
+				...previous,
+				clients: previous.clients.map((existing) => existing.clientId === id ? { ...existing, ...client } : existing),
+			} : previous);
 			queryClient.invalidateQueries({ queryKey: clientKeys.detail(id) });
 			queryClient.invalidateQueries({ queryKey: clientKeys.lists() });
 		},

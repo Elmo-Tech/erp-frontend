@@ -12,6 +12,7 @@ import { formatTimeDisplay } from "@/lib/dateUtils";
 interface AttendanceColumnsOptions {
 	onEdit?: (attendance: Attendance) => void;
 	canManage?: boolean;
+	onReviewPermissions?: (attendance: Attendance) => void;
 }
 
 function formatMinutes(minutes: number): string {
@@ -22,7 +23,7 @@ function formatMinutes(minutes: number): string {
 	return `${mins}m`;
 }
 
-export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOptions): Column<Attendance>[] {
+export function getAttendanceColumns({ onEdit, canManage, onReviewPermissions }: AttendanceColumnsOptions): Column<Attendance>[] {
 	const columns: Column<Attendance>[] = [
 		{
 			key: "employee",
@@ -91,19 +92,25 @@ export function getAttendanceColumns({ onEdit, canManage }: AttendanceColumnsOpt
 		},
 	];
 
-	if (canManage && onEdit) {
+	if ((canManage && onEdit) || onReviewPermissions) {
 		columns.push({
 			key: "actions",
 			header: "",
-			className: "w-[70px]",
+			className: "w-[180px]",
 			render: (attendance) => (
+				<div className="flex items-center gap-2">
+				{canManage && onEdit && (
 				<Button
 					variant="ghost"
 					size="icon"
 					onClick={() => onEdit(attendance)}
+					aria-label={`Edit attendance for ${attendance.user?.name ?? "employee"}`}
 				>
 					<Edit className="h-4 w-4" />
 				</Button>
+				)}
+				{onReviewPermissions && <Button size="sm" variant="outline" onClick={() => onReviewPermissions(attendance)}>Short permissions</Button>}
+				</div>
 			),
 		});
 	}

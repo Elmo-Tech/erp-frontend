@@ -1,6 +1,7 @@
 "use client";
 
-import React from 'react';
+import React, { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LookupOptionsManager } from '@/features/settings/components/LookupOptionsManager';
 import { TagsManager } from '@/features/settings/components/TagsManager';
@@ -9,9 +10,16 @@ import { HrPoliciesSettings } from '@/features/hr/components/HrPoliciesSettings'
 import { LeaveTypesSettings } from '@/features/hr/components/LeaveTypesSettings';
 import { DeductionTypesSettings } from '@/features/hr/components/DeductionTypesSettings';
 import { useAuthStore } from '@/store/authStore';
+import { isModuleEnabled, moduleKeys } from '@/config/simplification';
 
 export default function SettingsPage() {
+  return <Suspense fallback={<p>Loading settings...</p>}><SettingsContent /></Suspense>;
+}
+
+function SettingsContent() {
   const canManageLeaveTypes = useAuthStore((state) => state.hasPermission('manage_leave_types'));
+  const searchParams = useSearchParams();
+  const canConfigureDeductionTypes = isModuleEnabled(moduleKeys.financials);
 
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
@@ -24,7 +32,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="specializations" className="space-y-4">
+      <Tabs defaultValue={searchParams.get('tab') === 'google_drive' ? 'google_drive' : 'specializations'} className="space-y-4">
         <TabsList className="h-auto w-full flex-wrap justify-start">
            <TabsTrigger value="specializations">Specializations</TabsTrigger>
            <TabsTrigger value="categories">Task Categories</TabsTrigger>
@@ -35,7 +43,7 @@ export default function SettingsPage() {
 			<TabsTrigger value="google_drive">Google Drive</TabsTrigger>
             <TabsTrigger value="hr_policies">HR Policies</TabsTrigger>
             {canManageLeaveTypes && <TabsTrigger value="leave_types">Leave Types</TabsTrigger>}
-            <TabsTrigger value="deduction_types">Deduction Types</TabsTrigger>
+             {canConfigureDeductionTypes && <TabsTrigger value="deduction_types">Deduction Types</TabsTrigger>}
             <TabsTrigger value="contract_durations">Contract Durations</TabsTrigger>
         </TabsList>
         
@@ -84,7 +92,7 @@ export default function SettingsPage() {
         </TabsContent>
 
 		<TabsContent value="google_drive" className="space-y-4">
-			<GoogleDriveSettings />
+			<GoogleDriveSettings oauthError={searchParams.get('googleDrive') === 'error'} />
 		</TabsContent>
 
         <TabsContent value="hr_policies" className="space-y-4">
@@ -97,9 +105,9 @@ export default function SettingsPage() {
           </TabsContent>
         )}
 
-        <TabsContent value="deduction_types" className="space-y-4">
+        {canConfigureDeductionTypes && <TabsContent value="deduction_types" className="space-y-4">
           <DeductionTypesSettings />
-        </TabsContent>
+        </TabsContent>}
 
         <TabsContent value="contract_durations" className="space-y-4">
           <LookupOptionsManager

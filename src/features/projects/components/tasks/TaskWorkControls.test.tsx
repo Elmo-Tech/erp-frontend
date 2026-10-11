@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { timeEntriesApi } from "@/features/sales/api/timeEntries";
 import { TrackableType, type TimeEntry } from "@/features/sales/types/timeEntry";
@@ -64,6 +64,23 @@ describe("TaskWorkControls", () => {
 		await waitFor(() => expect(timeEntriesApi.end).toHaveBeenCalled());
 		await waitFor(() => expect(useTimerStore.getState().activeTimer).toBeNull());
 		expect(useTimerStore.getState().resumableTimer).toBeNull();
+	});
+
+	it("Complete a running task from the board", async () => {
+		useTimerStore.setState({ activeTimer: { ...entry, isActive: true } });
+		let status = "In Progress";
+		vi.mocked(timeEntriesApi.end).mockImplementation(async () => { status = "Completed"; return { ...entry, stopReason: "end" }; });
+		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		function BoardTask() {
+			const task = useQuery({ queryKey: ["project-pipeline", 1], queryFn: async () => ({ status }) });
+			return <><span>{task.data?.status}</span><TaskWorkControls taskId={12} title="Delivery task" canWork /></>;
+		}
+		render(<QueryClientProvider client={queryClient}><BoardTask /></QueryClientProvider>);
+		await screen.findByText("In Progress");
+		fireEvent.click(screen.getByRole("button", { name: "End work on Delivery task" }));
+		await screen.findByText("Completed");
+		expect(screen.queryByText("In Progress")).not.toBeInTheDocument();
+		expect(useTimerStore.getState().activeTimer).toBeNull();
 	});
 
 	it("does not mutate the timer on a failed pause", async () => {

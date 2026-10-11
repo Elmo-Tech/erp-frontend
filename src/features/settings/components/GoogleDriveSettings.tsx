@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { projectDriveApi } from "@/features/projects/api/projectDrive";
 import { useGoogleDriveStatus } from "@/features/projects/hooks/useProjectDrive";
 
-export function GoogleDriveSettings() {
+export function GoogleDriveSettings({ oauthError: callbackFailed = false }: { oauthError?: boolean }) {
 	const { data: status, error, isFetching, isLoading, refetch } = useGoogleDriveStatus();
 	const [isStartingOAuth, setIsStartingOAuth] = useState(false);
 	const [oauthError, setOauthError] = useState<string | null>(null);
@@ -18,7 +18,7 @@ export function GoogleDriveSettings() {
 		try {
 			setOauthError(null);
 			setIsStartingOAuth(true);
-			const { url } = await projectDriveApi.getOAuthUrl("/dashboard/settings");
+			const { url } = await projectDriveApi.getOAuthUrl("/dashboard/settings?tab=google_drive");
 			window.location.href = url;
 		} catch {
 			setOauthError("Unable to start the Google Drive connection. Please try again.");
@@ -33,6 +33,7 @@ export function GoogleDriveSettings() {
 				<CardDescription>Manage the Google account used to select project folders and upload project files.</CardDescription>
 			</CardHeader>
 			<CardContent>
+				{callbackFailed && <p role="alert" className="mb-4 text-sm text-destructive">Google Drive authorization did not complete. Please try connecting again.</p>}
 				{isLoading ? (
 					<div className="space-y-3" role="status">
 						<span className="sr-only">Loading Google Drive connection status</span>

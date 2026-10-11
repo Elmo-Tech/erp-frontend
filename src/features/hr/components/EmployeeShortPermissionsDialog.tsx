@@ -27,6 +27,7 @@ interface EmployeeShortPermissionsPanelProps {
 	employeeName: string;
 	canManage: boolean;
 	isActive: boolean;
+	initialMonth?: string;
 }
 
 type ShortPermissionReviewAction = "approve" | "reject" | "cancel";
@@ -182,8 +183,8 @@ function ShortPermissionSummary({ permission, canManage, isReviewing, onReview }
 	);
 }
 
-export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canManage, isActive }: EmployeeShortPermissionsPanelProps) {
-	const [month, setMonth] = useState(() => getCurrentPermissionMonth());
+export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canManage, isActive, initialMonth }: EmployeeShortPermissionsPanelProps) {
+	const [month, setMonth] = useState(() => initialMonth ?? getCurrentPermissionMonth());
 	const [pendingReview, setPendingReview] = useState<PendingShortPermissionReview | null>(null);
 	const [compensationType, setCompensationType] = useState<PermissionCompensationType | "">("");
 	const [reviewNote, setReviewNote] = useState("");
@@ -486,7 +487,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 						<AlertDialogAction
 							disabled={isReviewing || (pendingReview?.action === "approve" && !compensationType)}
 							className={pendingReview?.action === "reject" ? "bg-destructive text-white hover:bg-destructive/90" : undefined}
-							onClick={() => void handleReviewSubmit()}
+							onClick={(event) => { event.preventDefault(); void handleReviewSubmit(); }}
 						>
 							{isReviewing && <Loader2 className="animate-spin" />}
 							{pendingReview ? reviewActionLabels[pendingReview.action] : "Confirm"}

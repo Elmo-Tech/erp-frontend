@@ -247,7 +247,7 @@ export type AdminPermission = (typeof ADMIN_PERMISSIONS)[keyof typeof ADMIN_PERM
  * @returns Object with permission checking utilities
  */
 export const usePermissions = () => {
-	const { permissions } = useAuthStore();
+	const { permissions, role } = useAuthStore();
 
 	/**
 	 * Check if user has a specific permission
@@ -256,6 +256,7 @@ export const usePermissions = () => {
 	 */
 	const hasPermission = useCallback(
 		(permissionName: string): boolean => {
+			if (role === "super-admin") return true;
 			if (!permissions || permissions.length === 0) {
 				return false;
 			}
@@ -263,7 +264,7 @@ export const usePermissions = () => {
 			const permission = permissions.find((p) => p.permissionName === permissionName);
 			return permission?.access ?? false;
 		},
-		[permissions]
+		[permissions, role]
 	);
 
 	/**
