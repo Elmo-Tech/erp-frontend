@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
@@ -8,6 +9,8 @@ import { Client, ClientStatus } from "../../../types";
 import { clientSchema, ClientFormData } from "../../../schemas/clientSchema";
 import { ClientFormFields } from "./ClientFormFields";
 import { toast } from "sonner";
+import { handleApiError } from "@/lib/errorHandling";
+import { isAxiosError } from "axios";
 
 interface UpdateClientFormProps {
 	open: boolean;
@@ -36,44 +39,44 @@ export function UpdateClientForm({ open, onOpenChange, client, onSuccess }: Upda
 		},
 	});
 
-	const setFormData = (clientData: Client) => {
+	useEffect(() => {
+		if (!open) return;
 		form.reset({
-			name: clientData.name,
-			email: clientData.email,
-			phone: clientData.phone || "",
-			company: clientData.company || "",
-			position: clientData.position || "",
-			address: clientData.address || "",
-			city: clientData.city || "",
-			country: clientData.country || "",
-			website: clientData.website || "",
-			notes: clientData.notes || "",
-			status: clientData.status || ClientStatus.ACTIVE,
+			name: client.name,
+			email: client.email,
+			phone: client.phone || "",
+			company: client.company || "",
+			position: client.position || "",
+			address: client.address || "",
+			city: client.city || "",
+			country: client.country || "",
+			website: client.website || "",
+			notes: client.notes || "",
+			status: client.status || ClientStatus.ACTIVE,
 		});
-	};
-
-	const handleOpenChange = (isOpen: boolean) => {
-		if (isOpen) {
-			setFormData(client);
-		}
-		onOpenChange(isOpen);
-	};
+	}, [client, open, form]);
 
 	const handleSubmit = async (data: ClientFormData) => {
 		try {
 			await updateClient.mutateAsync({ id: client.clientId, payload: data });
-			toast.success("Client updated successfully");
+			// Success toast comes from the backend message via the axios interceptor.
 			onOpenChange(false);
 			onSuccess?.();
-		} catch {
-			toast.error("Failed to update client");
+		} catch (error) {
+			const errors = isAxiosError<{ errors?: Record<string, string[]> }>(error) ? error.response?.data.errors : undefined;
+			if (errors) {
+				for (const [field, messages] of Object.entries(errors)) {
+					if (field in data) form.setError(field as keyof ClientFormData, { type: "server", message: messages[0] });
+				}
+			}
+			toast.error(handleApiError(error));
 		}
 	};
 
 	return (
 		<FormDialog
 			open={open}
-			onOpenChange={handleOpenChange}
+			onOpenChange={onOpenChange}
 			title="Edit Client"
 			description="Update client information"
 			onSubmit={form.handleSubmit(handleSubmit)}

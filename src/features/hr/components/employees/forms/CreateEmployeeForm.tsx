@@ -23,8 +23,6 @@ const employeeSchema = z.object({
 	salary: z.number().min(0).optional().nullable(),
 	hourlyRate: z.number().min(0).optional().nullable(),
 	workHoursPerDay: z.number().min(1).max(24),
-	workStartTime: z.string(),
-	graceDaysAllowed: z.number().min(0).max(31),
 	internalHourlyCost: z.number().min(0).optional().nullable(),
 });
 
@@ -40,8 +38,6 @@ const defaultEmployeeValues: EmployeeFormData = {
 	salary: null,
 	hourlyRate: null,
 	workHoursPerDay: 8,
-	workStartTime: "10:00",
-	graceDaysAllowed: 5,
 	internalHourlyCost: null,
 };
 
@@ -66,11 +62,11 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 	useEffect(() => {
 		if (open) {
 			form.reset(defaultEmployeeValues);
-			setAvatarFile(null);
 		}
 	}, [form, open]);
 
 	const handleOpenChange = (isOpen: boolean) => {
+		if (!isOpen) setAvatarFile(null);
 		onOpenChange(isOpen);
 	};
 
@@ -88,8 +84,6 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 				salary: data.salary ?? undefined,
 				hourlyRate: data.hourlyRate ?? undefined,
 				workHoursPerDay: data.workHoursPerDay,
-				workStartTime: data.workStartTime,
-				graceDaysAllowed: data.graceDaysAllowed,
 			});
 		} catch (error) {
 			toast.error(handleApiError(error));
@@ -103,14 +97,14 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 				toast.error("Employee was created, but the photo could not be uploaded.", {
 					description: `${handleApiError(error)} You can add the photo by editing the employee.`,
 				});
-				onOpenChange(false);
+				handleOpenChange(false);
 				onSuccess?.();
 				return;
 			}
 		}
 
 		// Success toast comes from the backend message via the axios interceptor.
-		onOpenChange(false);
+		handleOpenChange(false);
 		onSuccess?.();
 	};
 

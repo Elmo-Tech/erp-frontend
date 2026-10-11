@@ -109,7 +109,7 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 				/>
 			</div>
 
-			<div className="grid gap-4 md:grid-cols-3">
+			<div className={isEditing ? "grid gap-4 md:grid-cols-3" : "grid gap-4"}>
 				<FormInput
 					control={control}
 					name="workHoursPerDay"
@@ -118,20 +118,20 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 					min={1}
 					max={24}
 				/>
-				<FormInput
+				{isEditing && <FormInput
 					control={control}
 					name="workStartTime"
 					label="Start Time"
 					type="time"
-				/>
-				<FormInput
+				/>}
+				{isEditing && <FormInput
 					control={control}
 					name="graceDaysAllowed"
 					label="Grace Days/Month"
 					type="number"
 					min={0}
 					max={31}
-				/>
+				/>}
 			</div>
 
 			<FormSwitch
