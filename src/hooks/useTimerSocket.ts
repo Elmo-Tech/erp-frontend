@@ -52,10 +52,14 @@ export function useTimerSocketInit() {
 			}
 
 			try {
-				await api.post("/time-entries/heartbeat", {
-					timeEntryId: activeTimer.timeEntryId,
-					sessionId: activeTimer.sessionId,
-				});
+				await api.post(
+					"/time-entries/heartbeat",
+					{
+						timeEntryId: activeTimer.timeEntryId,
+						sessionId: activeTimer.sessionId,
+					},
+					{ skipErrorToast: true }
+				);
 			} catch (error: unknown) {
 				const status = (error as { response?: { status?: number } }).response?.status;
 				if (status === 409) {

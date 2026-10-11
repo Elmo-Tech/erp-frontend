@@ -308,7 +308,7 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 
 		try {
 			await moveTask.mutateAsync({ taskId, workflowStageId: nextStageId });
-			toast.success("Task moved");
+			// Success toast comes from the backend message via the axios interceptor.
 		} catch {
 			toast.error("Could not move the task");
 		}
@@ -319,7 +319,7 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 
 		try {
 			await deleteTask.mutateAsync(taskToDelete.taskId);
-			toast.success("Task moved to trash");
+			// Success toast comes from the backend message via the axios interceptor.
 			setTaskToDelete(null);
 		} catch {
 			toast.error("Could not delete the task");

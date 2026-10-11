@@ -81,7 +81,7 @@ export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, is
 
 		try {
 			await uploadDocument.mutateAsync({ employeeId, payload: { file, name: name.trim(), documentType: documentType.trim() } });
-			toast.success("Employee document uploaded");
+			// Success toast comes from the backend message via the axios interceptor.
 			resetUploadForm();
 		} catch (error) {
 			setUploadError(handleApiError(error));
@@ -101,7 +101,7 @@ export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, is
 
 		try {
 			await deleteDocument.mutateAsync({ id: pendingDelete.id, employeeId });
-			toast.success("Employee document permanently deleted");
+			// Success toast comes from the backend message via the axios interceptor.
 			setPendingDelete(null);
 		} catch (error) {
 			toast.error(handleApiError(error));

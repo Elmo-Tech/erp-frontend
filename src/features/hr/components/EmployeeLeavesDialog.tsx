@@ -171,7 +171,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 	const handleRequestSubmit = async (values: LeaveRequestFormValues) => {
 		try {
 			await createLeave.mutateAsync({ employeeId, payload: buildEmployeeLeavePayload(values) });
-			toast.success("Leave request submitted");
+			// Success toast comes from the backend message via the axios interceptor.
 			form.reset(getDefaultLeaveRequestFormValues());
 		} catch (error) {
 			toast.error(handleApiError(error));
@@ -192,7 +192,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 			} else {
 				await cancelLeave.mutateAsync({ id: review.leave.id, employeeId, payload });
 			}
-			toast.success(`Leave request ${review.action === "approve" ? "approved" : review.action === "reject" ? "rejected" : "cancelled"}`);
+			// Success toast comes from the backend message via the axios interceptor.
 			setPendingReview(null);
 			setReviewNote("");
 		} catch (error) {

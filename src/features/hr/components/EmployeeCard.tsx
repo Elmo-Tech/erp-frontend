@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Clock, MoreVertical, Calendar, Edit, UserX, UserCheck } from "lucide-react";
+import { Clock, MoreVertical, Calendar, Edit, UserX, UserCheck, Trash2 } from "lucide-react";
 import type { Employee } from "../types";
 import { cn } from "@/lib/utils";
 import { getRoleLabel } from "@/config/simplification";
@@ -15,10 +15,11 @@ interface EmployeeCardProps {
 	onOpen: (employee: Employee) => void;
 	onEdit?: (employee: Employee) => void;
 	onToggleStatus?: (employee: Employee) => void;
+	onDelete?: (employee: Employee) => void;
 }
 
-export function EmployeeCard({ employee, onOpen, onEdit, onToggleStatus }: EmployeeCardProps) {
-	const hasActions = Boolean(onEdit || onToggleStatus);
+export function EmployeeCard({ employee, onOpen, onEdit, onToggleStatus, onDelete }: EmployeeCardProps) {
+	const hasActions = Boolean(onEdit || onToggleStatus || onDelete);
 
 	const formatTime = (time: string | null) => {
 		if (!time) return "-";
@@ -76,13 +77,19 @@ export function EmployeeCard({ employee, onOpen, onEdit, onToggleStatus }: Emplo
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								{onEdit && (
-									<DropdownMenuItem onClick={(event) => { event.stopPropagation(); onEdit(employee); }}>
+									<DropdownMenuItem
+										onSelect={() => onEdit(employee)}
+										onClick={(event) => { event.stopPropagation(); onEdit(employee); }}
+									>
 										<Edit className="h-4 w-4 mr-2" />
 										Edit
 									</DropdownMenuItem>
 								)}
 								{onToggleStatus && (
-									<DropdownMenuItem onClick={(event) => { event.stopPropagation(); onToggleStatus(employee); }}>
+									<DropdownMenuItem
+										onSelect={() => onToggleStatus(employee)}
+										onClick={(event) => { event.stopPropagation(); onToggleStatus(employee); }}
+									>
 										{employee.isActive ? (
 											<>
 												<UserX className="h-4 w-4 mr-2" />
@@ -94,6 +101,16 @@ export function EmployeeCard({ employee, onOpen, onEdit, onToggleStatus }: Emplo
 												Activate
 											</>
 										)}
+									</DropdownMenuItem>
+								)}
+								{onDelete && (
+									<DropdownMenuItem
+										className="text-destructive"
+										onSelect={() => onDelete(employee)}
+										onClick={(event) => { event.stopPropagation(); onDelete(employee); }}
+									>
+										<Trash2 className="h-4 w-4 mr-2" />
+										Delete
 									</DropdownMenuItem>
 								)}
 							</DropdownMenuContent>

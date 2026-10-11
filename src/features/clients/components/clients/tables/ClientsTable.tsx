@@ -51,7 +51,7 @@ export function ClientsTable({ onEdit, onAdd }: ClientsTableProps) {
 
 		try {
 			await deleteClient.mutateAsync(clientToDelete.clientId);
-			toast.success("Client deleted successfully");
+			// Success toast comes from the backend message via the axios interceptor.
 			setDeleteDialogOpen(false);
 			setClientToDelete(null);
 		} catch {

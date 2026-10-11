@@ -13,7 +13,10 @@ interface ClientActionsProps {
 }
 
 export function ClientActions({ client, onView, onEdit, onDelete }: ClientActionsProps) {
+	const stopPropagation = (event: { stopPropagation(): void }) => event.stopPropagation();
+
 	return (
+		<div onClick={stopPropagation} onPointerDown={stopPropagation}>
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button
@@ -25,12 +28,18 @@ export function ClientActions({ client, onView, onEdit, onDelete }: ClientAction
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				<DropdownMenuItem onClick={() => onView(client)}>
+				<DropdownMenuItem
+					onSelect={() => onView(client)}
+					onClick={(e) => { e.stopPropagation(); onView(client); }}
+				>
 					<Eye className="h-4 w-4 mr-2" />
 					View
 				</DropdownMenuItem>
 				{onEdit && (
-					<DropdownMenuItem onClick={() => onEdit(client)}>
+					<DropdownMenuItem
+						onSelect={() => onEdit(client)}
+						onClick={(e) => { e.stopPropagation(); onEdit(client); }}
+					>
 						<Pencil className="h-4 w-4 mr-2" />
 						Edit
 					</DropdownMenuItem>
@@ -38,7 +47,8 @@ export function ClientActions({ client, onView, onEdit, onDelete }: ClientAction
 				{onDelete && (
 					<DropdownMenuItem
 						className="text-destructive"
-						onClick={() => onDelete(client)}
+						onSelect={() => onDelete(client)}
+						onClick={(e) => { e.stopPropagation(); onDelete(client); }}
 					>
 						<Trash2 className="h-4 w-4 mr-2" />
 						Delete
@@ -46,5 +56,6 @@ export function ClientActions({ client, onView, onEdit, onDelete }: ClientAction
 				)}
 			</DropdownMenuContent>
 		</DropdownMenu>
+		</div>
 	);
 }

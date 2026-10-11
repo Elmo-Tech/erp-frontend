@@ -218,7 +218,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 	const handleRequestSubmit = async (values: ShortPermissionRequestFormValues) => {
 		try {
 			await createShortPermission.mutateAsync({ employeeId, payload: buildEmployeeShortPermissionPayload(values) });
-			toast.success("Short permission request submitted");
+			// Success toast comes from the backend message via the axios interceptor.
 			form.reset(getDefaultShortPermissionRequestFormValues());
 		} catch (error) {
 			toast.error(handleApiError(error));
@@ -244,7 +244,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 			} else {
 				await cancelShortPermission.mutateAsync({ id: review.permission.id, employeeId, payload });
 			}
-			toast.success(`Short permission ${review.action === "approve" ? "approved" : review.action === "reject" ? "rejected" : "cancelled"}`);
+			// Success toast comes from the backend message via the axios interceptor.
 			setPendingReview(null);
 			setCompensationType("");
 			setReviewNote("");

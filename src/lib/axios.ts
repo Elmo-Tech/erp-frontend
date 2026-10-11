@@ -8,6 +8,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/a
 const LOGIN_ROUTE = "/login";
 let nextRateLimitToastAt = 0;
 
+declare module "axios" {
+	export interface AxiosRequestConfig {
+		/** Skip the global error toast (for polling/background requests). */
+		skipErrorToast?: boolean;
+	}
+}
+
 function getRetryAfterSeconds(error: AxiosError): number | null {
 	const rawValue = error.response?.headers?.["retry-after"];
 
@@ -97,6 +104,12 @@ export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
 export const handleApiRequestError = (error: AxiosError) => Promise.reject(error);
 
 export const handleApiResponse = (response: AxiosResponse) => {
+	// Convention: the interceptor owns generic CRUD success toasts from the
+	// backend `message` field. Components must NOT toast the same success
+	// again (that produced the duplicate/triple toasts). Components keep
+	// only special-case toasts (warnings, info, custom flows).
+	// Endpoints that return a bare `{ data }` shape stay silent here, so
+	// their components keep their own success toast.
 	const method = response.config.method?.toLowerCase();
 	const message = typeof response.data?.message === "string" ? response.data.message : null;
 
@@ -111,6 +124,14 @@ export const handleApiResponseError = (error: AxiosError) => {
 	if (error.response?.status === 401) {
 		clearClientAuthState();
 		redirectToLogin();
+	}
+
+	// Polling/background requests opt out of the global error toast so a
+	// dead session or flaky network does not spam the user. Pass
+	// { skipErrorToast: true } in the request config.
+	const skipErrorToast = (error.config as { skipErrorToast?: boolean } | undefined)?.skipErrorToast === true;
+	if (skipErrorToast) {
+		return Promise.reject(error);
 	}
 
 	if (error.response?.status === 429) {

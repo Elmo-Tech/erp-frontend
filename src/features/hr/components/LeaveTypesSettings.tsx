@@ -33,7 +33,7 @@ export function LeaveTypesSettings() {
 	const toggleActiveStatus = async (leaveType: LeaveType) => {
 		try {
 			await updateLeaveType.mutateAsync({ id: leaveType.id, payload: { isActive: !leaveType.isActive } });
-			toast.success(`${leaveType.name} ${leaveType.isActive ? "deactivated" : "reactivated"}`);
+			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
 			toast.error(handleApiError(error));
 		}

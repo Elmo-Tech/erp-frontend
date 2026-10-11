@@ -49,7 +49,7 @@ export function FormDialog({ open, onOpenChange, title, description, children, o
 				{children}
 
 				{showFooter && (
-					<DialogFooter className="gap-2 pt-4">
+					<DialogFooter className="sticky bottom-0 gap-2 bg-background pt-4">
 						<Button
 							type="button"
 							variant="outline"

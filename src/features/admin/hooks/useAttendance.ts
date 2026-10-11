@@ -29,10 +29,7 @@ export function useCreateAttendance() {
 		mutationFn: (data: AttendanceFormData) => attendanceApi.create(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: attendanceKeys.all });
-			toast.success("Attendance record created successfully");
-		},
-		onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-			toast.error(error.response?.data?.message || "Failed to create attendance record");
+			// Success + error toasts come from the axios interceptor.
 		},
 	});
 }
@@ -44,10 +41,7 @@ export function useUpdateAttendance() {
 		mutationFn: ({ id, data }: { id: number; data: Partial<AttendanceFormData> }) => attendanceApi.update(id, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: attendanceKeys.all });
-			toast.success("Attendance record updated successfully");
-		},
-		onError: (error: Error & { response?: { data?: { message?: string } } }) => {
-			toast.error(error.response?.data?.message || "Failed to update attendance record");
+			// Success + error toasts come from the axios interceptor.
 		},
 	});
 }

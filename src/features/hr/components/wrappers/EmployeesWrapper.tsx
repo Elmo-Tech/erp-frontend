@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Users } from "lucide-react";
-import { useEmployees, useDeactivateEmployee, useActivateEmployee } from "../../hooks";
+import { useEmployees, useDeactivateEmployee, useActivateEmployee, useDeleteEmployee } from "../../hooks";
 import { EmployeeCard } from "../EmployeeCard";
 import { CreateEmployeeForm, UpdateEmployeeForm } from "../employees";
 import type { Employee } from "../../types";
 import { useRoles } from "@/features/admin/hooks/useRoles";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
 import { getRoleLabel } from "@/config/simplification";
 import { useAuthStore } from "@/store/authStore";
+import { handleApiError } from "@/lib/errorHandling";
 
 export function EmployeesWrapper() {
 	const router = useRouter();
@@ -34,6 +36,8 @@ export function EmployeesWrapper() {
 	const canManageEmployees = useAuthStore((state) => state.hasPermission("manage_employees"));
 	const deactivateEmployee = useDeactivateEmployee();
 	const activateEmployee = useActivateEmployee();
+	const deleteEmployee = useDeleteEmployee();
+	const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
 
 	const roleOptions =
 		rolesData?.roles
@@ -53,13 +57,24 @@ export function EmployeesWrapper() {
 		try {
 			if (employee.isActive) {
 				await deactivateEmployee.mutateAsync(employee.userId);
-				toast.success("Employee deactivated");
 			} else {
 				await activateEmployee.mutateAsync(employee.userId);
-				toast.success("Employee activated");
 			}
+			// Success toast comes from the backend message via the axios interceptor.
 		} catch {
 			toast.error("Failed to update employee status");
+		}
+	};
+
+	const handleDelete = async () => {
+		if (!employeeToDelete) return;
+
+		try {
+			await deleteEmployee.mutateAsync(employeeToDelete.userId);
+			// Success toast comes from the backend message via the axios interceptor.
+			setEmployeeToDelete(null);
+		} catch (error) {
+			toast.error(handleApiError(error));
 		}
 	};
 
@@ -129,6 +144,7 @@ export function EmployeesWrapper() {
 							onOpen={handleOpenEmployeeDetails}
 							onEdit={canManageEmployees ? handleEdit : undefined}
 							onToggleStatus={canManageEmployees ? handleToggleStatus : undefined}
+							onDelete={canManageEmployees ? setEmployeeToDelete : undefined}
 						/>
 					))}
 				</div>
@@ -164,6 +180,17 @@ export function EmployeesWrapper() {
 					roles={roleOptions}
 				/>
 			)}
+
+			<ConfirmDialog
+				open={employeeToDelete !== null}
+				onOpenChange={(open) => { if (!open) setEmployeeToDelete(null); }}
+				title="Delete Employee"
+				description={`Are you sure you want to delete ${employeeToDelete?.name}? History is kept (soft delete) and the employee can no longer sign in.`}
+				confirmLabel="Delete"
+				onConfirm={() => void handleDelete()}
+				variant="destructive"
+				isLoading={deleteEmployee.isPending}
+			/>
 
 		</div>
 	);

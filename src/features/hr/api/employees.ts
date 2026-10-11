@@ -61,4 +61,8 @@ export const employeesApi = {
 		const response = await api.post(`${BASE_URL}/${id}/activate`);
 		return response.data.data;
 	},
+
+	remove: async (id: number): Promise<void> => {
+		await api.delete(`${BASE_URL}/${id}`);
+	},
 };

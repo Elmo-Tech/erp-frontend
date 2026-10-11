@@ -89,7 +89,7 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 		try {
 			const savedPolicy = await createPolicy.mutateAsync(buildCreateHrPolicyPayload(values));
 			form.reset(toHrPolicyFormValues(savedPolicy));
-			toast.success("HR policy version saved");
+			// Success toast comes from the backend message via the axios interceptor.
 		} catch {
 			// The shared API client displays a request error toast.
 		}

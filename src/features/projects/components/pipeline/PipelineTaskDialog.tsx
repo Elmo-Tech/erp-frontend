@@ -112,7 +112,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 
 		try {
 			await saveCoverImage(savedTask.taskId);
-			toast.success(isEditing ? "Task updated" : "Task added to the pipeline");
+			// Success toast comes from the backend message via the axios interceptor.
 		} catch {
 			toast.warning("Task saved, but its cover image could not be updated");
 		}

@@ -93,3 +93,15 @@ export function useActivateEmployee() {
 		},
 	});
 }
+
+export function useDeleteEmployee() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (id: number) => employeesApi.remove(id),
+		onSuccess: (_, id) => {
+			queryClient.invalidateQueries({ queryKey: employeeKeys.lists() });
+			queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id) });
+		},
+	});
+}

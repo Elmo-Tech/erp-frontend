@@ -9,6 +9,7 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { FormDialog } from "@/components/shared/dialogs/FormDialog";
 import { FormInput } from "@/components/shared/forms/FormInput";
+import { FormTimePicker } from "@/components/shared/forms/FormTimePicker";
 import { FormSelect } from "@/components/shared/forms/FormSelect";
 import { FormTextarea } from "@/components/shared/forms/FormTextarea";
 import { FormDatePicker } from "@/components/shared/forms/FormDatePicker";
@@ -215,18 +216,16 @@ export function AttendanceFormDialog({ open, onClose, attendance }: AttendanceFo
 							/>
 
 							<div className="grid grid-cols-2 gap-4">
-								<FormInput
+								<FormTimePicker
 									control={form.control}
 									name="clockIn"
 									label="Clock In"
-									type="time"
 								/>
 
-								<FormInput
+								<FormTimePicker
 									control={form.control}
 									name="clockOut"
 									label="Clock Out"
-									type="time"
 								/>
 							</div>
 

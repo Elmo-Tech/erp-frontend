@@ -100,10 +100,10 @@ function MyLeaves({ employeeId, year }: { employeeId: number; year: number }) {
 		try {
 			if (editingId) {
 				await updateLeave.mutateAsync({ id: editingId, employeeId, payload: buildEmployeeLeavePayload(values) });
-				toast.success("Leave request updated");
+				// Success toast comes from the backend message via the axios interceptor.
 			} else {
 				await createLeave.mutateAsync({ employeeId, payload: buildEmployeeLeavePayload(values) });
-				toast.success("Leave request submitted");
+				// Success toast comes from the backend message via the axios interceptor.
 			}
 			setEditingId(null);
 			form.reset(getDefaultLeaveRequestFormValues());
@@ -162,7 +162,7 @@ function MyLeaves({ employeeId, year }: { employeeId: number; year: number }) {
 										onClick={async () => {
 											try {
 												await cancelLeave.mutateAsync({ id: l.id, employeeId });
-												toast.success("Leave cancelled");
+												// Success toast comes from the backend message via the axios interceptor.
 											} catch (e) {
 												toast.error(handleApiError(e));
 											}
@@ -194,10 +194,10 @@ function MyPermissions({ employeeId, month }: { employeeId: number; month: strin
 		try {
 			if (editingId) {
 				await updatePerm.mutateAsync({ id: editingId, employeeId, payload: buildEmployeeShortPermissionPayload(values) });
-				toast.success("Permission updated");
+				// Success toast comes from the backend message via the axios interceptor.
 			} else {
 				await createPerm.mutateAsync({ employeeId, payload: buildEmployeeShortPermissionPayload(values) });
-				toast.success("Permission submitted");
+				// Success toast comes from the backend message via the axios interceptor.
 			}
 			setEditingId(null);
 			form.reset(getDefaultShortPermissionRequestFormValues());
@@ -229,7 +229,7 @@ function MyPermissions({ employeeId, month }: { employeeId: number; month: strin
 									<Button size="sm" variant="outline" onClick={() => { setEditingId(p.id); form.reset({ permissionDate: p.permissionDate, startTime: p.startTime.slice(0, 5), endTime: p.endTime.slice(0, 5), reason: p.reason ?? "" }); }}>Edit</Button>
 								)}
 								{(p.status === "pending" || p.status === "approved") && (
-									<Button size="sm" variant="ghost" onClick={async () => { try { await cancelPerm.mutateAsync({ id: p.id, employeeId }); toast.success("Permission cancelled"); } catch (e) { toast.error(handleApiError(e)); } }}>Cancel</Button>
+									<Button size="sm" variant="ghost" onClick={async () => { try { await cancelPerm.mutateAsync({ id: p.id, employeeId }); /* Success toast via axios interceptor. */ } catch (e) { toast.error(handleApiError(e)); } }}>Cancel</Button>
 								)}
 							</span>
 						</div>

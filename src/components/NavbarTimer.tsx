@@ -109,7 +109,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 			setHoldDialogOpen(false);
 			setHoldReason("");
 			await queryClient.invalidateQueries({ queryKey: projectPipelineKeys.all });
-			toast.success(action === "pause" ? "Timer paused" : action === "hold" ? "Task placed on hold" : "Timer ended");
+			// Success toast comes from the backend message via the axios interceptor.
 		} catch {
 			toast.error(`Failed to ${action} timer`);
 		} finally {
@@ -126,7 +126,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 			setActiveTimer(response.data.data);
 			setResumableTimer(null);
 			await queryClient.invalidateQueries({ queryKey: projectPipelineKeys.all });
-			toast.success("Timer resumed");
+			// Success toast comes from the backend message via the axios interceptor.
 		} catch {
 			toast.error("Failed to resume timer");
 		} finally {

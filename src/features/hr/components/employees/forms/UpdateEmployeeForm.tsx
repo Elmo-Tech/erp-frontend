@@ -133,7 +133,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 		}
 
 		if (Object.keys(payload).length > 0 || avatarFile) {
-			toast.success("Employee updated successfully");
+			// Success toast comes from the backend message via the axios interceptor.
 		}
 		onOpenChange(false);
 		onSuccess?.();

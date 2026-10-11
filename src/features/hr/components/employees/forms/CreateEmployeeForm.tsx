@@ -109,7 +109,7 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 			}
 		}
 
-		toast.success("Employee created successfully");
+		// Success toast comes from the backend message via the axios interceptor.
 		onOpenChange(false);
 		onSuccess?.();
 	};

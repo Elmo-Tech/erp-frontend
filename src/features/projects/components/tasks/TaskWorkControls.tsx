@@ -64,7 +64,7 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 			setHoldOpen(false);
 			setHoldReason("");
 			await refresh();
-			toast.success(action === "pause" ? "Work paused" : action === "hold" ? "Task placed on hold" : "Work session ended");
+			// Success toast comes from the backend message via the axios interceptor.
 		},
 		onError: (error) => toast.error(handleApiError(error)),
 	});
@@ -74,7 +74,7 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 			if (isResumable && resumableTimer) await resumeTimer.mutateAsync(resumableTimer.timeEntryId);
 			else await startTimer.mutateAsync({ trackableType: TrackableType.TASK, trackableId: taskId });
 			await refresh();
-			toast.success(isResumable ? "Work resumed" : "Work started");
+			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
 			toast.error(handleApiError(error));
 		}

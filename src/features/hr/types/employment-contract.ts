@@ -19,6 +19,11 @@ export interface EmploymentContract {
 	terminatedOn: string | null;
 	notes?: string | null;
 	isCurrent: boolean;
+	hasFile?: boolean;
+	fileName?: string | null;
+	fileSize?: number | null;
+	fileMimeType?: string | null;
+	fileUploadedAt?: string | null;
 	createdAt: string;
 	updatedAt: string;
 }

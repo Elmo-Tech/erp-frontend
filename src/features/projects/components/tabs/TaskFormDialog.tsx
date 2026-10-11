@@ -244,7 +244,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 
 				if (Object.keys(payload).length > 0) {
 					await updateTask.mutateAsync({ id: task.taskId, payload });
-					toast.success("Task updated successfully");
+					// Success toast comes from the backend message via the axios interceptor.
 				} else {
 					toast.info("No changes to save");
 				}
@@ -268,7 +268,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					tagIds: data.tagIds,
 					internalReviewerNotes: data.internalReviewerNotes,
 				});
-				toast.success("Task created successfully");
+				// Success toast comes from the backend message via the axios interceptor.
 			}
 			form.reset();
 			onOpenChange(false);
