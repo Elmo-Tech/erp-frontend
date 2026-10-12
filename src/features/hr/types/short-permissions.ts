@@ -30,6 +30,12 @@ export interface PermissionAllowance {
 export interface EmployeeShortPermissionsResponse {
 	permissions: EmployeeShortPermission[];
 	allowance: PermissionAllowance;
+	canReview?: boolean;
+}
+
+export interface PendingEmployeeShortPermission extends EmployeeShortPermission {
+	employee: { userId: number; name: string };
+	canReview: boolean;
 }
 
 export interface CreateEmployeeShortPermissionPayload {

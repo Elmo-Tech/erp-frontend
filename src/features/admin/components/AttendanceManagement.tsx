@@ -17,6 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Label } from "@/components/ui/label";
 import { EmployeeShortPermissionsPanel } from "@/features/hr/components/EmployeeShortPermissionsDialog";
 import { useAuthStore } from "@/store/authStore";
+import { ShortPermissionPendingQueue } from "@/features/hr/components/ShortPermissionPendingQueue";
+import type { PendingEmployeeShortPermission, PermissionCompensationType } from "@/features/hr/types/short-permissions";
 
 export function AttendanceManagement() {
 	const [filters, setFilters] = useState<AttendanceFilters>({});
@@ -26,13 +28,16 @@ export function AttendanceManagement() {
 	const [permissionsOpen, setPermissionsOpen] = useState(false);
 	const [permissionEmployeeId, setPermissionEmployeeId] = useState(0);
 	const [permissionMonth, setPermissionMonth] = useState<string | undefined>();
-	const currentUserId = useAuthStore((state) => state.user?.userId);
+	const currentUser = useAuthStore((state) => state.user);
+	const [reviewRequest, setReviewRequest] = useState<{ permission: PendingEmployeeShortPermission; compensationType?: PermissionCompensationType; revision: number } | undefined>();
 
 	const { data, isLoading, error } = useAttendanceList(filters, page);
 	const { data: employeesData } = useEmployees({ perPage: 100 });
 	const { canManageAttendance, canViewAllAttendance, hasAnyPermission } = usePermissions();
 	const canReviewPermissions = hasAnyPermission(["manage_permissions", "manage_employees"]);
-	const permissionEmployee = employeesData?.employees.find((employee) => employee.userId === permissionEmployeeId);
+	const permissionEmployee = employeesData?.employees.find((employee) => employee.userId === permissionEmployeeId)
+		?? (currentUser?.userId === permissionEmployeeId ? currentUser : undefined)
+		?? (reviewRequest?.permission.employeeId === permissionEmployeeId ? reviewRequest.permission.employee : undefined);
 
 	const handleUserFilterChange = (value: string | undefined) => {
 		setFilters((prev) => ({
@@ -89,6 +94,7 @@ export function AttendanceManagement() {
 		onEdit: handleEdit,
 		canManage: canManageAttendance,
 		onReviewPermissions: canReviewPermissions ? (attendance) => {
+			setReviewRequest(undefined);
 			setPermissionEmployeeId(attendance.userId);
 			setPermissionMonth(attendance.date.slice(0, 7));
 			setPermissionsOpen(true);
@@ -133,6 +139,7 @@ export function AttendanceManagement() {
 						actions={
 							<div className="flex gap-2">
 							{canReviewPermissions && <Button variant="outline" onClick={() => {
+								setReviewRequest(undefined);
 								setPermissionEmployeeId(filters.userId ?? 0);
 								setPermissionMonth(undefined);
 								setPermissionsOpen(true);
@@ -181,12 +188,23 @@ export function AttendanceManagement() {
 			{canReviewPermissions && <Dialog open={permissionsOpen} onOpenChange={setPermissionsOpen}>
 				<DialogContent className="max-w-4xl! max-h-[90vh] overflow-y-auto">
 					<DialogHeader><DialogTitle>Review short permissions</DialogTitle><DialogDescription>Select an employee to submit or approve paid and unpaid short permissions.</DialogDescription></DialogHeader>
+					<ShortPermissionPendingQueue isActive={permissionsOpen} onReview={(permission, compensationType) => {
+						setPermissionEmployeeId(permission.employeeId);
+						setPermissionMonth(permission.permissionDate.slice(0, 7));
+						setReviewRequest((previous) => ({ permission, compensationType, revision: (previous?.revision ?? 0) + 1 }));
+					}} onView={(permission) => {
+						setPermissionEmployeeId(permission.employeeId);
+						setPermissionMonth(permission.permissionDate.slice(0, 7));
+						setReviewRequest(undefined);
+					}} />
 					<Label htmlFor="permission-employee">Employee</Label>
-					<select id="permission-employee" className="rounded-md border p-2" value={permissionEmployeeId} onChange={(event) => setPermissionEmployeeId(Number(event.target.value))}>
+					<select id="permission-employee" className="rounded-md border p-2" value={permissionEmployeeId} onChange={(event) => { setReviewRequest(undefined); setPermissionMonth(undefined); setPermissionEmployeeId(Number(event.target.value)); }}>
 						<option value={0}>Select an employee</option>
 						{employeesData?.employees.map((employee) => <option key={employee.userId} value={employee.userId}>{employee.name}</option>)}
+						{currentUser && !employeesData?.employees.some((employee) => employee.userId === currentUser.userId) && <option value={currentUser.userId}>{currentUser.name}</option>}
+						{permissionEmployee && permissionEmployee.userId !== currentUser?.userId && !employeesData?.employees.some((employee) => employee.userId === permissionEmployee.userId) && <option value={permissionEmployee.userId}>{permissionEmployee.name}</option>}
 					</select>
-					{permissionEmployeeId === currentUserId ? <p className="text-sm text-muted-foreground">Your own requests must be approved by another manager. Use My Requests to submit them.</p> : permissionEmployee && <EmployeeShortPermissionsPanel key={`${permissionEmployeeId}-${permissionMonth}`} employeeId={permissionEmployeeId} employeeName={permissionEmployee.name} canManage isActive={permissionsOpen} initialMonth={permissionMonth} />}
+					{permissionEmployee && <EmployeeShortPermissionsPanel key={`${permissionEmployeeId}-${permissionMonth}-${reviewRequest?.revision}`} employeeId={permissionEmployeeId} employeeName={permissionEmployee.name} canManage isActive={permissionsOpen} initialMonth={permissionMonth} initialReview={reviewRequest} />}
 				</DialogContent>
 			</Dialog>}
 		</>

@@ -184,7 +184,8 @@ function MyLeaves({ employeeId, year }: { employeeId: number; year: number }) {
 }
 
 function MyPermissions({ employeeId, month }: { employeeId: number; month: string }) {
-	const listQuery = useEmployeeShortPermissions(employeeId, month, employeeId > 0);
+	const [selectedMonth, setSelectedMonth] = useState(month);
+	const listQuery = useEmployeeShortPermissions(employeeId, selectedMonth, employeeId > 0);
 	const createPerm = useCreateEmployeeShortPermission();
 	const updatePerm = useUpdateEmployeeShortPermission();
 	const cancelPerm = useCancelEmployeeShortPermission();
@@ -201,6 +202,7 @@ function MyPermissions({ employeeId, month }: { employeeId: number; month: strin
 				await createPerm.mutateAsync({ employeeId, payload: buildEmployeeShortPermissionPayload(values) });
 				// Success toast comes from the backend message via the axios interceptor.
 			}
+			setSelectedMonth(values.permissionDate.slice(0, 7));
 			setEditingId(null);
 			form.reset(getDefaultShortPermissionRequestFormValues());
 		} catch (e) {
@@ -211,14 +213,15 @@ function MyPermissions({ employeeId, month }: { employeeId: number; month: strin
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>My short permissions ({month})</CardTitle>
+				<CardTitle>My short permissions ({selectedMonth})</CardTitle>
 				<CardDescription>Used {listQuery.data?.allowance.usedPaidMinutes ?? 0} / {listQuery.data?.allowance.allocatedMinutes ?? 0} paid minutes.</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				<input aria-label="My short permissions month" type="month" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} className="rounded border px-2 py-2 text-sm" />
 				<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
-					<input type="date" {...form.register("permissionDate")} className="rounded border px-2 py-2 text-sm" />
-					<input type="time" {...form.register("startTime")} className="rounded border px-2 py-2 text-sm" />
-					<input type="time" {...form.register("endTime")} className="rounded border px-2 py-2 text-sm" />
+					<input aria-label="Permission date" type="date" {...form.register("permissionDate")} className="rounded border px-2 py-2 text-sm" />
+					<input aria-label="Start time" type="time" {...form.register("startTime")} className="rounded border px-2 py-2 text-sm" />
+					<input aria-label="End time" type="time" {...form.register("endTime")} className="rounded border px-2 py-2 text-sm" />
 					<input {...form.register("reason")} placeholder="Reason (optional)" className="rounded border px-2 py-2 text-sm" />
 					<Button type="submit">{editingId ? "Update" : "Submit"}</Button>
 				</form>

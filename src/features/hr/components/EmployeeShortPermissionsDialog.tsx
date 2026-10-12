@@ -28,6 +28,7 @@ interface EmployeeShortPermissionsPanelProps {
 	canManage: boolean;
 	isActive: boolean;
 	initialMonth?: string;
+	initialReview?: { permission: EmployeeShortPermission; compensationType?: PermissionCompensationType };
 }
 
 type ShortPermissionReviewAction = "approve" | "reject" | "cancel";
@@ -127,8 +128,8 @@ function AllowanceSummary({ allowance }: { allowance: PermissionAllowance }) {
 	);
 }
 
-function ShortPermissionSummary({ permission, canManage, isReviewing, onReview }: { permission: EmployeeShortPermission; canManage: boolean; isReviewing: boolean; onReview: (permission: EmployeeShortPermission, action: ShortPermissionReviewAction) => void }) {
-	const actions = getAvailableReviewActions(permission.status);
+function ShortPermissionSummary({ permission, canManage, canReview, isReviewing, onReview }: { permission: EmployeeShortPermission; canManage: boolean; canReview: boolean; isReviewing: boolean; onReview: (permission: EmployeeShortPermission, action: ShortPermissionReviewAction, compensationType?: PermissionCompensationType) => void }) {
+	const actions = getAvailableReviewActions(permission.status).filter((action) => action === "cancel" || canReview);
 
 	return (
 		<div className="rounded-lg border bg-muted/20 p-4">
@@ -156,6 +157,7 @@ function ShortPermissionSummary({ permission, canManage, isReviewing, onReview }
 								{reviewActionLabels[action]}
 							</Button>
 						))}
+						{permission.status === "pending" && canReview && <Button type="button" size="sm" variant="outline" disabled={isReviewing} onClick={() => onReview(permission, "approve", "paid")}>Mark as Paid</Button>}
 					</div>
 				)}
 			</div>
@@ -183,10 +185,10 @@ function ShortPermissionSummary({ permission, canManage, isReviewing, onReview }
 	);
 }
 
-export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canManage, isActive, initialMonth }: EmployeeShortPermissionsPanelProps) {
+export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canManage, isActive, initialMonth, initialReview }: EmployeeShortPermissionsPanelProps) {
 	const [month, setMonth] = useState(() => initialMonth ?? getCurrentPermissionMonth());
-	const [pendingReview, setPendingReview] = useState<PendingShortPermissionReview | null>(null);
-	const [compensationType, setCompensationType] = useState<PermissionCompensationType | "">("");
+	const [pendingReview, setPendingReview] = useState<PendingShortPermissionReview | null>(() => initialReview ? { permission: initialReview.permission, action: "approve" } : null);
+	const [compensationType, setCompensationType] = useState<PermissionCompensationType | "">(initialReview?.compensationType ?? "");
 	const [reviewNote, setReviewNote] = useState("");
 	const shortPermissionsQuery = useEmployeeShortPermissions(employeeId, month, isActive && canManage);
 	const createShortPermission = useCreateEmployeeShortPermission();
@@ -205,20 +207,22 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 	const pendingPermissions = permissions.filter((permission) => permission.status === "pending");
 	const historicalPermissions = permissions.filter((permission) => permission.status !== "pending");
 	const allowance = shortPermissionsQuery.data?.allowance;
+	const canReview = shortPermissionsQuery.data?.canReview ?? canManage;
 	const isReviewing = approveShortPermission.isPending || rejectShortPermission.isPending || cancelShortPermission.isPending;
 	const isRequesting = createShortPermission.isPending;
 	const availableAllowanceMinutes = Math.max(allowance?.remainingMinutes ?? 0, 0);
 	const paidApprovalOverageMinutes = pendingReview?.action === "approve" && allowance ? Math.max(0, pendingReview.permission.durationMinutes - availableAllowanceMinutes) : 0;
 
-	const openReviewDialog = (permission: EmployeeShortPermission, action: ShortPermissionReviewAction) => {
+	const openReviewDialog = (permission: EmployeeShortPermission, action: ShortPermissionReviewAction, compensation?: PermissionCompensationType) => {
 		setPendingReview({ permission, action });
-		setCompensationType("");
+		setCompensationType(compensation ?? "");
 		setReviewNote("");
 	};
 
 	const handleRequestSubmit = async (values: ShortPermissionRequestFormValues) => {
 		try {
 			await createShortPermission.mutateAsync({ employeeId, payload: buildEmployeeShortPermissionPayload(values) });
+			setMonth(values.permissionDate.slice(0, 7));
 			// Success toast comes from the backend message via the axios interceptor.
 			form.reset(getDefaultShortPermissionRequestFormValues());
 		} catch (error) {
@@ -364,9 +368,10 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 								</Button>
 							</AlertDescription>
 						</Alert>
-					) : allowance ? (
+					) : shortPermissionsQuery.data ? (
 						<div className="space-y-6">
-							<AllowanceSummary allowance={allowance} />
+							{allowance && <AllowanceSummary allowance={allowance} />}
+							{!canReview && <p className="text-sm text-muted-foreground">These requests require another authorized reviewer. Admins with short-permission approval access may approve their own requests.</p>}
 
 							<section className="space-y-3 border-t pt-5">
 								<div>
@@ -380,6 +385,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 												key={permission.id}
 												permission={permission}
 												canManage={canManage}
+												canReview={canReview}
 												isReviewing={isReviewing}
 												onReview={openReviewDialog}
 											/>
@@ -402,6 +408,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 												key={permission.id}
 												permission={permission}
 												canManage={canManage}
+												canReview={canReview}
 												isReviewing={isReviewing}
 												onReview={openReviewDialog}
 											/>
@@ -485,7 +492,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 					<AlertDialogFooter>
 						<AlertDialogCancel disabled={isReviewing}>Keep request</AlertDialogCancel>
 						<AlertDialogAction
-							disabled={isReviewing || (pendingReview?.action === "approve" && !compensationType)}
+							disabled={isReviewing || (pendingReview?.action === "approve" && (!compensationType || !canReview))}
 							className={pendingReview?.action === "reject" ? "bg-destructive text-white hover:bg-destructive/90" : undefined}
 							onClick={(event) => { event.preventDefault(); void handleReviewSubmit(); }}
 						>

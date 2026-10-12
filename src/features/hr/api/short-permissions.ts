@@ -1,7 +1,11 @@
 import api from "@/lib/axios";
-import type { ApproveEmployeeShortPermissionPayload, CreateEmployeeShortPermissionPayload, EmployeeShortPermission, EmployeeShortPermissionsResponse, ReviewEmployeeShortPermissionPayload } from "../types/short-permissions";
+import type { ApproveEmployeeShortPermissionPayload, CreateEmployeeShortPermissionPayload, EmployeeShortPermission, EmployeeShortPermissionsResponse, PendingEmployeeShortPermission, ReviewEmployeeShortPermissionPayload } from "../types/short-permissions";
 
 export const shortPermissionsApi = {
+	getPendingShortPermissions: async (): Promise<PendingEmployeeShortPermission[]> => {
+		const response = await api.get<{ data: { permissions: PendingEmployeeShortPermission[] } }>("/employee-short-permissions/pending");
+		return response.data.data.permissions;
+	},
 	getEmployeeShortPermissions: async (employeeId: number, month: string): Promise<EmployeeShortPermissionsResponse> => {
 		const response = await api.get(`/employees/${employeeId}/short-permissions`, { params: { month } });
 		return response.data.data;

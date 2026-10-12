@@ -35,6 +35,13 @@ describe("shortPermissionsApi", () => {
 		expect(api.get).toHaveBeenCalledWith("/employees/12/short-permissions", { params: { month: "2026-05" } });
 	});
 
+	it("loads the pending reviewer scope without employee, creator, or month filtering", async () => {
+		const permissions = [{ id: 41, employeeId: 9, permissionDate: "2026-10-12", canReview: true, employee: { userId: 9, name: "Review Admin" } }];
+		vi.mocked(api.get).mockResolvedValue({ data: { data: { permissions } } });
+		await expect(shortPermissionsApi.getPendingShortPermissions()).resolves.toEqual(permissions);
+		expect(api.get).toHaveBeenCalledExactlyOnceWith("/employee-short-permissions/pending");
+	});
+
 	it("creates, approves, rejects, and cancels with the contract endpoints", async () => {
 		const permission = { id: 8 };
 		vi.mocked(api.post).mockResolvedValue({ data: { data: permission } });
