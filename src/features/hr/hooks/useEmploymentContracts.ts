@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { employmentContractsApi } from "../api/employment-contracts";
 import type { EmploymentContractPayload } from "../types/employment-contract";
+import { employeeKeys } from "./useEmployees";
 
 export const employmentContractKeys = {
 	all: ["employment-contracts"] as const,
@@ -23,6 +24,7 @@ export function useCreateEmploymentContract() {
 		mutationFn: ({ employeeId, payload }: { employeeId: number; payload: EmploymentContractPayload }) => employmentContractsApi.create(employeeId, payload),
 		onSuccess: (_, { employeeId }) => {
 			queryClient.invalidateQueries({ queryKey: employmentContractKeys.list(employeeId) });
+			queryClient.invalidateQueries({ queryKey: employeeKeys.all });
 		},
 	});
 }
@@ -34,6 +36,7 @@ export function useUpdateEmploymentContract() {
 		mutationFn: ({ id, payload }: { id: number; employeeId: number; payload: EmploymentContractPayload }) => employmentContractsApi.update(id, payload),
 		onSuccess: (_, { employeeId }) => {
 			queryClient.invalidateQueries({ queryKey: employmentContractKeys.list(employeeId) });
+			queryClient.invalidateQueries({ queryKey: employeeKeys.all });
 		},
 	});
 }
@@ -42,7 +45,7 @@ export function useDeleteEmploymentContract() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ id, employeeId }: { id: number; employeeId: number }) => employmentContractsApi.remove(id),
+		mutationFn: ({ id }: { id: number; employeeId: number }) => employmentContractsApi.remove(id),
 		onSuccess: (_, { employeeId }) => {
 			queryClient.invalidateQueries({ queryKey: employmentContractKeys.list(employeeId) });
 		},
@@ -53,7 +56,7 @@ export function useUploadContractFile() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ id, employeeId, file }: { id: number; employeeId: number; file: File }) => employmentContractsApi.uploadFile(id, file),
+		mutationFn: ({ id, file }: { id: number; employeeId: number; file: File }) => employmentContractsApi.uploadFile(id, file),
 		onSuccess: (_, { employeeId }) => {
 			queryClient.invalidateQueries({ queryKey: employmentContractKeys.list(employeeId) });
 		},
@@ -64,7 +67,7 @@ export function useDeleteContractFile() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ id, employeeId }: { id: number; employeeId: number }) => employmentContractsApi.deleteFile(id),
+		mutationFn: ({ id }: { id: number; employeeId: number }) => employmentContractsApi.deleteFile(id),
 		onSuccess: (_, { employeeId }) => {
 			queryClient.invalidateQueries({ queryKey: employmentContractKeys.list(employeeId) });
 		},

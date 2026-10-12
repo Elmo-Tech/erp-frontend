@@ -9,6 +9,7 @@ export interface EmploymentContract {
 	employeeId: number;
 	employmentType: EmploymentType;
 	baseSalary: number;
+	hourlyRate?: number | null;
 	startDate: string;
 	endDate: string;
 	durationMonths: number;
@@ -31,6 +32,7 @@ export interface EmploymentContract {
 export interface EmploymentContractPayload {
 	employmentType: EmploymentType;
 	baseSalary: number;
+	hourlyRate?: number | null;
 	startDate: string;
 	durationMonths: number;
 	workDays: EmploymentContractWorkDay[];
@@ -44,6 +46,7 @@ export interface EmploymentContractPayload {
 export interface EmploymentContractFormValues {
 	employmentType: EmploymentType;
 	baseSalary: number;
+	hourlyRate?: number | null;
 	startDate: string;
 	durationMonths: number;
 	workDays: EmploymentContractWorkDay[];

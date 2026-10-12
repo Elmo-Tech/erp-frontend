@@ -9,6 +9,7 @@ export const employmentContractSchema = z
 	.object({
 		employmentType: z.enum(["full_time", "part_time"]),
 		baseSalary: z.number().min(0, "Base salary cannot be negative"),
+		hourlyRate: z.number().min(0, "Hourly rate cannot be negative").nullable().optional(),
 		startDate: z.string().refine(isValidContractDate, "Enter a valid start date"),
 		durationMonths: z.number().int("Duration must be a whole number of months").min(1, "Duration must be at least 1 month").max(120, "Duration cannot exceed 120 months"),
 		workDays: z.array(z.enum(employmentContractWorkDays)).min(1, "Select at least one work day"),
@@ -65,6 +66,7 @@ export function getDefaultEmploymentContractFormValues(today = new Date()): Empl
 	return {
 		employmentType: "full_time",
 		baseSalary: 0,
+		hourlyRate: null,
 		startDate: localToday,
 		durationMonths: 12,
 		workDays: ["sunday", "monday", "tuesday", "wednesday", "thursday"],
@@ -80,6 +82,7 @@ export function toEmploymentContractFormValues(contract: EmploymentContract): Em
 	return {
 		employmentType: contract.employmentType,
 		baseSalary: contract.baseSalary,
+		hourlyRate: contract.hourlyRate ?? null,
 		startDate: contract.startDate,
 		durationMonths: contract.durationMonths,
 		workDays: [...contract.workDays],
@@ -97,6 +100,7 @@ export function buildEmploymentContractPayload(values: EmploymentContractFormVal
 	return {
 		employmentType: values.employmentType,
 		baseSalary: values.baseSalary,
+		hourlyRate: values.hourlyRate ?? null,
 		startDate: values.startDate,
 		durationMonths: values.durationMonths,
 		workDays: [...values.workDays],

@@ -46,7 +46,8 @@ function playReminderBeep(): void {
 
 export function useActiveTimerTabBehavior(activeTimer: TimeEntryData | null, elapsedSeconds: number) {
 	const originalTitle = useRef<string | null>(null);
-	const originalFavicon = useRef<string | null>(null);
+	const originalFavicons = useRef<Array<{ link: HTMLLinkElement; href: string | null; type: string | null; sizes: string | null }>>([]);
+	const createdFavicon = useRef<HTMLLinkElement | null>(null);
 	const isShowingTimerTitle = useRef(false);
 	const hasActiveTimer = activeTimer !== null;
 	const lastReminderBucket = useRef(0);
@@ -54,20 +55,34 @@ export function useActiveTimerTabBehavior(activeTimer: TimeEntryData | null, ela
 
 	const setFavicon = (alertBadge: boolean) => {
 		if (typeof document === "undefined") return;
-		let link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
-		if (!link) {
-			link = document.createElement("link");
-			link.rel = "icon";
-			document.head.appendChild(link);
-		}
-		if (originalFavicon.current === null) {
-			originalFavicon.current = link.href;
-		}
 		if (alertBadge) {
-			const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231d4ed8'/><circle cx='22' cy='10' r='7' fill='%23ef4444' stroke='white' stroke-width='2'/><text x='9' y='22' font-size='14' fill='white' font-family='sans-serif' font-weight='bold'>T</text></svg>`;
-			link.href = `data:image/svg+xml,${svg}`;
-		} else if (originalFavicon.current) {
-			link.href = originalFavicon.current;
+			let links = Array.from(document.querySelectorAll<HTMLLinkElement>("link[rel~='icon']"));
+			if (links.length === 0) {
+				const link = document.createElement("link");
+				link.rel = "icon";
+				document.head.appendChild(link);
+				createdFavicon.current = link;
+				links = [link];
+			}
+			const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#1d4ed8"/><text x="7" y="23" font-size="19" fill="white" font-family="sans-serif" font-weight="bold">T</text><circle cx="24" cy="8" r="7" fill="#ef4444" stroke="white" stroke-width="2"/></svg>`;
+			for (const link of links) {
+				if (!originalFavicons.current.some((icon) => icon.link === link)) {
+					originalFavicons.current.push({ link, href: link.getAttribute("href"), type: link.getAttribute("type"), sizes: link.getAttribute("sizes") });
+				}
+				link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+				link.type = "image/svg+xml";
+				link.setAttribute("sizes", "any");
+			}
+		} else {
+			for (const { link, href, type, sizes } of originalFavicons.current) {
+				for (const [name, value] of [["href", href], ["type", type], ["sizes", sizes]] as const) {
+					if (value === null) link.removeAttribute(name);
+					else link.setAttribute(name, value);
+				}
+			}
+			originalFavicons.current = [];
+			createdFavicon.current?.remove();
+			createdFavicon.current = null;
 		}
 	};
 
@@ -125,12 +140,12 @@ export function useActiveTimerTabBehavior(activeTimer: TimeEntryData | null, ela
 
 		const isFlashing = Date.now() < flashUntil.current;
 		const flashOn = Math.floor(Date.now() / 1000) % 2 === 0;
-		const timerTitle = `[Timer] ${activeTimer.trackableDisplayName} - ${formatDuration(elapsedSeconds)} | ${TABLES_APP_NAME}`;
+		const timerTitle = `🔴 ${formatDuration(elapsedSeconds)} · ${activeTimer.trackableDisplayName} | ${TABLES_APP_NAME}`;
 
 		document.title = isFlashing && flashOn
 			? `⚠ TIMER RUNNING ${formatDuration(elapsedSeconds)} — ${activeTimer.trackableDisplayName}`
 			: timerTitle;
-		setFavicon(isFlashing ? flashOn : true);
+		setFavicon(true);
 	}, [activeTimer, elapsedSeconds]);
 
 	useEffect(() => {

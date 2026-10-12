@@ -206,6 +206,8 @@ export function EmployeeDirectDeductionsPanel({ employeeId, employeeName, canMan
 	const handleRequestSubmit = async (values: DirectEmployeeDeductionFormValues) => {
 		try {
 			await createDeduction.mutateAsync({ employeeId, payload: buildDirectEmployeeDeductionPayload(values) });
+			setYear(Number(values.deductionDate.slice(0, 4)));
+			setMonth(Number(values.deductionDate.slice(5, 7)));
 			toast.success("Direct deduction submitted for approval");
 			form.reset(getDefaultDirectEmployeeDeductionFormValues());
 		} catch (error) {

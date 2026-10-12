@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import { handleApiError } from "@/lib/errorHandling";
 import { attendanceApi } from "@/features/admin/api/attendance";
 import type { Attendance } from "@/features/admin/types/attendance";
 
@@ -31,24 +32,10 @@ export function EmployeeAttendancePanel({ employeeId, canManage, isActive }: Pro
 	}
 
 	const records: Attendance[] = historyQuery.data?.attendances ?? [];
-	const totalLate = records.reduce((sum: number, r: Attendance) => sum + (r.lateMinutes ?? 0), 0);
 
 	return (
 		<div className="space-y-4">
-			<div className="grid gap-3 sm:grid-cols-3">
-				<div className="rounded-lg border p-4">
-					<p className="text-sm text-muted-foreground">Records (last 31)</p>
-					<p className="mt-1 text-xl font-semibold">{records.length}</p>
-				</div>
-				<div className="rounded-lg border p-4">
-					<p className="text-sm text-muted-foreground">Total late minutes</p>
-					<p className="mt-1 text-xl font-semibold">{totalLate}</p>
-				</div>
-				<div className="rounded-lg border p-4">
-					<p className="text-sm text-muted-foreground">Grace days used in view</p>
-					<p className="mt-1 text-xl font-semibold">{records.filter((r: Attendance) => r.usedGraceDay).length}</p>
-				</div>
-			</div>
+			{historyQuery.isError && <p role="alert" className="text-sm text-destructive">{handleApiError(historyQuery.error)}</p>}
 			{records.length === 0 ? (
 				<p className="text-sm text-muted-foreground">No attendance records in this view. Full history lives on the Attendance page.</p>
 			) : (
@@ -63,7 +50,7 @@ export function EmployeeAttendancePanel({ employeeId, canManage, isActive }: Pro
 							</tr>
 						</thead>
 						<tbody>
-							{records.slice(0, 15).map((r: Attendance) => (
+							{records.map((r: Attendance) => (
 								<tr key={r.attendanceId} className="border-t">
 									<td className="px-3 py-2">{r.date}</td>
 									<td className="px-3 py-2">{r.clockIn ?? "—"}</td>

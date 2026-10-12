@@ -2,9 +2,6 @@
 
 import { Control, useWatch } from "react-hook-form";
 import { FormInput, FormSelect, FormSwitch } from "@/components/shared";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { calculateHourlyRate, calculateMonthlyWorkHours } from "../../../lib/salary-rate";
 import { EmployeeAvatarField } from "./EmployeeAvatarField";
 
 interface EmployeeFormFieldsProps {
@@ -20,11 +17,7 @@ interface EmployeeFormFieldsProps {
 }
 
 export function EmployeeFormFields({ control, isEditing, roleOptions, specializationOptions, avatarFile, currentAvatarUrl, disabled, onAvatarChange }: EmployeeFormFieldsProps) {
-	const salary = useWatch({ control, name: "salary" });
 	const employeeName = useWatch({ control, name: "name" });
-	const workHoursPerDay = Number(useWatch({ control, name: "workHoursPerDay" }) || 0);
-	const monthlyWorkHours = calculateMonthlyWorkHours(workHoursPerDay);
-	const hourlyRate = calculateHourlyRate(salary === "" ? null : Number(salary), workHoursPerDay);
 
 	return (
 		<div className="space-y-5">
@@ -78,61 +71,7 @@ export function EmployeeFormFields({ control, isEditing, roleOptions, specializa
 				description="Determines which tasks the employee can see and work on"
 			/>
 
-			<div className="grid gap-4 md:grid-cols-3">
-				<FormInput
-					control={control}
-					name="salary"
-					label="Monthly Salary"
-					type="number"
-					min={0}
-					step={100}
-				/>
-				<div className="space-y-2">
-					<Label htmlFor="monthly-work-hours">Monthly Work Hours</Label>
-					<Input
-						id="monthly-work-hours"
-						value={monthlyWorkHours.toFixed(2)}
-						readOnly
-						aria-readonly="true"
-						className="bg-muted"
-					/>
-					<p className="text-xs text-muted-foreground">5 working days/week × average weeks/month</p>
-				</div>
-				<FormInput
-					control={control}
-					name="hourlyRate"
-					label="Hourly Rate (manual)"
-					type="number"
-					min={0}
-					step={0.25}
-					description={hourlyRate ? `Auto fallback ${hourlyRate.toFixed(2)} — leave empty to use it` : "Used for overtime pay"}
-				/>
-			</div>
-
-			<div className={isEditing ? "grid gap-4 md:grid-cols-3" : "grid gap-4"}>
-				<FormInput
-					control={control}
-					name="workHoursPerDay"
-					label="Work Hours/Day"
-					type="number"
-					min={1}
-					max={24}
-				/>
-				{isEditing && <FormInput
-					control={control}
-					name="workStartTime"
-					label="Start Time"
-					type="time"
-				/>}
-				{isEditing && <FormInput
-					control={control}
-					name="graceDaysAllowed"
-					label="Grace Days/Month"
-					type="number"
-					min={0}
-					max={31}
-				/>}
-			</div>
+			<p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">Salary, hourly rate, and working hours are managed in the employee’s employment contract.</p>
 
 			<FormSwitch
 				control={control}

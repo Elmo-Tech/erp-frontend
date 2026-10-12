@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as deductionsRewardsApi from "../api/deductions-rewards";
 import type { CreateDeductionTypeInput, CreateRewardTypeInput, CreateEmployeeDeductionInput, CreateEmployeeRewardInput } from "../types/deductions-rewards";
+import { directEmployeeDeductionKeys } from "./useDirectEmployeeDeductions";
 
 // ==================== Deduction Types Hooks ====================
 
@@ -27,7 +28,7 @@ export const useCreateDeductionType = () => {
 		mutationFn: (data: CreateDeductionTypeInput) => deductionsRewardsApi.createDeductionType(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["deduction-types"] });
-			toast.success("Deduction type created successfully");
+			queryClient.invalidateQueries({ queryKey: directEmployeeDeductionKeys.types() });
 		},
 		onError: (error: Error) => {
 			toast.error(`Failed to create deduction type: ${error.message}`);
@@ -43,7 +44,7 @@ export const useUpdateDeductionType = () => {
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["deduction-types"] });
 			queryClient.invalidateQueries({ queryKey: ["deduction-type", variables.id] });
-			toast.success("Deduction type updated successfully");
+			queryClient.invalidateQueries({ queryKey: directEmployeeDeductionKeys.types() });
 		},
 		onError: (error: Error) => {
 			toast.error(`Failed to update deduction type: ${error.message}`);
@@ -58,7 +59,7 @@ export const useDeleteDeductionType = () => {
 		mutationFn: (id: number) => deductionsRewardsApi.deleteDeductionType(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["deduction-types"] });
-			toast.success("Deduction type deleted successfully");
+			queryClient.invalidateQueries({ queryKey: directEmployeeDeductionKeys.types() });
 		},
 		onError: (error: Error) => {
 			toast.error(`Failed to delete deduction type: ${error.message}`);

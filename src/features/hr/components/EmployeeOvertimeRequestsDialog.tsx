@@ -144,6 +144,7 @@ function OvertimeRequestDetails({ request, canManage, isReviewing, onReview }: {
 						</Button>
 					</div>
 				)}
+				{canManage && request.status === "approved" && <Button type="button" size="sm" variant="outline" disabled={isReviewing} onClick={() => onReview(request, "cancel")}><Ban />Cancel overtime</Button>}
 			</div>
 
 			<dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -241,7 +242,9 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 		setRequestError(null);
 		try {
 			await createOvertime.mutateAsync({ employeeId, payload: buildEmployeeOvertimeRequestPayload(values) });
-			toast.success("Overtime request submitted");
+			toast.success("Overtime saved");
+			setYear(Number(values.overtimeDate.slice(0, 4)));
+			setMonth(Number(values.overtimeDate.slice(5, 7)));
 			form.reset(getDefaultOvertimeRequestFormValues());
 		} catch (error) {
 			const message = handleApiError(error);
@@ -282,7 +285,7 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 			<div className="space-y-5">
 				<div>
 					<h2 className="text-lg font-semibold">Overtime for {employeeName}</h2>
-					<p className="text-sm text-muted-foreground">Submit and review overtime preapproval requests for the selected period.</p>
+					<p className="text-sm text-muted-foreground">Register overtime in one step. Administrative entries are authorized immediately when saved.</p>
 				</div>
 
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -322,7 +325,7 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 
 					<section className="space-y-3">
 						<div>
-							<h3 className="font-semibold">Request overtime</h3>
+							<h3 className="font-semibold">Register overtime</h3>
 							<p className="text-sm text-muted-foreground">Overtime must be requested for a future date. The duration below is a local preview; the server determines the saved request.</p>
 						</div>
 						<Form {...form}>
@@ -348,7 +351,7 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 								<DialogFooter>
 									<Button type="submit" disabled={isRequesting || !form.formState.isValid}>
 										{isRequesting && <Loader2 className="animate-spin" />}
-										Submit request
+										Save overtime
 									</Button>
 								</DialogFooter>
 							</form>
@@ -373,7 +376,7 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 						<div className="space-y-6">
 							<OvertimeSummary summary={overtimeQuery.data.summary} />
 
-							<section className="space-y-3 border-t pt-5">
+							{pendingRequests.length > 0 && <section className="space-y-3 border-t pt-5">
 								<div>
 									<h3 className="font-semibold">Pending requests{` (${overtimeQuery.data.summary.pendingCount})`}</h3>
 									<p className="text-sm text-muted-foreground">Requests awaiting a manager decision.</p>
@@ -385,7 +388,7 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 								) : (
 									<p className="py-2 text-sm text-muted-foreground">No pending overtime requests.</p>
 								)}
-							</section>
+							</section>}
 
 							<section className="space-y-3 border-t pt-5">
 								<div>

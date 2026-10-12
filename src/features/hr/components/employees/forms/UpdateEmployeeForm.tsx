@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,12 +20,6 @@ const employeeSchema = z.object({
 	role: z.string().optional(),
 	specialization: z.string().optional(),
 	isActive: z.boolean(),
-	salary: z.number().min(0).optional().nullable(),
-	hourlyRate: z.number().min(0).optional().nullable(),
-	workHoursPerDay: z.number().min(1).max(24),
-	workStartTime: z.string(),
-	graceDaysAllowed: z.number().min(0).max(31),
-	internalHourlyCost: z.number().min(0).optional().nullable(),
 });
 
 type EmployeeFormData = z.infer<typeof employeeSchema>;
@@ -53,20 +47,8 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			role: employee.role || "",
 			specialization: employee.specialization || "",
 			isActive: employee.isActive,
-			salary: employee.salary,
-			hourlyRate: employee.hourlyRate,
-			workHoursPerDay: employee.workHoursPerDay,
-			workStartTime: employee.workStartTime?.slice(0, 5) || "10:00",
-			graceDaysAllowed: employee.graceDaysAllowed,
-			internalHourlyCost: employee.internalHourlyCost,
 		},
 	});
-
-	useEffect(() => {
-		if (open) {
-			setAvatarFile(null);
-		}
-	}, [open]);
 
 	const setFormData = (emp: Employee) => {
 		form.reset({
@@ -76,16 +58,11 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 			role: emp.role || "",
 			specialization: emp.specialization || "",
 			isActive: emp.isActive,
-			salary: emp.salary,
-			hourlyRate: emp.hourlyRate,
-			workHoursPerDay: emp.workHoursPerDay,
-			workStartTime: emp.workStartTime?.slice(0, 5) || "10:00",
-			graceDaysAllowed: emp.graceDaysAllowed,
-			internalHourlyCost: emp.internalHourlyCost,
 		});
 	};
 
 	const handleOpenChange = (isOpen: boolean) => {
+		if (!isOpen) setAvatarFile(null);
 		if (isOpen) {
 			setFormData(employee);
 		}
@@ -100,12 +77,6 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 		if (data.role !== employee.role) payload.role = data.role;
 		if (data.specialization !== employee.specialization) payload.specialization = data.specialization;
 		if (data.isActive !== employee.isActive) payload.isActive = data.isActive;
-		if (data.salary !== employee.salary) payload.salary = data.salary;
-		if (data.hourlyRate !== employee.hourlyRate) payload.hourlyRate = data.hourlyRate;
-		if (data.workHoursPerDay !== employee.workHoursPerDay) payload.workHoursPerDay = data.workHoursPerDay;
-		if (data.workStartTime !== employee.workStartTime?.slice(0, 5)) payload.workStartTime = data.workStartTime;
-		if (data.graceDaysAllowed !== employee.graceDaysAllowed) payload.graceDaysAllowed = data.graceDaysAllowed;
-		if (data.internalHourlyCost !== employee.internalHourlyCost) payload.internalHourlyCost = data.internalHourlyCost;
 
 		try {
 			if (Object.keys(payload).length > 0) {
@@ -126,7 +97,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 						: "The employee photo could not be uploaded.",
 					{ description: handleApiError(error) }
 				);
-				onOpenChange(false);
+				handleOpenChange(false);
 				onSuccess?.();
 				return;
 			}
@@ -135,7 +106,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 		if (Object.keys(payload).length > 0 || avatarFile) {
 			// Success toast comes from the backend message via the axios interceptor.
 		}
-		onOpenChange(false);
+		handleOpenChange(false);
 		onSuccess?.();
 	};
 

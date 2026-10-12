@@ -20,6 +20,7 @@ describe("employment contract helpers", () => {
 		expect(buildEmploymentContractPayload(formValues)).toEqual({
 			employmentType: "full_time",
 			baseSalary: 12000,
+			hourlyRate: null,
 			startDate: "2026-01-31",
 			durationMonths: 1,
 			workDays: ["sunday", "monday", "tuesday", "wednesday", "thursday"],

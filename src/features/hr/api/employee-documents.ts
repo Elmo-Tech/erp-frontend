@@ -14,11 +14,7 @@ export const employeeDocumentsApi = {
 		formData.append("name", payload.name);
 		formData.append("documentType", payload.documentType);
 
-		const response = await api.post<{ data: EmployeeDocument }>(`/employees/${employeeId}/documents`, formData, {
-			headers: {
-				"Content-Type": "multipart/form-data",
-			},
-		});
+		const response = await api.post<{ data: EmployeeDocument }>(`/employees/${employeeId}/documents`, formData);
 		return response.data.data;
 	},
 

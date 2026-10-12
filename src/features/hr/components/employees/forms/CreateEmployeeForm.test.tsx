@@ -14,7 +14,9 @@ describe("CreateEmployeeForm", () => {
 		render(<CreateEmployeeForm open onOpenChange={vi.fn()} />);
 		expect(screen.queryByLabelText("Grace Days/Month")).not.toBeInTheDocument();
 		expect(screen.queryByLabelText("Start Time")).not.toBeInTheDocument();
-		expect(screen.getByLabelText("Work Hours/Day")).toBeInTheDocument();
+		expect(screen.queryByLabelText("Work Hours/Day")).not.toBeInTheDocument();
+		expect(screen.queryByLabelText("Monthly Salary")).not.toBeInTheDocument();
+		expect(screen.queryByLabelText("Hourly Rate (manual)")).not.toBeInTheDocument();
 		fireEvent.change(screen.getByLabelText("Name"), { target: { value: "New Employee" } });
 		fireEvent.change(screen.getByLabelText("Email"), { target: { value: "new@example.com" } });
 		fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
@@ -24,5 +26,7 @@ describe("CreateEmployeeForm", () => {
 		await waitFor(() => expect(createEmployee).toHaveBeenCalled());
 		expect(createEmployee.mock.calls[0][0]).not.toHaveProperty("graceDaysAllowed");
 		expect(createEmployee.mock.calls[0][0]).not.toHaveProperty("workStartTime");
+		expect(createEmployee.mock.calls[0][0]).not.toHaveProperty("salary");
+		expect(createEmployee.mock.calls[0][0]).not.toHaveProperty("workHoursPerDay");
 	});
 });

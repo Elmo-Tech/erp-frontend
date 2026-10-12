@@ -62,6 +62,12 @@ export const api = axios.create({
 });
 
 export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
+	// Let the browser supply the multipart boundary. The JSON default otherwise
+	// serializes FormData into JSON and Laravel never receives the uploaded file.
+	if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+		config.headers.delete("Content-Type");
+	}
+
 	const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
 	// Check if auth-storage exists and validate token expiry

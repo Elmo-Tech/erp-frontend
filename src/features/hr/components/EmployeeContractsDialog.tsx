@@ -327,6 +327,16 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 								/>
 								<FormInput
 									control={form.control}
+									name="hourlyRate"
+									label="Hourly rate (optional)"
+									type="number"
+									min={0}
+									step="0.01"
+									description="Leave empty to calculate from base salary and daily working hours."
+									disabled={isSaving}
+								/>
+								<FormInput
+									control={form.control}
 									name="startDate"
 									label="Start date"
 									type="date"
@@ -489,7 +499,7 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 							<div className="rounded-lg border border-dashed px-4 py-10 text-center">
 								<FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
 								<p className="font-medium">No current contract</p>
-								<p className="mt-1 text-sm text-muted-foreground">Add an agreement to establish this employee's terms and schedule.</p>
+								<p className="mt-1 text-sm text-muted-foreground">Add an agreement to establish this employee’s terms and schedule.</p>
 							</div>
 						)}
 

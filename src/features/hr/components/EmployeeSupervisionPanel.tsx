@@ -2,6 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useTaskSupervisionSummary } from "@/features/dashboard/hooks/useTaskSupervision";
+import { handleApiError } from "@/lib/errorHandling";
 
 interface Props {
 	employeeId: number;
@@ -23,6 +24,7 @@ export function EmployeeSupervisionPanel({ employeeId, canManage, isActive }: Pr
 			</div>
 		);
 	}
+	if (summaryQuery.isError) return <p role="alert" className="text-sm text-destructive">{handleApiError(summaryQuery.error)}</p>;
 
 	return (
 		<div className="space-y-4">

@@ -20,6 +20,7 @@ vi.mock("./EmployeeAdvancesDialog", () => ({ EmployeeAdvancesPanel: panelMock("a
 vi.mock("./EmployeePartialPaysDialog", () => ({ EmployeePartialPaysPanel: panelMock("partial-pays-panel") }));
 vi.mock("./EmployeeAttendancePanel", () => ({ EmployeeAttendancePanel: panelMock("attendance-panel") }));
 vi.mock("./EmployeeSupervisionPanel", () => ({ EmployeeSupervisionPanel: panelMock("supervision-panel") }));
+vi.mock("./EmployeeOverviewPanel", () => ({ EmployeeOverviewPanel: () => <div>Employee overview</div> }));
 
 const employee: Employee = {
 	userId: 7,
@@ -47,18 +48,20 @@ describe("EmployeeWorkspace", () => {
 		render(<EmployeeWorkspace employee={employee} canManage onEdit={vi.fn()} />);
 
 		expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute("data-state", "active");
-		expect(screen.getAllByRole("tab")).toHaveLength(12);
+		expect(screen.getAllByRole("tab")).toHaveLength(5);
 
 		fireEvent.mouseDown(screen.getByRole("tab", { name: "Contracts" }), { button: 0, ctrlKey: false });
 		expect(screen.getByRole("tab", { name: "Contracts" })).toHaveAttribute("data-state", "active");
 		expect(screen.getByTestId("contracts-panel")).toHaveAttribute("data-active", "true");
 		expect(screen.getByTestId("documents-panel")).not.toBeVisible();
 
-		fireEvent.mouseDown(screen.getByRole("tab", { name: "Advances" }), { button: 0, ctrlKey: false });
+		fireEvent.mouseDown(screen.getByRole("tab", { name: "Salary & advances" }), { button: 0, ctrlKey: false });
 		expect(screen.getByTestId("contracts-panel")).toHaveAttribute("data-active", "false");
 		expect(screen.getByTestId("contracts-panel")).not.toBeVisible();
 		expect(screen.getByTestId("advances-panel")).toHaveAttribute("data-active", "true");
-		expect(screen.getByTestId("partial-pays-panel")).not.toBeVisible();
+		expect(screen.queryByTestId("partial-pays-panel")).not.toBeInTheDocument();
+		fireEvent.mouseDown(screen.getByRole("tab", { name: "Attendance & time off" }), { button: 0, ctrlKey: false });
+		for (const panel of ["attendance-panel", "leaves-panel", "permissions-panel"]) expect(screen.getByTestId(panel)).toHaveAttribute("data-active", "true");
 	});
 
 	it("shows only the overview and does not mount protected panels for non-managers", () => {

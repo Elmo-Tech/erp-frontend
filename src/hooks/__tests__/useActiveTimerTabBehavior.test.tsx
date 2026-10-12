@@ -34,7 +34,7 @@ describe("useActiveTimerTabBehavior", () => {
 			/>
 		);
 
-		expect(document.title).toBe("[Timer] Landing page redesign - 1:05 | The Tables ERP");
+		expect(document.title).toBe("🔴 1:05 · Landing page redesign | The Tables ERP");
 
 		rerender(
 			<TimerTabBehavior
@@ -42,7 +42,7 @@ describe("useActiveTimerTabBehavior", () => {
 				elapsedSeconds={66}
 			/>
 		);
-		expect(document.title).toBe("[Timer] Landing page redesign - 1:06 | The Tables ERP");
+		expect(document.title).toBe("🔴 1:06 · Landing page redesign | The Tables ERP");
 
 		rerender(
 			<TimerTabBehavior
@@ -85,6 +85,15 @@ describe("useActiveTimerTabBehavior", () => {
 			/>
 		);
 		expect(removeEventListener).toHaveBeenCalledWith("beforeunload", listener);
+	});
+
+	it("badges every browser icon and restores its original format and size on stop", () => {
+		const icons = [document.createElement("link"), document.createElement("link")];
+		icons.forEach((icon, index) => { icon.rel = index ? "shortcut icon" : "icon"; icon.href = `/favicon-${index}.png`; icon.type = "image/png"; icon.setAttribute("sizes", "32x32"); document.head.append(icon); });
+		const { rerender } = render(<TimerTabBehavior timer={activeTimer} elapsedSeconds={10} />);
+		icons.forEach((icon) => { expect(icon.href).toMatch(/^data:image\/svg\+xml,/); expect(icon.type).toBe("image/svg+xml"); expect(icon.getAttribute("sizes")).toBe("any"); });
+		rerender(<TimerTabBehavior timer={null} elapsedSeconds={0} />);
+		icons.forEach((icon, index) => { expect(icon.getAttribute("href")).toBe(`/favicon-${index}.png`); expect(icon.type).toBe("image/png"); expect(icon.getAttribute("sizes")).toBe("32x32"); icon.remove(); });
 	});
 
 	it("removes the unload confirmation listener on unmount", () => {

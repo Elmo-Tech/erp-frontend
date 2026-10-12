@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { handleApiRequest, handleApiResponse, handleApiResponseError } from "../axios";
+import api, { handleApiRequest, handleApiResponse, handleApiResponseError } from "../axios";
 
 const mocks = vi.hoisted(() => ({
 	toastSuccess: vi.fn(),
@@ -44,6 +44,17 @@ describe("Axios Interceptors", () => {
 	});
 
 	describe("Request Interceptor", () => {
+		it("preserves uploaded files through Axios transforms instead of serializing FormData as JSON", async () => {
+			const file = new File(["signed contract"], "contract.pdf", { type: "application/pdf" });
+			const body = new FormData();
+			body.append("file", file);
+			await api.post("/employment-contracts/7/file", body, { adapter: async (config) => {
+				expect(config.data).toBeInstanceOf(FormData);
+				expect((config.data as FormData).get("file")).toBe(file);
+				expect(config.headers.get("Content-Type")).not.toBe("application/json");
+				return { data: {}, status: 201, statusText: "Created", headers: {}, config };
+			} });
+		});
 		it("adds a bearer token when a valid token exists", async () => {
 			localStorageMock.getItem.mockImplementation((key: string) => {
 				if (key === "auth_token") return "test-token-123";

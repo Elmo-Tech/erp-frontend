@@ -10,7 +10,6 @@ import { HrPoliciesSettings } from '@/features/hr/components/HrPoliciesSettings'
 import { LeaveTypesSettings } from '@/features/hr/components/LeaveTypesSettings';
 import { DeductionTypesSettings } from '@/features/hr/components/DeductionTypesSettings';
 import { useAuthStore } from '@/store/authStore';
-import { isModuleEnabled, moduleKeys } from '@/config/simplification';
 
 export default function SettingsPage() {
   return <Suspense fallback={<p>Loading settings...</p>}><SettingsContent /></Suspense>;
@@ -19,7 +18,7 @@ export default function SettingsPage() {
 function SettingsContent() {
   const canManageLeaveTypes = useAuthStore((state) => state.hasPermission('manage_leave_types'));
   const searchParams = useSearchParams();
-  const canConfigureDeductionTypes = isModuleEnabled(moduleKeys.financials);
+  const canConfigureDeductionTypes = useAuthStore((state) => state.hasPermission('manage_deductions') || state.hasPermission('manage_hr_settings') || state.hasPermission('manage_employees'));
 
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">

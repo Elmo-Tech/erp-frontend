@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { FormInput, FormTextarea } from "@/components/shared";
+import { FormInput, FormSelect, FormTextarea } from "@/components/shared";
 import { handleApiError } from "@/lib/errorHandling";
 import { useApproveEmployeeShortPermission, useCancelEmployeeShortPermission, useCreateEmployeeShortPermission, useEmployeeShortPermissions, useRejectEmployeeShortPermission } from "../hooks/useEmployeeShortPermissions";
 import { buildEmployeeShortPermissionPayload, calculatePermissionDurationMinutes, formatPermissionDuration, getCurrentPermissionMonth, getDefaultShortPermissionRequestFormValues, isValidPermissionDate, shortPermissionRequestSchema } from "../lib/short-permissions";
@@ -157,7 +157,6 @@ function ShortPermissionSummary({ permission, canManage, canReview, isReviewing,
 								{reviewActionLabels[action]}
 							</Button>
 						))}
-						{permission.status === "pending" && canReview && <Button type="button" size="sm" variant="outline" disabled={isReviewing} onClick={() => onReview(permission, "approve", "paid")}>Mark as Paid</Button>}
 					</div>
 				)}
 			</div>
@@ -202,6 +201,10 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 	});
 	const startTime = useWatch({ control: form.control, name: "startTime" });
 	const endTime = useWatch({ control: form.control, name: "endTime" });
+	const selectedCompensation = useWatch({ control: form.control, name: "compensationType" });
+	const permissionDate = useWatch({ control: form.control, name: "permissionDate" });
+	const creationAllowanceQuery = useEmployeeShortPermissions(employeeId, permissionDate.slice(0, 7), isActive && canManage);
+	const creationAllowance = creationAllowanceQuery.data?.allowance;
 	const durationPreview = calculatePermissionDurationMinutes(startTime, endTime);
 	const permissions = [...(shortPermissionsQuery.data?.permissions ?? [])].sort((left, right) => right.permissionDate.localeCompare(left.permissionDate) || right.createdAt.localeCompare(left.createdAt));
 	const pendingPermissions = permissions.filter((permission) => permission.status === "pending");
@@ -220,6 +223,10 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 	};
 
 	const handleRequestSubmit = async (values: ShortPermissionRequestFormValues) => {
+		if (!values.compensationType) {
+			form.setError("compensationType", { message: "Choose Paid or Unpaid" });
+			return;
+		}
 		try {
 			await createShortPermission.mutateAsync({ employeeId, payload: buildEmployeeShortPermissionPayload(values) });
 			setMonth(values.permissionDate.slice(0, 7));
@@ -265,7 +272,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 			<div className="space-y-5">
 				<div>
 					<h2 className="text-lg font-semibold">Short permissions for {employeeName}</h2>
-					<p className="text-sm text-muted-foreground">Submit and review short time-away requests for the selected month.</p>
+					<p className="text-sm text-muted-foreground">Register time away and select Paid or Unpaid before saving. Administrative entries are approved immediately.</p>
 				</div>
 
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -290,7 +297,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 
 					<section className="space-y-3">
 						<div>
-							<h3 className="font-semibold">Request short permission</h3>
+							<h3 className="font-semibold">Register short permission</h3>
 							<p className="text-sm text-muted-foreground">The duration below is a local preview; the server confirms the final duration after submission.</p>
 						</div>
 						<Form {...form}>
@@ -321,6 +328,8 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 										disabled={isRequesting}
 									/>
 								</div>
+								<FormSelect control={form.control} name="compensationType" label="Compensation type" placeholder="Choose Paid or Unpaid" options={[{ value: "paid", label: "Paid" }, { value: "unpaid", label: "Unpaid" }]} disabled={isRequesting} />
+								{selectedCompensation === "paid" && creationAllowance && durationPreview !== null && durationPreview > creationAllowance.remainingMinutes && <Alert><Info /><AlertTitle>Paid permission exceeds the monthly allowance</AlertTitle><AlertDescription>{formatPermissionDuration(creationAllowance.remainingMinutes)} remaining for {permissionDate.slice(0, 7)}. Saving as Paid uses {formatPermissionDuration(durationPreview)} and records the excess; choose Unpaid if it should not use paid allowance.</AlertDescription></Alert>}
 								<Alert>
 									<Clock3 />
 									<AlertTitle>Duration preview: {durationPreview === null ? "Enter an end time after the start time" : formatPermissionDuration(durationPreview)}</AlertTitle>
@@ -337,10 +346,10 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 								<DialogFooter>
 									<Button
 										type="submit"
-										disabled={isRequesting || !form.formState.isValid}
+										disabled={isRequesting || !form.formState.isValid || !selectedCompensation}
 									>
 										{isRequesting && <Loader2 className="animate-spin" />}
-										Submit request
+										Save permission
 									</Button>
 								</DialogFooter>
 							</form>
@@ -373,7 +382,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 							{allowance && <AllowanceSummary allowance={allowance} />}
 							{!canReview && <p className="text-sm text-muted-foreground">These requests require another authorized reviewer. Admins with short-permission approval access may approve their own requests.</p>}
 
-							<section className="space-y-3 border-t pt-5">
+							{pendingPermissions.length > 0 && <section className="space-y-3 border-t pt-5">
 								<div>
 									<h3 className="font-semibold">Pending requests</h3>
 									<p className="text-sm text-muted-foreground">Requests awaiting a manager decision.</p>
@@ -394,7 +403,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 								) : (
 									<p className="py-2 text-sm text-muted-foreground">No pending short permission requests.</p>
 								)}
-							</section>
+							</section>}
 
 							<section className="space-y-3 border-t pt-5">
 								<div>

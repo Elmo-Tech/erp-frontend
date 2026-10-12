@@ -37,7 +37,7 @@ beforeEach(() => {
 		const month = (config?.params as { month: string }).month;
 		const selected = permissions.filter((permission) => permission.employeeId === employeeId && permission.permissionDate.startsWith(month));
 		const used = selected.filter((permission) => permission.status === "approved" && permission.isPaid).reduce((minutes, permission) => minutes + permission.durationMinutes, 0);
-		return { data: { data: { permissions: selected, canReview: true, allowance: { period: month, allocatedMinutes: 360, usedPaidMinutes: used, remainingMinutes: 360 - used, overageMinutes: 0 } } } };
+		return { data: { data: { permissions: selected, canReview: useAuthStore.getState().role !== "employee", allowance: { period: month, allocatedMinutes: 360, usedPaidMinutes: used, remainingMinutes: 360 - used, overageMinutes: 0 } } } };
 	});
 	vi.mocked(api.post).mockImplementation(async (url, payload) => {
 		if (url.includes("/approve")) {
@@ -45,7 +45,8 @@ beforeEach(() => {
 			permissions = permissions.map((permission) => permission.id === id ? { ...permission, status: "approved", isPaid: (payload as ApproveEmployeeShortPermissionPayload).compensationType === "paid" } : permission);
 			return { data: { data: permissions.find((permission) => permission.id === id) } };
 		}
-		const permission: EmployeeShortPermission = { ...(payload as CreateEmployeeShortPermissionPayload), id: nextId++, employeeId: Number(url.match(/employees\/(\d+)/)?.[1]), durationMinutes: 60, status: "pending", isPaid: null, createdAt: "2026-01-15T10:00:00" };
+		const compensation = (payload as CreateEmployeeShortPermissionPayload).compensationType;
+		const permission: EmployeeShortPermission = { ...(payload as CreateEmployeeShortPermissionPayload), id: nextId++, employeeId: Number(url.match(/employees\/(\d+)/)?.[1]), durationMinutes: 60, status: compensation ? "approved" : "pending", isPaid: compensation ? compensation === "paid" : null, createdAt: "2026-01-15T10:00:00" };
 		permissions.push(permission);
 		return { data: { data: permission } };
 	});
@@ -53,7 +54,7 @@ beforeEach(() => {
 
 afterEach(() => vi.useRealTimers());
 
-it("Create and approve a short permission", async () => {
+it("registers a paid permission in one step without a confirmation dialog", async () => {
 	renderAttendance(client());
 	fireEvent.click(screen.getByRole("button", { name: "Review short permissions" }));
 	fireEvent.change(screen.getByLabelText("Employee"), { target: { value: "9" } });
@@ -64,27 +65,20 @@ it("Create and approve a short permission", async () => {
 	fireEvent.keyDown(day, { key: "Escape" });
 	fireEvent.change(screen.getByLabelText("Start time"), { target: { value: "09:00" } });
 	fireEvent.change(screen.getByLabelText("End time"), { target: { value: "10:00" } });
-	await waitFor(() => expect(screen.getByRole("button", { name: "Submit request" })).toBeEnabled());
-	fireEvent.click(screen.getByRole("button", { name: "Submit request" }));
-	const queue = screen.getByRole("region", { name: "Pending short permissions" });
-	expect(await within(queue).findByText("2026-10-12 09:00–10:00 · Pending · 1h")).toBeVisible();
-	expect(within(queue).getByRole("button", { name: "Approve" })).toBeEnabled();
-	expect(within(queue).getByRole("button", { name: "Mark as Paid" })).toBeEnabled();
+	fireEvent.keyDown(screen.getByRole("combobox", { name: "Compensation type" }), { key: "Enter" });
+	fireEvent.click(await screen.findByRole("option", { name: /^Paid$/ }));
+	await waitFor(() => expect(screen.getByRole("button", { name: "Save permission" })).toBeEnabled());
+	fireEvent.click(screen.getByRole("button", { name: "Save permission" }));
 	await waitFor(() => expect(screen.getByLabelText("Short permissions month")).toHaveValue("2026-10"));
-	fireEvent.click(within(queue).getByRole("button", { name: "Mark as Paid" }));
-	fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Keep request" }));
-	fireEvent.click(within(queue).getByRole("button", { name: "Mark as Paid" }));
-	const review = screen.getByRole("alertdialog");
-	expect(within(review).getByRole("combobox", { name: "Compensation type" })).toHaveTextContent("Paid");
-	expect(within(review).getByRole("button", { name: "Approve" })).toBeEnabled();
-	fireEvent.click(within(review).getByRole("button", { name: "Approve" }));
 	await screen.findByText("Approved");
-	expect(api.post).toHaveBeenCalledWith("/employee-short-permissions/41/approve", { compensationType: "paid" });
+	expect(api.post).toHaveBeenCalledExactlyOnceWith("/employees/9/short-permissions", { permissionDate: "2026-10-12", startTime: "09:00", endTime: "10:00", compensationType: "paid" });
 	expect(within(screen.getByText("Paid used").parentElement!).getByText("1h")).toBeVisible();
-	expect(within(queue).queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+	expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+	expect(screen.queryByRole("button", { name: "Mark as Paid" })).not.toBeInTheDocument();
 });
 
 it("finds a request created in My Requests even when another employee and month are selected", async () => {
+	useAuthStore.setState({ role: "employee" });
 	const queryClient = client();
 	const myRequests = render(<QueryClientProvider client={queryClient}><MyRequestsPanel /></QueryClientProvider>);
 	fireEvent.mouseDown(screen.getByRole("tab", { name: "Short permissions" }), { button: 0, ctrlKey: false });
@@ -95,6 +89,7 @@ it("finds a request created in My Requests even when another employee and month 
 	await screen.findByText("2026-10-12 09:00-10:00 · pending");
 	expect(screen.getByLabelText("My short permissions month")).toHaveValue("2026-10");
 	myRequests.unmount();
+	useAuthStore.setState({ role: "admin" });
 	renderAttendance(queryClient);
 	fireEvent.click(screen.getByRole("button", { name: "Review short permissions" }));
 	fireEvent.change(screen.getByLabelText("Employee"), { target: { value: "7" } });

@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { Loader2, RefreshCw, Save } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -79,7 +78,10 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 		defaultValues: toHrPolicyFormValues(policy),
 	});
 	const createPolicy = useCreateHrPolicy();
-	const workingDays = form.watch("settings.workingDays") ?? [];
+	const workingDays = useWatch({ control: form.control, name: "settings.workingDays" }) ?? [];
+	const lateTiers = useWatch({ control: form.control, name: "settings.lateDeductionTiers" });
+	const dailyDivisor = useWatch({ control: form.control, name: "settings.dailyRateDivisor" });
+	const advanceLimit = useWatch({ control: form.control, name: "settings.advanceLimitSalaryPercentage" });
 
 	useEffect(() => {
 		form.reset(toHrPolicyFormValues(policy));
@@ -194,48 +196,22 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 					<Card className="xl:col-span-2">
 						<CardHeader>
 							<CardTitle>Late deductions</CardTitle>
-							<CardDescription>Set the reset rule and the percentage applied for each of the first four late occurrences.</CardDescription>
+							<CardDescription>Choose a late-minute range, then the deduction percentage for the first, second, third, and fourth or later occurrence. Percentages apply to one day’s salary.</CardDescription>
 						</CardHeader>
 						<CardContent className="space-y-4">
-							<div className="max-w-sm grid gap-2">
-								<Label htmlFor="late-deduction-reset">Late deduction reset</Label>
-								<Input id="late-deduction-reset" disabled={createPolicy.isPending} {...form.register("settings.lateDeductionReset", { required: true })} />
+							<p className="rounded-lg bg-muted/50 p-3 text-sm">Occurrences restart automatically each month. A manual reset is available in the employee’s Late deductions section. 0% means a warning without a deduction.</p>
+							<div className="grid gap-4 lg:grid-cols-2">
+								{tierIndexes.map((tierIndex) => <fieldset key={tierIndex} className="space-y-4 rounded-lg border p-4">
+									<legend className="px-2 text-sm font-semibold">{lateTiers[tierIndex].minimumMinutes} – {lateTiers[tierIndex].maximumMinutes ?? "∞"} minutes late</legend>
+									<div className="grid grid-cols-2 gap-3">
+										<div className="space-y-2"><Label htmlFor={`late-min-${tierIndex}`}>From (minutes)</Label><Input id={`late-min-${tierIndex}`} type="number" min={0} max={1440} step={1} disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.minimumMinutes`, { required: true, valueAsNumber: true })} /></div>
+										<div className="space-y-2"><Label htmlFor={`late-max-${tierIndex}`}>Through (minutes)</Label><Input id={`late-max-${tierIndex}`} type="number" min={0} max={1440} step={1} placeholder="No upper limit" disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.maximumMinutes`, { setValueAs: (value) => value === "" || value === null ? null : Number(value) })} /></div>
+									</div>
+									<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{percentageIndexes.map((occurrence) => <div key={occurrence} className="space-y-2"><Label htmlFor={`late-percent-${tierIndex}-${occurrence}`}>{["First", "Second", "Third", "Fourth+"][occurrence]} (%)</Label><Input id={`late-percent-${tierIndex}-${occurrence}`} type="number" min={0} max={100} step={1} disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.percentages.${occurrence}`, { required: true, valueAsNumber: true })} /></div>)}</div>
+									<p className="text-xs text-muted-foreground">Fourth+ applies to every later occurrence in the same month. Leave the last range’s upper limit blank for any longer delay.</p>
+								</fieldset>)}
 							</div>
-							<div className="overflow-x-auto rounded-md border">
-								<table className="w-full min-w-[50rem] text-sm">
-									<caption className="sr-only">Late deduction percentage grid by tier and occurrence</caption>
-									<thead className="bg-muted/50 text-left">
-										<tr>
-											<th className="px-3 py-2 font-medium">Tier</th>
-											<th className="px-3 py-2 font-medium">Minimum minutes</th>
-											<th className="px-3 py-2 font-medium">Maximum minutes</th>
-											{percentageIndexes.map((occurrence) => (
-												<th className="px-3 py-2 text-center font-medium" key={occurrence}>
-													Occurrence {occurrence + 1}
-												</th>
-											))}
-										</tr>
-									</thead>
-									<tbody>
-										{tierIndexes.map((tierIndex) => (
-											<tr className="border-t" key={tierIndex}>
-												<td className="px-3 py-2 font-medium">Tier {tierIndex + 1}</td>
-												<td className="p-2">
-													<Input aria-label={`Tier ${tierIndex + 1} minimum minutes`} type="number" disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.minimumMinutes`, { required: true, valueAsNumber: true })} />
-												</td>
-												<td className="p-2">
-													<Input aria-label={`Tier ${tierIndex + 1} maximum minutes`} type="number" disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.maximumMinutes`, { required: true, valueAsNumber: true })} />
-												</td>
-												{percentageIndexes.map((percentageIndex) => (
-													<td className="p-2" key={percentageIndex}>
-														<Input aria-label={`Tier ${tierIndex + 1} occurrence ${percentageIndex + 1} percentage`} type="number" step="any" disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.percentages.${percentageIndex}`, { required: true, valueAsNumber: true })} />
-													</td>
-												))}
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
+							<p className="text-sm text-muted-foreground">Example: with a salary of 6,000 and divisor {dailyDivisor}, one day is {(6000 / dailyDivisor).toFixed(2)}. A 20% deduction is {(6000 / dailyDivisor * 0.2).toFixed(2)}.</p>
 						</CardContent>
 					</Card>
 
@@ -265,33 +241,44 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 
 					<Card>
 						<CardHeader>
-							<CardTitle>Payroll &amp; advances</CardTitle>
-							<CardDescription>Configure salary rates, payroll timing, and employee advances.</CardDescription>
+							<CardTitle>Salary calculation &amp; payment date</CardTitle>
+							<CardDescription>Base salary comes from each employee’s contract. These rules calculate daily rates and determine when the previous month is paid.</CardDescription>
 						</CardHeader>
 						<CardContent className="grid gap-4 sm:grid-cols-2">
 							<div className="grid gap-2">
 								<Label htmlFor="daily-rate-divisor">Daily rate divisor</Label>
 								<Input id="daily-rate-divisor" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.dailyRateDivisor", { required: true, valueAsNumber: true })} />
+								<p className="text-xs text-muted-foreground">Daily salary = contract base salary ÷ {dailyDivisor}. Default: 30.</p>
 							</div>
 							<div className="grid gap-2">
 								<Label htmlFor="unpaid-leave-multiplier">Unpaid leave daily rate multiplier</Label>
 								<Input id="unpaid-leave-multiplier" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.unpaidLeaveDailyRateMultiplier", { required: true, valueAsNumber: true })} />
+								<p className="text-xs text-muted-foreground">1 deducts one daily salary for each unpaid working day.</p>
 							</div>
 							<div className="grid gap-2">
 								<Label htmlFor="payroll-payment-day">Payroll payment day</Label>
 								<Input id="payroll-payment-day" type="number" disabled={createPolicy.isPending} {...form.register("settings.payrollPaymentDay", { required: true, valueAsNumber: true })} />
+								<p className="text-xs text-muted-foreground">Day of the following month. 1 means September’s salary is paid on October 1.</p>
 							</div>
 							<div className="grid gap-2">
 								<Label htmlFor="mid-month-hire-paid-days">Mid-month hire paid days</Label>
 								<Input id="mid-month-hire-paid-days" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.midMonthHirePaidDays", { required: true, valueAsNumber: true })} />
+								<p className="text-xs text-muted-foreground">Automatic first-month calculation for a hire on day 15; subsequent months use normal salary.</p>
 							</div>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader><CardTitle>Employee advances</CardTitle><CardDescription>An advance is money paid before salary. Recovery deducts it from a later payroll payment.</CardDescription></CardHeader>
+						<CardContent className="grid gap-4 sm:grid-cols-2">
 							<div className="grid gap-2">
-								<Label htmlFor="advance-limit-salary-percentage">Advance limit salary percentage</Label>
+								<Label htmlFor="advance-limit-salary-percentage">Maximum open advances (% of salary)</Label>
 								<Input id="advance-limit-salary-percentage" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.advanceLimitSalaryPercentage", { required: true, valueAsNumber: true })} />
+								<p className="text-xs text-muted-foreground">At {advanceLimit}%, a salary of 6,000 allows up to {(6000 * advanceLimit / 100).toFixed(2)} in total unsettled advances.</p>
 							</div>
 							<div className="grid gap-2">
 								<Label htmlFor="advance-settlement">Advance settlement</Label>
-								<Input id="advance-settlement" disabled={createPolicy.isPending} {...form.register("settings.advanceSettlement", { required: true })} />
+								<select id="advance-settlement" className="h-9 rounded-md border bg-background px-3 text-sm" disabled={createPolicy.isPending} {...form.register("settings.advanceSettlement", { required: true })}><option value="next_payroll">Recover in the next payroll</option></select>
+								<p className="text-xs text-muted-foreground">By default, recover the full amount next payroll. Enable installments below to split recovery over several months.</p>
 							</div>
 							<div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2">
 								<div className="space-y-1">

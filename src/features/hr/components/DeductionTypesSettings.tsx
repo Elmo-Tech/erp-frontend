@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -35,15 +35,14 @@ export function DeductionTypesSettings() {
 	const deleteType = useDeleteDeductionType();
 	const [editingId, setEditingId] = useState<number | null>(null);
 	const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { name: "", code: "", description: "", category: "other", isActive: true } });
+	const isActive = useWatch({ control: form.control, name: "isActive" });
 
 	const onSubmit = async (values: FormValues) => {
 		try {
 			if (editingId) {
 				await updateType.mutateAsync({ id: editingId, data: { name: values.name, code: values.code, description: values.description || undefined, category: values.category, is_active: values.isActive } });
-				toast.success("Deduction type updated");
 			} else {
 				await createType.mutateAsync({ name: values.name, code: values.code, description: values.description || undefined, category: values.category, is_active: values.isActive });
-				toast.success("Deduction type created");
 			}
 			setEditingId(null);
 			form.reset({ name: "", code: "", description: "", category: "other", isActive: true });
@@ -61,6 +60,7 @@ export function DeductionTypesSettings() {
 				<CardDescription>Manage direct deduction reasons. Inactive types stay on history but cannot be used for new deductions.</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
+				{listQuery.isError && <div role="alert" className="rounded-lg border border-destructive p-3 text-sm"><p>{handleApiError(listQuery.error)}</p><Button type="button" size="sm" variant="outline" onClick={() => listQuery.refetch()}>Try again</Button></div>}
 				<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
 					<div className="space-y-1">
 						<Label>Name</Label>
@@ -81,7 +81,7 @@ export function DeductionTypesSettings() {
 						</select>
 					</div>
 					<div className="flex items-end gap-2">
-						<Switch checked={form.watch("isActive")} onCheckedChange={(v) => form.setValue("isActive", v)} />
+						<Switch checked={isActive} onCheckedChange={(v) => form.setValue("isActive", v)} />
 						<Label>Active</Label>
 					</div>
 					<Button type="submit" className="md:col-span-4">{editingId ? "Update" : "Add"}</Button>
@@ -92,11 +92,11 @@ export function DeductionTypesSettings() {
 							<span>{t.name} ({t.code}) {!t.is_active && "(inactive)"}</span>
 							<span className="flex gap-2">
 								<Button size="sm" variant="outline" onClick={() => { setEditingId(t.id); form.reset({ name: t.name, code: t.code, description: t.description ?? "", category: t.category, isActive: t.is_active }); }}>Edit</Button>
-								<Button size="sm" variant="ghost" onClick={async () => { try { await deleteType.mutateAsync(t.id); toast.success("Deduction type removed"); } catch (e) { toast.error(handleApiError(e)); } }}>Remove</Button>
+									<Button size="sm" variant="ghost" onClick={async () => { try { await deleteType.mutateAsync(t.id); } catch (e) { toast.error(handleApiError(e)); } }}>Remove</Button>
 							</span>
 						</div>
 					))}
-					{items.length === 0 && <p className="text-sm text-muted-foreground">No deduction types yet.</p>}
+					{listQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading deduction types…</p> : !listQuery.isError && items.length === 0 && <p className="text-sm text-muted-foreground">No deduction types yet.</p>}
 				</div>
 			</CardContent>
 		</Card>

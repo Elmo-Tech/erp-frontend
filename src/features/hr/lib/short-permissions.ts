@@ -11,6 +11,7 @@ export const shortPermissionRequestSchema = z
 		startTime: z.string().refine(isValidPermissionTime, "Enter a valid start time"),
 		endTime: z.string().refine(isValidPermissionTime, "Enter a valid end time"),
 		reason: z.string().max(2000, "Reason cannot exceed 2,000 characters"),
+		compensationType: z.enum(["paid", "unpaid"]).optional(),
 	})
 	.superRefine((values, context) => {
 		if (isValidPermissionTime(values.startTime) && isValidPermissionTime(values.endTime) && !isPermissionTimeRangeValid(values.startTime, values.endTime)) {
@@ -90,5 +91,6 @@ export function buildEmployeeShortPermissionPayload(values: ShortPermissionReque
 	};
 
 	if (reason) payload.reason = reason;
+	if (values.compensationType) payload.compensationType = values.compensationType;
 	return payload;
 }

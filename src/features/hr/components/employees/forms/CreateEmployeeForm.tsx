@@ -20,10 +20,6 @@ const employeeSchema = z.object({
 	role: z.string().optional(),
 	specialization: z.string().optional(),
 	isActive: z.boolean(),
-	salary: z.number().min(0).optional().nullable(),
-	hourlyRate: z.number().min(0).optional().nullable(),
-	workHoursPerDay: z.number().min(1).max(24),
-	internalHourlyCost: z.number().min(0).optional().nullable(),
 });
 
 type EmployeeFormData = z.infer<typeof employeeSchema>;
@@ -35,10 +31,6 @@ const defaultEmployeeValues: EmployeeFormData = {
 	role: "",
 	specialization: "",
 	isActive: true,
-	salary: null,
-	hourlyRate: null,
-	workHoursPerDay: 8,
-	internalHourlyCost: null,
 };
 
 interface CreateEmployeeFormProps {
@@ -81,9 +73,6 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 				role: data.role,
 				specialization: data.specialization,
 				isActive: data.isActive,
-				salary: data.salary ?? undefined,
-				hourlyRate: data.hourlyRate ?? undefined,
-				workHoursPerDay: data.workHoursPerDay,
 			});
 		} catch (error) {
 			toast.error(handleApiError(error));

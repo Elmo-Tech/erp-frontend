@@ -192,8 +192,13 @@ function MyPermissions({ employeeId, month }: { employeeId: number; month: strin
 	const [editingId, setEditingId] = useState<number | null>(null);
 	const form = useForm<ShortPermissionRequestFormValues>({ resolver: zodResolver(shortPermissionRequestSchema), mode: "onChange", defaultValues: getDefaultShortPermissionRequestFormValues() });
 	const items = listQuery.data?.permissions ?? [];
+	const canRegisterDirectly = listQuery.data?.canReview ?? false;
 
 	const onSubmit = async (values: ShortPermissionRequestFormValues) => {
+		if (!editingId && canRegisterDirectly && !values.compensationType) {
+			toast.error("Choose Paid or Unpaid before saving");
+			return;
+		}
 		try {
 			if (editingId) {
 				await updatePerm.mutateAsync({ id: editingId, employeeId, payload: buildEmployeeShortPermissionPayload(values) });
@@ -222,6 +227,7 @@ function MyPermissions({ employeeId, month }: { employeeId: number; month: strin
 					<input aria-label="Permission date" type="date" {...form.register("permissionDate")} className="rounded border px-2 py-2 text-sm" />
 					<input aria-label="Start time" type="time" {...form.register("startTime")} className="rounded border px-2 py-2 text-sm" />
 					<input aria-label="End time" type="time" {...form.register("endTime")} className="rounded border px-2 py-2 text-sm" />
+					{canRegisterDirectly && <select aria-label="Compensation type" {...form.register("compensationType", { setValueAs: (value) => value || undefined })} className="rounded border px-2 py-2 text-sm"><option value="">Choose Paid or Unpaid</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option></select>}
 					<input {...form.register("reason")} placeholder="Reason (optional)" className="rounded border px-2 py-2 text-sm" />
 					<Button type="submit">{editingId ? "Update" : "Submit"}</Button>
 				</form>

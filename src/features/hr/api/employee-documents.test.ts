@@ -54,9 +54,7 @@ describe("employee documents", () => {
 
 		const formData = vi.mocked(api.post).mock.calls[0][1] as FormData;
 		expect(api.get).toHaveBeenCalledWith("/employees/12/documents");
-		expect(api.post).toHaveBeenCalledWith("/employees/12/documents", expect.any(FormData), {
-			headers: { "Content-Type": "multipart/form-data" },
-		});
+		expect(api.post).toHaveBeenCalledWith("/employees/12/documents", expect.any(FormData));
 		expect(formData.get("file")).toBe(file);
 		expect(formData.get("name")).toBe("Agreement");
 		expect(formData.get("documentType")).toBe("Contract");

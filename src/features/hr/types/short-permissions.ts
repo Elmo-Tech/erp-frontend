@@ -43,6 +43,7 @@ export interface CreateEmployeeShortPermissionPayload {
 	startTime: string;
 	endTime: string;
 	reason?: string;
+	compensationType?: PermissionCompensationType;
 }
 
 export interface ApproveEmployeeShortPermissionPayload {
@@ -59,4 +60,5 @@ export interface ShortPermissionRequestFormValues {
 	startTime: string;
 	endTime: string;
 	reason: string;
+	compensationType?: PermissionCompensationType;
 }

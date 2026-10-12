@@ -134,10 +134,6 @@ export function EmployeeCard({ employee, onOpen, onEdit, onToggleStatus, onDelet
 					</div>
 				</div>
 
-				<div className="text-sm text-muted-foreground pt-2 border-t">
-					Grace: {employee.graceDaysRemaining}/{employee.graceDaysAllowed} days
-				</div>
-
 				{employee.skills && employee.skills.length > 0 && (
 					<div className="flex flex-wrap gap-1 pt-2">
 						{employee.skills.slice(0, 3).map((skill) => (

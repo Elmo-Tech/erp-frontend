@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { AlertCircle, Ban, CalendarDays, Check, FileText, Info, Loader2, X } from "lucide-react";
+import { AlertCircle, Ban, Check, FileText, Info, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -207,7 +207,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 			<div className="space-y-5">
 				<div>
 					<h2 className="text-lg font-semibold">Leave requests for {employeeName}</h2>
-					<p className="text-sm text-muted-foreground">Submit and review time-off requests for the selected year.</p>
+					<p className="text-sm text-muted-foreground">Register leave for the employee. Administrative entries are approved immediately when saved.</p>
 				</div>
 
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -241,12 +241,12 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 					<Alert>
 						<Info />
 						<AlertTitle>How balances work</AlertTitle>
-						<AlertDescription>Paid balance is consumed only when a request is approved. Unpaid leave is recorded without a balance deduction in this phase.</AlertDescription>
+						<AlertDescription>Saving paid leave consumes its balance immediately. Unpaid leave creates a salary deduction. Cancelling restores the balance or cancels the unprocessed deduction.</AlertDescription>
 					</Alert>
 
 					<section className="space-y-3">
 						<div>
-							<h3 className="font-semibold">Request time off</h3>
+							<h3 className="font-semibold">Register leave</h3>
 							<p className="text-sm text-muted-foreground">The server confirms working-day duration after submission.</p>
 						</div>
 						<Form {...form}>
@@ -325,7 +325,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 										disabled={isRequestDisabled || !form.formState.isValid}
 									>
 										{isRequesting && <Loader2 className="animate-spin" />}
-										Submit request
+										Save leave
 									</Button>
 								</DialogFooter>
 							</form>
@@ -381,7 +381,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 								)}
 							</section>
 
-							<section className="space-y-3 border-t pt-5">
+							{pendingLeaves.length > 0 && <section className="space-y-3 border-t pt-5">
 								<div>
 									<h3 className="font-semibold">Pending requests</h3>
 									<p className="text-sm text-muted-foreground">Requests awaiting a decision.</p>
@@ -404,7 +404,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 								) : (
 									<p className="py-2 text-sm text-muted-foreground">No pending leave requests.</p>
 								)}
-							</section>
+							</section>}
 
 							<section className="space-y-3 border-t pt-5">
 								<div>
