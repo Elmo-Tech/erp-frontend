@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { useCreateHrPolicy, useCurrentHrPolicy } from "../hooks/useHrPolicies";
 import { buildCreateHrPolicyPayload, toHrPolicyFormValues } from "../lib/policy";
 import type { HrPolicy, HrPolicyFormValues } from "../types";
@@ -81,7 +80,6 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 	const workingDays = useWatch({ control: form.control, name: "settings.workingDays" }) ?? [];
 	const lateTiers = useWatch({ control: form.control, name: "settings.lateDeductionTiers" });
 	const dailyDivisor = useWatch({ control: form.control, name: "settings.dailyRateDivisor" });
-	const advanceLimit = useWatch({ control: form.control, name: "settings.advanceLimitSalaryPercentage" });
 
 	useEffect(() => {
 		form.reset(toHrPolicyFormValues(policy));
@@ -241,61 +239,6 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 
 					<Card>
 						<CardHeader>
-							<CardTitle>Salary calculation &amp; payment date</CardTitle>
-							<CardDescription>Base salary comes from each employee’s contract. These rules calculate daily rates and determine when the previous month is paid.</CardDescription>
-						</CardHeader>
-						<CardContent className="grid gap-4 sm:grid-cols-2">
-							<div className="grid gap-2">
-								<Label htmlFor="daily-rate-divisor">Daily rate divisor</Label>
-								<Input id="daily-rate-divisor" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.dailyRateDivisor", { required: true, valueAsNumber: true })} />
-								<p className="text-xs text-muted-foreground">Daily salary = contract base salary ÷ {dailyDivisor}. Default: 30.</p>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="unpaid-leave-multiplier">Unpaid leave daily rate multiplier</Label>
-								<Input id="unpaid-leave-multiplier" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.unpaidLeaveDailyRateMultiplier", { required: true, valueAsNumber: true })} />
-								<p className="text-xs text-muted-foreground">1 deducts one daily salary for each unpaid working day.</p>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="payroll-payment-day">Payroll payment day</Label>
-								<Input id="payroll-payment-day" type="number" disabled={createPolicy.isPending} {...form.register("settings.payrollPaymentDay", { required: true, valueAsNumber: true })} />
-								<p className="text-xs text-muted-foreground">Day of the following month. 1 means September’s salary is paid on October 1.</p>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="mid-month-hire-paid-days">Mid-month hire paid days</Label>
-								<Input id="mid-month-hire-paid-days" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.midMonthHirePaidDays", { required: true, valueAsNumber: true })} />
-								<p className="text-xs text-muted-foreground">Automatic first-month calculation for a hire on day 15; subsequent months use normal salary.</p>
-							</div>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardHeader><CardTitle>Employee advances</CardTitle><CardDescription>An advance is money paid before salary. Recovery deducts it from a later payroll payment.</CardDescription></CardHeader>
-						<CardContent className="grid gap-4 sm:grid-cols-2">
-							<div className="grid gap-2">
-								<Label htmlFor="advance-limit-salary-percentage">Maximum open advances (% of salary)</Label>
-								<Input id="advance-limit-salary-percentage" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.advanceLimitSalaryPercentage", { required: true, valueAsNumber: true })} />
-								<p className="text-xs text-muted-foreground">At {advanceLimit}%, a salary of 6,000 allows up to {(6000 * advanceLimit / 100).toFixed(2)} in total unsettled advances.</p>
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="advance-settlement">Advance settlement</Label>
-								<select id="advance-settlement" className="h-9 rounded-md border bg-background px-3 text-sm" disabled={createPolicy.isPending} {...form.register("settings.advanceSettlement", { required: true })}><option value="next_payroll">Recover in the next payroll</option></select>
-								<p className="text-xs text-muted-foreground">By default, recover the full amount next payroll. Enable installments below to split recovery over several months.</p>
-							</div>
-							<div className="flex items-center justify-between gap-4 rounded-lg border p-3 sm:col-span-2">
-								<div className="space-y-1">
-									<Label htmlFor="allow-advance-installments">Allow advance installments</Label>
-									<p className="text-sm text-muted-foreground">Allow advances to be settled over multiple payments.</p>
-								</div>
-								<Controller
-									control={form.control}
-									name="settings.allowAdvanceInstallments"
-									render={({ field }) => <Switch id="allow-advance-installments" checked={field.value} onCheckedChange={field.onChange} disabled={createPolicy.isPending} />}
-								/>
-							</div>
-						</CardContent>
-					</Card>
-
-					<Card>
-						<CardHeader>
 							<CardTitle>Supervision</CardTitle>
 							<CardDescription>Each task has one assigned supervisor.</CardDescription>
 						</CardHeader>
@@ -309,27 +252,10 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 					</Card>
 				</div>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>New version details</CardTitle>
-						<CardDescription>Both fields are optional. Leave the effective date empty to use the backend policy date.</CardDescription>
-					</CardHeader>
-					<CardContent className="grid gap-4 md:grid-cols-2">
-						<div className="grid gap-2">
-							<Label htmlFor="effective-from">Effective from</Label>
-							<Input id="effective-from" type="date" disabled={createPolicy.isPending} {...form.register("effectiveFrom")} />
-						</div>
-						<div className="grid gap-2 md:row-span-2">
-							<Label htmlFor="policy-notes">Notes</Label>
-							<Textarea id="policy-notes" placeholder="Reason for this policy version" disabled={createPolicy.isPending} {...form.register("notes")} />
-						</div>
-					</CardContent>
-				</Card>
-
 				<div className="flex justify-end">
 					<Button type="submit" disabled={createPolicy.isPending}>
 						{createPolicy.isPending ? <Loader2 className="animate-spin" /> : <Save />}
-						{createPolicy.isPending ? "Saving policy..." : "Save new policy version"}
+						{createPolicy.isPending ? "Saving settings..." : "Save settings"}
 					</Button>
 				</div>
 			</form>

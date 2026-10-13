@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { leaveManagementApi } from "../api/leave-management";
 import type { CreateEmployeeLeavePayload, CreateLeaveTypePayload, ReviewEmployeeLeavePayload, UpdateLeaveTypePayload } from "../types/leave-management";
+import { refreshEmployeeHr } from "./useEmployeeOverview";
 
 export const employeeLeaveKeys = {
 	all: ["employee-leaves"] as const,
@@ -40,7 +41,7 @@ export function useCreateEmployeeLeave() {
 
 	return useMutation({
 		mutationFn: ({ employeeId, payload }: { employeeId: number; payload: CreateEmployeeLeavePayload }) => leaveManagementApi.createEmployeeLeave(employeeId, payload),
-		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.employee(employeeId) }),
+		onSuccess: (_, { employeeId }) => Promise.all([queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.employee(employeeId) }), refreshEmployeeHr(queryClient, employeeId)]),
 	});
 }
 
@@ -48,8 +49,8 @@ export function useUpdateEmployeeLeave() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ id, employeeId, payload }: { id: number; employeeId: number; payload: CreateEmployeeLeavePayload }) => leaveManagementApi.updateEmployeeLeave(id, payload),
-		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.employee(employeeId) }),
+		mutationFn: ({ id, payload }: { id: number; employeeId: number; payload: CreateEmployeeLeavePayload }) => leaveManagementApi.updateEmployeeLeave(id, payload),
+		onSuccess: (_, { employeeId }) => Promise.all([queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.employee(employeeId) }), refreshEmployeeHr(queryClient, employeeId)]),
 	});
 }
 
@@ -75,12 +76,12 @@ function useEmployeeLeaveAction(action: "approve" | "reject" | "cancel") {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ id, employeeId, payload }: { id: number; employeeId: number; payload?: ReviewEmployeeLeavePayload }) => {
+		mutationFn: ({ id, payload }: { id: number; employeeId: number; payload?: ReviewEmployeeLeavePayload }) => {
 			if (action === "approve") return leaveManagementApi.approveEmployeeLeave(id, payload);
 			if (action === "reject") return leaveManagementApi.rejectEmployeeLeave(id, payload);
 			return leaveManagementApi.cancelEmployeeLeave(id, payload);
 		},
-		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.employee(employeeId) }),
+		onSuccess: (_, { employeeId }) => Promise.all([queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.employee(employeeId) }), refreshEmployeeHr(queryClient, employeeId)]),
 	});
 }
 

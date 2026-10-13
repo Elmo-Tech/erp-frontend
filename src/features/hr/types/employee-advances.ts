@@ -31,6 +31,7 @@ export interface EmployeeAdvance {
 	status: EmployeeAdvanceStatus;
 	reason: string;
 	installmentCount: number;
+	isSalaryWithdrawal?: boolean;
 	policyVersionId: number | null;
 	policySnapshot: EmployeeAdvancePolicySnapshot | null;
 	salaryAtApproval: number | null;
@@ -63,6 +64,7 @@ export interface CreateEmployeeAdvancePayload {
 	requestedAmount: number;
 	reason: string;
 	installmentCount: number;
+	withdrawalDate?: string;
 }
 
 export interface ApproveEmployeeAdvancePayload {

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { overtimeRequestsApi } from "../api/overtime-requests";
 import { isValidOvertimePeriod } from "../lib/overtime-requests";
 import type { CreateEmployeeOvertimeRequestPayload, ReviewEmployeeOvertimeRequestPayload } from "../types/overtime-requests";
+import { refreshEmployeeHr } from "./useEmployeeOverview";
 
 export const employeeOvertimeRequestKeys = {
 	all: ["employee-overtime-requests"] as const,
@@ -23,7 +24,7 @@ export function useCreateEmployeeOvertimeRequest() {
 
 	return useMutation({
 		mutationFn: ({ employeeId, payload }: { employeeId: number; payload: CreateEmployeeOvertimeRequestPayload }) => overtimeRequestsApi.createEmployeeOvertimeRequest(employeeId, payload),
-		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeOvertimeRequestKeys.employee(employeeId) }),
+		onSuccess: (_, { employeeId }) => Promise.all([queryClient.invalidateQueries({ queryKey: employeeOvertimeRequestKeys.employee(employeeId) }), refreshEmployeeHr(queryClient, employeeId)]),
 	});
 }
 
@@ -31,12 +32,12 @@ function useEmployeeOvertimeRequestAction(action: "approve" | "reject" | "cancel
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ id, employeeId, payload }: { id: number; employeeId: number; payload?: ReviewEmployeeOvertimeRequestPayload }) => {
+		mutationFn: ({ id, payload }: { id: number; employeeId: number; payload?: ReviewEmployeeOvertimeRequestPayload }) => {
 			if (action === "approve") return overtimeRequestsApi.approveEmployeeOvertimeRequest(id, payload);
 			if (action === "reject") return overtimeRequestsApi.rejectEmployeeOvertimeRequest(id, payload);
 			return overtimeRequestsApi.cancelEmployeeOvertimeRequest(id, payload);
 		},
-		onSuccess: (_, { employeeId }) => queryClient.invalidateQueries({ queryKey: employeeOvertimeRequestKeys.employee(employeeId) }),
+		onSuccess: (_, { employeeId }) => Promise.all([queryClient.invalidateQueries({ queryKey: employeeOvertimeRequestKeys.employee(employeeId) }), refreshEmployeeHr(queryClient, employeeId)]),
 	});
 }
 

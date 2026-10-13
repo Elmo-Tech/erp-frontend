@@ -30,7 +30,7 @@ it("saves the open-ended late range and edited fourth-plus percentage without re
 	render(<HrPoliciesSettings />);
 	fireEvent.change(screen.getAllByLabelText("Through (minutes)")[3], { target: { value: "" } });
 	fireEvent.change(screen.getAllByLabelText("Fourth+ (%)")[3], { target: { value: "65" } });
-	fireEvent.click(screen.getByRole("button", { name: "Save new policy version" }));
+	fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
 	await waitFor(() => expect(save).toHaveBeenCalledOnce());
 	expect(save.mock.calls[0][0].settings.lateDeductionTiers[3]).toEqual({ minimumMinutes: 60, maximumMinutes: null, percentages: [30, 40, 50, 65] });
 	expect(save.mock.calls[0][0].settings.advanceSettlement).toBe("next_payroll");

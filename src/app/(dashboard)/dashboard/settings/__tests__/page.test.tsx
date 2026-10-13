@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import SettingsPage from "../page";
 import { useAuthStore } from "@/store/authStore";
@@ -11,11 +11,11 @@ vi.mock("@/features/hr/components/HrPoliciesSettings", () => ({ HrPoliciesSettin
 vi.mock("@/features/hr/components/LeaveTypesSettings", () => ({ LeaveTypesSettings: () => null }));
 vi.mock("@/features/hr/components/DeductionTypesSettings", () => ({ DeductionTypesSettings: () => <p>Create deduction type</p> }));
 
-it("lets the super admin manage direct deduction types in simplified mode", () => {
+it("keeps HR settings accessible without the removed deduction type section", () => {
 	useAuthStore.setState({ role: "super-admin" });
 	const { unmount } = render(<SettingsPage />);
-	fireEvent.mouseDown(screen.getByRole("tab", { name: "Deduction Types" }), { button: 0, ctrlKey: false });
-	expect(screen.getByText("Create deduction type")).toBeVisible();
+	expect(screen.getByRole("tab", { name: "HR Policies" })).toBeVisible();
+	expect(screen.queryByRole("tab", { name: "Deduction Types" })).not.toBeInTheDocument();
 	unmount();
 	useAuthStore.setState({ role: null, permissions: [] });
 });

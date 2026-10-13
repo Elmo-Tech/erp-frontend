@@ -9,7 +9,7 @@ export const employmentContractSchema = z
 	.object({
 		employmentType: z.enum(["full_time", "part_time"]),
 		baseSalary: z.number().min(0, "Base salary cannot be negative"),
-		hourlyRate: z.number().min(0, "Hourly rate cannot be negative").nullable().optional(),
+		requiredMonthlyHours: z.number().positive("Enter a positive monthly hours target").max(744, "Monthly hours cannot exceed 744").nullable().optional(),
 		startDate: z.string().refine(isValidContractDate, "Enter a valid start date"),
 		durationMonths: z.number().int("Duration must be a whole number of months").min(1, "Duration must be at least 1 month").max(120, "Duration cannot exceed 120 months"),
 		workDays: z.array(z.enum(employmentContractWorkDays)).min(1, "Select at least one work day"),
@@ -20,6 +20,9 @@ export const employmentContractSchema = z
 		notes: z.string(),
 	})
 	.superRefine((values, context) => {
+		if (values.employmentType === "part_time" && !values.requiredMonthlyHours) {
+			context.addIssue({ code: "custom", path: ["requiredMonthlyHours"], message: "Required monthly hours are required for part-time contracts" });
+		}
 		if (values.status !== "terminated") return;
 
 		if (!values.terminatedOn) {
@@ -66,7 +69,7 @@ export function getDefaultEmploymentContractFormValues(today = new Date()): Empl
 	return {
 		employmentType: "full_time",
 		baseSalary: 0,
-		hourlyRate: null,
+		requiredMonthlyHours: null,
 		startDate: localToday,
 		durationMonths: 12,
 		workDays: ["sunday", "monday", "tuesday", "wednesday", "thursday"],
@@ -82,7 +85,7 @@ export function toEmploymentContractFormValues(contract: EmploymentContract): Em
 	return {
 		employmentType: contract.employmentType,
 		baseSalary: contract.baseSalary,
-		hourlyRate: contract.hourlyRate ?? null,
+		requiredMonthlyHours: contract.requiredMonthlyHours ?? null,
 		startDate: contract.startDate,
 		durationMonths: contract.durationMonths,
 		workDays: [...contract.workDays],
@@ -100,7 +103,7 @@ export function buildEmploymentContractPayload(values: EmploymentContractFormVal
 	return {
 		employmentType: values.employmentType,
 		baseSalary: values.baseSalary,
-		hourlyRate: values.hourlyRate ?? null,
+		requiredMonthlyHours: values.employmentType === "part_time" ? values.requiredMonthlyHours ?? null : null,
 		startDate: values.startDate,
 		durationMonths: values.durationMonths,
 		workDays: [...values.workDays],

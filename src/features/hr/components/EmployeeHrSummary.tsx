@@ -1,0 +1,21 @@
+"use client";
+
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatPermissionDuration } from "../lib/short-permissions";
+import type { EmployeeOverview, EmployeeWorkCommitment } from "../types/employee-overview";
+
+export const formatHrMoney = (value: number | null | undefined) => value == null ? "Not set" : `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EGP`;
+
+export function EmployeeHrStats({ cards, loading }: { cards: Array<{ label: string; value: string; detail: string; progress?: number | null }>; loading?: boolean }) {
+	return <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">{loading ? Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-32 rounded-xl" />) : cards.map((card) => <div key={card.label} className="min-w-0 rounded-xl border bg-card p-4 sm:p-5"><p className="text-xs text-muted-foreground">{card.label}</p><p className="mt-3 break-words text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">{card.value}</p>{card.progress != null && <Progress value={Math.min(100, card.progress)} className="mt-3 h-1.5" />}<p className="mt-2 text-xs text-muted-foreground">{card.detail}</p></div>)}</div>;
+}
+
+export function EmployeeWorkTarget({ commitment }: { commitment?: EmployeeWorkCommitment }) {
+	if (!commitment || !commitment.requiredMinutes) return null;
+	return <section className="rounded-xl border bg-card p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">{commitment.hasPartTimeTarget ? "Part-time work commitment" : "Monthly work commitment"}</h3><p className="mt-1 text-xs text-muted-foreground">{commitment.requiredMonthlyHours != null ? `${commitment.requiredMonthlyHours} required hours per full month · ` : ""}Target follows the contract’s actual service dates.</p></div><span className="rounded-lg bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">{commitment.completionPercentage}%</span></div><p className="mt-5 text-xl font-semibold tabular-nums">{formatPermissionDuration(commitment.workedMinutes)} <span className="text-sm font-normal text-muted-foreground">/ {formatPermissionDuration(commitment.requiredMinutes)} required</span></p><Progress value={Math.min(100, commitment.completionPercentage ?? 0)} className="mt-3 h-2" /><p className="mt-2 text-xs text-muted-foreground">{formatPermissionDuration(commitment.remainingMinutes)} remaining{commitment.hasPartTimeTarget ? " · Work-target completion affects the productivity score in performance evaluations." : ""}</p></section>;
+}
+
+export function EmployeeTimeOffBalances({ data }: { data?: EmployeeOverview }) {
+	return <section className="rounded-xl border bg-card p-5"><h3 className="font-semibold">Time off balances</h3><p className="mt-1 text-xs text-muted-foreground">Annual leave balances · {data?.month.slice(0, 4)}</p><div className="mt-4 divide-y">{data?.leaveBalances.map((balance) => <div key={balance.name} className="py-4"><div className="flex flex-wrap justify-between gap-2 text-sm"><span>{balance.name}</span><span className="font-medium">{balance.remainingDays} / {balance.allocatedDays} days</span></div><Progress value={balance.allocatedDays ? Math.min(100, balance.usedDays / balance.allocatedDays * 100) : 0} className="mt-3 h-1.5" /><p className="mt-2 text-xs text-muted-foreground">{balance.usedDays} days used</p></div>)}{data && <div className="py-4"><div className="flex flex-wrap justify-between gap-2 text-sm"><span>Paid permissions</span><span className="font-medium">{formatPermissionDuration(data.permissions.remainingMinutes)} left</span></div><Progress value={data.permissions.allocatedMinutes ? Math.min(100, data.permissions.paidUsedMinutes / data.permissions.allocatedMinutes * 100) : 0} className="mt-3 h-1.5" /><p className="mt-2 text-xs text-muted-foreground">{formatPermissionDuration(data.permissions.paidUsedMinutes)} of {formatPermissionDuration(data.permissions.allocatedMinutes)} used{data.permissions.overageMinutes > 0 ? ` · ${formatPermissionDuration(data.permissions.overageMinutes)} over allowance` : ""}</p></div>}</div>{!data && <p className="mt-4 text-sm text-muted-foreground">No balance data available.</p>}</section>;
+}

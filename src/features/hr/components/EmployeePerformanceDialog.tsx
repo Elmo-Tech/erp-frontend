@@ -11,6 +11,7 @@ import { Clock, Star, AlertTriangle, FolderKanban, TrendingDown } from "lucide-r
 import { useEmployeePerformance } from "../hooks";
 import type { Employee } from "../types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmployeeWorkTarget } from "./EmployeeHrSummary";
 
 interface EmployeePerformanceDialogProps {
 	open: boolean;
@@ -107,6 +108,7 @@ export function EmployeePerformanceDialog({ open, onOpenChange, employee }: Empl
 						</div>
 					) : performance ? (
 						<div className="grid gap-4">
+							<EmployeeWorkTarget commitment={performance.workCommitment} />
 							{/* Attendance Stats */}
 							<Card>
 								<CardHeader className="pb-2">

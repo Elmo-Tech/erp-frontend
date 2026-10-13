@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Employee HR · Four design directions</title>
+  <style>
+    :root { --blue:#2757df; --ink:#202938; --muted:#738093; --line:#e7ebf1; --bg:#f5f7fb; --green:#158063; --radius:14px; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline:3px solid #9fb7ff; outline-offset:3px; }
+    button { color:inherit; }
+    .chooser { background:#192740; padding:18px 30px; color:white; }
+    .chooser-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:13px; }
+    .chooser h1 { font-size:17px; margin:0; }
+    .chooser p { font-size:12px; margin:3px 0 0; color:#bfccdf; }
+    .prototype { font-size:11px; color:#cfdaed; border:1px solid #516078; border-radius:30px; padding:5px 11px; white-space:nowrap; }
+    .choices { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+    .choice { background:#26354f; border:1px solid #3b4b66; text-align:right; border-radius:10px; padding:11px 14px; color:#d6ddeb; }
+    .choice strong { display:block; font-size:14px; }
+    .choice small { display:block; color:#b0bfd6; margin-top:2px; font-size:11px; }
+    .choice[aria-pressed="true"] { border-color:#92b0ff; background:#eaf0ff; color:#1a43ae; }
+    .choice[aria-pressed="true"] small { color:#5b72a3; }
+    .shell { display:grid; grid-template-columns:78px minmax(0,1fr); max-width:1540px; margin:auto; min-height:calc(100vh - 154px); }
+    .rail { background:white; border-right:1px solid var(--line); padding:23px 14px; display:flex; align-items:center; flex-direction:column; gap:17px; }
+    .logo { display:grid; place-items:center; width:38px; height:38px; background:var(--blue); color:white; font-weight:800; border-radius:12px; margin-bottom:14px; font-size:17px; }
+    .rail-item { display:grid; place-items:center; width:43px; height:43px; border-radius:11px; color:#8895a8; }
+    .rail-item.current { color:var(--blue); background:#ecf1ff; }
+    .rail-bottom { margin-top:auto; padding-top:30px; }
+    svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+    main { min-width:0; padding:26px 34px 36px; }
+    .breadcrumb { font-size:12px; color:var(--muted); display:flex; align-items:center; gap:10px; margin-bottom:19px; }
+    .breadcrumb b { color:#4e5e74; font-weight:500; }
+    .employee-header { display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:24px; }
+    .identity { display:flex; align-items:center; gap:15px; min-width:0; }
+    .avatar { width:60px; height:60px; display:grid; place-items:center; border-radius:18px; background:#e1eafb; border:4px solid white; box-shadow:0 0 0 1px #d9e2f2; color:#3d609e; font-size:20px; font-weight:700; flex:none; }
+    .identity h2 { margin:0 0 2px; font-size:25px; letter-spacing:-.6px; line-height:1.3; }
+    .identity p { color:var(--muted); margin:0; font-size:12px; }
+    .identity-line { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .badge { font-size:10px; font-weight:650; padding:4px 9px; border-radius:6px; background:#f0f3f8; color:#647288; white-space:nowrap; display:inline-flex; align-items:center; gap:5px; }
+    .badge.green { background:#eaf7f1; color:#158063; }
+    .badge.blue { background:#edf2ff; color:var(--blue); }
+    .badge.orange { background:#fff6e8; color:#a46c14; }
+    .badge.red { background:#fff0f1; color:#be4655; }
+    .dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; background:white; border:1px solid #dde3ed; border-radius:8px; padding:9px 13px; font-size:12px; font-weight:600; text-decoration:none; white-space:nowrap; }
+    .btn svg { width:15px; height:15px; }
+    .btn.primary { background:var(--blue); color:white; border-color:var(--blue); }
+    .btn.soft { background:#edf2ff; border-color:#edf2ff; color:var(--blue); }
+    .btn.quiet { background:transparent; border-color:transparent; color:var(--muted); }
+    .buttons { display:flex; flex-wrap:wrap; gap:8px; }
+    .tabs { display:flex; gap:26px; border-bottom:1px solid var(--line); margin-bottom:25px; overflow-x:auto; }
+    .tab { border:0; background:transparent; display:flex; align-items:center; gap:8px; padding:12px 1px 14px; border-bottom:2px solid transparent; color:var(--muted); font-size:12px; font-weight:550; white-space:nowrap; }
+    .tab svg { width:16px; height:16px; }
+    .tab[aria-selected="true"] { color:var(--blue); border-bottom-color:var(--blue); }
+    .section-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:17px; }
+    .section-heading h3 { margin:0; font-size:19px; letter-spacing:-.3px; }
+    .section-heading p { margin:3px 0 0; font-size:12px; color:var(--muted); }
+    .month { padding:8px 11px; border:1px solid #dde3ed; border-radius:8px; background:white; font-size:12px; color:#55657a; }
+    .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; margin-bottom:21px; }
+    .stat { background:white; border:1px solid var(--line); border-radius:var(--radius); padding:18px; }
+    .stat-label { font-size:11px; color:var(--muted); display:flex; justify-content:space-between; align-items:center; }
+    .stat-label svg { color:#a2b1c7; width:16px; height:16px; }
+    .stat-value { font-size:27px; font-weight:700; letter-spacing:-.8px; margin:9px 0 4px; line-height:1.2; }
+    .stat-value small { font-size:12px; color:var(--muted); font-weight:400; letter-spacing:0; }
+    .stat-note { font-size:10px; color:var(--muted); }
+    .stat-note.green { color:var(--green); }
+    .progress { height:5px; background:#edf0f6; border-radius:20px; overflow:hidden; margin:12px 0 6px; }
+    .progress span { display:block; height:100%; width:85%; background:var(--blue); border-radius:20px; }
+    .card { border:1px solid var(--line); border-radius:var(--radius); background:white; padding:20px; }
+    .card h4 { margin:0; font-size:13px; }
+    .card p { font-size:11px; color:var(--muted); margin:4px 0 0; }
+    .card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:17px; }
+    .actions { background:#edf2ff; border:1px solid #e1e9ff; border-radius:var(--radius); padding:13px 18px; display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:20px; }
+    .actions h4 { font-size:12px; margin:0; color:#385787; }
+    .actions p { font-size:10px; color:#6d81a6; margin:2px 0 0; }
+    .action-btn { border:1px solid #d7e1fa; background:white; border-radius:8px; color:#395ba6; font-size:11px; font-weight:600; display:flex; gap:7px; align-items:center; padding:8px 12px; }
+    .action-btn svg { width:14px; height:14px; }
+    .two-col { display:grid; grid-template-columns:minmax(0,1.8fr) minmax(240px,1fr); gap:19px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; text-align:left; font-size:11px; white-space:nowrap; }
+    th { color:#8a96a7; font-weight:500; background:#fafbfd; padding:10px 12px; border-bottom:1px solid var(--line); }
+    td { padding:13px 12px; border-bottom:1px solid #f0f2f6; color:#566477; }
+    tbody tr:last-child td { border-bottom:0; }
+    td:first-child { color:#36465d; font-weight:550; }
+    .balance { padding:12px 0; border-bottom:1px solid #f0f2f6; }
+    .balance:last-child { border-bottom:0; }
+    .balance-line { display:flex; align-items:center; justify-content:space-between; font-size:11px; }
+    .balance-line strong { font-size:12px; }
+    .balance .progress { margin:8px 0 5px; height:4px; }
+    .balance .progress span { width:29%; background:#82a6f5; }
+    .balance p { font-size:10px; }
+    .footnote { color:#8c98aa; font-size:10px; margin-top:16px; display:flex; align-items:center; gap:6px; }
+    .footnote svg { width:13px; height:13px; }
+    .side-layout { display:grid; grid-template-columns:210px minmax(0,1fr); gap:27px; align-items:start; }
+    .side-nav { background:white; padding:11px; border:1px solid var(--line); border-radius:var(--radius); }
+    .side-nav .tabs { flex-direction:column; gap:3px; margin:0; border:0; overflow:visible; }
+    .side-nav .tab { width:100%; padding:12px; border:0; border-radius:8px; text-align:left; }
+    .side-nav .tab[aria-selected="true"] { background:#edf2ff; }
+    .side-note { border-top:1px solid var(--line); margin:15px 8px 0; padding-top:16px; color:var(--muted); font-size:10px; }
+    .side-note strong { display:block; color:#44546c; font-size:11px; margin-bottom:3px; }
+    .focus-content .stats { grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; }
+    .focus-content .stat:nth-child(4) { display:none; }
+    .focus-content .two-col { grid-template-columns:minmax(0,1fr); }
+    .focus-content .two-col > .card:nth-child(2) { display:none; }
+    .focus-content .actions { background:white; padding:16px; }
+    .focus-content .section-heading h3 { font-size:22px; }
+    .focus-content .card { padding:22px; }
+    .command { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:25px; background:white; border:1px solid var(--line); border-radius:18px; margin-bottom:20px; }
+    .command .identity h2 { font-size:24px; }
+    .pill-tabs { border:0; background:#eaf0f7; padding:5px; border-radius:11px; width:max-content; max-width:100%; gap:4px; margin-bottom:25px; }
+    .pill-tabs .tab { padding:9px 15px; border:0; border-radius:7px; font-size:11px; }
+    .pill-tabs .tab[aria-selected="true"] { background:white; box-shadow:0 1px 5px #1b315d0d; }
+    .action-tiles { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px; margin-bottom:24px; }
+    .action-tile { text-align:left; border:1px solid var(--line); background:white; border-radius:var(--radius); padding:17px; display:flex; align-items:center; gap:12px; }
+    .tile-icon { width:37px; height:37px; background:#eef3ff; border-radius:10px; display:grid; place-items:center; color:var(--blue); flex:none; }
+    .action-tile:nth-child(2) .tile-icon { background:#edf8f3; color:var(--green); }
+    .action-tile:nth-child(3) .tile-icon { background:#fff5e6; color:#c68e35; }
+    .action-tile strong { display:block; font-size:12px; }
+    .action-tile small { display:block; font-size:10px; color:var(--muted); margin-top:2px; }
+    .action-tile > svg { width:14px; height:14px; margin-left:auto; color:#95a2b5; }
+    .feed { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; }
+    .feed-item { border:1px solid var(--line); border-radius:10px; padding:15px; display:flex; justify-content:space-between; align-items:start; gap:12px; }
+    .feed-item strong { display:block; font-size:12px; }
+    .feed-item p { font-size:10px; }
+    .feed-item .hours { font-size:17px; font-weight:650; }
+    .feed-item .badge { margin-top:7px; }
+    .timeline-header { padding-bottom:17px; border-bottom:1px solid var(--line); margin-bottom:22px; }
+    .timeline-header .employee-header { margin-bottom:15px; }
+    .timeline-strip { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:22px; background:white; border:1px solid var(--line); padding:17px 22px; border-radius:12px; }
+    .timeline-strip h3 { margin:0; font-size:14px; }
+    .timeline-strip p { margin:2px 0 0; color:var(--muted); font-size:10px; }
+    .timeline-days { display:flex; align-items:center; gap:8px; }
+    .day { width:35px; padding:6px 0; text-align:center; background:#f4f6fa; border-radius:7px; color:#8895a7; font-size:9px; }
+    .day b { font-size:13px; display:block; color:#576981; }
+    .day.active { background:var(--blue); color:#bbcbff; }
+    .day.active b { color:white; }
+    .timeline-layout { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(270px,1fr); gap:20px; }
+    .timeline-entry { position:relative; display:grid; grid-template-columns:30px minmax(0,1fr) auto; gap:12px; padding:15px 0; }
+    .timeline-entry::before { content:""; position:absolute; width:1px; background:#e8edf4; left:14px; top:42px; bottom:-16px; }
+    .timeline-entry:last-child::before { display:none; }
+    .event-icon { display:grid; place-items:center; width:30px; height:30px; color:var(--blue); background:#edf2ff; border:3px solid white; border-radius:50%; z-index:1; }
+    .event-icon svg { width:14px; height:14px; }
+    .timeline-entry strong { font-size:12px; display:block; }
+    .timeline-entry small { font-size:10px; color:var(--muted); }
+    .timeline-entry time { color:#8a97a9; font-size:10px; }
+    .timeline-entry .badge { align-self:start; margin-top:5px; }
+    .mini-summary { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+    .mini-summary strong { display:block; font-size:25px; letter-spacing:-.5px; }
+    .mini-summary small { color:var(--muted); font-size:10px; }
+    .timeline-actions { display:flex; flex-direction:column; gap:9px; margin-top:18px; }
+    .timeline-actions .btn { justify-content:flex-start; padding:12px 14px; }
+    .contract-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; margin:24px 0; }
+    .contract-grid dt { font-size:11px; color:var(--muted); }
+    .contract-grid dd { margin:5px 0 0; font-size:14px; font-weight:600; }
+    .contract-banner { background:#edf2ff; border:1px solid #dfe8ff; border-radius:10px; padding:14px 17px; color:#426097; font-size:12px; display:flex; gap:10px; align-items:center; }
+    .contract-banner svg { color:var(--blue); }
+    .overview-grid { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(230px,1fr); gap:19px; }
+    .big-progress { display:flex; align-items:center; gap:25px; margin:20px 0; }
+    .ring { background:conic-gradient(var(--blue) 0 85%,#edf1f8 85% 100%); width:108px; height:108px; border-radius:50%; position:relative; display:grid; place-items:center; flex:none; }
+    .ring::before { content:""; position:absolute; inset:9px; background:white; border-radius:50%; }
+    .ring b { z-index:1; font-size:25px; }
+    .big-progress h3 { font-size:24px; margin:0; }
+    .big-progress p { font-size:12px; }
+    .document { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:15px 0; border-bottom:1px solid var(--line); }
+    .document:last-child { border:0; }
+    .document strong { font-size:12px; }
+    .document p { font-size:10px; }
+    dialog { border:1px solid #dde4ef; border-radius:18px; width:520px; max-width:calc(100vw - 28px); max-height:calc(100dvh - 40px); padding:0; color:var(--ink); box-shadow:0 24px 100px #132d5438; }
+    dialog::backdrop { background:#19274070; backdrop-filter:blur(3px); }
+    .dialog-head { padding:22px 24px 17px; border-bottom:1px solid var(--line); display:flex; align-items:start; justify-content:space-between; gap:15px; }
+    .dialog-head h3 { font-size:19px; margin:0; }
+    .dialog-head p { font-size:11px; color:var(--muted); margin:4px 0 0; }
+    .close { background:transparent; border:0; color:#8b97a7; padding:3px; }
+    .dialog-body { padding:20px 24px; }
+    .dialog-body label { display:block; font-size:12px; font-weight:550; margin-bottom:6px; }
+    .dialog-body input,.dialog-body select,.dialog-body textarea { border:1px solid #dde4ef; padding:10px 12px; border-radius:8px; width:100%; background:white; color:#3e4d63; font-size:12px; }
+    .field { margin-bottom:16px; }
+    .field small { color:var(--muted); font-size:10px; display:block; margin-top:5px; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .dialog-foot { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:17px 24px; border-top:1px solid var(--line); background:#fafbfd; }
+    .dialog-foot small { font-size:10px; color:var(--muted); }
+    .notice { font-size:11px; background:#edf7f2; color:#287456; padding:12px 14px; border-radius:8px; display:flex; gap:9px; align-items:start; }
+    .notice svg { width:15px; height:15px; }
+    .report-sections { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:18px 0; }
+    .report-sections span { font-size:11px; background:#f2f5fa; border-radius:7px; padding:10px; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1d2d46; color:white; border-radius:10px; padding:13px 20px; font-size:12px; z-index:5; box-shadow:0 8px 30px #1e325333; text-align:center; max-width:calc(100vw - 30px); }
+    [hidden] { display:none !important; }
+    .preview-footer { margin-top:24px; display:flex; justify-content:space-between; gap:12px; font-size:10px; color:#8b98aa; }
+    @media (min-width:1440px) { main { padding-left:45px; padding-right:45px; } }
+    @media (max-width:1100px) { .side-layout { grid-template-columns:185px minmax(0,1fr); gap:19px; } .focus-content .stat { padding:14px; } .focus-content .stat-value { font-size:24px; } .actions { align-items:start; flex-direction:column; } .timeline-days { gap:4px; } }
+    @media (max-width:850px) { .rail { display:none; } .shell { display:block; } main { padding:22px; } .two-col,.timeline-layout,.overview-grid { grid-template-columns:minmax(0,1fr); } .side-layout { grid-template-columns:minmax(0,1fr); } .side-nav { padding:0; border:0; background:transparent; } .side-nav .tabs { flex-direction:row; overflow-x:auto; gap:4px; } .side-nav .tab { width:auto; } .side-note { display:none; } .timeline-days .day:nth-child(-n+3) { display:none; } .chooser { padding:16px 22px; } .action-tiles { gap:9px; } .action-tile { padding:12px; } .action-tile > svg { display:none; } }
+    @media (max-width:600px) { .chooser { padding:14px; } .chooser-top { align-items:start; } .chooser h1 { font-size:14px; } .prototype { font-size:9px; padding:4px 7px; } .choices { grid-template-columns:1fr 1fr; gap:7px; } .choice { padding:9px 10px; } .choice strong { font-size:12px; } .choice small { font-size:10px; } main { padding:18px 15px; } .employee-header { flex-direction:column; align-items:start; gap:14px; } .identity h2 { font-size:21px; } .avatar { width:49px; height:49px; border-radius:13px; font-size:17px; } .tabs { gap:21px; margin-bottom:21px; } .tab { font-size:11px; } .stat { padding:15px; } .stats { grid-template-columns:1fr 1fr; gap:10px; } .stat-value { font-size:24px; } .focus-content .stats { grid-template-columns:1fr 1fr; } .focus-content .stat:nth-child(4) { display:block; } .section-heading { align-items:start; } .section-heading h3 { font-size:17px; } .section-heading p { max-width:195px; font-size:11px; } .actions { padding:14px; } .action-btn { font-size:10px; padding:8px 10px; } .command { padding:17px; align-items:start; flex-direction:column; gap:16px; } .action-tiles { grid-template-columns:1fr; } .action-tile { padding:13px; } .action-tile > svg { display:block; } .feed { grid-template-columns:1fr; } .timeline-strip { padding:14px; gap:10px; } .timeline-days .day:nth-child(-n+5) { display:none; } .day { width:29px; } .contract-grid { grid-template-columns:1fr 1fr; gap:18px; } .card { padding:17px; } .dialog-body { padding:18px; } .dialog-head,.dialog-foot { padding:17px 18px; } .dialog-foot small { max-width:115px; } .report-sections { gap:6px; } .preview-footer { flex-direction:column; } }
+  </style>
+</head>
+<body>
+  <div class="chooser">
+    <div class="chooser-top">
+      <div><h1>Employee HR / Design playground</h1><p dir="rtl">٤ اتجاهات مختلفة — جرّب التبويبات وأزرار الإضافة والتقرير قبل الاختيار</p></div>
+      <span class="prototype">INTERACTIVE PREVIEW · SAMPLE DATA</span>
+    </div>
+    <div class="choices" dir="rtl" aria-label="Design directions">
+      <button class="choice" data-design="1" aria-pressed="true"><strong>١ · مساحة هادئة <span style="font-size:10px">★ ترشيحي</span></strong><small>تبويبات واضحة · إحصائيات · جدول مرتب</small></button>
+      <button class="choice" data-design="2" aria-pressed="false"><strong>٢ · تركيز جانبي</strong><small>قائمة جانبية · مساحة أوسع للعمل</small></button>
+      <button class="choice" data-design="3" aria-pressed="false"><strong>٣ · كروت تفاعلية</strong><small>أزرار كبيرة · تفاصيل سهلة · طابع أخف</small></button>
+      <button class="choice" data-design="4" aria-pressed="false"><strong>٤ · رحلة الشهر</strong><small>خط زمني · ملخص جانبي · تتبع الأحداث</small></button>
+    </div>
+  </div>
+  <div class="shell">
+    <aside class="rail" aria-label="Application context"><div class="logo">t.</div><div class="rail-item" data-icon="home"></div><div class="rail-item" data-icon="layers"></div><div class="rail-item current" data-icon="users"></div><div class="rail-item" data-icon="chart"></div><div class="rail-item rail-bottom" data-icon="settings"></div></aside>
+    <main id="workspace"></main>
+  </div>
+  <dialog id="modal" aria-labelledby="modal-title" aria-describedby="modal-description"></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script>
+    const paths = {
+      home:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/>',
+      layers:'<path d="m12 3 10 5-10 5L2 8Z"/><path d="m2 12 10 5 10-5M2 16l10 5 10-5"/>',
+      users:'<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/>',
+      chart:'<path d="M4 3v18h17M8 16v-4m5 4V7m5 9v-6"/>',
+      settings:'<path d="m9 3-.7 3-2.5 1.4L3 7l-1 4 2.5 2.2L5 16l-1 2 3 3 3-1 3 .2 2 1 3-3-1-3 .3-2.5L21 11l-1-4-3 .4L14 6l-1-3Z"/><circle cx="11" cy="12" r="3"/>',
+      file:'<path d="M14 2H5v20h14V7Z"/><path d="M14 2v5h5M8 12h8m-8 4h6"/>',
+      calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18M7 15h2m4 0h2m-8 3h2"/>',
+      wallet:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 8h18m0 5h-6v4h6M6 5V3h12v2"/>',
+      clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      arrow:'<path d="M5 12h14m-5-5 5 5-5 5"/>',
+      plus:'<path d="M12 5v14M5 12h14"/>',
+      download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',
+      edit:'<path d="m15 4 5 5M4 20l4-1L21 6l-5-5L3 14Z"/>',
+      chevron:'<path d="m9 5 7 7-7 7"/>',
+      check:'<path d="m5 12 4 4L19 6"/>',
+      close:'<path d="m6 6 12 12M6 18 18 6"/>',
+      leaf:'<path d="M20 3C9 2 3 7 5 15s15 8 15-12ZM4 21l11-12"/>',
+      info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.1"/>',
+      spark:'<path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/>',
+      shield:'<path d="m12 2 9 4v6c0 5-9 10-9 10S3 17 3 12V6Z"/><path d="m8 12 3 3 5-5"/>',
+    };
+    const icon = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.file}</svg>`;
+    document.querySelectorAll('[data-icon]').forEach(el => el.innerHTML = icon(el.dataset.icon));
+    const tabs = [ ['overview','Overview','chart'], ['contracts','Contracts','file'], ['attendance','Attendance & time off','calendar'], ['payroll','Salary & advances','wallet'], ['documents','Documents','layers'] ];
+    let design = ['1','2','3','4'].includes(new URLSearchParams(location.search).get('design')) ? Number(new URLSearchParams(location.search).get('design')) : 1;
+    let active = 'attendance';
+    let toastTimeout;
+    const badge = (text,color='green') => `<span class="badge ${color}">${text}</span>`;
+    const button = (label,action,ico,kind='') => `<button type="button" class="btn ${kind}" data-action="${action}">${ico ? icon(ico) : ''}${label}</button>`;
+    const identity = () => `<div class="identity"><div class="avatar">AS</div><div><div class="identity-line"><h2>Ahmed Saber</h2><span class="badge green"><i class="dot"></i>Active</span></div><p>Product designer &nbsp;·&nbsp; Part-time &nbsp;·&nbsp; EMP-024</p></div></div>`;
+    const headerButtons = () => `<div class="buttons">${button('Edit profile','profile','edit')}${button('Employee report','report','download','primary')}</div>`;
+    const tabNav = (cls='') => `<nav class="tabs ${cls}" role="tablist" aria-label="Employee HR sections">${tabs.map(([id,label,ico]) => `<button id="tab-${id}" class="tab" role="tab" aria-selected="${active===id}" aria-controls="active-panel" tabindex="${active===id?0:-1}" data-tab="${id}">${icon(ico)}${label}</button>`).join('')}</nav>`;
+    const month = () => `<input class="month" type="month" value="2026-10" aria-label="Summary month">`;
+    const heading = (title,sub) => `<div class="section-heading"><div><h3>${title}</h3><p>${sub}</p></div>${month()}</div>`;
+    const stat = (label,value,note,ico,extra='') => `<div class="stat"><div class="stat-label">${label}${icon(ico)}</div><div class="stat-value">${value}</div>${extra}<div class="stat-note">${note}</div></div>`;
+    const attendanceStats = () => `<div class="stats">${stat('Attendance days','12 <small>days</small>','2 days on approved leave','calendar')}${stat('Monthly work target','68 <small>/ 80 hrs</small>','85% of required monthly hours','clock','<div class="progress"><span></span></div>')}${stat('Leave balance','15 <small>days</small>','6 days used this year','leaf')}${stat('Paid permissions','4.5 <small>hrs left</small>','1.5 of 6 hours used','shield')}</div>`;
+    const actionBar = () => `<div class="actions"><div><h4>Everything in its place.</h4><p>Add a record in a dialog. Your monthly summary stays here.</p></div><div class="buttons"><button class="action-btn" data-action="attendance">${icon('calendar')}Attendance</button><button class="action-btn" data-action="leave">${icon('plus')}Leave</button><button class="action-btn" data-action="permission">${icon('clock')}Short permission</button></div></div>`;
+    const attendanceRows = () => `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Clock in</th><th>Clock out</th><th>Work time</th><th>Status</th></tr></thead><tbody><tr><td>Tue, Oct 13</td><td>09:00 AM</td><td>01:00 PM</td><td>4h 00m</td><td>${badge('On time')}</td></tr><tr><td>Mon, Oct 12</td><td>09:00 AM</td><td>02:30 PM</td><td>5h 30m</td><td>${badge('On time')}</td></tr><tr><td>Sun, Oct 11</td><td>09:20 AM</td><td>01:20 PM</td><td>4h 00m</td><td>${badge('20m late','orange')}</td></tr><tr><td>Thu, Oct 08</td><td>—</td><td>—</td><td>—</td><td>${badge('Paid leave','blue')}</td></tr><tr><td>Wed, Oct 07</td><td>09:00 AM</td><td>01:00 PM</td><td>4h 00m</td><td>${badge('On time')}</td></tr></tbody></table></div>`;
+    const balances = () => `<div class="card"><div class="card-header"><div><h4>Time off balances</h4><p>Current year · 2026</p></div>${icon('leaf')}</div>${[['Annual leave','15 / 21 days','6 days used','#82a6f5','29%'],['Sick leave','8 / 10 days','2 days used','#6fc0a3','20%'],['Paid permissions','4.5 / 6 hrs','1.5 hours used this month','#efc074','25%']].map(([name,amount,note,color,width]) => `<div class="balance"><div class="balance-line"><span>${name}</span><strong>${amount}</strong></div><div class="progress"><span style="background:${color};width:${width}"></span></div><p>${note}</p></div>`).join('')}<div class="footnote">${icon('info')}Approved records update balances automatically.</div></div>`;
+    const attendanceTable = () => `<div class="card"><div class="card-header"><div><h4>Attendance & time off history</h4><p>All records in one clear view</p></div>${button('Details','attendance','arrow','quiet')}</div>${attendanceRows()}</div>`;
+    function attendanceContent() {
+      if (design===3) return `${heading('A good month, at a glance.','A simple overview of work time and time off.')}${attendanceStats()}<div class="action-tiles">${[['leave','Add leave','Paid or unpaid time off','leaf'],['permission','Short permission','A few hours, all recorded','clock'],['attendance','Attendance details','View the complete daily log','calendar']].map(([action,title,sub,ico]) => `<button class="action-tile" data-action="${action}"><span class="tile-icon">${icon(ico)}</span><span><strong>${title}</strong><small>${sub}</small></span>${icon('arrow')}</button>`).join('')}</div><div class="two-col"><div class="card"><div class="card-header"><div><h4>Recent activity</h4><p>The details you need, without the noise</p></div>${badge('October','blue')}</div><div class="feed">${[['Today · Oct 13','09:00 AM → 01:00 PM','4h','On time','green'],['Yesterday · Oct 12','09:00 AM → 02:30 PM','5.5h','On time','green'],['Sun · Oct 11','09:20 AM → 01:20 PM','4h','20m late','orange'],['Thu · Oct 08','Annual leave · Approved','1 day','Paid leave','blue']].map(([title,sub,hrs,status,color]) => `<div class="feed-item"><div><strong>${title}</strong><p>${sub}</p>${badge(status,color)}</div><span class="hours">${hrs}</span></div>`).join('')}</div></div>${balances()}</div>`;
+      if (design===4) return `<div class="timeline-strip"><div><h3>October, one day at a time.</h3><p>Work, time off and requests in context.</p></div><div class="timeline-days">${[['W','07'],['T','08'],['F','09'],['S','10'],['S','11'],['M','12'],['T','13']].map(([day,n]) => `<span class="day ${n==='13'?'active':''}">${day}<b>${n}</b></span>`).join('')}</div>${month()}</div><div class="timeline-layout"><div class="card"><div class="card-header"><div><h4>Your monthly timeline</h4><p>Attendance and time off · most recent first</p></div>${badge('October','blue')}</div>${[['calendar','Attendance recorded','4h worked · 09:00 AM – 01:00 PM','Today, 1:00 PM','On time','green'],['clock','Short permission','1h 30m · Personal appointment · Paid','Oct 12, 11:30 AM','Approved','green'],['calendar','Attendance recorded','4h worked · 20 minutes late','Oct 11, 1:20 PM','Late','orange'],['leaf','Annual leave','1 paid day · Balance updated','Oct 08, 9:00 AM','Approved','blue'],['calendar','Attendance recorded','4h worked · 09:00 AM – 01:00 PM','Oct 07, 1:00 PM','On time','green']].map(([ico,title,sub,date,status,color]) => `<div class="timeline-entry"><span class="event-icon">${icon(ico)}</span><div><strong>${title}</strong><small>${sub}</small><br><time>${date}</time></div>${badge(status,color)}</div>`).join('')}</div><div><div class="card"><h4>This month's work target</h4><div class="mini-summary"><div><strong>68<span style="font-size:12px;color:#8a97aa"> / 80h</span></strong><small>Tracked work hours</small></div><div><strong>85%</strong><small>Monthly target reached</small></div></div><div class="progress"><span></span></div><p>12 hours remaining to reach the contract target.</p><div class="timeline-actions">${button('Register leave','leave','leaf')}${button('Add short permission','permission','clock')}${button('View attendance log','attendance','calendar','soft')}</div></div><div style="height:17px"></div>${balances()}</div></div>`;
+      return `${heading('Attendance & time off','Monthly statistics, balances and a clean daily log.')}${attendanceStats()}${actionBar()}<div class="two-col">${attendanceTable()}${balances()}</div>`;
+    }
+    function contractsContent() {
+      return `${heading('Employment contracts','Clear terms. A monthly target for part-time work.')}<div class="card"><div class="card-header"><div><h4>Current employment contract</h4><p>Started October 05, 2026 · Ends April 04, 2027</p></div>${button('Edit contract','contract','edit')}</div><div class="buttons">${badge('Active')}${badge('Part-time','blue')}${badge('6 months','')}</div><dl class="contract-grid"><div><dt>Monthly salary</dt><dd>8,000 EGP</dd></div><div><dt>Required monthly hours</dt><dd>80 hours</dd></div><div><dt>Working days</dt><dd>Sunday – Thursday</dd></div><div><dt>Daily schedule</dt><dd>09:00 AM · 4 hours</dd></div><div><dt>First salary period</dt><dd>Oct 05 – Oct 31</dd></div><div><dt>Contract attachment</dt><dd>Employment agreement.pdf</dd></div></dl><div class="contract-banner">${icon('clock')}Part-time performance compares tracked work with the required monthly hours.</div></div><div class="section-heading" style="margin-top:24px"><div><h3 style="font-size:15px">Contract history</h3><p>Renewals and previous agreements remain easy to find.</p></div>${button('New contract','contract','plus','primary')}</div><div class="card"><p>No previous agreements for this sample employee.</p></div>`;
+    }
+    function payrollContent() {
+      return `${heading('Salary & advances','A clear salary summary and every withdrawal in one place.')}<div class="stats">${stat('Monthly base salary','8,000 <small>EGP</small>','From the employment contract','file')}${stat('Withdrawals','1,000 <small>EGP</small>','Recorded and deducted from salary','wallet')}${stat('Direct deductions','200 <small>EGP</small>','Approved automatically by admin','shield')}${stat('Salary deductions','1,200 <small>EGP</small>','1,000 withdrawal + 200 deduction','chart')}</div><div class="actions"><div><h4>One simple step.</h4><p>Enter the amount, date and note. Administrative entries are approved immediately.</p></div><div class="buttons">${button('Record withdrawal','advance','plus','primary')}${button('Direct deduction','deduction','wallet')}${button('Overtime','overtime','clock')}</div></div><div class="card"><div class="card-header"><div><h4>Salary activity</h4><p>Exact date, amount and approval details for every transaction</p></div>${badge('October','blue')}</div><div class="table-wrap"><table><thead><tr><th>Date & time</th><th>Transaction</th><th>Amount</th><th>Note</th><th>Status</th></tr></thead><tbody><tr><td>Oct 12, 2026 · 10:35 AM</td><td>Salary withdrawal</td><td>−1,000 EGP</td><td>Personal advance</td><td>${badge('Auto-approved')}</td></tr><tr><td>Oct 09, 2026 · 02:10 PM</td><td>Direct deduction</td><td>−200 EGP</td><td>Administrative deduction</td><td>${badge('Auto-approved')}</td></tr></tbody></table></div></div><div class="footnote">${icon('info')}The final salary also includes the contract's actual first-month period and approved additions.</div>`;
+    }
+    function overviewContent() {
+      return `${heading('A clear picture of the month.','Work, HR and salary, together in one useful overview.')}<div class="stats">${stat('Tracked work','68 <small>hours</small>','80 hours required by contract','clock')}${stat('Completed tasks','18 <small>/ 21</small>','86% task completion','check')}${stat('Attendance','12 <small>days</small>','1 late day this month','calendar')}${stat('Salary deductions','1,200 <small>EGP</small>','Withdrawals and direct deductions','wallet')}</div><div class="overview-grid"><div class="card"><div class="card-header"><div><h4>Part-time work performance</h4><p>Measured against the agreed monthly hours</p></div>${badge('Part-time','blue')}</div><div class="big-progress"><div class="ring"><b>85%</b></div><div><h3>68 of 80 hours</h3><p>12 hours to reach the full monthly target.</p><p>Task completion: 86% · 18 completed tasks</p></div></div><div class="footnote">${icon('info')}Work-target progress and task quality stay visible as separate metrics.</div></div>${balances()}</div><div class="card" style="margin-top:19px"><div class="card-header"><div><h4>Supervision & work context</h4><p>Project and task supervision remains visible in the employee overview.</p></div>${button('View full report','report','download','soft')}</div><p>2 supervised tasks · 3h 20m supervision recorded · 0 open help requests</p></div>`;
+    }
+    function documentsContent() {
+      return `${heading('Employee documents','All employee paperwork, organised and easy to reach.')}<div class="card"><div class="card-header"><div><h4>Files & documents</h4><p>Private employee documents and contract attachments</p></div>${button('Upload document','document','plus','primary')}</div>${[['Employment agreement.pdf','Contract · Uploaded Oct 05, 2026'],['National ID.pdf','Identity · Uploaded Oct 05, 2026'],['Portfolio.pdf','Employee document · Uploaded Oct 06, 2026']].map(([name,sub]) => `<div class="document"><div style="display:flex;align-items:center;gap:12px"><span class="tile-icon">${icon('file')}</span><div><strong>${name}</strong><p>${sub}</p></div></div>${button('Preview','document-preview','arrow','quiet')}</div>`).join('')}</div>`;
+    }
+    function render() {
+      document.querySelectorAll('[data-design]').forEach(el => el.setAttribute('aria-pressed',String(Number(el.dataset.design)===design)));
+      const crumb = `<div class="breadcrumb">Employees ${icon('chevron')} <b>Ahmed Saber</b></div>`;
+      const header = `<header class="employee-header">${identity()}${headerButtons()}</header>`;
+      const content = active==='attendance'?attendanceContent():active==='contracts'?contractsContent():active==='payroll'?payrollContent():active==='documents'?documentsContent():overviewContent();
+      const panel = `<section id="active-panel" role="tabpanel" aria-labelledby="tab-${active}" tabindex="0">${content}</section>`;
+      let html;
+      if (design===2) html = `${crumb}${header}<div class="side-layout"><aside class="side-nav">${tabNav()}<div class="side-note"><strong>Part-time contract</strong>80 required hours / month<br>Active since Oct 05, 2026<br><br>All HR, one workspace.</div></aside><div class="focus-content">${panel}</div></div>`;
+      else if (design===3) html = `${crumb}<header class="command">${identity()}${headerButtons()}</header>${tabNav('pill-tabs')}${panel}`;
+      else if (design===4) html = `${crumb}<div class="timeline-header">${header}${tabNav('pill-tabs')}</div>${panel}`;
+      else html = `${crumb}${header}${tabNav()}${panel}`;
+      document.getElementById('workspace').innerHTML = html + `<footer class="preview-footer"><span>THE TABLES · EMPLOYEE WORKSPACE</span><span>Design ${design} / 4 · Illustrative data · Actions are previews</span></footer>`;
+    }
+    function field(id,label,type='text',value='',help='') {
+      return `<div class="field"><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" ${value?`value="${value}"`:''} ${type==='number'?'min="0.01" step="0.01"':''} required>${help?`<small>${help}</small>`:''}</div>`;
+    }
+    const note = (label='Note') => `<div class="field"><label for="record-note">${label}</label><textarea id="record-note" name="note" rows="3" placeholder="Add a short note for the employee record"></textarea></div>`;
+    const select = (id,label,options) => `<div class="field"><label for="${id}">${label}</label><select id="${id}" name="${id}">${options.map(([v,text]) => `<option value="${v}">${text}</option>`).join('')}</select></div>`;
+    function openModal(action) {
+      let title='',sub='',body='',save='Save preview',readonly=false;
+      if (action==='leave') { title='Register leave'; sub='Ahmed Saber · Time off, without leaving the page'; body=select('leave-type','Leave type',[['annual','Annual leave · 15 days remaining'],['sick','Sick leave · 8 days remaining'],['unpaid','Unpaid leave']])+`<div class="field-row">${field('leave-start','From','date','2026-10-14')}${field('leave-end','To','date','2026-10-14')}</div>`+note('Reason')+`<div class="notice">${icon('check')}Registered by an admin. The leave is approved immediately and the balance is updated.</div>`; save='Register leave'; }
+      if (action==='permission') { title='Add short permission'; sub='Ahmed Saber · 4.5 paid hours remaining this month'; body=field('permission-date','Date','date','2026-10-14')+`<div class="field-row">${field('permission-from','From','time','10:00')}${field('permission-to','To','time','11:00')}</div>`+select('permission-pay','Payment',[['paid','Paid permission'],['unpaid','Unpaid permission']])+note('Reason')+`<div class="notice">${icon('check')}Admin registration is approved immediately. Paid time uses the monthly allowance.</div>`; save='Add permission'; }
+      if (action==='attendance') { title='Attendance log'; sub='Ahmed Saber · October 2026 · Detailed daily records'; body=attendanceRows(); readonly=true; }
+      if (action==='advance' || action==='deduction') { title=action==='advance'?'Record salary withdrawal':'Direct salary deduction'; sub='Ahmed Saber · Simple, immediate and traceable'; body=field('transaction-amount','Amount (EGP)','number',action==='advance'?'1000':'200')+field('transaction-date','Exact date & time','datetime-local','2026-10-13T10:35')+note('Reason / note')+`<div class="notice">${icon('check')}Super admin entry: approved automatically and included once in salary deductions.</div>`; save=action==='advance'?'Record withdrawal':'Apply deduction'; }
+      if (action==='contract') { title='Employment contract'; sub='Ahmed Saber · Employment terms and monthly commitment'; body=select('employment-type','Employment type',[['part_time','Part-time'],['full_time','Full-time']])+`<div class="field-row">${field('contract-salary','Monthly salary (EGP)','number','8000')}<div id="monthly-hours-field">${field('monthly-hours','Required hours / month','number','80','Used to assess the employee’s monthly work commitment.')}</div></div><div class="field-row">${field('contract-start','Start date','date','2026-10-05')}${field('contract-duration','Duration (months)','number','6')}</div>`+note()+`<div class="contract-banner">${icon('calendar')}The first salary period runs from the contract start date to the end of that month.</div>`; save='Save contract'; }
+      if (action==='overtime') { title='Register overtime'; sub='Ahmed Saber · Extra work with a clear record'; body=field('overtime-date','Date','date','2026-10-14')+`<div class="field-row">${field('overtime-from','From','time','13:00')}${field('overtime-to','To','time','15:00')}</div>`+note('Reason'); save='Register overtime'; }
+      if (action==='report') { title='Comprehensive employee report'; sub='Report direction · Sample data, not a live export'; body=`<div class="field-row">${field('report-start','From','date','2026-10-01')}${field('report-end','To','date','2026-10-31')}</div><p style="font-size:12px;color:#728096">The implemented report will cover each of these sections, with totals and record-level details.</p><div class="report-sections">${['Profile & employment contracts','Required vs tracked hours','Performance, tasks & projects','Attendance, lateness & work time','Leave records & balances','Short permissions & allowances','Overtime & salary additions','Salary, withdrawals & deductions','Exact dates & approval history','Documents & supervision'].map(t=>`<span>${t}</span>`).join('')}</div><div class="contract-banner">${icon('file')}Actual report export will be wired to the employee data during implementation.</div>`; readonly=true; }
+      if (action==='profile') { title='Edit employee profile'; sub='Ahmed Saber · Personal and contact details'; body=field('profile-name','Name','text','Ahmed Saber')+field('profile-email','Email','email','ahmed@example.com'); save='Save profile'; }
+      if (action==='document') { title='Upload employee document'; sub='Ahmed Saber · Add a file to the employee record'; body=field('document-name','Document name')+field('document-file','File','file'); save='Upload preview'; }
+      if (action==='document-preview') { title='Document preview'; sub='Illustrative file · Design preview'; body='<div class="card" style="text-align:center;padding:45px 20px">'+icon('file')+'<h4 style="margin-top:12px">Employee document</h4><p>Real file preview and download use the existing document APIs.</p></div>'; readonly=true; }
+      const dialog=document.getElementById('modal');
+      dialog.innerHTML=`<form id="preview-form"><div class="dialog-head"><div><h3 id="modal-title">${title}</h3><p id="modal-description">${sub}</p></div><button type="button" class="close" data-close aria-label="Close dialog">${icon('close')}</button></div><div class="dialog-body">${body}</div><div class="dialog-foot"><small>Sample data · Preview only</small><div class="buttons">${button(readonly?'Close':'Cancel','close','')}${readonly?'':`<button type="submit" class="btn primary">${icon('check')}${save}</button>`}</div></div></form>`;
+      dialog.showModal();
+      document.getElementById('preview-form').addEventListener('submit',event=>{event.preventDefault(); dialog.close();showToast('Preview complete — no employee records were changed.');});
+      const type=document.getElementById('employment-type');
+      if (type) type.addEventListener('change',()=>{ const hidden=type.value!=='part_time'; document.getElementById('monthly-hours-field').hidden=hidden; document.getElementById('monthly-hours').required=!hidden; });
+    }
+    function showToast(text) { clearTimeout(toastTimeout);const el=document.getElementById('toast');el.textContent=text;el.hidden=false;toastTimeout=setTimeout(()=>el.hidden=true,3500); }
+    document.addEventListener('click',event=>{
+      const choice=event.target.closest('[data-design]');
+      if (choice) { design=Number(choice.dataset.design);const url=new URL(location.href);url.searchParams.set('design',String(design));history.replaceState(null,'',url);render();return; }
+      const tab=event.target.closest('[data-tab]');
+      if (tab) { active=tab.dataset.tab;render();document.getElementById(`tab-${active}`).focus();return; }
+      if (event.target.closest('[data-close]')) {document.getElementById('modal').close();return;}
+      const action=event.target.closest('[data-action]');
+      if (action) {if(action.dataset.action==='close')document.getElementById('modal').close();else openModal(action.dataset.action);}
+    });
+    document.addEventListener('keydown',event=>{
+      if (!event.target.matches('[role="tab"]')) return;
+      const index=tabs.findIndex(([id])=>id===active);
+      let next=index;
+      if(event.key==='ArrowRight' || (design===2 && event.key==='ArrowDown'))next=(index+1)%tabs.length;
+      else if(event.key==='ArrowLeft' || (design===2 && event.key==='ArrowUp'))next=(index+tabs.length-1)%tabs.length;
+      else if(event.key==='Home')next=0;
+      else if(event.key==='End')next=tabs.length-1;
+      else return;
+      event.preventDefault();active=tabs[next][0];render();document.getElementById(`tab-${active}`).focus();
+    });
+    document.getElementById('modal').addEventListener('click',event=>{if(event.target===event.currentTarget){const rect=event.currentTarget.getBoundingClientRect();if(event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom)event.currentTarget.close();}});
+    render();
+  </script>
+</body>
+</html>

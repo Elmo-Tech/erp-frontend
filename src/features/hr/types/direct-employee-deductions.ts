@@ -10,6 +10,7 @@ export interface DirectEmployeeDeduction {
 	employeeId: number;
 	deductionType: DirectDeductionType;
 	deductionDate: string;
+	occurredAt?: string | null;
 	amount: number;
 	status: DirectEmployeeDeductionStatus;
 	reason: string;
@@ -32,8 +33,9 @@ export interface DirectEmployeeDeductionsResponse {
 }
 
 export interface CreateDirectEmployeeDeductionPayload {
-	deductionTypeId: number;
+	deductionTypeId?: number;
 	deductionDate: string;
+	occurredAt?: string;
 	amount: number;
 	reason: string;
 }

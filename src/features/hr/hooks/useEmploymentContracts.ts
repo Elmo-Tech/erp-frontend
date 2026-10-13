@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { employmentContractsApi } from "../api/employment-contracts";
 import type { EmploymentContractPayload } from "../types/employment-contract";
 import { employeeKeys } from "./useEmployees";
+import { refreshEmployeeHr } from "./useEmployeeOverview";
 
 export const employmentContractKeys = {
 	all: ["employment-contracts"] as const,
@@ -25,6 +26,7 @@ export function useCreateEmploymentContract() {
 		onSuccess: (_, { employeeId }) => {
 			queryClient.invalidateQueries({ queryKey: employmentContractKeys.list(employeeId) });
 			queryClient.invalidateQueries({ queryKey: employeeKeys.all });
+			void refreshEmployeeHr(queryClient, employeeId);
 		},
 	});
 }
@@ -37,6 +39,7 @@ export function useUpdateEmploymentContract() {
 		onSuccess: (_, { employeeId }) => {
 			queryClient.invalidateQueries({ queryKey: employmentContractKeys.list(employeeId) });
 			queryClient.invalidateQueries({ queryKey: employeeKeys.all });
+			void refreshEmployeeHr(queryClient, employeeId);
 		},
 	});
 }

@@ -3,6 +3,7 @@ import { shortPermissionsApi } from "../api/short-permissions";
 import { isValidPermissionMonth } from "../lib/short-permissions";
 import type { ApproveEmployeeShortPermissionPayload, CreateEmployeeShortPermissionPayload, ReviewEmployeeShortPermissionPayload } from "../types/short-permissions";
 import { useAuthStore } from "@/store/authStore";
+import { refreshEmployeeHr } from "./useEmployeeOverview";
 
 export const employeeShortPermissionKeys = {
 	all: ["employee-short-permissions"] as const,
@@ -26,6 +27,7 @@ function refreshShortPermissions(queryClient: QueryClient, employeeId: number) {
 	return Promise.all([
 		queryClient.invalidateQueries({ queryKey: employeeShortPermissionKeys.employee(employeeId) }),
 		queryClient.invalidateQueries({ queryKey: employeeShortPermissionKeys.pending() }),
+		refreshEmployeeHr(queryClient, employeeId),
 	]);
 }
 

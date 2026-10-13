@@ -21,6 +21,9 @@ vi.mock("./EmployeePartialPaysDialog", () => ({ EmployeePartialPaysPanel: panelM
 vi.mock("./EmployeeAttendancePanel", () => ({ EmployeeAttendancePanel: panelMock("attendance-panel") }));
 vi.mock("./EmployeeSupervisionPanel", () => ({ EmployeeSupervisionPanel: panelMock("supervision-panel") }));
 vi.mock("./EmployeeOverviewPanel", () => ({ EmployeeOverviewPanel: () => <div>Employee overview</div> }));
+vi.mock("./EmployeeFinancialPanel", () => ({ EmployeeFinancialPanel: panelMock("financial-panel") }));
+vi.mock("./EmployeeTimeOffPanel", () => ({ EmployeeTimeOffPanel: panelMock("time-off-panel") }));
+vi.mock("./EmployeeReportDialog", () => ({ EmployeeReportDialog: ({ open }: { open: boolean }) => open ? <div role="dialog">Comprehensive employee report</div> : null }));
 
 const employee: Employee = {
 	userId: 7,
@@ -58,10 +61,12 @@ describe("EmployeeWorkspace", () => {
 		fireEvent.mouseDown(screen.getByRole("tab", { name: "Salary & advances" }), { button: 0, ctrlKey: false });
 		expect(screen.getByTestId("contracts-panel")).toHaveAttribute("data-active", "false");
 		expect(screen.getByTestId("contracts-panel")).not.toBeVisible();
-		expect(screen.getByTestId("advances-panel")).toHaveAttribute("data-active", "true");
+		expect(screen.getByTestId("financial-panel")).toHaveAttribute("data-active", "true");
 		expect(screen.queryByTestId("partial-pays-panel")).not.toBeInTheDocument();
 		fireEvent.mouseDown(screen.getByRole("tab", { name: "Attendance & time off" }), { button: 0, ctrlKey: false });
-		for (const panel of ["attendance-panel", "leaves-panel", "permissions-panel"]) expect(screen.getByTestId(panel)).toHaveAttribute("data-active", "true");
+		expect(screen.getByTestId("time-off-panel")).toHaveAttribute("data-active", "true");
+		fireEvent.click(screen.getByRole("button", { name: "Employee report" }));
+		expect(screen.getByRole("dialog")).toHaveTextContent("Comprehensive employee report");
 	});
 
 	it("shows only the overview and does not mount protected panels for non-managers", () => {

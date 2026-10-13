@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,6 +117,7 @@ function ContractSummary({ contract, employeeId, canManage, onEdit, onDelete }: 
 			</div>
 
 			<dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+				{contract.employmentType === "part_time" && <div><dt className="text-muted-foreground">Required monthly hours</dt><dd className="font-medium">{contract.requiredMonthlyHours ?? "Not set"} hours/month</dd></div>}
 				{canManage && (
 					<div>
 						<dt className="text-muted-foreground">Base salary</dt>
@@ -223,6 +224,7 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 	const startDate = useWatch({ control: form.control, name: "startDate" });
 	const durationMonths = useWatch({ control: form.control, name: "durationMonths" });
 	const selectedStatus = useWatch({ control: form.control, name: "status" });
+	const employmentType = useWatch({ control: form.control, name: "employmentType" });
 	const isSaving = createContract.isPending || updateContract.isPending;
 	const contracts = [...(contractsQuery.data ?? [])].sort((left, right) => right.startDate.localeCompare(left.startDate));
 	const currentContract = contracts.find((contract) => contract.isCurrent) ?? contracts.find((contract) => contract.status === "active");
@@ -284,14 +286,14 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 	return (
 		<div className="space-y-5">
 			<div>
-				<h2 className="text-lg font-semibold">{isFormVisible ? (mode === "edit" ? "Edit employment contract" : "New employment contract") : `Employment contracts for ${employeeName}`}</h2>
+				<h2 className="text-xl font-semibold tracking-tight">Employment contracts for {employeeName}</h2>
 				<p className="text-sm text-muted-foreground">
 					{isFormVisible
 						? "Set the terms and schedule for this employment agreement."
 						: "Review the current agreement and its renewal history. End dates displayed here are confirmed by the server."}
 				</p>
 			</div>
-				{isFormVisible ? (
+				<Dialog open={isFormVisible} onOpenChange={(open) => { if (!open && !isSaving) returnToOverview(); }}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl"><DialogHeader><DialogTitle>{mode === "edit" ? "Edit employment contract" : "New employment contract"}</DialogTitle><DialogDescription>Employment terms, salary and work commitment for {employeeName}.</DialogDescription></DialogHeader>
 					<Form {...form}>
 						<form
 							onSubmit={form.handleSubmit(handleSubmit)}
@@ -325,16 +327,7 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 									step="0.01"
 									disabled={isSaving}
 								/>
-								<FormInput
-									control={form.control}
-									name="hourlyRate"
-									label="Hourly rate (optional)"
-									type="number"
-									min={0}
-									step="0.01"
-									description="Leave empty to calculate from base salary and daily working hours."
-									disabled={isSaving}
-								/>
+								{employmentType === "part_time" && <FormInput control={form.control} name="requiredMonthlyHours" label="Required monthly hours" type="number" min={0.01} max={744} step="0.01" description="The employee’s tracked work is evaluated against this monthly target. Partial months are prorated from the contract start date." disabled={isSaving} />}
 								<FormInput
 									control={form.control}
 									name="startDate"
@@ -357,7 +350,7 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 							<Alert>
 								<CalendarDays />
 								<AlertTitle>Estimated end date: {previewEndDate ? formatDate(previewEndDate) : "Enter a valid start date and duration"}</AlertTitle>
-								<AlertDescription>This is a local preview. The saved end date is calculated and returned by the backend.</AlertDescription>
+								<AlertDescription>The first salary is calculated from the contract start date through the end of that month, including the start day.</AlertDescription>
 							</Alert>
 
 							<div className="grid gap-4 sm:grid-cols-2">
@@ -450,7 +443,7 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 							</DialogFooter>
 						</form>
 					</Form>
-				) : (
+				</DialogContent></Dialog>
 					<div className="space-y-5">
 						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<div>
@@ -528,7 +521,6 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 							)}
 						</div>
 					</div>
-				)}
 		</div>
 	);
 }

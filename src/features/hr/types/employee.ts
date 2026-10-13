@@ -81,6 +81,7 @@ export interface UpdateEmployeePayload {
 }
 
 export interface EmployeePerformance {
+	workCommitment?: import("./employee-overview").EmployeeWorkCommitment;
 	employee: {
 		userId: number;
 		name: string;

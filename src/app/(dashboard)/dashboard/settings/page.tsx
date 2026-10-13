@@ -8,7 +8,6 @@ import { TagsManager } from '@/features/settings/components/TagsManager';
 import { GoogleDriveSettings } from '@/features/settings/components/GoogleDriveSettings';
 import { HrPoliciesSettings } from '@/features/hr/components/HrPoliciesSettings';
 import { LeaveTypesSettings } from '@/features/hr/components/LeaveTypesSettings';
-import { DeductionTypesSettings } from '@/features/hr/components/DeductionTypesSettings';
 import { useAuthStore } from '@/store/authStore';
 
 export default function SettingsPage() {
@@ -18,7 +17,6 @@ export default function SettingsPage() {
 function SettingsContent() {
   const canManageLeaveTypes = useAuthStore((state) => state.hasPermission('manage_leave_types'));
   const searchParams = useSearchParams();
-  const canConfigureDeductionTypes = useAuthStore((state) => state.hasPermission('manage_deductions') || state.hasPermission('manage_hr_settings') || state.hasPermission('manage_employees'));
 
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
@@ -42,7 +40,6 @@ function SettingsContent() {
 			<TabsTrigger value="google_drive">Google Drive</TabsTrigger>
             <TabsTrigger value="hr_policies">HR Policies</TabsTrigger>
             {canManageLeaveTypes && <TabsTrigger value="leave_types">Leave Types</TabsTrigger>}
-             {canConfigureDeductionTypes && <TabsTrigger value="deduction_types">Deduction Types</TabsTrigger>}
             <TabsTrigger value="contract_durations">Contract Durations</TabsTrigger>
         </TabsList>
         
@@ -103,10 +100,6 @@ function SettingsContent() {
             <LeaveTypesSettings />
           </TabsContent>
         )}
-
-        {canConfigureDeductionTypes && <TabsContent value="deduction_types" className="space-y-4">
-          <DeductionTypesSettings />
-        </TabsContent>}
 
         <TabsContent value="contract_durations" className="space-y-4">
           <LookupOptionsManager
