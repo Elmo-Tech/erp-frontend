@@ -4,12 +4,7 @@ export interface HrLateDeductionTier {
 	percentages: [number, number, number, number];
 }
 
-export type HrLateDeductionTiers = [
-	HrLateDeductionTier,
-	HrLateDeductionTier,
-	HrLateDeductionTier,
-	HrLateDeductionTier,
-];
+export type HrLateDeductionTiers = HrLateDeductionTier[];
 
 export interface HrPolicySettings {
 	workingDays: string[];

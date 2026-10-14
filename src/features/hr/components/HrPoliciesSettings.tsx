@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
-import { Loader2, RefreshCw, Save } from "lucide-react";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { Loader2, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useCreateHrPolicy, useCurrentHrPolicy } from "../hooks/useHrPolicies";
-import { buildCreateHrPolicyPayload, toHrPolicyFormValues } from "../lib/policy";
+import { buildCreateHrPolicyPayload, MAX_LATE_DEDUCTION_TIERS, toHrPolicyFormValues, validateLateDeductionTiers } from "../lib/policy";
 import type { HrPolicy, HrPolicyFormValues } from "../types";
 
 const workingDayOptions = [
@@ -25,7 +25,6 @@ const workingDayOptions = [
 	{ value: "sunday", label: "Sun" },
 ] as const;
 
-const tierIndexes = [0, 1, 2, 3] as const;
 const percentageIndexes = [0, 1, 2, 3] as const;
 
 export function HrPoliciesSettings() {
@@ -77,9 +76,18 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 		defaultValues: toHrPolicyFormValues(policy),
 	});
 	const createPolicy = useCreateHrPolicy();
+	const { fields: lateTierFields, append: appendLateTier, remove: removeLateTier } = useFieldArray({
+		control: form.control,
+		name: "settings.lateDeductionTiers",
+		rules: { validate: validateLateDeductionTiers },
+	});
 	const workingDays = useWatch({ control: form.control, name: "settings.workingDays" }) ?? [];
 	const lateTiers = useWatch({ control: form.control, name: "settings.lateDeductionTiers" });
 	const dailyDivisor = useWatch({ control: form.control, name: "settings.dailyRateDivisor" });
+	const lastLateTier = lateTiers.at(-1);
+	const lastLateMinute = lastLateTier?.maximumMinutes ?? lastLateTier?.minimumMinutes;
+	const noRoomForLateTier = lastLateMinute !== undefined && lastLateMinute >= 1440;
+	const lateTierError = form.formState.errors.settings?.lateDeductionTiers?.root?.message;
 
 	useEffect(() => {
 		form.reset(toHrPolicyFormValues(policy));
@@ -101,6 +109,38 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 			: workingDays.filter((workingDay) => workingDay !== day);
 
 		form.setValue("settings.workingDays", nextWorkingDays, { shouldDirty: true });
+	};
+
+	const addLateTier = async () => {
+		if (lateTierFields.length >= MAX_LATE_DEDUCTION_TIERS || noRoomForLateTier) return;
+		if (!(await form.trigger("settings.lateDeductionTiers"))) return;
+
+		const tiers = form.getValues("settings.lateDeductionTiers");
+		const lastTier = tiers[tiers.length - 1];
+		if (tiers.length >= MAX_LATE_DEDUCTION_TIERS || (lastTier.maximumMinutes ?? lastTier.minimumMinutes) >= 1440) return;
+		// Split an open-ended range without changing its existing deduction rates.
+		const minimumMinutes = lastTier.maximumMinutes === null
+			? Math.min(lastTier.minimumMinutes + 15, 1440)
+			: lastTier.maximumMinutes + 1;
+		if (lastTier.maximumMinutes === null) {
+			form.setValue(`settings.lateDeductionTiers.${tiers.length - 1}.maximumMinutes`, minimumMinutes - 1, { shouldDirty: true });
+		}
+		appendLateTier({ minimumMinutes, maximumMinutes: null, percentages: [...lastTier.percentages] }, {
+			focusName: `settings.lateDeductionTiers.${tiers.length}.minimumMinutes`,
+		});
+	};
+
+	const removeLateRange = (index: number) => {
+		const tiers = form.getValues("settings.lateDeductionTiers");
+		if (tiers.length <= 1 || createPolicy.isPending) return;
+
+		// Keep the removed minutes covered so deduction evaluation has no missing range.
+		if (index > 0) {
+			form.setValue(`settings.lateDeductionTiers.${index - 1}.maximumMinutes`, tiers[index].maximumMinutes, { shouldDirty: true });
+		} else {
+			form.setValue("settings.lateDeductionTiers.1.minimumMinutes", tiers[0].minimumMinutes, { shouldDirty: true });
+		}
+		removeLateTier(index);
 	};
 
 	return (
@@ -198,17 +238,34 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<p className="rounded-lg bg-muted/50 p-3 text-sm">Occurrences restart automatically each month. A manual reset is available in the employee’s Late deductions section. 0% means a warning without a deduction.</p>
+							<div className="flex flex-wrap items-center justify-between gap-3">
+								<p className="text-sm text-muted-foreground">{lateTierFields.length} of {MAX_LATE_DEDUCTION_TIERS} ranges. Keep at least one range, ordered without overlaps.</p>
+								<Button type="button" variant="outline" disabled={createPolicy.isPending || lateTierFields.length >= MAX_LATE_DEDUCTION_TIERS || noRoomForLateTier} onClick={addLateTier}>
+									<Plus className="size-4" />
+									Add range
+								</Button>
+							</div>
+							{noRoomForLateTier && <p className="text-sm text-muted-foreground">Adjust the last range below 1440 minutes before adding another range.</p>}
+							{lateTierError && <p role="alert" className="text-sm text-destructive">{lateTierError}</p>}
 							<div className="grid gap-4 lg:grid-cols-2">
-								{tierIndexes.map((tierIndex) => <fieldset key={tierIndex} className="space-y-4 rounded-lg border p-4">
-									<legend className="px-2 text-sm font-semibold">{lateTiers[tierIndex].minimumMinutes} – {lateTiers[tierIndex].maximumMinutes ?? "∞"} minutes late</legend>
+								{lateTierFields.map((tier, tierIndex) => <fieldset key={tier.id} className="space-y-4 rounded-lg border p-4">
+									<legend className="px-2 text-sm font-semibold">{Number.isFinite(lateTiers[tierIndex]?.minimumMinutes) ? lateTiers[tierIndex].minimumMinutes : "—"} – {lateTiers[tierIndex]?.maximumMinutes ?? "∞"} minutes late</legend>
+									<div className="flex justify-end">
+										<Button type="button" variant="ghost" size="sm" aria-label={`Remove late range ${tierIndex + 1}`} disabled={createPolicy.isPending || lateTierFields.length <= 1} onClick={() => removeLateRange(tierIndex)}>
+											<Trash2 className="size-4" />
+											Remove range
+										</Button>
+									</div>
 									<div className="grid grid-cols-2 gap-3">
-										<div className="space-y-2"><Label htmlFor={`late-min-${tierIndex}`}>From (minutes)</Label><Input id={`late-min-${tierIndex}`} type="number" min={0} max={1440} step={1} disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.minimumMinutes`, { required: true, valueAsNumber: true })} /></div>
+										<div className="space-y-2"><Label htmlFor={`late-min-${tierIndex}`}>From (minutes)</Label><Input id={`late-min-${tierIndex}`} type="number" min={0} max={1440} step={1} disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.minimumMinutes`, { valueAsNumber: true })} /></div>
 										<div className="space-y-2"><Label htmlFor={`late-max-${tierIndex}`}>Through (minutes)</Label><Input id={`late-max-${tierIndex}`} type="number" min={0} max={1440} step={1} placeholder="No upper limit" disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.maximumMinutes`, { setValueAs: (value) => value === "" || value === null ? null : Number(value) })} /></div>
 									</div>
-									<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{percentageIndexes.map((occurrence) => <div key={occurrence} className="space-y-2"><Label htmlFor={`late-percent-${tierIndex}-${occurrence}`}>{["First", "Second", "Third", "Fourth+"][occurrence]} (%)</Label><Input id={`late-percent-${tierIndex}-${occurrence}`} type="number" min={0} max={100} step={1} disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.percentages.${occurrence}`, { required: true, valueAsNumber: true })} /></div>)}</div>
+									<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{percentageIndexes.map((occurrence) => <div key={occurrence} className="space-y-2"><Label htmlFor={`late-percent-${tierIndex}-${occurrence}`}>{["First", "Second", "Third", "Fourth+"][occurrence]} (%)</Label><Input id={`late-percent-${tierIndex}-${occurrence}`} type="number" min={0} max={100} step={1} disabled={createPolicy.isPending} {...form.register(`settings.lateDeductionTiers.${tierIndex}.percentages.${occurrence}`, { valueAsNumber: true })} /></div>)}</div>
 									<p className="text-xs text-muted-foreground">Fourth+ applies to every later occurrence in the same month. Leave the last range’s upper limit blank for any longer delay.</p>
 								</fieldset>)}
 							</div>
+							<p className="text-xs text-muted-foreground">Adding after an open-ended range splits off a new range with the same percentages. Adjust the minutes and percentages as needed.</p>
+							<p className="text-xs text-muted-foreground">Removing a range extends the previous range to cover its minutes, keeping that range’s percentages. Removing the first range extends the next range instead.</p>
 							<p className="text-sm text-muted-foreground">Example: with a salary of 6,000 and divisor {dailyDivisor}, one day is {(6000 / dailyDivisor).toFixed(2)}. A 20% deduction is {(6000 / dailyDivisor * 0.2).toFixed(2)}.</p>
 						</CardContent>
 					</Card>
