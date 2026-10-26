@@ -7,7 +7,7 @@ import { useCreateClient } from "../../../hooks/useClients";
 import { ClientStatus } from "../../../types";
 import { clientSchema, ClientFormData } from "../../../schemas/clientSchema";
 import { ClientFormFields } from "./ClientFormFields";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 
 interface CreateClientFormProps {
 	open: boolean;
@@ -61,11 +61,10 @@ export function CreateClientForm({ open, onOpenChange, onSuccess }: CreateClient
 	const handleSubmit = async (data: ClientFormData) => {
 		try {
 			await createClient.mutateAsync(data);
-			toast.success("Client created successfully");
 			onOpenChange(false);
 			onSuccess?.();
-		} catch {
-			toast.error("Failed to create client");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

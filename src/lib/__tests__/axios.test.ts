@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import api, { handleApiRequest, handleApiResponse, handleApiResponseError } from "../axios";
+import { notifyApiError } from "../errorHandling";
 
 const mocks = vi.hoisted(() => ({
 	toastSuccess: vi.fn(),
@@ -120,6 +121,11 @@ describe("Axios Interceptors", () => {
 			expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		});
 
+		it("keeps background heartbeats and caller-owned rich feedback silent", () => {
+			handleApiResponse({ config: { method: "post", skipSuccessToast: true }, data: { message: "Heartbeat updated" } } as never);
+			expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		});
+
 		it("clears auth state and redirects on 401 responses", async () => {
 			const error = {
 				response: {
@@ -133,7 +139,7 @@ describe("Axios Interceptors", () => {
 			expect(localStorageMock.removeItem).toHaveBeenCalledWith("auth_token");
 			expect(localStorageMock.removeItem).toHaveBeenCalledWith("auth-storage");
 			expect(assignMock).toHaveBeenCalledWith("/login");
-			expect(mocks.toastError).toHaveBeenCalledWith("Unauthenticated from backend");
+			expect(mocks.toastError).toHaveBeenCalledWith("Unauthenticated from backend", { id: "api-error:Unauthenticated from backend" });
 		});
 
 		it("does not clear auth state for non-401 responses", async () => {
@@ -148,7 +154,20 @@ describe("Axios Interceptors", () => {
 
 			expect(localStorageMock.removeItem).not.toHaveBeenCalled();
 			expect(assignMock).not.toHaveBeenCalled();
-			expect(mocks.toastError).toHaveBeenCalledWith("Backend rejected it");
+			expect(mocks.toastError).toHaveBeenCalledWith("Backend rejected it", { id: "api-error:Backend rejected it" });
+		});
+
+		it("does not reload the login page after wrong credentials", async () => {
+			const error = { config: { url: "/auth/login" }, response: { status: 401, data: { message: "Wrong credentials" } } };
+			await expect(handleApiResponseError(error as never)).rejects.toBe(error);
+			expect(assignMock).not.toHaveBeenCalled();
+			expect(localStorageMock.removeItem).not.toHaveBeenCalled();
+		});
+
+		it("shows one toast when the interceptor and the form handle the same failed request", async () => {
+			const error = { response: { status: 422, data: { errors: { reason: ["A reason is required"] } } } };
+			await handleApiResponseError(error as never).catch(notifyApiError);
+			expect(mocks.toastError).toHaveBeenCalledTimes(1);
 		});
 	});
 });

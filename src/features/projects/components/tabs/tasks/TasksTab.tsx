@@ -15,7 +15,7 @@ import { Task, TaskStatus, TaskType, TaskPriority } from "@/features/dashboard/t
 import { TaskFormDialog } from "../TaskFormDialog";
 import { TaskDetailSheet } from "../../tasks/TaskDetailSheet";
 import { Plus, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { dedupeTaskTree } from "@/features/dashboard/utils/taskTree";
@@ -71,10 +71,9 @@ export function TasksTab({ projectId }: TasksTabProps) {
 		if (!taskToDelete) return;
 		try {
 			await deleteTask.mutateAsync({ id: taskToDelete.taskId, projectId });
-			toast.success("Task deleted successfully");
 			setTaskToDelete(null);
-		} catch {
-			toast.error("Failed to delete task");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

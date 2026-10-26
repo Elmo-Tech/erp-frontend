@@ -9,7 +9,7 @@ import { useUserSpecializations } from "../../../hooks/useEnums";
 import { User } from "../../../types";
 import { updateUserSchema, UpdateUserFormData } from "../../../schemas/userSchema";
 import { UserFormFields } from "./UserFormFields";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { getRoleLabel } from "@/config/simplification";
 import { Form } from "@/components/ui/form";
 import { useAuthStore } from "@/store/authStore";
@@ -23,7 +23,8 @@ interface UpdateUserFormProps {
 
 export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUserFormProps) {
 	const updateUser = useUpdateUser();
-	const { data: rolesData } = useRoles();
+	const canAssignRoles = useAuthStore((state) => state.hasPermission("assign_user_roles"));
+	const { data: rolesData } = useRoles(open && canAssignRoles);
 	const { data: specializationsData } = useUserSpecializations();
 	const canManageProtectedUsers = useAuthStore((state) => state.hasPermission("manage_protected_users"));
 
@@ -66,16 +67,16 @@ export function UpdateUserForm({ open, onOpenChange, user, onSuccess }: UpdateUs
 	const handleSubmit = async (data: UpdateUserFormData) => {
 		try {
 			const updateData = { ...data };
+			if (!canAssignRoles) delete updateData.roles;
 			if (!updateData.password) {
 				delete updateData.password;
 				delete updateData.password_confirmation;
 			}
 			await updateUser.mutateAsync({ id: user.userId, payload: updateData });
-			toast.success("User updated successfully");
 			onOpenChange(false);
 			onSuccess?.();
-		} catch {
-			toast.error("Failed to update user");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
 import { employeeHrReportApi } from "../api/employee-hr-report";
 import { isValidContractDate } from "../lib/employment-contract";
 import { formatPermissionDuration, getCurrentPermissionMonth } from "../lib/short-permissions";
@@ -23,7 +22,7 @@ export function EmployeeReportDialog({ employeeId, employeeName, open, onOpenCha
 	const download = async () => {
 		setExporting(true);
 		try { await employeeHrReportApi.download(employeeId, dateFrom, dateTo); }
-		catch (error) { toast.error(handleApiError(error)); }
+		catch (error) { notifyApiError(error); }
 		finally { setExporting(false); }
 	};
 	return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-5xl">

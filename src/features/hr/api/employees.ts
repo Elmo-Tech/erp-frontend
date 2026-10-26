@@ -36,6 +36,7 @@ export const employeesApi = {
 		formData.append("avatar", avatar);
 
 		const response = await api.post<{ data: Employee }>(`${BASE_URL}/${id}/avatar`, formData, {
+			skipErrorToast: true,
 			headers: {
 				"Content-Type": "multipart/form-data",
 			},

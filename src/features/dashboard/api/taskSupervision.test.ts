@@ -23,6 +23,7 @@ const session: TaskSupervisionSession = {
 	durationMinutes: null,
 	isActive: true,
 };
+const callerFeedback = { skipErrorToast: true, skipSuccessToast: true };
 
 describe("taskSupervisionApi", () => {
 	beforeEach(() => {
@@ -38,7 +39,7 @@ describe("taskSupervisionApi", () => {
 		await expect(taskSupervisionApi.setSupervisor(12, { supervisorId: 8 })).resolves.toEqual(task);
 		await expect(taskSupervisionApi.getTaskSupervision(12)).resolves.toEqual(supervision);
 
-		expect(api.put).toHaveBeenCalledWith("/tasks/12/supervisor", { supervisorId: 8 });
+		expect(api.put).toHaveBeenCalledWith("/tasks/12/supervisor", { supervisorId: 8 }, callerFeedback);
 		expect(api.get).toHaveBeenCalledWith("/tasks/12/supervision");
 	});
 
@@ -50,8 +51,8 @@ describe("taskSupervisionApi", () => {
 		await expect(taskSupervisionApi.createHelpRequest(12, { message: "Need a review" })).resolves.toEqual(request);
 		await expect(taskSupervisionApi.updateHelpRequest(6, { status: "resolved", resolutionNote: "Reviewed together" })).resolves.toEqual({ ...request, status: "resolved" });
 
-		expect(api.post).toHaveBeenCalledWith("/tasks/12/help-requests", { message: "Need a review" });
-		expect(api.patch).toHaveBeenCalledWith("/task-help-requests/6", { status: "resolved", resolutionNote: "Reviewed together" });
+		expect(api.post).toHaveBeenCalledWith("/tasks/12/help-requests", { message: "Need a review" }, callerFeedback);
+		expect(api.patch).toHaveBeenCalledWith("/task-help-requests/6", { status: "resolved", resolutionNote: "Reviewed together" }, callerFeedback);
 	});
 
 	it("uses independent supervision session endpoints and summary filters", async () => {
@@ -81,9 +82,9 @@ describe("taskSupervisionApi", () => {
 		await expect(taskSupervisionApi.getActiveSession()).resolves.toEqual(session);
 		await expect(taskSupervisionApi.getSummary({ requestedBy: 4, supervisorId: 8, from: "2026-09-01" })).resolves.toEqual({ summary });
 
-		expect(api.post).toHaveBeenNthCalledWith(1, "/tasks/12/supervision-sessions/start", { helpRequestId: 6, notes: "Pairing" });
-		expect(api.post).toHaveBeenNthCalledWith(2, "/task-supervision-sessions/41/heartbeat");
-		expect(api.post).toHaveBeenNthCalledWith(3, "/task-supervision-sessions/41/stop", { stopReason: "Guidance delivered" });
+		expect(api.post).toHaveBeenNthCalledWith(1, "/tasks/12/supervision-sessions/start", { helpRequestId: 6, notes: "Pairing" }, callerFeedback);
+		expect(api.post).toHaveBeenNthCalledWith(2, "/task-supervision-sessions/41/heartbeat", undefined, callerFeedback);
+		expect(api.post).toHaveBeenNthCalledWith(3, "/task-supervision-sessions/41/stop", { stopReason: "Guidance delivered" }, callerFeedback);
 		expect(api.get).toHaveBeenNthCalledWith(1, "/task-supervision-sessions/active");
 		expect(api.get).toHaveBeenNthCalledWith(2, "/task-supervision/summary", { params: { requestedBy: 4, supervisorId: 8, from: "2026-09-01" } });
 	});

@@ -8,6 +8,19 @@ export const authApi = {
 	},
 
 	logout: async (): Promise<void> => {
+		if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+			try {
+				const registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
+				const subscription = await registration?.pushManager.getSubscription();
+				if (subscription) {
+					try {
+						await api.delete("/notifications/push-subscriptions", { data: { endpoint: subscription.endpoint }, skipErrorToast: true });
+					} finally {
+						await subscription.unsubscribe();
+					}
+				}
+			} catch { /* Sign-out remains available if desktop push is unavailable. */ }
+		}
 		await api.post("/auth/logout");
 	},
 

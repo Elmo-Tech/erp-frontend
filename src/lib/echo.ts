@@ -17,6 +17,11 @@ export function getEcho(): Echo<"reverb"> | null {
 		return echoInstance;
 	}
 
+	// Polling and local timer reminders remain usable before realtime is configured.
+	if (!process.env.NEXT_PUBLIC_REVERB_APP_KEY || !process.env.NEXT_PUBLIC_REVERB_HOST) {
+		return null;
+	}
+
 	// Get auth token from localStorage
 	const token = localStorage.getItem("auth_token");
 

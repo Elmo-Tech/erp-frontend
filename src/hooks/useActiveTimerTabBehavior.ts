@@ -5,7 +5,6 @@ import { TABLES_APP_NAME } from "@/config/simplification";
 import { formatDuration } from "@/lib/dateUtils";
 import type { TimeEntryData } from "@/store/timerStore";
 
-const REMINDER_INTERVAL_SECONDS = 45 * 60;
 const FLASH_DURATION_MS = 10_000;
 
 let sharedAudioContext: AudioContext | null = null;
@@ -44,7 +43,7 @@ function playReminderBeep(): void {
 	}
 }
 
-export function useActiveTimerTabBehavior(activeTimer: TimeEntryData | null, elapsedSeconds: number) {
+export function useActiveTimerTabBehavior(activeTimer: TimeEntryData | null, elapsedSeconds: number, reminderMinutes = 15) {
 	const originalTitle = useRef<string | null>(null);
 	const originalFavicons = useRef<Array<{ link: HTMLLinkElement; href: string | null; type: string | null; sizes: string | null }>>([]);
 	const createdFavicon = useRef<HTMLLinkElement | null>(null);
@@ -131,7 +130,7 @@ export function useActiveTimerTabBehavior(activeTimer: TimeEntryData | null, ela
 			isShowingTimerTitle.current = true;
 		}
 
-		const bucket = Math.floor(elapsedSeconds / REMINDER_INTERVAL_SECONDS);
+		const bucket = Math.floor(elapsedSeconds / (reminderMinutes * 60));
 		if (bucket >= 1 && bucket > lastReminderBucket.current) {
 			lastReminderBucket.current = bucket;
 			flashUntil.current = Date.now() + FLASH_DURATION_MS;
@@ -146,7 +145,7 @@ export function useActiveTimerTabBehavior(activeTimer: TimeEntryData | null, ela
 			? `⚠ TIMER RUNNING ${formatDuration(elapsedSeconds)} — ${activeTimer.trackableDisplayName}`
 			: timerTitle;
 		setFavicon(true);
-	}, [activeTimer, elapsedSeconds]);
+	}, [activeTimer, elapsedSeconds, reminderMinutes]);
 
 	useEffect(() => {
 		if (!hasActiveTimer || typeof window === "undefined") return;

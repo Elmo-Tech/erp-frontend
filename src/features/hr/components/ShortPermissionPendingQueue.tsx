@@ -6,6 +6,7 @@ import { handleApiError } from "@/lib/errorHandling";
 import { usePendingEmployeeShortPermissions } from "../hooks/useEmployeeShortPermissions";
 import { formatPermissionDuration } from "../lib/short-permissions";
 import type { PendingEmployeeShortPermission, PermissionCompensationType } from "../types/short-permissions";
+import { useHrAccess } from "../hooks/useHrAccess";
 
 interface ShortPermissionPendingQueueProps {
 	isActive: boolean;
@@ -14,6 +15,7 @@ interface ShortPermissionPendingQueueProps {
 }
 
 export function ShortPermissionPendingQueue({ isActive, onReview, onView }: ShortPermissionPendingQueueProps) {
+	const access = useHrAccess();
 	const query = usePendingEmployeeShortPermissions(isActive);
 	return <section aria-label="Pending short permissions" className="space-y-3">
 		<h3 className="font-semibold">All pending short permissions</h3>
@@ -22,7 +24,7 @@ export function ShortPermissionPendingQueue({ isActive, onReview, onView }: Shor
 			<p>{handleApiError(query.error)}</p><Button variant="outline" onClick={() => void query.refetch()}>Refresh pending requests</Button>
 		</div> : query.data?.length ? query.data.map((permission) => <div key={permission.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
 			<div><p className="font-medium">{permission.employee.name}</p><p className="text-sm">{permission.permissionDate} {permission.startTime}–{permission.endTime} · Pending · {formatPermissionDuration(permission.durationMinutes)}</p></div>
-			{permission.canReview ? <div className="flex gap-2">
+			{permission.canReview && access.action("permissions", "approve") ? <div className="flex gap-2">
 				<Button size="sm" onClick={() => onReview(permission)}>Approve</Button>
 				<Button size="sm" variant="outline" onClick={() => onReview(permission, "paid")}>Mark as Paid</Button>
 			</div> : <div className="space-y-1"><p className="text-sm text-muted-foreground">Awaiting another authorized reviewer</p><Button size="sm" variant="outline" onClick={() => onView(permission)}>View request</Button></div>}

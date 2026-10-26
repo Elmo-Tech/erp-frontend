@@ -8,7 +8,7 @@ import { FormDialog, FormSelect } from "@/components/shared";
 import { useUsers } from "@/features/admin/hooks/useUsers";
 import { useAddProjectMember } from "../../hooks/useProjectMembers";
 import { MemberRole, MEMBER_ROLES } from "../../types/projectMember";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 
 const addMemberSchema = z.object({
 	userId: z.string().min(1, "Please select a user"),
@@ -62,11 +62,10 @@ export function AddMemberDialog({ projectId, open, onOpenChange, existingMemberI
 					role: data.role as MemberRole,
 				},
 			});
-			toast.success("Member added successfully");
 			form.reset();
 			onOpenChange(false);
-		} catch {
-			toast.error("Failed to add member");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

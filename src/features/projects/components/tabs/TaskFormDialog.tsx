@@ -1,6 +1,8 @@
 /* eslint-disable react-hooks/incompatible-library */
 "use client";
 
+import { toast } from "sonner";
+
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +16,7 @@ import { useTaskCategories } from "@/features/admin/hooks/useEnums";
 import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels, TaskPriority, TaskPriorityLabels } from "@/features/dashboard/types/task";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 
 const taskSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -273,14 +275,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 			form.reset();
 			onOpenChange(false);
 		} catch (error) {
-			const axiosError = error as { response?: { data?: { errors?: Record<string, string[]> } } };
-			if (axiosError?.response?.data?.errors) {
-				const errors = axiosError.response.data.errors;
-				const errorMessages = Object.values(errors).flat().join(", ");
-				toast.error(errorMessages || (isEditing ? "Failed to update task" : "Failed to create task"));
-			} else {
-				toast.error(isEditing ? "Failed to update task" : "Failed to create task");
-			}
+			notifyApiError(error);
 		}
 	};
 

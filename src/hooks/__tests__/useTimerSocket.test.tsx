@@ -35,7 +35,7 @@ describe("timer synchronization", () => {
 			expect(useTimerStore.getState().resumableTimer).toBeNull();
 		}
 		expect(api.post).toHaveBeenCalledTimes(3);
-		expect(api.post).toHaveBeenLastCalledWith("/time-entries/heartbeat", { timeEntryId: 42, sessionId: "timer-session" }, { skipErrorToast: true });
+		expect(api.post).toHaveBeenLastCalledWith("/time-entries/heartbeat", { timeEntryId: 42, sessionId: "timer-session" }, { skipErrorToast: true, skipSuccessToast: true });
 	});
 
 	it("does not overwrite a newly started timer with an older paused snapshot", async () => {

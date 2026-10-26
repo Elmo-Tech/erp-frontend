@@ -4,7 +4,6 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { AlertCircle, Ban, Check, Clock3, FileText, Info, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -17,7 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { FormInput, FormSelect, FormTextarea } from "@/components/shared";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
+import { HrAction } from "./HrAction";
+import { useHrAccess } from "../hooks/useHrAccess";
 import { useApproveEmployeeShortPermission, useCancelEmployeeShortPermission, useCreateEmployeeShortPermission, useEmployeeShortPermissions, useRejectEmployeeShortPermission } from "../hooks/useEmployeeShortPermissions";
 import { buildEmployeeShortPermissionPayload, calculatePermissionDurationMinutes, formatPermissionDuration, getCurrentPermissionMonth, getDefaultShortPermissionRequestFormValues, isValidPermissionDate, shortPermissionRequestSchema } from "../lib/short-permissions";
 import type { EmployeeShortPermission, EmployeeShortPermissionStatus, PermissionAllowance, PermissionCompensationType, ShortPermissionRequestFormValues } from "../types/short-permissions";
@@ -129,7 +130,8 @@ function AllowanceSummary({ allowance }: { allowance: PermissionAllowance }) {
 }
 
 function ShortPermissionSummary({ permission, canManage, canReview, isReviewing, onReview }: { permission: EmployeeShortPermission; canManage: boolean; canReview: boolean; isReviewing: boolean; onReview: (permission: EmployeeShortPermission, action: ShortPermissionReviewAction, compensationType?: PermissionCompensationType) => void }) {
-	const actions = getAvailableReviewActions(permission.status).filter((action) => action === "cancel" || canReview);
+	const access = useHrAccess();
+	const actions = getAvailableReviewActions(permission.status).filter((action) => (action === "cancel" || canReview) && access.action("permissions", action));
 
 	return (
 		<div className="rounded-lg border bg-muted/20 p-4">
@@ -233,7 +235,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 			// Success toast comes from the backend message via the axios interceptor.
 			form.reset(getDefaultShortPermissionRequestFormValues());
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -261,7 +263,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 			setCompensationType("");
 			setReviewNote("");
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -295,7 +297,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 						<AlertDescription>Only approved paid short permissions use the policy allowance. Cancelling an approved paid permission restores its allowance.</AlertDescription>
 					</Alert>
 
-					<section className="space-y-3">
+					<HrAction resource="permissions" action="create"><section className="space-y-3">
 						<div>
 							<h3 className="font-semibold">Register short permission</h3>
 							<p className="text-sm text-muted-foreground">The duration below is a local preview; the server confirms the final duration after submission.</p>
@@ -354,7 +356,7 @@ export function EmployeeShortPermissionsPanel({ employeeId, employeeName, canMan
 								</DialogFooter>
 							</form>
 						</Form>
-					</section>
+					</section></HrAction>
 
 					{shortPermissionsQuery.isLoading ? (
 						<div className="space-y-3">

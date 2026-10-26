@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/authStore";
 import { useLocaleStore } from "@/store/localeStore";
-import { handleApiError } from "@/lib/errorHandling";
+import { notifyApiError } from "@/lib/errorHandling";
 import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -12,6 +12,8 @@ declare module "axios" {
 	export interface AxiosRequestConfig {
 		/** Skip the global error toast (for polling/background requests). */
 		skipErrorToast?: boolean;
+		/** Background requests and custom rich-success flows own their feedback. */
+		skipSuccessToast?: boolean;
 	}
 }
 
@@ -43,6 +45,12 @@ function clearClientAuthState() {
 	localStorage.removeItem("auth_token");
 	localStorage.removeItem("auth-storage");
 	useAuthStore.getState().logout();
+	if ("serviceWorker" in navigator) {
+		void navigator.serviceWorker.getRegistration("/push-sw.js")
+			.then((registration) => registration?.pushManager.getSubscription())
+			.then((subscription) => subscription?.unsubscribe())
+			.catch(() => undefined);
+	}
 }
 
 function redirectToLogin() {
@@ -62,6 +70,7 @@ export const api = axios.create({
 });
 
 export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
+	const isLoginRequest = config.url?.split("?")[0]?.endsWith("/auth/login");
 	// Let the browser supply the multipart boundary. The JSON default otherwise
 	// serializes FormData into JSON and Laravel never receives the uploaded file.
 	if (typeof FormData !== "undefined" && config.data instanceof FormData) {
@@ -83,8 +92,10 @@ export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
 					// If token is expired, clear everything and redirect
 					if (expiresAt < now) {
 						clearClientAuthState();
-						redirectToLogin();
-						return Promise.reject(new Error("Token expired"));
+						if (!isLoginRequest) {
+							redirectToLogin();
+							return Promise.reject(new Error("Token expired"));
+						}
 					}
 				}
 			} catch {
@@ -95,7 +106,7 @@ export const handleApiRequest = (config: InternalAxiosRequestConfig) => {
 	}
 
 	// Only add token if it exists and is not just whitespace
-	if (token && token.trim() && config.headers) {
+	if (!isLoginRequest && token && token.trim() && config.headers) {
 		config.headers.Authorization = `Bearer ${token}`;
 	}
 
@@ -119,7 +130,7 @@ export const handleApiResponse = (response: AxiosResponse) => {
 	const method = response.config.method?.toLowerCase();
 	const message = typeof response.data?.message === "string" ? response.data.message : null;
 
-	if (message && method && method !== "get") {
+	if (message && method && method !== "get" && !response.config.skipSuccessToast) {
 		toast.success(message);
 	}
 
@@ -127,7 +138,8 @@ export const handleApiResponse = (response: AxiosResponse) => {
 };
 
 export const handleApiResponseError = (error: AxiosError) => {
-	if (error.response?.status === 401) {
+	const isLoginRequest = error.config?.url?.split("?")[0]?.endsWith("/auth/login");
+	if (error.response?.status === 401 && !isLoginRequest) {
 		clearClientAuthState();
 		redirectToLogin();
 	}
@@ -151,7 +163,7 @@ export const handleApiResponseError = (error: AxiosError) => {
 			nextRateLimitToastAt = now + Math.max(5, retryAfter ?? 5) * 1000;
 		}
 	} else {
-		toast.error(handleApiError(error));
+		notifyApiError(error);
 	}
 
 	return Promise.reject(error);

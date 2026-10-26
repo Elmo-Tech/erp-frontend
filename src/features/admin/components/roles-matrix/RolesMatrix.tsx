@@ -26,6 +26,8 @@ import { DeleteRoleDialog } from "./DeleteRoleDialog";
 import { PermissionCheckbox } from "./PermissionCheckbox";
 import { getRoleLabel } from "@/config/simplification";
 import { useAuthStore } from "@/store/authStore";
+import { Input } from "@/components/ui/input";
+import { notifyApiError } from "@/lib/errorHandling";
 
 interface RolesMatrixProps {
 	className?: string;
@@ -33,12 +35,17 @@ interface RolesMatrixProps {
 
 export function RolesMatrix({ className }: RolesMatrixProps) {
 	const [updatingCell, setUpdatingCell] = useState<string | null>(null);
+	const [search, setSearch] = useState("");
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [newRoleName, setNewRoleName] = useState("");
 	const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 	const canManageProtectedRoles = useAuthStore((state) => state.hasPermission("manage_protected_users"));
+	const { hasPermission: has } = useAuthStore((state) => state);
+	const canCreateRole = has("manage_roles") || has("create_roles");
+	const canEditRole = has("manage_roles") || has("edit_roles");
+	const canDeleteRole = has("manage_roles") || has("delete_roles");
 
 	const { data: rolesData, isLoading: isLoadingRoles, error: rolesError } = useRoles();
 	const { data: permissionsData, isLoading: isLoadingPermissions, error: permissionsError } = usePermissions();
@@ -50,8 +57,8 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 	const roles = useMemo(() => rolesData?.roles || [], [rolesData]);
 	const groupedPermissions = useMemo(() => {
 		if (!permissionsData) return {};
-		return groupPermissions(permissionsData);
-	}, [permissionsData]);
+		return groupPermissions(permissionsData.filter((permission) => `${permission.name} ${permission.group} ${permission.description}`.toLowerCase().includes(search.toLowerCase())));
+	}, [permissionsData, search]);
 	const permissionGroups = useMemo(() => Object.keys(groupedPermissions).sort(), [groupedPermissions]);
 
 	const roleHasPermission = useCallback((role: Role, permissionName: string): boolean => {
@@ -83,23 +90,11 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 
 		try {
 			await createRoleMutation.mutateAsync(payload);
-			toast.success("Role created successfully");
 			setCreateDialogOpen(false);
 			setNewRoleName("");
 			setSelectedPermissions([]);
 		} catch (error: unknown) {
-			const axiosError = error as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } };
-			const errorMessage = axiosError.response?.data?.message || "Please try again later.";
-			const validationErrors = axiosError.response?.data?.errors;
-
-			if (validationErrors) {
-				const firstError = Object.values(validationErrors)[0]?.[0];
-				toast.error("Validation Error", { description: firstError || errorMessage });
-			} else {
-				toast.error("Failed to create role", {
-					description: error instanceof Error ? error.message : errorMessage,
-				});
-			}
+			notifyApiError(error);
 		}
 	}, [newRoleName, selectedPermissions, createRoleMutation]);
 
@@ -108,13 +103,10 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 
 		try {
 			await deleteRoleMutation.mutateAsync(roleToDelete.id);
-			toast.success("Role deleted successfully");
 			setDeleteDialogOpen(false);
 			setRoleToDelete(null);
 		} catch (error) {
-			toast.error("Failed to delete role", {
-				description: error instanceof Error ? error.message : "Please try again later.",
-			});
+			notifyApiError(error);
 		}
 	}, [roleToDelete, deleteRoleMutation]);
 
@@ -141,13 +133,8 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 
 			try {
 				await updateRoleMutation.mutateAsync({ id: role.id, payload });
-				toast.success("Permission updated", {
-					description: `${currentlyHasPermission ? "Removed" : "Added"} "${permissionName}" ${currentlyHasPermission ? "from" : "to"} "${role.name}" role.`,
-				});
 			} catch (error) {
-				toast.error("Failed to update permission", {
-					description: error instanceof Error ? error.message : "Please try again later.",
-				});
+				notifyApiError(error);
 			} finally {
 				setUpdatingCell(null);
 			}
@@ -201,10 +188,10 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 							</CardTitle>
 							<CardDescription>{roles.length === 0 ? "No roles found. Create your first role to get started." : "No permissions found."}</CardDescription>
 						</div>
-						<Button onClick={() => setCreateDialogOpen(true)}>
+						{canCreateRole && <Button onClick={() => setCreateDialogOpen(true)}>
 							<Plus className="h-4 w-4 mr-2" />
 							Add Role
-						</Button>
+						</Button>}
 					</CardHeader>
 				</Card>
 				<CreateRoleDialog
@@ -235,13 +222,15 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 						Manage role permissions by toggling checkboxes. Protected role names cannot be renamed or deleted.
 					</CardDescription>
 				</div>
-				<Button onClick={() => setCreateDialogOpen(true)}>
+				{canCreateRole && <Button onClick={() => setCreateDialogOpen(true)}>
 					<Plus className="h-4 w-4 mr-2" />
 					Add Role
-				</Button>
+				</Button>}
 			</CardHeader>
 			<CardContent>
 				<div className="overflow-x-auto">
+					<Input aria-label="Search permissions" placeholder="Search by page, tab, action or permission name…" value={search} onChange={(event) => setSearch(event.target.value)} className="mb-3 max-w-lg" />
+					<p className="mb-4 text-sm text-muted-foreground">Permissions are grouped by page and section. Manage Employees is a master HR grant; remove it and select individual section permissions for narrower access. Manage Lookup Options grants all list-setting tabs.</p>
 					<Table>
 						<TableHeader>
 							<TableRow>
@@ -254,7 +243,7 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 										<div className="flex flex-col items-center gap-1">
 											<div className="flex items-center gap-1">
 												<span className="font-medium">{getRoleLabel(role.name)}</span>
-												{!isProtectedRole(role) && (
+											{canDeleteRole && !isProtectedRole(role) && (
 													<Button
 														variant="ghost"
 														size="icon"
@@ -308,7 +297,7 @@ export function RolesMatrix({ className }: RolesMatrixProps) {
 											{roles.map((role) => {
 												const hasPermission = roleHasPermission(role, permission.name);
 												const isProtected = isProtectedRole(role);
-												const isLocked = isProtected && !canManageProtectedRoles;
+												const isLocked = !canEditRole || (isProtected && !canManageProtectedRoles);
 												const cellKey = `${role.id}-${permission.name}`;
 												const isUpdating = updatingCell === cellKey;
 

@@ -62,6 +62,11 @@ export function useNotificationSocketInit() {
 
 		const handleNotification = (event: NotificationEvent) => {
 			const notification = normalizeNotification(event);
+			if (notification.type === "timer_reminder") {
+				window.dispatchEvent(new CustomEvent("timer-reminder", { detail: notification.data }));
+				return;
+			}
+			if (useNotificationStore.getState().notifications.some((existing) => existing.notificationId === notification.notificationId)) return;
 
 			addNotification(notification);
 

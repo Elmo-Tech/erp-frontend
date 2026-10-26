@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState } from "react";
@@ -11,7 +10,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock, User, Play, Square, AlertCircle, Timer } from "lucide-react";
 import { useActiveTimers, useStopTimerAdmin } from "@/features/sales/hooks";
 import { ActiveTimer } from "@/features/sales/types";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
+import { useAuthStore } from "@/store/authStore";
 import { cn } from "@/lib/utils";
 
 interface ActiveTimersSheetProps {
@@ -19,6 +19,7 @@ interface ActiveTimersSheetProps {
 }
 
 export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
+	const canStopTimers = useAuthStore((state) => state.hasPermission("edit_time_entries"));
 	const [open, setOpen] = useState(false);
 	const { data: activeTimers = [], isLoading, error } = useActiveTimers();
 	const stopTimerMutation = useStopTimerAdmin();
@@ -26,9 +27,8 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 	const handleStopTimer = async (timer: ActiveTimer) => {
 		try {
 			await stopTimerMutation.mutateAsync(timer.timeEntryId);
-			toast.success(`Stopped timer for ${timer.userName}`);
 		} catch (error) {
-			toast.error("Failed to stop timer");
+			notifyApiError(error);
 		}
 	};
 
@@ -172,7 +172,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 
 											<Separator />
 
-											<div className="flex justify-end">
+											{canStopTimers && <div className="flex justify-end">
 												<Button
 													variant="destructive"
 													size="sm"
@@ -183,7 +183,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 													<Square className="h-3 w-3" />
 													{stopTimerMutation.isPending ? "Stopping..." : "Stop Timer"}
 												</Button>
-											</div>
+											</div>}
 										</div>
 									</CardContent>
 

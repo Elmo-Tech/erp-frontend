@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { timeEntriesApi } from "../api/timeEntries";
 import { TimeEntry, StartTimerPayload, ActiveTimerResponse, TimeEntryFilters, TimeEntryListResponse, UpdateTimeEntryPayload, ActiveTimer } from "../types/timeEntry";
 import { useTimerStore } from "@/store/timerStore";
+import { useAuthStore } from "@/store/authStore";
 
 /**
  * TanStack Query hooks for time entry management
@@ -344,10 +345,13 @@ export const useUpdateTimeEntry = () => {
  * Requirement 11.5: Frontend hooks for admin timer monitoring
  */
 export const useActiveTimers = () => {
+	const canView = useAuthStore((state) => state.hasPermission("view_all_time_entries"));
+	const userId = useAuthStore((state) => state.user?.userId);
 	return useQuery<ActiveTimer[], Error>({
-		queryKey: [...timeEntryKeys.all, "activeTimers"],
+		queryKey: [...timeEntryKeys.all, "activeTimers", userId],
 		queryFn: timeEntriesApi.getActiveTimers,
-		refetchInterval: 500000, // Refetch every 500 seconds for real-time updates
+		enabled: canView && !!userId,
+		refetchInterval: 30_000,
 		staleTime: 10 * 1000, // 10 seconds (very fresh for active timers)
 		gcTime: 2 * 60 * 1000, // 2 minutes
 	});

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { AlertCircle, Ban, Check, Clock3, FileText, Info, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -16,7 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { FormInput, FormTextarea } from "@/components/shared";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
+import { HrAction } from "./HrAction";
 import { useApproveEmployeeOvertimeRequest, useCancelEmployeeOvertimeRequest, useCreateEmployeeOvertimeRequest, useEmployeeOvertimeRequests, useRejectEmployeeOvertimeRequest } from "../hooks/useEmployeeOvertimeRequests";
 import { buildEmployeeOvertimeRequestPayload, calculateOvertimeDurationMinutes, formatOvertimeCurrency, formatOvertimeMinutes, getCurrentOvertimePeriod, getDefaultOvertimeRequestFormValues, getOvertimeStatusLabel, isValidOvertimeDate, overtimeRequestSchema } from "../lib/overtime-requests";
 import type { EmployeeOvertimeRequest, EmployeeOvertimeRequestStatus, EmployeeOvertimeSummary, OvertimeRequestFormValues } from "../types/overtime-requests";
@@ -130,21 +130,21 @@ function OvertimeRequestDetails({ request, canManage, isReviewing, onReview }: {
 				</div>
 				{canManage && request.status === "pending" && (
 					<div className="flex flex-wrap gap-2">
-						<Button type="button" size="sm" disabled={isReviewing} onClick={() => onReview(request, "approve")}>
+						<HrAction resource="overtime" action="approve"><Button type="button" size="sm" disabled={isReviewing} onClick={() => onReview(request, "approve")}>
 							<Check />
 							Approve
-						</Button>
-						<Button type="button" size="sm" variant="destructive" disabled={isReviewing} onClick={() => onReview(request, "reject")}>
+						</Button></HrAction>
+						<HrAction resource="overtime" action="reject"><Button type="button" size="sm" variant="destructive" disabled={isReviewing} onClick={() => onReview(request, "reject")}>
 							<X />
 							Reject
-						</Button>
-						<Button type="button" size="sm" variant="outline" disabled={isReviewing} onClick={() => onReview(request, "cancel")}>
+						</Button></HrAction>
+						<HrAction resource="overtime" action="cancel"><Button type="button" size="sm" variant="outline" disabled={isReviewing} onClick={() => onReview(request, "cancel")}>
 							<Ban />
 							Cancel
-						</Button>
+						</Button></HrAction>
 					</div>
 				)}
-				{canManage && request.status === "approved" && <Button type="button" size="sm" variant="outline" disabled={isReviewing} onClick={() => onReview(request, "cancel")}><Ban />Cancel overtime</Button>}
+				{canManage && request.status === "approved" && <HrAction resource="overtime" action="cancel"><Button type="button" size="sm" variant="outline" disabled={isReviewing} onClick={() => onReview(request, "cancel")}><Ban />Cancel overtime</Button></HrAction>}
 			</div>
 
 			<dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -242,14 +242,13 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 		setRequestError(null);
 		try {
 			await createOvertime.mutateAsync({ employeeId, payload: buildEmployeeOvertimeRequestPayload(values) });
-			toast.success("Overtime saved");
 			setYear(Number(values.overtimeDate.slice(0, 4)));
 			setMonth(Number(values.overtimeDate.slice(5, 7)));
 			form.reset(getDefaultOvertimeRequestFormValues());
 		} catch (error) {
 			const message = handleApiError(error);
 			setRequestError(message);
-			toast.error(message);
+			notifyApiError(error);
 		}
 	};
 
@@ -268,13 +267,12 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 			} else {
 				await cancelOvertime.mutateAsync({ id: review.request.id, employeeId, payload });
 			}
-			toast.success(`Overtime request ${review.action === "approve" ? "approved" : review.action === "reject" ? "rejected" : "cancelled"}`);
 			setPendingReview(null);
 			setReviewNote("");
 		} catch (error) {
 			const message = handleApiError(error);
 			setReviewError(message);
-			toast.error(message);
+			notifyApiError(error);
 		}
 	};
 
@@ -323,7 +321,7 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 						<AlertDescription>Approval authorizes requested overtime. Actual time is recorded separately, and unapproved actual time is not payable.</AlertDescription>
 					</Alert>
 
-					<section className="space-y-3">
+					<HrAction resource="overtime" action="create"><section className="space-y-3">
 						<div>
 							<h3 className="font-semibold">Register overtime</h3>
 							<p className="text-sm text-muted-foreground">Overtime must be requested for a future date. The duration below is a local preview; the server determines the saved request.</p>
@@ -356,7 +354,7 @@ export function EmployeeOvertimeRequestsPanel({ employeeId, employeeName, canMan
 								</DialogFooter>
 							</form>
 						</Form>
-					</section>
+					</section></HrAction>
 
 					{overtimeQuery.isLoading ? (
 						<div className="space-y-3">

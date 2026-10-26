@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -17,8 +16,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { LookupOption, LookupType } from '../types';
-import { useLookupOptions, useDeleteLookupOption, useReorderLookupOptions } from '../hooks/useLookupOptions';
+import { useLookupOptions, useDeleteLookupOption } from '../hooks/useLookupOptions';
 import { LookupOptionForm } from './LookupOptionForm';
+import { handleApiError } from '@/lib/errorHandling';
+import { useAuthStore } from '@/store/authStore';
 
 interface LookupOptionsManagerProps {
   type: LookupType;
@@ -27,6 +28,9 @@ interface LookupOptionsManagerProps {
 }
 
 export function LookupOptionsManager({ type, title, description }: LookupOptionsManagerProps) {
+  const { hasPermission: has } = useAuthStore((state) => state);
+  const resource = { specialization: 'specializations', task_category: 'task_categories', project_type: 'project_types', project_status: 'project_statuses', task_status: 'task_statuses', contract_duration: 'contract_durations' }[type];
+  const can = (action: string) => has('manage_lookup_options') || has(`manage_${resource}`) || has(`${action}_${resource}`);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState<LookupOption | undefined>();
   const [optionToDelete, setOptionToDelete] = useState<LookupOption | null>(null);
@@ -63,10 +67,10 @@ export function LookupOptionsManager({ type, title, description }: LookupOptions
             <CardTitle>{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          <Button onClick={handleAdd}>
+          {can('create') && <Button onClick={handleAdd}>
             <Plus className="w-4 h-4 mr-2" />
             Add New
-          </Button>
+          </Button>}
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -80,10 +84,10 @@ export function LookupOptionsManager({ type, title, description }: LookupOptions
               <Settings className="w-8 h-8 text-muted-foreground mb-4 opacity-50" />
               <p className="text-sm font-medium">No options found</p>
               <p className="text-sm text-muted-foreground mb-4">Add your first option to get started.</p>
-              <Button variant="outline" onClick={handleAdd}>
+              {can('create') && <Button variant="outline" onClick={handleAdd}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Option
-              </Button>
+              </Button>}
             </div>
           ) : (
             <div className="rounded-md border">
@@ -120,17 +124,18 @@ export function LookupOptionsManager({ type, title, description }: LookupOptions
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(option)}>
+                    {can('edit') && <Button aria-label={`Edit ${option.label}`} variant="ghost" size="icon" onClick={() => handleEdit(option)}>
                       <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button 
+                    </Button>}
+                    {can('delete') && <Button
+                      aria-label={`Delete ${option.label}`}
                       variant="ghost" 
                       size="icon" 
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => setOptionToDelete(option)}
+                      onClick={() => { deleteMutation.reset(); setOptionToDelete(option); }}
                     >
                       <Trash2 className="w-4 h-4" />
-                    </Button>
+                    </Button>}
                   </div>
                 </div>
               ))}
@@ -153,18 +158,19 @@ export function LookupOptionsManager({ type, title, description }: LookupOptions
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the 
               <strong> {optionToDelete?.label} </strong> option. 
-              Any records currently using this option might lose their association.
+              Project types linked to projects cannot be deleted. Deactivate a type to hide it from new projects while preserving existing records, or reassign its projects first.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {deleteMutation.isError && <div role="alert" className="max-h-64 overflow-y-auto rounded-lg border border-destructive p-3 text-sm text-destructive">{handleApiError(deleteMutation.error)}</div>}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <Button
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDeleteConfirm}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

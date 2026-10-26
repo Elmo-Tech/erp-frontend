@@ -11,12 +11,11 @@ import { EmployeeCard } from "../EmployeeCard";
 import { CreateEmployeeForm, UpdateEmployeeForm } from "../employees";
 import type { Employee } from "../../types";
 import { useRoles } from "@/features/admin/hooks/useRoles";
-import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/shared/dialogs/ConfirmDialog";
 import { getRoleLabel } from "@/config/simplification";
 import { useAuthStore } from "@/store/authStore";
-import { handleApiError } from "@/lib/errorHandling";
+import { notifyApiError } from "@/lib/errorHandling";
 
 export function EmployeesWrapper() {
 	const router = useRouter();
@@ -33,7 +32,10 @@ export function EmployeesWrapper() {
 
 	const { data: rolesData } = useRoles();
 	const canManageProtectedUsers = useAuthStore((state) => state.hasPermission("manage_protected_users"));
-	const canManageEmployees = useAuthStore((state) => state.hasPermission("manage_employees"));
+	const canCreateEmployees = useAuthStore((state) => state.hasPermission("manage_employees") || state.hasPermission("create_employees"));
+	const canEditEmployees = useAuthStore((state) => state.hasPermission("manage_employees") || state.hasPermission("edit_employees"));
+	const canDeleteEmployees = useAuthStore((state) => state.hasPermission("manage_employees") || state.hasPermission("delete_employees"));
+	const canToggleEmployees = useAuthStore((state) => state.hasPermission("manage_employees") || state.hasPermission("toggle_employee_status"));
 	const deactivateEmployee = useDeactivateEmployee();
 	const activateEmployee = useActivateEmployee();
 	const deleteEmployee = useDeleteEmployee();
@@ -61,8 +63,8 @@ export function EmployeesWrapper() {
 				await activateEmployee.mutateAsync(employee.userId);
 			}
 			// Success toast comes from the backend message via the axios interceptor.
-		} catch {
-			toast.error("Failed to update employee status");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -74,7 +76,7 @@ export function EmployeesWrapper() {
 			// Success toast comes from the backend message via the axios interceptor.
 			setEmployeeToDelete(null);
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -93,7 +95,7 @@ export function EmployeesWrapper() {
 					</h1>
 					<p className="text-muted-foreground">Manage your team members</p>
 				</div>
-				{canManageEmployees && (
+				{canCreateEmployees && (
 					<Button onClick={() => setShowCreateDialog(true)}>
 						<Plus className="h-4 w-4 mr-2" />
 						Add Employee
@@ -142,9 +144,9 @@ export function EmployeesWrapper() {
 							key={employee.userId}
 							employee={employee}
 							onOpen={handleOpenEmployeeDetails}
-							onEdit={canManageEmployees ? handleEdit : undefined}
-							onToggleStatus={canManageEmployees ? handleToggleStatus : undefined}
-							onDelete={canManageEmployees ? setEmployeeToDelete : undefined}
+							onEdit={canEditEmployees ? handleEdit : undefined}
+							onToggleStatus={canToggleEmployees ? handleToggleStatus : undefined}
+							onDelete={canDeleteEmployees ? setEmployeeToDelete : undefined}
 						/>
 					))}
 				</div>
@@ -152,7 +154,7 @@ export function EmployeesWrapper() {
 				<div className="text-center py-12 text-muted-foreground">
 					<Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
 					<p>No employees found</p>
-					{canManageEmployees && (
+					{canCreateEmployees && (
 						<Button
 							variant="outline"
 							className="mt-4"
@@ -164,7 +166,7 @@ export function EmployeesWrapper() {
 				</div>
 			)}
 
-			{canManageEmployees && (
+			{canCreateEmployees && (
 				<CreateEmployeeForm
 					open={showCreateDialog}
 					onOpenChange={setShowCreateDialog}
@@ -172,7 +174,7 @@ export function EmployeesWrapper() {
 				/>
 			)}
 
-			{selectedEmployee && canManageEmployees && (
+			{selectedEmployee && canEditEmployees && (
 				<UpdateEmployeeForm
 					open={showUpdateDialog}
 					onOpenChange={handleUpdateClose}

@@ -17,14 +17,16 @@ import { useActiveTimers } from "@/features/sales/hooks/useTimeEntries";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { getRoleLabel } from "@/config/simplification";
+import { settingsPermissions } from "@/config/access";
 
 export function Navbar() {
-	const { user, role } = useAuthStore();
+	const { user, role, hasPermission } = useAuthStore();
 	const { toggleMobileOpen } = useSidebarStore();
 	const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
 	// Only fetch active timers for admin/super-admin
-	const isAdmin = role === "admin" || role === "super-admin";
+	const canViewTimers = hasPermission("view_all_time_entries");
+	const canManageSettings = settingsPermissions.some(hasPermission);
 	const { data: activeTimers = [] } = useActiveTimers();
 
 	const getInitials = (name: string) => {
@@ -52,9 +54,9 @@ export function Navbar() {
 	};
 
 	return (
-		<header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background/95 px-4 lg:px-6 backdrop-blur supports-backdrop-filter:bg-background/60">
+		<header className="sticky top-0 z-30 flex min-h-16 flex-wrap items-center justify-between gap-y-2 border-b bg-background/95 px-2 py-2 sm:h-16 sm:flex-nowrap sm:px-4 sm:py-0 lg:px-6 backdrop-blur supports-backdrop-filter:bg-background/60">
 			{/* Left side - Mobile menu + Search */}
-			<div className="flex items-center gap-3">
+			<div className="flex items-center gap-1 sm:gap-3">
 				{/* Mobile menu button */}
 				<Button
 					variant="ghost"
@@ -69,12 +71,12 @@ export function Navbar() {
 			</div>
 
 			{/* Right side */}
-			<div className="flex items-center gap-3">
+			<div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1 sm:flex-nowrap sm:gap-3">
 				{/* Timer Widget - Compact version for navbar */}
-				<NavbarTimer />
+				<NavbarTimer className="max-w-full" />
 
 				{/* Active Timers - Admin/Super Admin only */}
-				{isAdmin && (
+				{canViewTimers && (
 					<ActiveTimersSheet>
 						<Button
 							variant="ghost"
@@ -140,12 +142,12 @@ export function Navbar() {
 								Profile
 							</Link>
 						</DropdownMenuItem>
-						<DropdownMenuItem asChild>
+						{canManageSettings && <DropdownMenuItem asChild>
 							<Link href="/dashboard/settings">
 								<Settings className="mr-2 h-4 w-4" />
 								Settings
 							</Link>
-						</DropdownMenuItem>
+						</DropdownMenuItem>}
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							onClick={() => logout()}

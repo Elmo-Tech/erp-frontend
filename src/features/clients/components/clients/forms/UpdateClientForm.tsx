@@ -8,8 +8,7 @@ import { useUpdateClient } from "../../../hooks/useClients";
 import { Client, ClientStatus } from "../../../types";
 import { clientSchema, ClientFormData } from "../../../schemas/clientSchema";
 import { ClientFormFields } from "./ClientFormFields";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/errorHandling";
+import { notifyApiError } from "@/lib/errorHandling";
 import { isAxiosError } from "axios";
 
 interface UpdateClientFormProps {
@@ -69,7 +68,7 @@ export function UpdateClientForm({ open, onOpenChange, client, onSuccess }: Upda
 					if (field in data) form.setError(field as keyof ClientFormData, { type: "server", message: messages[0] });
 				}
 			}
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 

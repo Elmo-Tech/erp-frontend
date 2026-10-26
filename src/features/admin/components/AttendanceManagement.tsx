@@ -34,7 +34,7 @@ export function AttendanceManagement() {
 	const { data, isLoading, error } = useAttendanceList(filters, page);
 	const { data: employeesData } = useEmployees({ perPage: 100 });
 	const { canManageAttendance, canViewAllAttendance, hasAnyPermission } = usePermissions();
-	const canReviewPermissions = hasAnyPermission(["manage_permissions", "manage_employees"]);
+	const canReviewPermissions = hasAnyPermission(["manage_permissions", "manage_employees", "approve_permissions", "reject_permissions"]);
 	const permissionEmployee = employeesData?.employees.find((employee) => employee.userId === permissionEmployeeId)
 		?? (currentUser?.userId === permissionEmployeeId ? currentUser : undefined)
 		?? (reviewRequest?.permission.employeeId === permissionEmployeeId ? reviewRequest.permission.employee : undefined);

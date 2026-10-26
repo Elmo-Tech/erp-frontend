@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormDialog } from "@/components/shared";
 import { ExternalLink, Folder, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { projectDriveApi } from "../../api/projectDrive";
 import { useConnectProjectDriveFolder, useProjectDriveFolders } from "../../hooks/useProjectDrive";
 import { ProjectDriveFolder } from "../../types/project";
@@ -27,8 +27,8 @@ export function DriveFolderDialog({ projectId, open, onOpenChange }: DriveFolder
 			setIsStartingOAuth(true);
 			const { url } = await projectDriveApi.getOAuthUrl(`/dashboard/projects/${projectId}`);
 			window.location.href = url;
-		} catch {
-			toast.error("Failed to start Google Drive connection");
+		} catch (error) {
+			notifyApiError(error);
 		} finally {
 			setIsStartingOAuth(false);
 		}
@@ -37,10 +37,9 @@ export function DriveFolderDialog({ projectId, open, onOpenChange }: DriveFolder
 	const handleSelect = async (folder: ProjectDriveFolder) => {
 		try {
 			await connectFolder.mutateAsync(folder);
-			toast.success("Google Drive folder connected");
 			onOpenChange(false);
-		} catch {
-			toast.error("Failed to connect folder");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

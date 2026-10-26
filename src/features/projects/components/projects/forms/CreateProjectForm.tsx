@@ -10,6 +10,7 @@ import { useClients } from "@/features/clients/hooks/useClients";
 import { ProjectStatus } from "../../../types/project";
 import { ProjectFormFields } from "./ProjectFormFields";
 import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { FormCombobox } from "@/components/shared/forms";
 import { useClient } from "@/features/clients/hooks/useClients";
 import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
@@ -95,11 +96,10 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 				status: data.status,
 				projectTypeId: data.projectTypeId,
 			});
-			toast.success("Project created successfully");
 			onOpenChange(false);
 			onSuccess?.();
-		} catch {
-			toast.error("Failed to create project");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

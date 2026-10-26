@@ -12,7 +12,7 @@ import { useChangeRequests, useChangeRequestSummary, useCreateChangeRequest, use
 import { ChangeRequest, CreateChangeRequestPayload } from "../../../types/changeRequest";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Plus, FileEdit } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 
 import { SummaryCards } from "./SummaryCards";
 import { ChangeRequestCard } from "./ChangeRequestCard";
@@ -45,29 +45,26 @@ export function ChangeRequestsTab({ projectId }: ChangeRequestsTabProps) {
 	const handleCreate = async (payload: CreateChangeRequestPayload) => {
 		try {
 			await createCR.mutateAsync({ projectId, payload });
-			toast.success("Change request created");
 			setShowCreateDialog(false);
-		} catch {
-			toast.error("Failed to create change request");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
 	const handleSubmit = async (id: number) => {
 		try {
 			await submitCR.mutateAsync(id);
-			toast.success("Change request submitted for review");
-		} catch {
-			toast.error("Failed to submit change request");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
 	const handleApprove = async (id: number) => {
 		try {
 			await approveCR.mutateAsync({ id, approvedCost });
-			toast.success("Change request approved");
 			setSelectedCR(null);
-		} catch {
-			toast.error("Failed to approve change request");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -75,21 +72,19 @@ export function ChangeRequestsTab({ projectId }: ChangeRequestsTabProps) {
 		if (!selectedCR || !rejectReason) return;
 		try {
 			await rejectCR.mutateAsync({ id: selectedCR.changeRequestId, reason: rejectReason });
-			toast.success("Change request rejected");
 			setShowRejectDialog(false);
 			setSelectedCR(null);
 			setRejectReason("");
-		} catch {
-			toast.error("Failed to reject change request");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
 	const handleImplement = async (id: number) => {
 		try {
 			await implementCR.mutateAsync(id);
-			toast.success("Change request marked as implemented");
-		} catch {
-			toast.error("Failed to mark as implemented");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

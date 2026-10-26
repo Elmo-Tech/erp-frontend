@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { AlertCircle, Download, FileImage, FileSpreadsheet, FileText, Loader2, Trash2, Upload } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
+import { HrAction } from "./HrAction";
 import { employeeDocumentsApi } from "../api/employee-documents";
 import { employeeDocumentAcceptAttribute, validateEmployeeDocumentFile, validateEmployeeDocumentUpload } from "../lib/employee-documents";
 import { useDeleteEmployeeDocument, useEmployeeDocuments, useUploadEmployeeDocument } from "../hooks/useEmployeeDocuments";
@@ -51,7 +51,7 @@ export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, is
 	const [fileInputKey, setFileInputKey] = useState(0);
 	const [uploadError, setUploadError] = useState<string | null>(null);
 	const [pendingDelete, setPendingDelete] = useState<EmployeeDocument | null>(null);
-	const documentsQuery = useEmployeeDocuments(employeeId, isActive && canManage);
+	const documentsQuery = useEmployeeDocuments(employeeId, isActive);
 	const uploadDocument = useUploadEmployeeDocument();
 	const deleteDocument = useDeleteEmployeeDocument();
 	const documents = [...(documentsQuery.data ?? [])].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
@@ -92,7 +92,7 @@ export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, is
 		try {
 			await employeeDocumentsApi.downloadFile(document);
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -104,11 +104,10 @@ export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, is
 			// Success toast comes from the backend message via the axios interceptor.
 			setPendingDelete(null);
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
-	if (!canManage) return null;
 
 	return (
 		<>
@@ -118,7 +117,7 @@ export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, is
 					<p className="text-sm text-muted-foreground">Upload, download, and securely manage documents stored for this employee.</p>
 				</div>
 
-					<section className="space-y-3">
+					{canManage && <HrAction resource="employee_documents" action="upload"><section className="space-y-3">
 						<div>
 							<h3 className="font-semibold">Upload document</h3>
 							<p className="text-sm text-muted-foreground">Accepted: PDF, JPEG, PNG, WebP, DOC/DOCX, XLS/XLSX, and CSV. Maximum size: 10 MB.</p>
@@ -151,7 +150,7 @@ export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, is
 								</Button>
 							</DialogFooter>
 						</form>
-					</section>
+					</section></HrAction>}
 
 					<section className="space-y-3 border-t pt-5">
 						<div>
@@ -196,14 +195,14 @@ export function EmployeeDocumentsPanel({ employeeId, employeeName, canManage, is
 											</div>
 										</div>
 										<div className="flex shrink-0 gap-2">
-											<Button type="button" variant="outline" size="sm" onClick={() => void handleDownload(document)}>
+											<HrAction resource="employee_documents" action="download"><Button type="button" variant="outline" size="sm" onClick={() => void handleDownload(document)}>
 												<Download />
 												Download
-											</Button>
-											<Button type="button" variant="destructive" size="sm" disabled={deleteDocument.isPending} onClick={() => setPendingDelete(document)}>
+											</Button></HrAction>
+											{canManage && <HrAction resource="employee_documents" action="delete"><Button type="button" variant="destructive" size="sm" disabled={deleteDocument.isPending} onClick={() => setPendingDelete(document)}>
 												<Trash2 />
 												Delete
-											</Button>
+											</Button></HrAction>}
 										</div>
 									</div>
 								))}

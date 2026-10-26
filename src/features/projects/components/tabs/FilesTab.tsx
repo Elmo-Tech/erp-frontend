@@ -8,7 +8,7 @@ import { ProjectDriveFile, ProjectFile } from "../../types/project";
 import { FileFormDialog } from "./FileFormDialog";
 import { Plus, FileText, Link2, Download, Trash2, MoreHorizontal, ExternalLink, FolderSync, AlertCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { format } from "date-fns";
 import api from "@/lib/axios";
 import { useQueryClient } from "@tanstack/react-query";
@@ -46,11 +46,10 @@ export function FilesTab({ projectId, files, isLoading, googleDriveFolderId, goo
 		try {
 			setIsDeleting(true);
 			await api.delete(`/projects/${projectId}/files/${fileToDelete.fileId}`);
-			toast.success("File deleted successfully");
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			setFileToDelete(null);
-		} catch {
-			toast.error("Failed to delete file");
+		} catch (error) {
+			notifyApiError(error);
 		} finally {
 			setIsDeleting(false);
 		}

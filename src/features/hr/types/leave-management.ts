@@ -43,6 +43,8 @@ export interface EmployeeLeave {
 }
 
 export interface LeaveBalance {
+	isCustom?: boolean;
+	overdrawnDays?: number;
 	leaveTypeId: number;
 	leaveType: LeaveType;
 	allocatedDays: number;

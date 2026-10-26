@@ -6,7 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { format, isBefore, parseISO, startOfToday } from "date-fns";
 import { CalendarDays, Clock3, Flag, GripVertical, MoreHorizontal, Pencil, Plus, Settings2, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { FormCombobox } from "@/components/shared/forms";
 import {
 	AlertDialog,
@@ -309,8 +309,8 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 		try {
 			await moveTask.mutateAsync({ taskId, workflowStageId: nextStageId });
 			// Success toast comes from the backend message via the axios interceptor.
-		} catch {
-			toast.error("Could not move the task");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -321,8 +321,8 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 			await deleteTask.mutateAsync(taskToDelete.taskId);
 			// Success toast comes from the backend message via the axios interceptor.
 			setTaskToDelete(null);
-		} catch {
-			toast.error("Could not delete the task");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

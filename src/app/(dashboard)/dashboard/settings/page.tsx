@@ -1,114 +1,40 @@
 "use client";
 
-import React, { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LookupOptionsManager } from '@/features/settings/components/LookupOptionsManager';
-import { TagsManager } from '@/features/settings/components/TagsManager';
-import { GoogleDriveSettings } from '@/features/settings/components/GoogleDriveSettings';
-import { HrPoliciesSettings } from '@/features/hr/components/HrPoliciesSettings';
-import { LeaveTypesSettings } from '@/features/hr/components/LeaveTypesSettings';
-import { useAuthStore } from '@/store/authStore';
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LookupOptionsManager } from "@/features/settings/components/LookupOptionsManager";
+import { TagsManager } from "@/features/settings/components/TagsManager";
+import { GoogleDriveSettings } from "@/features/settings/components/GoogleDriveSettings";
+import { HrPoliciesSettings } from "@/features/hr/components/HrPoliciesSettings";
+import { LeaveTypesSettings } from "@/features/hr/components/LeaveTypesSettings";
+import { DevicesSettings } from "@/features/devices/components/DevicesSettings";
+import { useAuthStore } from "@/store/authStore";
+import type { LookupType } from "@/features/settings/types";
 
-export default function SettingsPage() {
-  return <Suspense fallback={<p>Loading settings...</p>}><SettingsContent /></Suspense>;
-}
+const lists: { id: string; type: LookupType; label: string; permission: string }[] = [
+	{ id: "specializations", type: "specialization", label: "Specializations", permission: "manage_specializations" },
+	{ id: "categories", type: "task_category", label: "Task Categories", permission: "manage_task_categories" },
+	{ id: "project_types", type: "project_type", label: "Project Types", permission: "manage_project_types" },
+	{ id: "project_statuses", type: "project_status", label: "Project Statuses", permission: "manage_project_statuses" },
+	{ id: "task_statuses", type: "task_status", label: "Task Statuses", permission: "manage_task_statuses" },
+	{ id: "contract_durations", type: "contract_duration", label: "Contract Durations", permission: "manage_contract_durations" },
+];
+
+export default function SettingsPage() { return <Suspense fallback={<p>Loading settings…</p>}><SettingsContent /></Suspense>; }
 
 function SettingsContent() {
-  const canManageLeaveTypes = useAuthStore((state) => state.hasPermission('manage_leave_types'));
-  const searchParams = useSearchParams();
-
-  return (
-    <div className="flex-1 space-y-6 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-          <p className="text-muted-foreground">
-            Manage system configuration and lookup data.
-          </p>
-        </div>
-      </div>
-
-      <Tabs defaultValue={searchParams.get('tab') === 'google_drive' ? 'google_drive' : 'specializations'} className="space-y-4">
-        <TabsList className="h-auto w-full flex-wrap justify-start">
-           <TabsTrigger value="specializations">Specializations</TabsTrigger>
-           <TabsTrigger value="categories">Task Categories</TabsTrigger>
-           <TabsTrigger value="project_types">Project Types</TabsTrigger>
-           <TabsTrigger value="project_statuses">Project Statuses</TabsTrigger>
-            <TabsTrigger value="task_statuses">Task Statuses</TabsTrigger>
-            <TabsTrigger value="tags">Tags</TabsTrigger>
-			<TabsTrigger value="google_drive">Google Drive</TabsTrigger>
-            <TabsTrigger value="hr_policies">HR Policies</TabsTrigger>
-            {canManageLeaveTypes && <TabsTrigger value="leave_types">Leave Types</TabsTrigger>}
-            <TabsTrigger value="contract_durations">Contract Durations</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="specializations" className="space-y-4">
-          <LookupOptionsManager 
-            type="specialization" 
-            title="User Specializations" 
-            description="Manage the specializations assigned to users and employees. These appear in user profile forms and are used for task filtering." 
-          />
-        </TabsContent>
-        
-        <TabsContent value="categories" className="space-y-4">
-          <LookupOptionsManager 
-            type="task_category" 
-            title="Task Categories" 
-            description="Manage the categories used to classify tasks. Categories help organize and filter tasks by type of work." 
-          />
-        </TabsContent>
-
-        <TabsContent value="project_types" className="space-y-4">
-          <LookupOptionsManager
-            type="project_type"
-            title="Project Types"
-            description="Manage the types used to classify projects. Active types are available when creating and editing projects."
-          />
-        </TabsContent>
-
-        <TabsContent value="project_statuses" className="space-y-4">
-          <LookupOptionsManager 
-            type="project_status" 
-            title="Project Statuses" 
-            description="Manage the statuses used to track project lifecycle. Core statuses cannot be deleted or renamed." 
-          />
-        </TabsContent>
-
-        <TabsContent value="task_statuses" className="space-y-4">
-          <LookupOptionsManager 
-            type="task_status" 
-            title="Task Statuses" 
-            description="Manage the statuses used to track task progress. Core statuses cannot be deleted or renamed." 
-          />
-        </TabsContent>
-        
-        <TabsContent value="tags" className="space-y-4">
-          <TagsManager />
-        </TabsContent>
-
-		<TabsContent value="google_drive" className="space-y-4">
-			<GoogleDriveSettings oauthError={searchParams.get('googleDrive') === 'error'} />
-		</TabsContent>
-
-        <TabsContent value="hr_policies" className="space-y-4">
-          <HrPoliciesSettings />
-        </TabsContent>
-
-        {canManageLeaveTypes && (
-          <TabsContent value="leave_types" className="space-y-4">
-            <LeaveTypesSettings />
-          </TabsContent>
-        )}
-
-        <TabsContent value="contract_durations" className="space-y-4">
-          <LookupOptionsManager
-            type="contract_duration"
-            title="Contract Durations"
-            description="Manage preset contract lengths (e.g. 3, 6, 12, 24 months). The value is stored as months on the contract; presets here speed up entry."
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+	const { hasPermission: has } = useAuthStore((state) => state);
+	const params = useSearchParams();
+	const tabs = [
+		...lists.filter((tab) => has("manage_lookup_options") || ["manage", "create", "edit", "delete", "reorder"].some((action) => has(tab.permission.replace(/^manage/, action)))).map((tab) => ({ id: tab.id, label: tab.label, content: <LookupOptionsManager type={tab.type} title={tab.label} description={`Manage ${tab.label.toLowerCase()} used throughout the system.`} /> })),
+		...(has("manage_tags") ? [{ id: "tags", label: "Tags", content: <TagsManager /> }] : []),
+		...(has("manage_google_drive") ? [{ id: "google_drive", label: "Google Drive", content: <GoogleDriveSettings oauthError={params.get("googleDrive") === "error"} /> }] : []),
+		...(has("manage_hr_settings") ? [{ id: "hr_policies", label: "HR Policies", content: <HrPoliciesSettings /> }] : []),
+		...(has("manage_leave_types") ? [{ id: "leave_types", label: "Leave Types", content: <LeaveTypesSettings /> }] : []),
+		...(has("manage_devices") ? [{ id: "devices", label: "Access Devices", content: <DevicesSettings /> }] : []),
+	];
+	if (!tabs.length) return <p>You do not have permission to manage settings.</p>;
+	const initial = tabs.some((tab) => tab.id === params.get("tab")) ? params.get("tab")! : tabs[0].id;
+	return <div className="space-y-6"><h1 className="text-3xl font-bold">Settings</h1><p className="text-muted-foreground">Available sections are controlled by your role permissions.</p><Tabs key={initial} defaultValue={initial} className="space-y-4"><TabsList className="h-auto w-full flex-wrap justify-start">{tabs.map((tab) => <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>)}</TabsList>{tabs.map((tab) => <TabsContent key={tab.id} value={tab.id}>{tab.content}</TabsContent>)}</Tabs></div>;
 }

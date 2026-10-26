@@ -8,13 +8,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Bell, CirclePause, Clock, ExternalLink, Hand, Loader2, Play, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import api from "@/lib/axios";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { TimeEntryData, useTimerStore } from "@/store/timerStore";
 import { getElapsedSeconds, formatDuration } from "@/lib/dateUtils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { projectPipelineKeys } from "@/features/projects/hooks/useProjectPipeline";
 import { useActiveTimerTabBehavior } from "@/hooks/useActiveTimerTabBehavior";
+import { DesktopNotificationSettings, useNotificationPreferences } from "./DesktopNotificationSettings";
 
 export function NavbarTimer({ className }: { className?: string }) {
 	const router = useRouter();
@@ -24,15 +25,15 @@ export function NavbarTimer({ className }: { className?: string }) {
 	const [pendingAction, setPendingAction] = useState<"pause" | "hold" | "end" | "resume" | null>(null);
 	const [holdDialogOpen, setHoldDialogOpen] = useState(false);
 	const [holdReason, setHoldReason] = useState("");
-	const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+	const [notificationSettingsOpen, setNotificationSettingsOpen] = useState(false);
+	const { data: notificationPreferences } = useNotificationPreferences();
 	const [mounted, setMounted] = useState(false);
 	const lastReminderBucket = useRef(0);
 
-	useActiveTimerTabBehavior(activeTimer, elapsedSeconds);
+	useActiveTimerTabBehavior(activeTimer, elapsedSeconds, notificationPreferences?.reminderMinutes ?? 15);
 
 	useEffect(() => {
 		setMounted(true);
-		setNotificationPermission("Notification" in window ? Notification.permission : "unsupported");
 	}, []);
 
 	const handleNavigateToTask = useCallback(() => {
@@ -70,32 +71,18 @@ export function NavbarTimer({ className }: { className?: string }) {
 	}, [activeTimer]);
 
 	useEffect(() => {
-		if (
-			!activeTimer
-			|| notificationPermission !== "granted"
-			|| document.visibilityState !== "hidden"
-		) {
+		if (!activeTimer) {
 			return;
 		}
 
-		const reminderBucket = Math.floor(elapsedSeconds / (45 * 60));
+		const reminderBucket = Math.floor(elapsedSeconds / ((notificationPreferences?.reminderMinutes ?? 15) * 60));
 		if (reminderBucket < 1 || reminderBucket <= lastReminderBucket.current) {
 			return;
 		}
 
 		lastReminderBucket.current = reminderBucket;
-		const notification = new Notification("A work timer is still running", {
-			body: `${activeTimer.trackableDisplayName} · ${formatDuration(elapsedSeconds)}`,
-			tag: `active-timer-${activeTimer.timeEntryId}`,
-			requireInteraction: true,
-		});
-
-		notification.onclick = () => {
-			window.focus();
-			handleNavigateToTask();
-			notification.close();
-		};
-	}, [activeTimer, elapsedSeconds, handleNavigateToTask, notificationPermission]);
+		window.dispatchEvent(new CustomEvent("timer-reminder", { detail: { timer_id: activeTimer.timeEntryId, body: activeTimer.trackableDisplayName, reminderMinutes: notificationPreferences?.reminderMinutes ?? 15 } }));
+	}, [activeTimer, elapsedSeconds, notificationPreferences?.reminderMinutes]);
 
 	const handleTimerAction = async (action: "pause" | "hold" | "end") => {
 		setPendingAction(action);
@@ -110,8 +97,8 @@ export function NavbarTimer({ className }: { className?: string }) {
 			setHoldReason("");
 			await queryClient.invalidateQueries({ queryKey: projectPipelineKeys.all });
 			// Success toast comes from the backend message via the axios interceptor.
-		} catch {
-			toast.error(`Failed to ${action} timer`);
+		} catch (error) {
+			notifyApiError(error);
 		} finally {
 			setPendingAction(null);
 		}
@@ -127,22 +114,20 @@ export function NavbarTimer({ className }: { className?: string }) {
 			setResumableTimer(null);
 			await queryClient.invalidateQueries({ queryKey: projectPipelineKeys.all });
 			// Success toast comes from the backend message via the axios interceptor.
-		} catch {
-			toast.error("Failed to resume timer");
+		} catch (error) {
+			notifyApiError(error);
 		} finally {
 			setPendingAction(null);
 		}
 	};
 
 	const enableNotifications = async () => {
-		if (!("Notification" in window)) return;
-		const permission = await Notification.requestPermission();
-		setNotificationPermission(permission);
+		setNotificationSettingsOpen(true);
 	};
 
 	if (!mounted || isLoading) {
 		return (
-			<div className={cn("flex items-center gap-2 p-2 bg-muted/50 rounded-lg", className)}>
+			<div className={cn("flex flex-wrap items-center gap-1 p-2 bg-muted/50 rounded-lg sm:flex-nowrap sm:gap-2", className)}>
 				<Loader2 className="h-3 w-3 animate-spin" />
 			</div>
 		);
@@ -150,7 +135,8 @@ export function NavbarTimer({ className }: { className?: string }) {
 
 	return (
 		<TooltipProvider>
-			<div className={cn("flex items-center gap-2 p-2 bg-muted/50 rounded-lg", className)}>
+			<Dialog open={notificationSettingsOpen} onOpenChange={setNotificationSettingsOpen}><DialogContent><DialogHeader><DialogTitle>Notification preferences</DialogTitle></DialogHeader><DesktopNotificationSettings /></DialogContent></Dialog>
+			<div className={cn("flex flex-wrap items-center gap-1 p-2 bg-muted/50 rounded-lg sm:flex-nowrap sm:gap-2", className)}>
 				{activeTimer ? (
 					<>
 						<Tooltip>
@@ -202,7 +188,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 						>
 							{pendingAction === "end" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Square className="h-3 w-3 text-red-500" />}
 						</Button>
-						{notificationPermission === "default" && (
+						{(
 							<Button
 								size="icon"
 								variant="ghost"

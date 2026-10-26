@@ -11,9 +11,11 @@ import { useUserSpecializations } from "@/features/admin/hooks/useEnums";
 import type { Employee } from "../../../types";
 import { EmployeeFormFields } from "./EmployeeFormFields";
 import { toast } from "sonner";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
+import { employeeDetailsDefaults, employeeDetailsSchema } from "../../../lib/employee-details";
 
 const employeeSchema = z.object({
+	...employeeDetailsSchema,
 	name: z.string().min(1, "Name is required"),
 	email: z.string().email("Invalid email"),
 	password: z.string().min(8, "Password must be at least 8 characters"),
@@ -25,6 +27,7 @@ const employeeSchema = z.object({
 type EmployeeFormData = z.infer<typeof employeeSchema>;
 
 const defaultEmployeeValues: EmployeeFormData = {
+	...employeeDetailsDefaults(),
 	name: "",
 	email: "",
 	password: "",
@@ -67,6 +70,7 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 
 		try {
 			employee = await createEmployee.mutateAsync({
+				...data,
 				name: data.name,
 				email: data.email,
 				password: data.password,
@@ -75,7 +79,7 @@ export function CreateEmployeeForm({ open, onOpenChange, roles = [], onSuccess }
 				isActive: data.isActive,
 			});
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 			return;
 		}
 

@@ -27,7 +27,7 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
 	isLoading: true,
 	setNotifications: (notifications) => set({ notifications }),
 	addNotification: (notification) =>
-		set((state) => ({
+		set((state) => state.notifications.some((item) => item.notificationId === notification.notificationId) ? state : ({
 			notifications: [notification, ...state.notifications],
 			unreadCount: state.unreadCount + 1,
 		})),
@@ -35,7 +35,7 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
 	markAsRead: (id) =>
 		set((state) => ({
 			notifications: state.notifications.map((n) => (n.notificationId === id ? { ...n, readAt: new Date().toISOString() } : n)),
-			unreadCount: Math.max(0, state.unreadCount - 1),
+			unreadCount: Math.max(0, state.unreadCount - (state.notifications.some((n) => n.notificationId === id && !n.readAt) ? 1 : 0)),
 		})),
 	markAllAsRead: () =>
 		set((state) => ({

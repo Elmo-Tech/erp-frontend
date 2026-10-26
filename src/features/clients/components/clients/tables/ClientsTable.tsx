@@ -12,7 +12,7 @@ import { Client, ClientFilters, ClientStatus, ClientStatusLabels } from "../../.
 import { getClientsColumns } from "./columns";
 import { DeleteClientDialog } from "../dialogs/DeleteClientDialog";
 import { Plus, Building2 } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 interface ClientsTableProps {
@@ -54,8 +54,8 @@ export function ClientsTable({ onEdit, onAdd }: ClientsTableProps) {
 			// Success toast comes from the backend message via the axios interceptor.
 			setDeleteDialogOpen(false);
 			setClientToDelete(null);
-		} catch {
-			toast.error("Failed to delete client");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

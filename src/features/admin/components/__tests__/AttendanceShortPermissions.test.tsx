@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/authStore";
@@ -24,7 +24,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	vi.useFakeTimers({ toFake: ["Date"] });
 	vi.setSystemTime(new Date("2026-01-15T10:00:00Z"));
-	useAuthStore.setState({ user: admin, role: "admin" });
+	useAuthStore.setState({ user: admin, role: "admin", permissions: [{ permissionName: "manage_permissions", access: true }] });
 	permissions = [];
 	nextId = 41;
 	vi.mocked(api.get).mockImplementation(async (url, config) => {
@@ -52,7 +52,7 @@ beforeEach(() => {
 	});
 });
 
-afterEach(() => vi.useRealTimers());
+afterEach(() => { cleanup(); useAuthStore.setState({ user: null, role: null, permissions: [] }); vi.useRealTimers(); });
 
 it("registers a paid permission in one step without a confirmation dialog", async () => {
 	renderAttendance(client());

@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
-import { toast } from 'sonner';
+import { notifyApiError } from '@/lib/errorHandling';
 import { LookupType, LookupOptionFormData } from '../types';
 import {
   fetchLookupOptions,
@@ -10,9 +9,6 @@ import {
   reorderLookupOptions,
 } from '../api/lookupOptionsApi';
 
-type ApiError = AxiosError<{ message?: string }>;
-
-const errorMessage = (error: ApiError, fallback: string) => error.response?.data?.message || fallback;
 
 export const useLookupOptions = (type: LookupType) => {
   return useQuery({
@@ -26,8 +22,7 @@ export const useCreateLookupOption = () => {
 
   return useMutation({
     mutationFn: createLookupOption,
-    onSuccess: (response, variables) => {
-      toast.success(response.message);
+    onSuccess: (_response, variables) => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'lookup-options', variables.type] });
       // Invalidate existing enum hooks so the app updates immediately
       if (variables.type === 'specialization') {
@@ -40,9 +35,7 @@ export const useCreateLookupOption = () => {
         queryClient.invalidateQueries({ queryKey: ['enums', 'task-statuses'] });
       }
     },
-    onError: (error: ApiError) => {
-      toast.error(errorMessage(error, 'Failed to create option'));
-    },
+    onError: notifyApiError,
   });
 };
 
@@ -51,16 +44,13 @@ export const useUpdateLookupOption = () => {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<LookupOptionFormData> }) => updateLookupOption(id, data),
-    onSuccess: (response) => {
-      toast.success(response.message);
+    onSuccess: () => {
       // We don't have the type in variables.data if it's a partial update,
       // but invalidating all lookup-options is fine for settings panel
       queryClient.invalidateQueries({ queryKey: ['settings', 'lookup-options'] });
       queryClient.invalidateQueries({ queryKey: ['enums'] });
     },
-    onError: (error: ApiError) => {
-      toast.error(errorMessage(error, 'Failed to update option'));
-    },
+    onError: notifyApiError,
   });
 };
 
@@ -69,14 +59,11 @@ export const useDeleteLookupOption = () => {
 
   return useMutation({
     mutationFn: deleteLookupOption,
-    onSuccess: (response) => {
-      toast.success(response?.message || 'Deleted successfully');
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'lookup-options'] });
       queryClient.invalidateQueries({ queryKey: ['enums'] });
     },
-    onError: (error: ApiError) => {
-      toast.error(errorMessage(error, 'Failed to delete option'));
-    },
+    onError: notifyApiError,
   });
 };
 
@@ -89,8 +76,6 @@ export const useReorderLookupOptions = () => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'lookup-options'] });
       queryClient.invalidateQueries({ queryKey: ['enums'] });
     },
-    onError: (error: ApiError) => {
-      toast.error(errorMessage(error, 'Failed to reorder options'));
-    },
+    onError: notifyApiError,
   });
 };

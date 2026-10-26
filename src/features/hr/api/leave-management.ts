@@ -2,6 +2,9 @@ import api from "@/lib/axios";
 import type { CreateEmployeeLeavePayload, CreateLeaveTypePayload, EmployeeLeave, EmployeeLeavesResponse, LeaveType, ReviewEmployeeLeavePayload, UpdateLeaveTypePayload } from "../types/leave-management";
 
 export const leaveManagementApi = {
+	updateBalance: async (employeeId: number, leaveTypeId: number, payload: { year: number; allocatedDays?: number; useDefault: boolean }): Promise<void> => {
+		await api.put(`/employees/${employeeId}/leave-balances/${leaveTypeId}`, payload);
+	},
 	getLeaveTypes: async (): Promise<LeaveType[]> => {
 		const response = await api.get("/leave-types");
 		return response.data.data;

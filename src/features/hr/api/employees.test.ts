@@ -22,6 +22,7 @@ describe("employeesApi.uploadAvatar", () => {
 
 		const formData = vi.mocked(api.post).mock.calls[0][1] as FormData;
 		expect(api.post).toHaveBeenCalledWith("/employees/12/avatar", expect.any(FormData), {
+			skipErrorToast: true,
 			headers: {
 				"Content-Type": "multipart/form-data",
 			},

@@ -1,12 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
-import { toast } from 'sonner';
+import { notifyApiError } from '@/lib/errorHandling';
 import { TagFormData } from '../types';
 import { fetchTags, createTag, updateTag, deleteTag } from '../api/tagsApi';
 
-type ApiError = AxiosError<{ message?: string }>;
-
-const errorMessage = (error: ApiError, fallback: string) => error.response?.data?.message || fallback;
 
 export const useTags = () => {
   return useQuery({
@@ -20,13 +16,10 @@ export const useCreateTag = () => {
 
   return useMutation({
     mutationFn: createTag,
-    onSuccess: (response) => {
-      toast.success(response.message);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'tags'] });
     },
-    onError: (error: ApiError) => {
-      toast.error(errorMessage(error, 'Failed to create tag'));
-    },
+    onError: notifyApiError,
   });
 };
 
@@ -35,13 +28,10 @@ export const useUpdateTag = () => {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<TagFormData> }) => updateTag(id, data),
-    onSuccess: (response) => {
-      toast.success(response.message);
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'tags'] });
     },
-    onError: (error: ApiError) => {
-      toast.error(errorMessage(error, 'Failed to update tag'));
-    },
+    onError: notifyApiError,
   });
 };
 
@@ -50,12 +40,9 @@ export const useDeleteTag = () => {
 
   return useMutation({
     mutationFn: deleteTag,
-    onSuccess: (response) => {
-      toast.success(response?.message || 'Deleted successfully');
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'tags'] });
     },
-    onError: (error: ApiError) => {
-      toast.error(errorMessage(error, 'Failed to delete tag'));
-    },
+    onError: notifyApiError,
   });
 };

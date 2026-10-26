@@ -16,8 +16,9 @@ export default function EmployeePage() {
 	const { id } = useParams<{ id: string }>();
 	const employeeQuery = useEmployee(Number(id));
 	const canManage = useAuthStore((state) => state.hasPermission("manage_employees"));
+	const canEdit = useAuthStore((state) => state.hasPermission("manage_employees") || state.hasPermission("edit_employees"));
 	const canManageProtectedUsers = useAuthStore((state) => state.hasPermission("manage_protected_users"));
-	const { data: rolesData } = useRoles();
+	const { data: rolesData } = useRoles(canManage);
 	const [editing, setEditing] = useState(false);
 	const roles = (rolesData?.roles ?? [])
 		.filter((role) => role.name !== "super-admin" || canManageProtectedUsers)
@@ -29,7 +30,7 @@ export default function EmployeePage() {
 			{employeeQuery.isLoading ? <Skeleton className="h-96 w-full" /> : employeeQuery.data ? (
 				<>
 					<EmployeeWorkspace key={id} employee={employeeQuery.data} canManage={canManage} onEdit={() => setEditing(true)} />
-					{canManage && <UpdateEmployeeForm employee={employeeQuery.data} roles={roles} open={editing} onOpenChange={setEditing} />}
+					{canEdit && <UpdateEmployeeForm employee={employeeQuery.data} roles={roles} open={editing} onOpenChange={setEditing} />}
 				</>
 			) : (
 				<div className="space-y-3 rounded-xl border p-6">

@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { AlertCircle, FileText, Info, Loader2, Pencil, Plus, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
 import { useAllLeaveTypes, useUpdateLeaveType } from "../hooks/useEmployeeLeaves";
 import type { LeaveType } from "../types/leave-management";
 import { LeaveTypeFormDialog } from "./LeaveTypeFormDialog";
@@ -35,7 +34,7 @@ export function LeaveTypesSettings() {
 			await updateLeaveType.mutateAsync({ id: leaveType.id, payload: { isActive: !leaveType.isActive } });
 			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -55,8 +54,8 @@ export function LeaveTypesSettings() {
 				<CardContent className="space-y-4">
 					<Alert>
 						<Info />
-						<AlertTitle>Allowance changes are forward-looking</AlertTitle>
-						<AlertDescription>Changing an annual allowance applies to new balance initialization, not historical employee balances.</AlertDescription>
+						<AlertTitle>Current-year allowance</AlertTitle>
+						<AlertDescription>Changes update the current year for employees using the default. Used days, custom employee allocations, and previous years are preserved. Reducing an allowance below used days leaves no remaining balance.</AlertDescription>
 					</Alert>
 
 					{leaveTypesQuery.isLoading ? (

@@ -59,7 +59,7 @@ export function useCreateLeaveType() {
 
 	return useMutation({
 		mutationFn: (payload: CreateLeaveTypePayload) => leaveManagementApi.createLeaveType(payload),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.types() }),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.all }),
 	});
 }
 
@@ -68,7 +68,7 @@ export function useUpdateLeaveType() {
 
 	return useMutation({
 		mutationFn: ({ id, payload }: { id: number; payload: UpdateLeaveTypePayload }) => leaveManagementApi.updateLeaveType(id, payload),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.types() }),
+		onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: employeeLeaveKeys.all }), queryClient.invalidateQueries({ queryKey: ["employee-overview"] })]),
 	});
 }
 

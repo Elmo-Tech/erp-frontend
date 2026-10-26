@@ -6,9 +6,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, Users } from "lucide-react";
 
 export default function UsersManagementPage() {
-	const { canManageUsers } = usePermissions();
+	const { canManageUsers, hasAnyPermission } = usePermissions();
 
-	if (!canManageUsers) {
+	if (!canManageUsers && !hasAnyPermission(["view_users"])) {
 		return (
 			<div className="container mx-auto p-6">
 				<div className="mb-6">

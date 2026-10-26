@@ -58,7 +58,7 @@ export function useTimerSocketInit() {
 						timeEntryId: activeTimer.timeEntryId,
 						sessionId: activeTimer.sessionId,
 					},
-					{ skipErrorToast: true }
+					{ skipErrorToast: true, skipSuccessToast: true }
 				);
 				const current = useTimerStore.getState().activeTimer;
 				if (!disposed && current?.timeEntryId === activeTimer.timeEntryId && current.sessionId === activeTimer.sessionId && response.data.data.isActive) {

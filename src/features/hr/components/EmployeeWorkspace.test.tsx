@@ -1,7 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { EmployeeWorkspace } from "./EmployeeWorkspace";
 import type { Employee } from "../types";
+import { useAuthStore } from "@/store/authStore";
+import { HrAction } from "./HrAction";
+
+afterEach(() => { cleanup(); useAuthStore.setState({ role: null, permissions: [] }); });
 
 function panelMock(testId: string) {
 	return function MockPanel({ isActive }: { isActive: boolean }) {
@@ -47,6 +51,14 @@ const employee: Employee = {
 };
 
 describe("EmployeeWorkspace", () => {
+	it("opens the contracts tab for a contract creator and hides unrelated sections and approval actions", () => {
+		useAuthStore.setState({ role: "contract-clerk", permissions: [{ permissionName: "create_employee_contracts", access: true }] });
+		render(<><EmployeeWorkspace employee={employee} canManage={false} onEdit={vi.fn()} /><HrAction resource="employee_contracts" action="create"><button>Create agreement</button></HrAction><HrAction resource="leaves" action="approve"><button>Approve leave</button></HrAction></>);
+		expect(screen.getByRole("tab", { name: "Contracts" })).toBeInTheDocument();
+		expect(screen.queryByRole("tab", { name: "Salary & advances" })).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Create agreement" })).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Approve leave" })).not.toBeInTheDocument();
+	});
 	it("shows one workflow per tab and keeps form state mounted while activating only the selected panel", () => {
 		render(<EmployeeWorkspace employee={employee} canManage onEdit={vi.fn()} />);
 

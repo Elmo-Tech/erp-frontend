@@ -13,7 +13,7 @@ import { Task, AssigneeRole, AssigneeRoleLabels, TaskAssignee, TaskType } from "
 import { useAddAssignee, useRemoveAssignee } from "@/features/dashboard/hooks/useTasks";
 import { useProjectMembers } from "../../hooks/useProjectMembers";
 import { Plus, X, Crown, Code, Eye, Info } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
@@ -55,7 +55,7 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 	const addAssignee = useAddAssignee();
 	const removeAssignee = useRemoveAssignee();
 	const { canManageTaskTeam } = usePermissions();
-	const { user, role } = useAuthStore();
+	const { role } = useAuthStore();
 
 	// Permission logic (UPDATED):
 	// - All task types (Main/Weekly/Subtask): Users with manage_task_team permission can add/remove team
@@ -120,20 +120,18 @@ export function TaskAssigneesSection({ task }: TaskAssigneesSectionProps) {
 					isPrimary: data.isPrimary,
 				},
 			});
-			toast.success("Assignee added successfully");
 			setShowAddDialog(false);
 			form.reset();
-		} catch {
-			toast.error("Failed to add assignee");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
 	const handleRemoveAssignee = async (userId: number) => {
 		try {
 			await removeAssignee.mutateAsync({ taskId: task.taskId, projectId: task.projectId, userId });
-			toast.success("Assignee removed successfully");
-		} catch {
-			toast.error("Failed to remove assignee");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

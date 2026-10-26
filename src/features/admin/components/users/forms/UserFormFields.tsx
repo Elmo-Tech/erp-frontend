@@ -7,6 +7,7 @@ import { FormSwitch } from "@/components/shared/forms/FormSwitch";
 import { FormCheckboxGroup } from "@/components/shared/forms/FormCheckboxGroup";
 import { TagInput } from "@/components/shared/forms/TagInput";
 import { usePermissions } from "../../../hooks/usePermissions";
+import { useAuthStore } from "@/store/authStore";
 
 interface UserFormFieldsProps {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,6 +19,7 @@ interface UserFormFieldsProps {
 
 export function UserFormFields({ control, isEditing, roleOptions, specializationOptions }: UserFormFieldsProps) {
 	const { canViewInternalCosts, canManageInternalCosts } = usePermissions();
+	const canAssignRoles = useAuthStore((state) => state.hasPermission("assign_user_roles"));
 
 	// Only show internal cost field if user has permission to view/manage internal costs
 	const showInternalCostField = canViewInternalCosts || canManageInternalCosts;
@@ -87,13 +89,13 @@ export function UserFormFields({ control, isEditing, roleOptions, specialization
 				/>
 			)}
 
-			<FormCheckboxGroup
+			{canAssignRoles && <FormCheckboxGroup
 				control={control}
 				name="roles"
 				label="Roles"
 				options={roleOptions}
 				columns={2}
-			/>
+			/>}
 
 			<FormSwitch
 				control={control}

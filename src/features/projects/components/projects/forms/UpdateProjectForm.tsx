@@ -8,7 +8,7 @@ import { FormDialog } from "@/components/shared";
 import { useUpdateProject } from "../../../hooks/useProjects";
 import { Project, ProjectStatus } from "../../../types/project";
 import { ProjectFormFields } from "./ProjectFormFields";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
 
 const projectSchema = z.object({
@@ -98,11 +98,10 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 					reason: data.reason || undefined,
 				},
 			});
-			toast.success("Project updated successfully");
 			onOpenChange(false);
 			onSuccess?.();
-		} catch {
-			toast.error("Failed to update project");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

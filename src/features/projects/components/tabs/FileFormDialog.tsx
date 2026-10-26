@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { projectKeys } from "../../hooks/useProjects";
 import api from "@/lib/axios";
 import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Upload, X, FileIcon } from "lucide-react";
@@ -126,13 +127,13 @@ export function FileFormDialog({ projectId, open, onOpenChange, driveFolderId }:
 				});
 			}
 
-			toast.success(driveFolderId && data.type === "file" ? "File uploaded to Google Drive" : "File added successfully", driveFileUrl ? { action: { label: "Open", onClick: () => window.open(driveFileUrl, "_blank") } } : undefined);
+			if (driveFolderId && data.type === "file") toast.success("File uploaded to Google Drive", driveFileUrl ? { action: { label: "Open", onClick: () => window.open(driveFileUrl, "_blank") } } : undefined);
 			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
 			form.reset();
 			setSelectedFile(null);
 			onOpenChange(false);
-		} catch {
-			toast.error("Failed to add file");
+		} catch (error) {
+			notifyApiError(error);
 		} finally {
 			setIsSubmitting(false);
 		}

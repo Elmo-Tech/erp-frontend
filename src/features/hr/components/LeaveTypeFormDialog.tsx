@@ -4,13 +4,12 @@ import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { handleApiError } from "@/lib/errorHandling";
+import { notifyApiError } from "@/lib/errorHandling";
 import { useCreateLeaveType, useUpdateLeaveType } from "../hooks/useEmployeeLeaves";
 import { buildLeaveTypePayload, leaveTypeFormSchema, toLeaveTypeFormValues } from "../lib/leave-management";
 import type { LeaveType, LeaveTypeFormValues } from "../types/leave-management";
@@ -47,14 +46,12 @@ export function LeaveTypeFormDialog({ leaveType, open, onOpenChange }: LeaveType
 			const payload = buildLeaveTypePayload(values);
 			if (leaveType) {
 				await updateLeaveType.mutateAsync({ id: leaveType.id, payload });
-				toast.success("Leave type updated");
 			} else {
 				await createLeaveType.mutateAsync(payload);
-				toast.success("Leave type created");
 			}
 			onOpenChange(false);
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 

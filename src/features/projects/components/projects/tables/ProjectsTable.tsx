@@ -7,15 +7,17 @@ import { DataTable } from "@/components/shared/data-display/DataTable";
 import { SearchInput } from "@/components/shared/filters/SearchInput";
 import { FilterSelect, FilterOption } from "@/components/shared/filters/FilterSelect";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
-import { ConfirmDialog } from "@/components/shared";
-import { useProjects, useDeleteProject, usePinProject, useUnpinProject } from "../../../hooks/useProjects";
+import { DeleteProjectDialog } from "../dialogs/DeleteProjectDialog";
+import { useProjects, usePinProject, useUnpinProject } from "../../../hooks/useProjects";
+import { useAuthStore } from "@/store/authStore";
+import Link from "next/link";
 import { Project, ProjectFilters } from "../../../types/project";
 import { ProjectStatus, ProjectStatusLabels } from "@/lib/statusHelpers";
 import { getProjectsColumns } from "./columns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
 import { FolderOpen, Filter, Tags, Users, Plus } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 
 interface ProjectsTableProps {
 	onProjectClick?: (project: Project) => void;
@@ -27,7 +29,7 @@ interface ProjectsTableProps {
 export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, className = "" }: ProjectsTableProps) {
 	const router = useRouter();
 	const { canDeleteProjects, canEditProjects } = usePermissions();
-	const deleteProject = useDeleteProject();
+	const canViewTrash = useAuthStore((state) => state.hasPermission("view_deleted_projects"));
 	const pinProject = usePinProject();
 	const unpinProject = useUnpinProject();
 
@@ -124,29 +126,16 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		}
 	};
 
-	const handleDeleteProject = async () => {
-		if (!projectToDelete) return;
-
-		try {
-			await deleteProject.mutateAsync(projectToDelete.projectId);
-			toast.success("Project deleted successfully");
-			setProjectToDelete(null);
-		} catch {
-			toast.error("Failed to delete project");
-		}
-	};
 
 	const handlePinProject = async (project: Project) => {
 		try {
 			if (project.isPinned) {
 				await unpinProject.mutateAsync(project.projectId);
-				toast.success("Project unpinned successfully");
 			} else {
 				await pinProject.mutateAsync(project.projectId);
-				toast.success("Project pinned successfully");
 			}
-		} catch {
-			toast.error(project.isPinned ? "Failed to unpin project" : "Failed to pin project");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -164,6 +153,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 
 	return (
 		<>
+			{canViewTrash && <Button asChild variant="outline" className="mb-3"><Link href="/dashboard/projects/trash">Deleted projects</Link></Button>}
 			<DataTable
 				title="Projects"
 				titleBadge={projectsResponse?.pagination ? `${projectsResponse.pagination.total} ${projectsResponse.pagination.total === 1 ? "project" : "projects"}` : undefined}
@@ -225,16 +215,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 				}
 			/>
 
-			<ConfirmDialog
-				open={!!projectToDelete}
-				onOpenChange={() => setProjectToDelete(null)}
-				title="Delete Project"
-				description={`Are you sure you want to delete "${projectToDelete?.title}"? This will also delete all tasks, files, and history associated with this project. This action cannot be undone.`}
-				confirmLabel="Delete"
-				onConfirm={handleDeleteProject}
-				variant="destructive"
-				isLoading={deleteProject.isPending}
-			/>
+			{projectToDelete && <DeleteProjectDialog key={projectToDelete.projectId} project={projectToDelete} onOpenChange={() => setProjectToDelete(null)} />}
 		</>
 	);
 }

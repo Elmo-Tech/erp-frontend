@@ -13,6 +13,8 @@ import { EmployeeOverviewPanel } from "./EmployeeOverviewPanel";
 import { EmployeeTimeOffPanel } from "./EmployeeTimeOffPanel";
 import { EmployeeFinancialPanel } from "./EmployeeFinancialPanel";
 import { EmployeeReportDialog } from "./EmployeeReportDialog";
+import { useAuthStore } from "@/store/authStore";
+import { resourcePermissions } from "@/config/access";
 
 const workflows = [
 	{ value: "contracts", label: "Contracts", Icon: FileText, Panel: EmployeeContractsPanel },
@@ -30,6 +32,9 @@ interface EmployeeWorkspaceProps {
 export function EmployeeWorkspace({ employee, canManage, onEdit }: EmployeeWorkspaceProps) {
 	const [activeTab, setActiveTab] = useState("overview");
 	const [reportOpen, setReportOpen] = useState(false);
+	const { hasPermission: has } = useAuthStore((state) => state);
+	const sectionPermissions: Record<string, string[]> = { contracts: resourcePermissions("employee_contracts"), attendance: [...resourcePermissions("leaves"), ...resourcePermissions("permissions"), "view_all_attendance", "manage_attendance"], payroll: ["manage_employee_salary", "view_employee_salary", ...resourcePermissions("employee_advances"), ...resourcePermissions("deductions"), ...resourcePermissions("overtime")], documents: resourcePermissions("employee_documents") };
+	const available = workflows.filter(({ value }) => canManage || sectionPermissions[value].some(has));
 	const panelProps = {
 		employeeId: employee.userId,
 		employeeName: employee.name,
@@ -51,7 +56,7 @@ export function EmployeeWorkspace({ employee, canManage, onEdit }: EmployeeWorks
 						</div>
 						<p className="truncate text-sm text-muted-foreground">{employee.email}</p>
 					</div>
-					{canManage && <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" size="sm" onClick={() => onEdit(employee)}><Edit />Edit</Button><Button type="button" size="sm" onClick={() => setReportOpen(true)}><Download />Employee report</Button></div>}
+					<div className="flex flex-wrap gap-2">{(canManage || has("edit_employees")) && <Button type="button" variant="outline" size="sm" onClick={() => onEdit(employee)}><Edit />Edit</Button>}{(canManage || has("view_employee_reports")) && <Button type="button" size="sm" onClick={() => setReportOpen(true)}><Download />Employee report</Button>}</div>
 				</div>
 			</header>
 
@@ -59,7 +64,7 @@ export function EmployeeWorkspace({ employee, canManage, onEdit }: EmployeeWorks
 				<div className="overflow-x-auto border-b">
 					<TabsList className="h-auto w-max min-w-full justify-start gap-1 rounded-none bg-transparent p-0">
 						<TabsTrigger value="overview" className="flex-none gap-2 rounded-none border-0 border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"><ChartNoAxesCombined className="size-4" />Overview</TabsTrigger>
-						{canManage && workflows.map(({ value, label, Icon }) => (
+						{available.map(({ value, label, Icon }) => (
 							<TabsTrigger key={value} value={value} className="flex-none gap-2 rounded-none border-0 border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"><Icon className="size-4" />{label}</TabsTrigger>
 						))}
 					</TabsList>
@@ -67,14 +72,14 @@ export function EmployeeWorkspace({ employee, canManage, onEdit }: EmployeeWorks
 
 				<div className="min-w-0">
 					<TabsContent value="overview" forceMount hidden={activeTab !== "overview"} className="mt-0 data-[state=inactive]:hidden"><EmployeeOverviewPanel employee={employee} canManage={canManage} isActive={activeTab === "overview"} /></TabsContent>
-					{canManage && workflows.map(({ value, Panel }) => (
+					{available.map(({ value, Panel }) => (
 						<TabsContent key={value} value={value} forceMount hidden={activeTab !== value} className="mt-0 data-[state=inactive]:hidden">
-							<Panel {...panelProps} isActive={activeTab === value} />
+							<Panel {...panelProps} canManage={canManage || sectionPermissions[value].some(has)} isActive={activeTab === value} />
 						</TabsContent>
 					))}
 				</div>
 			</Tabs>
-			{canManage && <EmployeeReportDialog employeeId={employee.userId} employeeName={employee.name} open={reportOpen} onOpenChange={setReportOpen} />}
+			{(canManage || has("view_employee_reports")) && <EmployeeReportDialog employeeId={employee.userId} employeeName={employee.name} open={reportOpen} onOpenChange={setReportOpen} />}
 		</div>
 	);
 }

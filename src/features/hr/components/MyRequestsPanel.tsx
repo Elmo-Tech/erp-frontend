@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-import { handleApiError } from "@/lib/errorHandling";
+import { notifyApiError } from "@/lib/errorHandling";
 import {
 	useCancelEmployeeLeave,
 	useCreateEmployeeLeave,
@@ -108,7 +108,7 @@ function MyLeaves({ employeeId, year }: { employeeId: number; year: number }) {
 			setEditingId(null);
 			form.reset(getDefaultLeaveRequestFormValues());
 		} catch (e) {
-			toast.error(handleApiError(e));
+			notifyApiError(e);
 		}
 	};
 
@@ -166,7 +166,7 @@ function MyLeaves({ employeeId, year }: { employeeId: number; year: number }) {
 												await cancelLeave.mutateAsync({ id: l.id, employeeId });
 												// Success toast comes from the backend message via the axios interceptor.
 											} catch (e) {
-												toast.error(handleApiError(e));
+												notifyApiError(e);
 											}
 										}}
 									>
@@ -211,7 +211,7 @@ function MyPermissions({ employeeId, month }: { employeeId: number; month: strin
 			setEditingId(null);
 			form.reset(getDefaultShortPermissionRequestFormValues());
 		} catch (e) {
-			toast.error(handleApiError(e));
+			notifyApiError(e);
 		}
 	};
 
@@ -240,7 +240,7 @@ function MyPermissions({ employeeId, month }: { employeeId: number; month: strin
 									<Button size="sm" variant="outline" onClick={() => { setEditingId(p.id); form.reset({ permissionDate: p.permissionDate, startTime: p.startTime.slice(0, 5), endTime: p.endTime.slice(0, 5), reason: p.reason ?? "" }); }}>Edit</Button>
 								)}
 								{(p.status === "pending" || p.status === "approved") && (
-									<Button size="sm" variant="ghost" onClick={async () => { try { await cancelPerm.mutateAsync({ id: p.id, employeeId }); /* Success toast via axios interceptor. */ } catch (e) { toast.error(handleApiError(e)); } }}>Cancel</Button>
+									<Button size="sm" variant="ghost" onClick={async () => { try { await cancelPerm.mutateAsync({ id: p.id, employeeId }); } catch (e) { notifyApiError(e); } }}>Cancel</Button>
 								)}
 							</span>
 						</div>
@@ -262,10 +262,9 @@ function MyOvertime({ employeeId, year, month }: { employeeId: number; year: num
 	const onSubmit = async (values: OvertimeRequestFormValues) => {
 		try {
 			await createOt.mutateAsync({ employeeId, payload: buildEmployeeOvertimeRequestPayload(values) });
-			toast.success("Overtime submitted");
 			form.reset(getDefaultOvertimeRequestFormValues());
 		} catch (e) {
-			toast.error(handleApiError(e));
+			notifyApiError(e);
 		}
 	};
 
@@ -288,7 +287,7 @@ function MyOvertime({ employeeId, year, month }: { employeeId: number; year: num
 						<div key={r.id} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
 							<span>{r.overtimeDate} {r.startTime}-{r.endTime} · {r.status}</span>
 							{r.status === "pending" && (
-								<Button size="sm" variant="ghost" onClick={async () => { try { await cancelOt.mutateAsync({ id: r.id, employeeId }); toast.success("Overtime cancelled"); } catch (e) { toast.error(handleApiError(e)); } }}>Cancel</Button>
+								<Button size="sm" variant="ghost" onClick={async () => { try { await cancelOt.mutateAsync({ id: r.id, employeeId }); } catch (e) { notifyApiError(e); } }}>Cancel</Button>
 							)}
 						</div>
 					))}

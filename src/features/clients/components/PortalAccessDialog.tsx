@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, Key, Copy, Check, Mail, Eye, EyeOff } from "lucide-react";
 import { Client } from "../types";
 import { useCreatePortalAccess, useRevokePortalAccess, useResetPortalPassword } from "../hooks/usePortalAccess";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 
 const createAccessSchema = z.object({
 	password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
@@ -36,7 +36,7 @@ export function PortalAccessDialog({ open, onOpenChange, client }: PortalAccessD
 	const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
 	const [copied, setCopied] = useState(false);
 	const [showPassword, setShowPassword] = useState(false);
-	const [mode, setMode] = useState<"create" | "manage">(client.hasPortalAccess ? "manage" : "create");
+	const [mode] = useState<"create" | "manage">(client.hasPortalAccess ? "manage" : "create");
 
 	const form = useForm<CreateAccessFormData>({
 		resolver: zodResolver(createAccessSchema),
@@ -56,19 +56,17 @@ export function PortalAccessDialog({ open, onOpenChange, client }: PortalAccessD
 				},
 			});
 			setCredentials(result.credentials);
-			toast.success("Portal access created successfully");
-		} catch {
-			toast.error("Failed to create portal access");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
 	const handleRevoke = async () => {
 		try {
 			await revokeAccess.mutateAsync(client.clientId);
-			toast.success("Portal access revoked");
 			onOpenChange(false);
-		} catch {
-			toast.error("Failed to revoke portal access");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -79,9 +77,8 @@ export function PortalAccessDialog({ open, onOpenChange, client }: PortalAccessD
 				payload: { sendEmail: true },
 			});
 			setCredentials(result.credentials);
-			toast.success("Password reset successfully");
-		} catch {
-			toast.error("Failed to reset password");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

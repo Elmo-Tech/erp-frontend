@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, CalendarDays, FilePenLine, FileText, Info, Loader2, Paperclip, Plus, RotateCcw, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,11 +12,14 @@ import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormCheckboxGroup, FormInput, FormSelect, FormTextarea } from "@/components/shared";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
 import { employmentContractsApi } from "../api/employment-contracts";
 import { useCreateEmploymentContract, useDeleteContractFile, useDeleteEmploymentContract, useEmploymentContracts, useUpdateEmploymentContract, useUploadContractFile } from "../hooks/useEmploymentContracts";
 import { buildEmploymentContractPayload, deriveContractEndDate, employmentContractSchema, getDefaultEmploymentContractFormValues, isValidContractDate, toEmploymentContractFormValues } from "../lib/employment-contract";
 import { employmentContractWorkDays, type EmploymentContract, type EmploymentContractFormValues, type EmploymentContractStatus } from "../types/employment-contract";
+import { useHrAccess } from "../hooks/useHrAccess";
+import { useAuthStore } from "@/store/authStore";
+import { HrAction } from "./HrAction";
 
 interface EmployeeContractsPanelProps {
 	employeeId: number;
@@ -77,6 +79,8 @@ function formatSalary(value: number) {
 }
 
 function ContractSummary({ contract, employeeId, canManage, onEdit, onDelete }: { contract: EmploymentContract; employeeId: number; canManage: boolean; onEdit: (contract: EmploymentContract) => void; onDelete: (contract: EmploymentContract) => void }) {
+	const access = useHrAccess();
+	const self = useAuthStore((state) => state.user?.userId === employeeId);
 	return (
 		<div className="rounded-lg border bg-muted/30 p-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -91,7 +95,7 @@ function ContractSummary({ contract, employeeId, canManage, onEdit, onDelete }: 
 				</div>
 				{canManage && (
 					<div className="flex flex-wrap gap-2">
-						<Button
+						<HrAction resource="employee_contracts" action="edit"><Button
 							type="button"
 							variant="outline"
 							size="sm"
@@ -99,8 +103,8 @@ function ContractSummary({ contract, employeeId, canManage, onEdit, onDelete }: 
 						>
 							<FilePenLine />
 							Edit
-						</Button>
-						{contract.status === "draft" && (
+						</Button></HrAction>
+						{contract.status === "draft" && access.action("employee_contracts", "delete") && (
 							<Button
 								type="button"
 								variant="ghost"
@@ -118,7 +122,7 @@ function ContractSummary({ contract, employeeId, canManage, onEdit, onDelete }: 
 
 			<dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
 				{contract.employmentType === "part_time" && <div><dt className="text-muted-foreground">Required monthly hours</dt><dd className="font-medium">{contract.requiredMonthlyHours ?? "Not set"} hours/month</dd></div>}
-				{canManage && (
+				{(canManage || self) && (
 					<div>
 						<dt className="text-muted-foreground">Base salary</dt>
 						<dd className="font-medium">{formatSalary(contract.baseSalary)}</dd>
@@ -142,6 +146,8 @@ function ContractSummary({ contract, employeeId, canManage, onEdit, onDelete }: 
 }
 
 function ContractFileSection({ contract, employeeId, canManage }: { contract: EmploymentContract; employeeId: number; canManage: boolean }) {
+	const access = useHrAccess();
+	const self = useAuthStore((state) => state.user?.userId === employeeId);
 	const uploadFile = useUploadContractFile();
 	const deleteFile = useDeleteContractFile();
 	const [fileKey, setFileKey] = useState(0);
@@ -152,7 +158,7 @@ function ContractFileSection({ contract, employeeId, canManage }: { contract: Em
 			await uploadFile.mutateAsync({ id: contract.id, employeeId, file: selected });
 			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		} finally {
 			setFileKey((key) => key + 1);
 		}
@@ -163,7 +169,7 @@ function ContractFileSection({ contract, employeeId, canManage }: { contract: Em
 			await deleteFile.mutateAsync({ id: contract.id, employeeId });
 			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -176,26 +182,26 @@ function ContractFileSection({ contract, employeeId, canManage }: { contract: Em
 			{contract.hasFile ? (
 				<div className="flex flex-wrap items-center gap-2">
 					<span className="text-muted-foreground">{contract.fileName}</span>
-					<Button
+					<HrAction resource="employee_contracts" action="download" allow={self}><Button
 						type="button"
 						variant="outline"
 						size="sm"
 						onClick={() => {
 							void employmentContractsApi
 								.downloadFile(contract.id, contract.fileName ?? "contract")
-								.catch((error: unknown) => toast.error(handleApiError(error)));
+								.catch(notifyApiError);
 						}}
 					>
 						Download
-					</Button>
-					{canManage && (
+					</Button></HrAction>
+					{canManage && access.action("employee_contracts", "delete") && (
 						<Button type="button" variant="ghost" size="sm" onClick={() => void handleRemove()} disabled={deleteFile.isPending}>
 							<Trash2 className="h-3.5 w-3.5" />
 							Remove file
 						</Button>
 					)}
 				</div>
-			) : canManage ? (
+			) : canManage && access.action("employee_contracts", "upload") ? (
 				<div className="flex flex-wrap items-center gap-2">
 					<Label htmlFor={`contract-file-${contract.id}`} className="sr-only">Upload contract file</Label>
 					<Input key={fileKey} id={`contract-file-${contract.id}`} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.csv" onChange={(event) => void handleFile(event.target.files?.[0] ?? null)} disabled={uploadFile.isPending} className="max-w-xs" />
@@ -212,7 +218,7 @@ function ContractFileSection({ contract, employeeId, canManage }: { contract: Em
 export function EmployeeContractsPanel({ employeeId, employeeName, canManage, isActive }: EmployeeContractsPanelProps) {
 	const [mode, setMode] = useState<DialogMode>("overview");
 	const [editingContract, setEditingContract] = useState<EmploymentContract | null>(null);
-	const contractsQuery = useEmploymentContracts(employeeId, isActive && canManage);
+	const contractsQuery = useEmploymentContracts(employeeId, isActive);
 	const createContract = useCreateEmploymentContract();
 	const updateContract = useUpdateEmploymentContract();
 	const deleteContract = useDeleteEmploymentContract();
@@ -263,7 +269,7 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 			}
 			returnToOverview();
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -275,11 +281,10 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 			await deleteContract.mutateAsync({ id: contract.id, employeeId });
 			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
-	if (!canManage) return null;
 
 	const isFormVisible = mode !== "overview";
 
@@ -450,13 +455,13 @@ export function EmployeeContractsPanel({ employeeId, employeeName, canManage, is
 								<h3 className="font-semibold">Current contract</h3>
 								<p className="text-sm text-muted-foreground">Active agreements are current until renewed, ended, or superseded.</p>
 							</div>
-							<Button
+							{canManage && <HrAction resource="employee_contracts" action="create"><Button
 								type="button"
 								onClick={openCreateForm}
 							>
 								{currentContract ? <RotateCcw /> : <Plus />}
 								{currentContract ? "Renew contract" : "Add contract"}
-							</Button>
+							</Button></HrAction>}
 						</div>
 
 						{contractsQuery.isLoading ? (

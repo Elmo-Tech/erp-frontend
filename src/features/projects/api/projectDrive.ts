@@ -65,6 +65,7 @@ export const projectDriveApi = {
 		formData.append("file", file);
 
 		const response = await api.post<{ data: { file: ProjectDriveFile } }>(`/projects/${projectId}/drive-files`, formData, {
+			skipSuccessToast: true,
 			headers: {
 				"Content-Type": "multipart/form-data",
 			},

@@ -8,7 +8,7 @@ import { Form } from "@/components/ui/form";
 import { FormDialog, FormInput, FormTextarea, FormSwitch } from "@/components/shared";
 import { useCreateProjectWiki, useUpdateProjectWiki } from "../../hooks/useProjectWikis";
 import { ProjectWiki } from "../../types/projectWiki";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 
 const wikiSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -61,18 +61,16 @@ export function WikiFormDialog({ projectId, open, onOpenChange, wiki }: WikiForm
 					wikiId: wiki.wikiId,
 					payload: data,
 				});
-				toast.success("Wiki entry updated successfully");
 			} else {
 				await createWiki.mutateAsync({
 					projectId,
 					payload: data,
 				});
-				toast.success("Wiki entry created successfully");
 			}
 			form.reset();
 			onOpenChange(false);
-		} catch {
-			toast.error(isEditing ? "Failed to update wiki entry" : "Failed to create wiki entry");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

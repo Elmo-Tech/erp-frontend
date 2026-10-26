@@ -3,7 +3,21 @@
  * Type definitions for employee management
  */
 
-export interface Employee {
+export interface EmployeePersonalDetails {
+	jobTitle?: string | null;
+	workArrangement?: "on_site" | "freelance" | "remote" | "" | null;
+	birthDate?: string | null;
+	appointmentDate?: string | null;
+	residence?: string | null;
+	nationalId?: string | null;
+	mobile?: string | null;
+	otherPhone?: string | null;
+	education?: string | null;
+}
+
+export interface Employee extends EmployeePersonalDetails {
+	canViewPersonalDetails?: boolean;
+	employmentType?: string | null;
 	userId: number;
 	name: string;
 	email: string;
@@ -47,7 +61,7 @@ export interface EmployeeListResponse {
 	pagination: EmployeePagination;
 }
 
-export interface CreateEmployeePayload {
+export interface CreateEmployeePayload extends EmployeePersonalDetails {
 	name: string;
 	email: string;
 	password: string;
@@ -63,7 +77,7 @@ export interface CreateEmployeePayload {
 	skills?: string[];
 }
 
-export interface UpdateEmployeePayload {
+export interface UpdateEmployeePayload extends EmployeePersonalDetails {
 	name?: string;
 	email?: string;
 	password?: string;

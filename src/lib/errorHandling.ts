@@ -4,6 +4,20 @@
  * Centralized error handling, logging, and reporting utilities.
  */
 
+import { toast } from "sonner";
+
+const reportedErrors = new WeakSet<object>();
+
+/** One owner per rejected request, even when both the interceptor and a form handle it. */
+export function notifyApiError(error: unknown): void {
+	if (typeof error === "object" && error !== null) {
+		if (reportedErrors.has(error)) return;
+		reportedErrors.add(error);
+	}
+	const message = handleApiError(error);
+	toast.error(message, { id: `api-error:${message}` });
+}
+
 export interface ErrorLog {
 	message: string;
 	stack?: string;

@@ -10,7 +10,7 @@ import { WikiFormDialog } from "./WikiFormDialog";
 import { WikiViewerDialog } from "./WikiViewerDialog";
 import { Plus, BookOpen, Eye, Pencil, Trash2, Lock, MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { format } from "date-fns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
@@ -38,10 +38,9 @@ export function WikiTab({ projectId }: WikiTabProps) {
 				projectId,
 				wikiId: wikiToDelete.wikiId,
 			});
-			toast.success("Wiki entry deleted successfully");
 			setWikiToDelete(null);
-		} catch {
-			toast.error("Failed to delete wiki entry");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

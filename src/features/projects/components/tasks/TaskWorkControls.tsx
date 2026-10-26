@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock3, Loader2, OctagonPause, Pause, Play, Square } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useResumeTimer, useStartTimer } from "@/features/sales/hooks";
 import { timeEntriesApi } from "@/features/sales/api/timeEntries";
 import { TrackableType } from "@/features/sales/types";
-import { handleApiError } from "@/lib/errorHandling";
+import { notifyApiError } from "@/lib/errorHandling";
 import { cn } from "@/lib/utils";
 import { useTimerStore } from "@/store/timerStore";
 import { useAuthStore } from "@/store/authStore";
@@ -66,7 +65,7 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 			await refresh();
 			// Success toast comes from the backend message via the axios interceptor.
 		},
-		onError: (error) => toast.error(handleApiError(error)),
+		onError: notifyApiError,
 	});
 	const pending = startTimer.isPending || resumeTimer.isPending || controlTimer.isPending;
 	const handleStart = async () => {
@@ -76,7 +75,7 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 			await refresh();
 			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 	const elapsed = (start: string) => formatWorkDuration((now - new Date(start).getTime()) / 1000);

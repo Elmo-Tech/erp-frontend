@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { AlertCircle, FileText, Info, Loader2, Pencil } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -12,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
+import { HrAction } from "./HrAction";
 import { useAuthStore } from "@/store/authStore";
 import { useEmployeeLateDeductions, useEvaluateEmployeeLateDeductions, useOverrideLateDeduction, useResetEmployeeLateDeductions } from "../hooks/useEmployeeLateDeductions";
 import { buildLateDeductionOverridePayload, formatLateDeductionOccurrence, lateDeductionOverrideSchema } from "../lib/late-deductions";
@@ -123,10 +123,10 @@ function LateDeductionDetails({ record, canReview, isOverriding, onOverride }: {
 						<p className="text-lg font-semibold">{formatAmount(record.finalAmount)}</p>
 					</div>
 					{canReview && record.status !== "waived" && (
-						<Button type="button" size="sm" variant="outline" disabled={isOverriding} onClick={() => onOverride(record)}>
+						<HrAction resource="deductions" action="override"><Button type="button" size="sm" variant="outline" disabled={isOverriding} onClick={() => onOverride(record)}>
 							<Pencil />
 							Override amount
-						</Button>
+						</Button></HrAction>
 					)}
 				</div>
 			</div>
@@ -226,9 +226,8 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 	const handleEvaluate = async () => {
 		try {
 			await evaluateLateDeductions.mutateAsync({ employeeId, year, month });
-			toast.success(`Late deductions evaluated for ${monthFormatter.format(new Date(2000, month - 1, 1))} ${year}`);
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -237,9 +236,8 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 		if (!confirmed) return;
 		try {
 			await resetLateDeductions.mutateAsync({ employeeId, year, month, reason: "Manual monthly reset from HR panel." });
-			toast.success("Late deductions reset for the month");
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -254,10 +252,9 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 				employeeId,
 				payload: buildLateDeductionOverridePayload(overrideValues),
 			});
-			toast.success("Late deduction override saved");
 			resetOverride();
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -311,14 +308,14 @@ export function EmployeeLateDeductionsPanel({ employeeId, employeeName, canManag
 							</Select>
 							{canReview && (
 								<>
-									<Button type="button" onClick={() => void handleEvaluate()} disabled={evaluateLateDeductions.isPending}>
+									<HrAction resource="deductions" action="evaluate"><Button type="button" onClick={() => void handleEvaluate()} disabled={evaluateLateDeductions.isPending}>
 										{evaluateLateDeductions.isPending && <Loader2 className="animate-spin" />}
 										Evaluate
-									</Button>
-									<Button type="button" variant="outline" onClick={() => void handleReset()} disabled={resetLateDeductions.isPending}>
+									</Button></HrAction>
+									<HrAction resource="deductions" action="reset"><Button type="button" variant="outline" onClick={() => void handleReset()} disabled={resetLateDeductions.isPending}>
 										{resetLateDeductions.isPending && <Loader2 className="animate-spin" />}
 										Reset month
-									</Button>
+									</Button></HrAction>
 								</>
 							)}
 						</div>

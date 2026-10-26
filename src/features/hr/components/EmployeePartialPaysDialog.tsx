@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { AlertCircle, Ban, Check, FileText, Info, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -16,12 +15,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSelect } from "@/components/shared";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
 import { useEmploymentContracts } from "../hooks/useEmploymentContracts";
 import { useApproveEmployeePartialPay, useCancelEmployeePartialPay, useCreateEmployeePartialPay, useEmployeePartialPays, usePreviewEmployeePartialPay } from "../hooks/useEmployeePartialPays";
 import { buildEmployeePartialPayPayload, employeePartialPayFormSchema, formatEmployeePartialPayAmount, getCurrentEmployeePartialPayPeriod, getDefaultEmployeePartialPayFormValues, getEmployeePartialPayKindLabel, getEmployeePartialPayPolicySnapshotValue, getEmployeePartialPayStatusLabel } from "../lib/employee-partial-pays";
 import type { EmploymentContract, EmploymentContractWorkDay } from "../types/employment-contract";
-import type { EmployeePartialPay, EmployeePartialPayCalculation, EmployeePartialPayFormValues, EmployeePartialPayKind, EmployeePartialPayStatus, EmployeePartialPaySummary } from "../types/employee-partial-pays";
+import type { EmployeePartialPay, EmployeePartialPayCalculation, EmployeePartialPayFormValues, EmployeePartialPayStatus, EmployeePartialPaySummary } from "../types/employee-partial-pays";
 
 interface EmployeePartialPaysPanelProps {
 	employeeId: number;
@@ -208,8 +207,8 @@ export function EmployeePartialPaysPanel({ employeeId, employeeName, canManage, 
 	const currentPeriod = getCurrentEmployeePartialPayPeriod();
 	const [year, setYear] = useState(currentPeriod.year);
 	const [month, setMonth] = useState(currentPeriod.month);
-	const [preview, setPreview] = useState<EmployeePartialPayCalculation | null>(null);
-	const [requestError, setRequestError] = useState<string | null>(null);
+	const [previewResult, setPreviewResult] = useState<{ key: string; value: EmployeePartialPayCalculation } | null>(null);
+	const [requestErrorResult, setRequestErrorResult] = useState<{ key: string; value: string } | null>(null);
 	const [pendingAction, setPendingAction] = useState<PendingEmployeePartialPayAction | null>(null);
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [reviewNote, setReviewNote] = useState("");
@@ -226,7 +225,12 @@ export function EmployeePartialPaysPanel({ employeeId, employeeName, canManage, 
 	});
 	const contractId = useWatch({ control: form.control, name: "contractId" });
 	const kind = useWatch({ control: form.control, name: "kind" });
-	const contracts = contractsQuery.data ?? [];
+	const requestKey = `${contractId}:${kind}:${month}:${year}`;
+	const preview = previewResult?.key === requestKey ? previewResult.value : null;
+	const requestError = requestErrorResult?.key === requestKey ? requestErrorResult.value : null;
+	const setPreview = (value: EmployeePartialPayCalculation | null) => setPreviewResult(value ? { key: requestKey, value } : null);
+	const setRequestError = (value: string | null) => setRequestErrorResult(value ? { key: requestKey, value } : null);
+	const contracts = useMemo(() => contractsQuery.data ?? [], [contractsQuery.data]);
 	const records = [...(partialPaysQuery.data?.records ?? [])].sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 	const draftRecords = records.filter((record) => record.status === "draft");
 	const historicalRecords = records.filter((record) => record.status !== "draft");
@@ -242,10 +246,6 @@ export function EmployeePartialPaysPanel({ employeeId, employeeName, canManage, 
 		form.setValue("contractId", defaultContract.id, { shouldValidate: true });
 	}, [contractId, contracts, form]);
 
-	useEffect(() => {
-		setPreview(null);
-		setRequestError(null);
-	}, [contractId, kind, month, year]);
 
 	const resetAction = () => {
 		setPendingAction(null);
@@ -266,7 +266,7 @@ export function EmployeePartialPaysPanel({ employeeId, employeeName, canManage, 
 		} catch (error) {
 			const message = handleApiError(error);
 			setRequestError(message);
-			toast.error(message);
+			notifyApiError(error);
 		}
 	};
 
@@ -280,11 +280,10 @@ export function EmployeePartialPaysPanel({ employeeId, employeeName, canManage, 
 				payload: buildEmployeePartialPayPayload(form.getValues(), year, month),
 			});
 			setPreview(null);
-			toast.success("Partial pay created as a draft");
 		} catch (error) {
 			const message = handleApiError(error);
 			setRequestError(message);
-			toast.error(message);
+			notifyApiError(error);
 		}
 	};
 
@@ -305,12 +304,11 @@ export function EmployeePartialPaysPanel({ employeeId, employeeName, canManage, 
 			} else {
 				await cancelPartialPay.mutateAsync({ id: pendingAction.partialPay.id, employeeId, payload });
 			}
-			toast.success(`Partial pay ${pendingAction.action === "approve" ? "approved" : "cancelled"}`);
 			resetAction();
 		} catch (error) {
 			const message = handleApiError(error);
 			setActionError(message);
-			toast.error(message);
+			notifyApiError(error);
 		}
 	};
 

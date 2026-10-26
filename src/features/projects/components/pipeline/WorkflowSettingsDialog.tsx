@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowDown, ArrowUp, Loader2, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -79,10 +79,9 @@ export function WorkflowSettingsDialog({ projectId, stages, canManageTemplates, 
 	const save = async () => {
 		try {
 			await updateWorkflow.mutateAsync(draft);
-			toast.success("Project workflow updated");
 			onOpenChange(false);
-		} catch {
-			toast.error("Could not update the workflow. Stages containing tasks cannot be removed.");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -90,10 +89,9 @@ export function WorkflowSettingsDialog({ projectId, stages, canManageTemplates, 
 		if (!templateId) return;
 		try {
 			await applyTemplate.mutateAsync(Number(templateId));
-			toast.success("Workflow template applied");
 			onOpenChange(false);
-		} catch {
-			toast.error("Templates can only replace a pipeline before tasks are created");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -101,10 +99,9 @@ export function WorkflowSettingsDialog({ projectId, stages, canManageTemplates, 
 		if (!templateName.trim()) return;
 		try {
 			await createTemplate.mutateAsync({ name: templateName.trim(), stages: draft });
-			toast.success("Reusable workflow template created");
 			setTemplateName("");
-		} catch {
-			toast.error("Could not create the workflow template");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

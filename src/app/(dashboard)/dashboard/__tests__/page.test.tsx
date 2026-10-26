@@ -52,6 +52,7 @@ describe("DashboardPage", () => {
 				message: "ok",
 				data: {
 					role: "admin",
+					liveWork: { activeTimerCount: 2, working: [{ userId: 2, name: "Working Employee", taskId: 1, taskTitle: "Build interface", projectId: 1, startedAt: "2026-10-25T10:00:00Z" }], idle: [{ userId: 3, name: "Idle Employee" }] },
 					stats: {
 						totalProjects: 2,
 						projectsChange: 5,
@@ -79,8 +80,10 @@ describe("DashboardPage", () => {
 	it("renders the admin KPI, operational charts, and delivery timeline", () => {
 		renderWithClient(<DashboardPage />);
 
-		expect(screen.getByText("Monthly Sales")).toBeInTheDocument();
-		expect(screen.getByText("$12,500")).toBeInTheDocument();
+		expect(screen.getByText("Running Timers")).toBeInTheDocument();
+		expect(screen.getByText("Working Employee")).toBeInTheDocument();
+		expect(screen.getByText("Build interface")).toBeInTheDocument();
+		expect(screen.getByText("Idle Employee")).toBeInTheDocument();
 		expect(screen.getByText("Project portfolio")).toBeInTheDocument();
 		expect(screen.getByText("Task attention")).toBeInTheDocument();
 		expect(screen.getByText("Delivery timeline")).toBeInTheDocument();

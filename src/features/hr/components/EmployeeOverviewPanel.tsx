@@ -11,12 +11,14 @@ import { formatPermissionDuration, getCurrentPermissionMonth } from "../lib/shor
 import { useEmployeeOverview } from "../hooks/useEmployeeOverview";
 import { EmployeeWorkTarget, EmployeeTimeOffBalances } from "./EmployeeHrSummary";
 import { EmployeeSupervisionPanel } from "./EmployeeSupervisionPanel";
+import { useHrAccess } from "../hooks/useHrAccess";
 
 const money = (value: number | null) => value === null ? "Not set" : value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function EmployeeOverviewPanel({ employee, canManage, isActive }: { employee: Employee; canManage: boolean; isActive: boolean }) {
+	const access = useHrAccess();
 	const [month, setMonth] = useState(getCurrentPermissionMonth);
-	const query = useEmployeeOverview(employee.userId, month, isActive && canManage);
+	const query = useEmployeeOverview(employee.userId, month, isActive && (canManage || access.overview));
 	const data = query.data;
 	const cards = data ? [
 		{ label: "Gross salary", value: money(data.salaryPeriod?.grossSalary ?? data.salary), detail: data.salaryPeriod ? `${data.salaryPeriod.serviceDays} of ${data.salaryPeriod.calendarDays} days this month` : "Current employment terms" },
@@ -27,19 +29,24 @@ export function EmployeeOverviewPanel({ employee, canManage, isActive }: { emplo
 
 	return (
 		<div className="space-y-6">
+			{employee.canViewPersonalDetails !== false && <section className="rounded-xl border bg-card p-5"><h2 className="font-semibold">Employee details</h2><dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[
+				["Full name", employee.name], ["Job title", employee.jobTitle], ["Work arrangement", employee.workArrangement?.replaceAll("_", " ")],
+				["Birthday", employee.birthDate], ["Appointment date", employee.appointmentDate], ["Employment", employee.employmentType?.replaceAll("_", " ")],
+				["Residence", employee.residence], ["National ID", employee.nationalId], ["Mobile", employee.mobile], ["Other number", employee.otherPhone], ["Education", employee.education],
+			].map(([label, value]) => <div key={label}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 break-words text-sm">{value || "Not recorded"}</dd></div>)}</dl></section>}
 			<div className="flex flex-wrap items-end justify-between gap-3">
 				<div>
 					<h2 className="text-lg font-semibold">Employee overview</h2>
 					<p className="text-sm text-muted-foreground">Salary, advances, deductions, attendance, leave, and permissions at a glance.</p>
 				</div>
-				{canManage && (
+				{(canManage || access.overview) && (
 					<div className="space-y-1">
 						<label htmlFor="employee-overview-month" className="text-sm font-medium">Summary month</label>
 						<Input id="employee-overview-month" type="month" value={month} onChange={(event) => setMonth(event.target.value)} className="w-44" />
 					</div>
 				)}
 			</div>
-			{canManage && (query.isLoading ? (
+			{(canManage || access.overview) && (query.isLoading ? (
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
 					{Array.from({ length: 8 }, (_, index) => <Skeleton key={index} className="h-28" />)}
 				</div>
@@ -72,10 +79,10 @@ export function EmployeeOverviewPanel({ employee, canManage, isActive }: { emplo
 					<div className="flex flex-wrap gap-2">{employee.skills.map((skill) => <Badge key={skill} variant="secondary">{skill}</Badge>)}</div>
 				) : <p className="text-sm text-muted-foreground">No skills recorded.</p>}
 			</section>
-			{canManage && (
+			{access.can("manage_supervision") && (
 				<section className="space-y-3 border-t pt-5">
 					<h3 className="font-semibold">Supervision</h3>
-					<EmployeeSupervisionPanel employeeId={employee.userId} employeeName={employee.name} canManage={canManage} isActive={isActive} />
+					<EmployeeSupervisionPanel employeeId={employee.userId} employeeName={employee.name} canManage isActive={isActive} />
 				</section>
 			)}
 		</div>

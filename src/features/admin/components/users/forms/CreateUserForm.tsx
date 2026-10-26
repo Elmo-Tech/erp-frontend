@@ -8,9 +8,8 @@ import { useRoles } from "../../../hooks/useRoles";
 import { useUserSpecializations } from "../../../hooks/useEnums";
 import { createUserSchema, CreateUserFormData } from "../../../schemas/userSchema";
 import { UserFormFields } from "./UserFormFields";
-import { toast } from "sonner";
 import { getRoleLabel } from "@/config/simplification";
-import { handleApiError } from "@/lib/errorHandling";
+import { notifyApiError } from "@/lib/errorHandling";
 import { Form } from "@/components/ui/form";
 import { useAuthStore } from "@/store/authStore";
 
@@ -22,7 +21,8 @@ interface CreateUserFormProps {
 
 export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserFormProps) {
 	const createUser = useCreateUser();
-	const { data: rolesData } = useRoles();
+	const canAssignRoles = useAuthStore((state) => state.hasPermission("assign_user_roles"));
+	const { data: rolesData } = useRoles(open && canAssignRoles);
 	const { data: specializationsData } = useUserSpecializations();
 	const canManageProtectedUsers = useAuthStore((state) => state.hasPermission("manage_protected_users"));
 
@@ -65,11 +65,10 @@ export function CreateUserForm({ open, onOpenChange, onSuccess }: CreateUserForm
 	const handleSubmit = async (data: CreateUserFormData) => {
 		try {
 			await createUser.mutateAsync(data);
-			toast.success("User created successfully");
 			onOpenChange(false);
 			onSuccess?.();
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 

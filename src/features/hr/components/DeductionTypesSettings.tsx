@@ -9,8 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
 import {
 	useCreateDeductionType,
 	useDeductionTypes,
@@ -47,7 +46,7 @@ export function DeductionTypesSettings() {
 			setEditingId(null);
 			form.reset({ name: "", code: "", description: "", category: "other", isActive: true });
 		} catch (e) {
-			toast.error(handleApiError(e));
+			notifyApiError(e);
 		}
 	};
 
@@ -92,7 +91,7 @@ export function DeductionTypesSettings() {
 							<span>{t.name} ({t.code}) {!t.is_active && "(inactive)"}</span>
 							<span className="flex gap-2">
 								<Button size="sm" variant="outline" onClick={() => { setEditingId(t.id); form.reset({ name: t.name, code: t.code, description: t.description ?? "", category: t.category, isActive: t.is_active }); }}>Edit</Button>
-									<Button size="sm" variant="ghost" onClick={async () => { try { await deleteType.mutateAsync(t.id); } catch (e) { toast.error(handleApiError(e)); } }}>Remove</Button>
+									<Button size="sm" variant="ghost" onClick={async () => { try { await deleteType.mutateAsync(t.id); } catch (e) { notifyApiError(e); } }}>Remove</Button>
 							</span>
 						</div>
 					))}

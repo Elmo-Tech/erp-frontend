@@ -102,6 +102,7 @@ export interface DeliveryTimelineItem {
 
 // Role-based Dashboard Responses
 export interface AdminDashboardOverview {
+	liveWork?: { activeTimerCount: number; working: { userId: number; name: string; taskId: number; taskTitle: string; projectId: number | null; startedAt: string }[]; idle: { userId: number; name: string }[] };
 	role: "admin";
 	stats: AdminDashboardStats;
 	recentProjects: RecentProject[];
@@ -118,6 +119,7 @@ export interface ManagerDashboardOverview {
 }
 
 export interface DeveloperDashboardOverview {
+	projects?: { projectId: number; name: string; deadline: string | null }[];
 	role: "developer";
 	stats: DeveloperDashboardStats;
 	pointsCycle: PointsCycleSummary;

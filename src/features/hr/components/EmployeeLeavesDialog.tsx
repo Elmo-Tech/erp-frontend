@@ -4,7 +4,6 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { AlertCircle, Ban, Check, FileText, Info, Loader2, X } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -16,10 +15,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { FormInput, FormSelect, FormTextarea } from "@/components/shared";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
 import { useApproveEmployeeLeave, useCancelEmployeeLeave, useCreateEmployeeLeave, useEmployeeLeaves, useLeaveTypes, useRejectEmployeeLeave } from "../hooks/useEmployeeLeaves";
 import { buildEmployeeLeavePayload, getDefaultLeaveRequestFormValues, isValidLeaveDate, leaveRequestSchema } from "../lib/leave-management";
 import type { EmployeeLeave, EmployeeLeaveStatus, LeaveRequestFormValues } from "../types/leave-management";
+import { LeaveBalanceEditor } from "./LeaveBalanceEditor";
+import { HrAction } from "./HrAction";
+import { useHrAccess } from "../hooks/useHrAccess";
 
 interface EmployeeLeavesPanelProps {
 	employeeId: number;
@@ -77,13 +79,13 @@ function formatLeaveDateTime(value: string): string {
 }
 
 function getAvailableReviewActions(status: EmployeeLeaveStatus): LeaveReviewAction[] {
-	if (status === "pending") return ["approve", "reject", "cancel"];
-	if (status === "approved") return ["cancel"];
+	if (status === "pending") return ["approve", "reject"];
 	return [];
 }
 
 function LeaveRequestSummary({ leave, canManage, isReviewing, onReview }: { leave: EmployeeLeave; canManage: boolean; isReviewing: boolean; onReview: (leave: EmployeeLeave, action: LeaveReviewAction) => void }) {
-	const actions = getAvailableReviewActions(leave.status);
+	const access = useHrAccess();
+	const actions = getAvailableReviewActions(leave.status).filter((action) => access.action("leaves", action));
 
 	return (
 		<div className="rounded-lg border bg-muted/20 p-4">
@@ -174,7 +176,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 			// Success toast comes from the backend message via the axios interceptor.
 			form.reset(getDefaultLeaveRequestFormValues());
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -196,7 +198,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 			setPendingReview(null);
 			setReviewNote("");
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 		}
 	};
 
@@ -244,7 +246,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 						<AlertDescription>Saving paid leave consumes its balance immediately. Unpaid leave creates a salary deduction. Cancelling restores the balance or cancels the unprocessed deduction.</AlertDescription>
 					</Alert>
 
-					<section className="space-y-3">
+					<HrAction resource="leaves" action="create"><section className="space-y-3">
 						<div>
 							<h3 className="font-semibold">Register leave</h3>
 							<p className="text-sm text-muted-foreground">The server confirms working-day duration after submission.</p>
@@ -330,7 +332,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 								</DialogFooter>
 							</form>
 						</Form>
-					</section>
+					</section></HrAction>
 
 					{leavesQuery.isLoading ? (
 						<div className="space-y-3">
@@ -373,6 +375,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 												</div>
 												<p className="mt-3 text-2xl font-semibold">{balance.remainingDays} days</p>
 												<p className="text-sm text-muted-foreground">{balance.usedDays} used of {balance.allocatedDays} allocated</p>
+												{canManage && <HrAction resource="leaves" action="allocate"><LeaveBalanceEditor employeeId={employeeId} year={year} balance={balance} /></HrAction>}
 											</div>
 										))}
 									</div>

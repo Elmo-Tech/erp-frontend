@@ -4,8 +4,12 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UsersTable, CreateUserForm, UpdateUserForm } from "../users";
 import { User } from "../../types";
+import { useAuthStore } from "@/store/authStore";
 
 export function UsersWrapper() {
+	const { hasPermission: has } = useAuthStore((state) => state);
+	const canCreate = has("manage_users") || has("create_users");
+	const canEdit = has("manage_users") || has("edit_users");
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 	const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
 	const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -32,16 +36,16 @@ export function UsersWrapper() {
 			</CardHeader>
 			<CardContent>
 				<UsersTable
-					onAdd={handleAdd}
-					onEdit={handleEdit}
+					onAdd={canCreate ? handleAdd : undefined}
+					onEdit={canEdit ? handleEdit : undefined}
 				/>
 
-				<CreateUserForm
+				{canCreate && <CreateUserForm
 					open={createDialogOpen}
 					onOpenChange={setCreateDialogOpen}
-				/>
+				/>}
 
-				{selectedUser && (
+				{selectedUser && canEdit && (
 					<UpdateUserForm
 						open={updateDialogOpen}
 						onOpenChange={handleUpdateClose}

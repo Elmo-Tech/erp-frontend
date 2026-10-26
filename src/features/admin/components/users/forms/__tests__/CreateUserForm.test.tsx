@@ -76,7 +76,8 @@ describe("CreateUserForm", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Create User" }));
 
 		await waitFor(() => {
-			expect(mocks.toastError).toHaveBeenCalledWith("The email has already been taken.");
+			expect(mocks.toastError).toHaveBeenCalledWith("The email has already been taken.", { id: "api-error:The email has already been taken." });
+			expect(mocks.toastError).toHaveBeenCalledTimes(1);
 		});
 	});
 });

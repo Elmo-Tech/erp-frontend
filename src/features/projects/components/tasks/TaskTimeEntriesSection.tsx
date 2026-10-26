@@ -14,7 +14,7 @@ import { TimeEntry } from "@/features/sales/types/timeEntry";
 import { useTimeEntriesByTrackable, useUpdateTimeEntry } from "@/features/sales/hooks/useTimeEntries";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Clock, Pencil, User } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { format } from "date-fns";
 
 const editTimeEntrySchema = z.object({
@@ -74,11 +74,10 @@ export function TaskTimeEntriesSection({ task }: TaskTimeEntriesSectionProps) {
 					durationMinutes: totalMinutes,
 				},
 			});
-			toast.success("Time entry updated successfully");
 			setEditingEntry(null);
 			form.reset();
-		} catch {
-			toast.error("Failed to update time entry");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

@@ -12,7 +12,7 @@ import { Task, TaskActivity } from "@/features/dashboard/types/task";
 import { useAddComment } from "@/features/dashboard/hooks/useTasks";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { MessageSquare, Clock, UserPlus, UserMinus, CheckCircle2, XCircle, Play, Square, Tag, AlertCircle, Send, Lock, Info } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -81,10 +81,9 @@ export function TaskActivitySection({ task, activities }: TaskActivitySectionPro
 				taskId: task.taskId,
 				payload: { comment: comment.trim(), isInternal },
 			});
-			toast.success(isInternal ? "Internal note added" : "Comment added");
 			setComment("");
-		} catch {
-			toast.error("Failed to add comment");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

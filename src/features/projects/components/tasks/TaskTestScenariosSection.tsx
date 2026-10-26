@@ -12,7 +12,7 @@ import { FormDialog, FormInput, FormTextarea } from "@/components/shared";
 import { Task, TaskTestScenario, TestScenarioStatus, TaskType } from "@/features/dashboard/types/task";
 import { useAddTestScenario, useCompleteTestScenario, useVerifyTestScenario } from "@/features/dashboard/hooks/useTasks";
 import { Plus, Check, X, Clock, CheckCircle2, XCircle, AlertCircle, Info } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -108,20 +108,18 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 	const handleAddScenario = async (data: AddScenarioFormData) => {
 		try {
 			await addScenario.mutateAsync({ taskId: task.taskId, projectId: task.projectId, payload: data });
-			toast.success("Test scenario added");
 			setShowAddDialog(false);
 			addForm.reset();
-		} catch {
-			toast.error("Failed to add test scenario");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
 	const handleComplete = async (scenario: TaskTestScenario) => {
 		try {
 			await completeScenario.mutateAsync({ scenarioId: scenario.scenarioId, taskId: task.taskId, projectId: task.projectId });
-			toast.success("Test marked as completed");
-		} catch {
-			toast.error("Failed to complete test");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -134,11 +132,10 @@ export function TaskTestScenariosSection({ task, scenarios }: TaskTestScenariosS
 				projectId: task.projectId,
 				payload: data,
 			});
-			toast.success(data.passed ? "Test verified as passed" : "Test marked as failed");
 			setShowVerifyDialog(null);
 			verifyForm.reset();
-		} catch {
-			toast.error("Failed to verify test");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

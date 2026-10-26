@@ -7,7 +7,7 @@ import { TaskStatusBadge, TaskPriorityBadge } from "@/components/shared/StatusBa
 import { useAuthStore } from "@/store/authStore";
 import { useDashboardStats } from "@/features/dashboard/hooks/useDashboardStats";
 import { useMyAssignedTasks } from "@/features/dashboard/hooks/useTasks";
-import { FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink, DollarSign } from "lucide-react";
+import { FolderKanban, Clock, Users, ArrowUpRight, ArrowDownRight, AlertCircle, ListTodo, PlayCircle, Timer, Coffee, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboardOverview } from "@/features/dashboard/types";
 import { getRoleLabel } from "@/config/simplification";
@@ -86,19 +86,19 @@ function AdminDashboard({ data }: { data: AdminDashboardOverview }) {
 			isAbsolute: true,
 		},
 		{
-			title: "Monthly Sales",
-			value: data?.stats?.monthlySales ?? 0,
-			change: data?.stats?.salesChange ?? 0,
-			icon: DollarSign,
+			title: "Running Timers",
+			value: data?.liveWork?.activeTimerCount ?? 0,
+			icon: Timer,
 			color: "text-emerald-600",
 			bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
-			format: (v: number) => `$${v.toLocaleString()}`,
+			format: (v: number) => v.toLocaleString(),
 		},
 	];
 
 	return (
 		<>
 			<StatsGrid stats={stats} />
+			{data.liveWork && <div className="grid gap-4 md:grid-cols-2"><Card><CardHeader><CardTitle>Working now ({data.liveWork.working.length})</CardTitle><CardDescription>Employees with an active work timer</CardDescription></CardHeader><CardContent className="space-y-3">{data.liveWork.working.length ? data.liveWork.working.map((session) => <Link className="block rounded-lg border p-3" key={`${session.userId}-${session.taskId}`} href={session.projectId ? `/dashboard/projects/${session.projectId}` : `/dashboard/my-tasks?highlight=${session.taskId}`}><p className="font-medium">{session.name}</p><p className="text-sm text-muted-foreground">{session.taskTitle}</p></Link>) : <p className="text-sm text-muted-foreground">No work timers running.</p>}</CardContent></Card><Card><CardHeader><CardTitle>No active timer ({data.liveWork.idle.length})</CardTitle><CardDescription>Timer status is independent of fingerprint attendance</CardDescription></CardHeader><CardContent className="flex flex-wrap gap-2">{data.liveWork.idle.map((employee) => <span key={employee.userId} className="rounded-full bg-muted px-3 py-1 text-sm">{employee.name}</span>)}</CardContent></Card></div>}
 			<DashboardOperationsCharts stats={data.stats} />
 			<DeliveryTimeline entries={data.timeline ?? []} />
 			<div className="grid gap-4 md:grid-cols-2">
@@ -234,6 +234,7 @@ function EmployeeDashboard({ data }: { data: DeveloperDashboardOverview }) {
 	return (
 		<>
 			<StatsGrid stats={stats} />
+			<Card><CardHeader><CardTitle>My projects & deadlines</CardTitle></CardHeader><CardContent className="space-y-3">{data.projects?.length ? data.projects.map((project) => <Link key={project.projectId} href={`/dashboard/projects/${project.projectId}`} className="flex flex-wrap justify-between gap-2 rounded-lg border p-3"><span className="font-medium">{project.name}</span><span className="text-sm text-muted-foreground">Deadline: {project.deadline || "Not set"}</span></Link>) : <p className="text-sm text-muted-foreground">No projects assigned.</p>}</CardContent></Card>
 			<div className="grid gap-4 md:grid-cols-2">
 				<Card>
 					<CardHeader>

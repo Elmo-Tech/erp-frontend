@@ -2,6 +2,8 @@ export interface Attendance {
 	attendanceId: number;
 	userId: number;
 	date: string;
+	source: 'web' | 'device' | 'manual';
+	deviceId: number | null;
 	clockIn: string | null;
 	clockOut: string | null;
 	expectedClockIn: string | null;

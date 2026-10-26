@@ -10,7 +10,7 @@ import { useProjectMembers, useRemoveProjectMember, useUpdateProjectMember } fro
 import { ProjectMember, MemberRole, MEMBER_ROLES } from "../../types/projectMember";
 import { AddMemberDialog } from "./AddMemberDialog";
 import { Users, Plus, MoreHorizontal, UserMinus, Shield } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 interface TeamTabProps {
@@ -36,10 +36,9 @@ export function TeamTab({ projectId }: TeamTabProps) {
 				projectId,
 				memberId: memberToRemove.memberId,
 			});
-			toast.success("Member removed successfully");
 			setMemberToRemove(null);
-		} catch {
-			toast.error("Failed to remove member");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
@@ -50,9 +49,8 @@ export function TeamTab({ projectId }: TeamTabProps) {
 				memberId,
 				payload: { role },
 			});
-			toast.success("Role updated successfully");
-		} catch {
-			toast.error("Failed to update role");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

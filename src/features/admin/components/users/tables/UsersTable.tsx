@@ -10,7 +10,7 @@ import { User, UsersFilters } from "../../../types";
 import { getUsersColumns } from "./columns";
 import { DeleteUserDialog } from "../dialogs/DeleteUserDialog";
 import { Plus, Users } from "lucide-react";
-import { toast } from "sonner";
+import { notifyApiError } from "@/lib/errorHandling";
 
 interface UsersTableProps {
 	onEdit?: (user: User) => void;
@@ -38,20 +38,18 @@ export function UsersTable({ onEdit, onAdd }: UsersTableProps) {
 
 		try {
 			await deleteUser.mutateAsync(userToDelete.userId);
-			toast.success("User deleted successfully");
 			setDeleteDialogOpen(false);
 			setUserToDelete(null);
-		} catch {
-			toast.error("Failed to delete user");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 
 	const handleToggleStatus = async (user: User) => {
 		try {
 			await toggleStatus.mutateAsync(user.userId);
-			toast.success(user.isActive ? "User deactivated successfully" : "User activated successfully");
-		} catch {
-			toast.error("Failed to update user status");
+		} catch (error) {
+			notifyApiError(error);
 		}
 	};
 

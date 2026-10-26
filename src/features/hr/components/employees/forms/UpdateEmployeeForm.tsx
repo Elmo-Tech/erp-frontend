@@ -11,9 +11,11 @@ import { useUserSpecializations } from "@/features/admin/hooks/useEnums";
 import type { Employee, UpdateEmployeePayload } from "../../../types";
 import { EmployeeFormFields } from "./EmployeeFormFields";
 import { toast } from "sonner";
-import { handleApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
+import { employeeDetailsDefaults, employeeDetailsSchema } from "../../../lib/employee-details";
 
 const employeeSchema = z.object({
+	...employeeDetailsSchema,
 	name: z.string().min(1, "Name is required"),
 	email: z.string().email("Invalid email"),
 	password: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
@@ -41,6 +43,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 	const form = useForm<EmployeeFormData>({
 		resolver: zodResolver(employeeSchema),
 		defaultValues: {
+			...employeeDetailsDefaults(employee),
 			name: employee.name,
 			email: employee.email,
 			password: "",
@@ -52,6 +55,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 
 	const setFormData = (emp: Employee) => {
 		form.reset({
+			...employeeDetailsDefaults(emp),
 			name: emp.name,
 			email: emp.email,
 			password: "",
@@ -70,7 +74,8 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 	};
 
 	const handleSubmit = async (data: EmployeeFormData) => {
-		const payload: UpdateEmployeePayload = {};
+		const personalDetails = employeeDetailsDefaults(data);
+		const payload: UpdateEmployeePayload = { ...personalDetails };
 		if (data.name !== employee.name) payload.name = data.name;
 		if (data.email !== employee.email) payload.email = data.email;
 		if (data.password) payload.password = data.password;
@@ -83,7 +88,7 @@ export function UpdateEmployeeForm({ open, onOpenChange, employee, roles = [], o
 				await updateEmployee.mutateAsync({ id: employee.userId, payload });
 			}
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 			return;
 		}
 

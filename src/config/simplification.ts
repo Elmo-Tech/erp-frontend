@@ -1,3 +1,4 @@
+import { employeePermissions, settingsPermissions } from "./access";
 export const TABLES_APP_NAME = "The Tables ERP";
 
 export const moduleKeys = {
@@ -67,6 +68,7 @@ export interface SimplifiedNavItem {
 	href: string;
 	module: ModuleKey;
 	permission?: string;
+	anyPermissions?: string[];
 	roles?: string[];
 }
 
@@ -133,7 +135,7 @@ export const dashboardNavGroups: SimplifiedNavGroup[] = [
 				title: "Employees",
 				href: "/dashboard/employees",
 				module: moduleKeys.employees,
-				permission: "manage_employees",
+				anyPermissions: employeePermissions,
 			},
 			{
 				id: "my-attendance",
@@ -173,21 +175,21 @@ export const dashboardNavGroups: SimplifiedNavGroup[] = [
 				title: "Roles & Permissions",
 				href: "/dashboard/roles",
 				module: moduleKeys.roles,
-				permission: "manage_roles",
+				anyPermissions: ["manage_roles", "view_roles"],
 			},
 			{
 				id: "settings",
 				title: "Settings",
 				href: "/dashboard/settings",
 				module: moduleKeys.settings,
-				roles: ["super-admin", "admin", "manager"],
+				anyPermissions: settingsPermissions,
 			},
 			{
 				id: "profile",
 				title: "Profile",
 				href: "/dashboard/profile",
 				module: moduleKeys.profile,
-				roles: ["developer"],
+				// All authenticated employees can access their personal profile.
 			},
 		],
 	},
@@ -255,6 +257,7 @@ export const canShowNavigationItem = (
 ): boolean => {
 	if (!isModuleEnabled(item.module)) return false;
 	if (item.permission && !context.hasPermission(item.permission)) return false;
+	if (item.anyPermissions && !item.anyPermissions.some(context.hasPermission)) return false;
 	if (item.roles && (!context.role || !item.roles.includes(context.role))) return false;
 	return true;
 };

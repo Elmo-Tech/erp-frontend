@@ -1,8 +1,9 @@
 "use client";
 
+import { toast } from "sonner";
+
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { DatePicker } from "@/components/shared/forms/DatePicker";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useEmployees } from "@/features/hr/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
-import { handleApiError } from "@/lib/errorHandling";
+import { notifyApiError } from "@/lib/errorHandling";
 import { getViableSupervisorCandidates } from "@/features/dashboard/lib/taskSupervision";
 import { useProjectMembers } from "../../hooks/useProjectMembers";
 import {
@@ -106,7 +107,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 				});
 			}
 		} catch (error) {
-			toast.error(handleApiError(error));
+			notifyApiError(error);
 			return;
 		}
 
