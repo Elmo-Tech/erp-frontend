@@ -1,4 +1,7 @@
 /* Desktop delivery runs independently of open application tabs. */
+self.addEventListener("install", (event) => event.waitUntil(self.skipWaiting()));
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
 self.addEventListener("push", (event) => {
   let data;
   try { data = event.data.json(); } catch { return; }

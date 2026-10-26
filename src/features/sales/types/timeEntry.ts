@@ -65,6 +65,8 @@ export interface TimeEntryFilters {
 }
 
 export interface ActiveTimer {
+	targetStatus?: string;
+	targetMessage?: string | null;
 	timeEntryId: number;
 	userId: number;
 	userName: string;

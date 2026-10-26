@@ -4,6 +4,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import api from "@/lib/axios";
 import { Button } from "@/components/ui/button";
+import { NotificationSetupError, registerNotificationWorker } from "@/lib/desktopPush";
+import { handleApiError } from "@/lib/errorHandling";
 
 export interface NotificationPreferences { publicKey: string | null; enabled: boolean; reminderMinutes: number; intervals: number[] }
 
@@ -19,20 +21,25 @@ function applicationKey(key: string): Uint8Array<ArrayBuffer> {
 export function DesktopNotificationSettings() {
 	const query = useNotificationPreferences();
 	const [status, setStatus] = useState("");
+	const [technicalDetails, setTechnicalDetails] = useState("");
 	const [busy, setBusy] = useState(false);
 	const save = useMutation({ mutationFn: (reminderMinutes: number) => api.put("/notifications/preferences", { reminderMinutes }), onSuccess: () => query.refetch() });
 	const enable = async () => {
 		setBusy(true);
+		setStatus("");
+		setTechnicalDetails("");
 		try {
-			if (!("serviceWorker" in navigator) || !("PushManager" in window) || !window.isSecureContext) throw new Error("Desktop notifications need a supported browser and HTTPS.");
+			if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window) || !window.isSecureContext) throw new Error("Desktop notifications need HTTPS and a browser with Web Push support, such as an updated Chrome or Edge.");
 			if (!query.data?.enabled || !query.data.publicKey) throw new Error("Web Push keys need to be configured on the server.");
 			if (await Notification.requestPermission() !== "granted") throw new Error("Allow notifications in your browser's site settings.");
-			await navigator.serviceWorker.register("/push-sw.js");
-			const registration = await navigator.serviceWorker.ready;
+			const registration = await registerNotificationWorker();
 			const subscription = await registration.pushManager.getSubscription() ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationKey(query.data.publicKey) });
 			await api.post("/notifications/push-subscriptions", subscription.toJSON());
 			setStatus("Desktop notifications enabled on this browser.");
-		} catch (error) { setStatus(error instanceof Error ? error.message : "Unable to enable notifications."); }
+		} catch (error) {
+			setStatus(handleApiError(error));
+			if (error instanceof NotificationSetupError) setTechnicalDetails(error.technicalDetails ?? "");
+		}
 		finally { setBusy(false); }
 	};
 	const disable = async () => {
@@ -50,5 +57,6 @@ export function DesktopNotificationSettings() {
 		<div className="flex flex-wrap gap-2"><Button onClick={enable} disabled={busy || !query.data?.enabled}>Enable desktop notifications</Button><Button variant="outline" onClick={disable} disabled={busy}>Disable on this browser</Button></div>
 		{query.data && !query.data.enabled && <p className="text-sm text-muted-foreground">Desktop delivery awaits server Web Push configuration. In-app timer reminders remain available.</p>}
 		{status && <p role="status" className="text-sm">{status}</p>}
+		{technicalDetails && <details className="text-xs text-muted-foreground"><summary>Browser technical details</summary><p className="mt-2 break-words">{technicalDetails}</p></details>}
 	</section>;
 }

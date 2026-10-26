@@ -157,6 +157,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 											<div>
 												<p className="font-medium text-sm mb-1">Working on:</p>
 												<p className="text-sm text-muted-foreground">{timer.trackableDisplayName}</p>
+												{timer.targetMessage && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{timer.targetMessage}</p>}
 											</div>
 
 											<div className="flex items-center justify-between text-xs text-muted-foreground">

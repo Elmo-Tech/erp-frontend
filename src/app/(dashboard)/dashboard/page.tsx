@@ -98,7 +98,7 @@ function AdminDashboard({ data }: { data: AdminDashboardOverview }) {
 	return (
 		<>
 			<StatsGrid stats={stats} />
-			{data.liveWork && <div className="grid gap-4 md:grid-cols-2"><Card><CardHeader><CardTitle>Working now ({data.liveWork.working.length})</CardTitle><CardDescription>Employees with an active work timer</CardDescription></CardHeader><CardContent className="space-y-3">{data.liveWork.working.length ? data.liveWork.working.map((session) => <Link className="block rounded-lg border p-3" key={`${session.userId}-${session.taskId}`} href={session.projectId ? `/dashboard/projects/${session.projectId}` : `/dashboard/my-tasks?highlight=${session.taskId}`}><p className="font-medium">{session.name}</p><p className="text-sm text-muted-foreground">{session.taskTitle}</p></Link>) : <p className="text-sm text-muted-foreground">No work timers running.</p>}</CardContent></Card><Card><CardHeader><CardTitle>No active timer ({data.liveWork.idle.length})</CardTitle><CardDescription>Timer status is independent of fingerprint attendance</CardDescription></CardHeader><CardContent className="flex flex-wrap gap-2">{data.liveWork.idle.map((employee) => <span key={employee.userId} className="rounded-full bg-muted px-3 py-1 text-sm">{employee.name}</span>)}</CardContent></Card></div>}
+			{data.liveWork && <LiveWorkPanel data={data.liveWork} />}
 			<DashboardOperationsCharts stats={data.stats} />
 			<DeliveryTimeline entries={data.timeline ?? []} />
 			<div className="grid gap-4 md:grid-cols-2">
@@ -107,6 +107,20 @@ function AdminDashboard({ data }: { data: AdminDashboardOverview }) {
 			</div>
 		</>
 	);
+}
+
+function LiveWorkPanel({ data }: { data: NonNullable<AdminDashboardOverview["liveWork"]> }) {
+	return <div className="grid gap-4 md:grid-cols-2">
+		<Card><CardHeader><CardTitle>Working now ({data.working.length})</CardTitle><CardDescription>Employees with an active work timer</CardDescription></CardHeader><CardContent className="space-y-3">
+			{data.working.length ? data.working.map((session) => {
+				const content = <><p className="font-medium">{session.name}</p><p className="text-sm text-muted-foreground">{session.taskTitle}</p>{session.targetMessage && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{session.targetMessage}</p>}</>;
+				return session.targetStatus && session.targetStatus !== "available"
+					? <div className="rounded-lg border border-amber-300 p-3" key={`${session.userId}-${session.taskId}`}>{content}</div>
+					: <Link className="block rounded-lg border p-3" key={`${session.userId}-${session.taskId}`} href={session.projectId ? `/dashboard/projects/${session.projectId}` : `/dashboard/my-tasks?highlight=${session.taskId}`}>{content}</Link>;
+			}) : <p className="text-sm text-muted-foreground">No work timers running.</p>}
+		</CardContent></Card>
+		<Card><CardHeader><CardTitle>No active timer ({data.idle.length})</CardTitle><CardDescription>Timer status is independent of fingerprint attendance</CardDescription></CardHeader><CardContent className="flex flex-wrap gap-2">{data.idle.map((employee) => <span key={employee.userId} className="rounded-full bg-muted px-3 py-1 text-sm">{employee.name}</span>)}</CardContent></Card>
+	</div>;
 }
 
 function ManagerDashboard({ data }: { data: ManagerDashboardOverview }) {

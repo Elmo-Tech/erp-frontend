@@ -9,6 +9,8 @@ export interface TimeEntryData {
 	trackableDisplayName: string;
 	trackableProjectId?: number | null;
 	isActive: boolean;
+	targetStatus?: "available" | "task_deleted" | "project_deleted" | "project_archived";
+	targetMessage?: string | null;
 	lastHeartbeatAt?: string;
 	stopReason?: "pause" | "hold" | "end" | "connection_lost" | "admin_stop" | null;
 }

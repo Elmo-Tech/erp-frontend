@@ -5,6 +5,7 @@ import { getEcho } from "@/lib/echo";
 import { useAuthStore } from "@/store/authStore";
 import { TimeEntryData, useTimerStore } from "@/store/timerStore";
 import api from "@/lib/axios";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TimerUpdateEvent {
 	action: string;
@@ -33,9 +34,22 @@ async function synchronizeTimer() {
 
 // Hook to initialize WebSocket connection (call once in layout/provider)
 export function useTimerSocketInit() {
+	const queryClient = useQueryClient();
 	const { user } = useAuthStore();
-	const { activeTimer, setActiveTimer, setResumableTimer, setIsConnected } = useTimerStore();
+	const { activeTimer, resumableTimer, isLoading, setActiveTimer, setResumableTimer, setIsConnected } = useTimerStore();
 	const channelRef = useRef<unknown>(null);
+	const lastTimerState = useRef<string | null>(null);
+	const activeId = activeTimer?.timeEntryId;
+	const resumableId = resumableTimer?.timeEntryId;
+	useEffect(() => {
+		if (isLoading) return;
+		const signature = `${activeId ?? "none"}:${resumableId ?? "none"}`;
+		if (lastTimerState.current !== null && lastTimerState.current !== signature) {
+			void queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+			void queryClient.invalidateQueries({ queryKey: ["timeEntries", "activeTimers"] });
+		}
+		lastTimerState.current = signature;
+	}, [activeId, resumableId, isLoading, queryClient]);
 
 	// Initial fetch
 	const fetchActiveTimer = synchronizeTimer;
@@ -95,11 +109,19 @@ export function useTimerSocketInit() {
 	useEffect(() => {
 		if (!user?.userId) return;
 		void fetchActiveTimer();
+		const refreshIfVisible = () => { if (document.visibilityState === "visible" && navigator.onLine) void fetchActiveTimer(); };
+		const interval = window.setInterval(refreshIfVisible, 30_000);
+		document.addEventListener("visibilitychange", refreshIfVisible);
+		window.addEventListener("online", refreshIfVisible);
+		const cleanUpRefresh = () => {
+			window.clearInterval(interval);
+			document.removeEventListener("visibilitychange", refreshIfVisible);
+			window.removeEventListener("online", refreshIfVisible);
+		};
 
 		const echo = getEcho();
 		if (!echo) {
-			console.log("[Timer] Echo not available");
-			return;
+			return cleanUpRefresh;
 		}
 
 		console.log("[Timer] Subscribing to channel user." + user.userId);
@@ -128,6 +150,7 @@ export function useTimerSocketInit() {
 			});
 
 		return () => {
+			cleanUpRefresh();
 			console.log("[Timer] Leaving channel");
 			if (channelRef.current) {
 				echo.leave(`user.${user.userId}`);

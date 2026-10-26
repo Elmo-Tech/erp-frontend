@@ -88,4 +88,15 @@ describe("DashboardPage", () => {
 		expect(screen.getByText("Task attention")).toBeInTheDocument();
 		expect(screen.getByText("Delivery timeline")).toBeInTheDocument();
 	});
+
+	it("keeps a running timer for an archived project visible with an actionable notice", () => {
+		const response = mockUseDashboardStats();
+		mockUseDashboardStats.mockReturnValue({ ...response, data: { ...response.data!, data: { ...response.data!.data,
+			liveWork: { activeTimerCount: 1, working: [{ userId: 2, name: "Working Employee", taskId: 1, taskTitle: "Archived task", projectId: 7, startedAt: "2026-10-25T10:00:00Z", targetStatus: "project_archived", targetMessage: "This project is in Deleted projects. Restore it before resuming work." }], idle: [] },
+		} } } as ReturnType<typeof useDashboardStats>);
+		renderWithClient(<DashboardPage />);
+		expect(screen.getByText("Archived task")).toBeVisible();
+		expect(screen.getByText(/Restore it before resuming work/)).toBeVisible();
+		expect(screen.queryByRole("link", { name: /Working Employee/ })).not.toBeInTheDocument();
+	});
 });

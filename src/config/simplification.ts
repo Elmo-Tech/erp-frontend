@@ -39,7 +39,6 @@ const enabledModules = new Set<ModuleKey>([
 	moduleKeys.myAttendance,
 	moduleKeys.myRequests,
 	moduleKeys.attendanceManagement,
-	moduleKeys.reports,
 	moduleKeys.roles,
 	moduleKeys.settings,
 	moduleKeys.timers,
@@ -48,6 +47,7 @@ const enabledModules = new Set<ModuleKey>([
 ]);
 
 const disabledModules = new Set<ModuleKey>([
+	moduleKeys.reports,
 	moduleKeys.sales,
 	moduleKeys.invoices,
 	moduleKeys.performance,
@@ -163,13 +163,6 @@ export const dashboardNavGroups: SimplifiedNavGroup[] = [
 	{
 		title: "Administration",
 		items: [
-			{
-				id: "reports",
-				title: "Reports",
-				href: "/dashboard/admin",
-				module: moduleKeys.reports,
-				permission: "view_admin_stats",
-			},
 			{
 				id: "roles",
 				title: "Roles & Permissions",

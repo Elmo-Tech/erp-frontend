@@ -16,8 +16,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { projectPipelineKeys } from "@/features/projects/hooks/useProjectPipeline";
 import { useActiveTimerTabBehavior } from "@/hooks/useActiveTimerTabBehavior";
 import { DesktopNotificationSettings, useNotificationPreferences } from "./DesktopNotificationSettings";
+import { useRealtimeTimer } from "@/hooks/useTimerSocket";
 
 export function NavbarTimer({ className }: { className?: string }) {
+	const { refetch: refreshTimer } = useRealtimeTimer();
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { activeTimer, resumableTimer, setActiveTimer, setResumableTimer, isLoading } = useTimerStore();
@@ -37,6 +39,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 	}, []);
 
 	const handleNavigateToTask = useCallback(() => {
+		if (activeTimer?.targetStatus && activeTimer.targetStatus !== "available") return;
 		if (activeTimer && activeTimer.trackableType.includes("Task")) {
 			router.push(
 				activeTimer.trackableProjectId
@@ -99,6 +102,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
 			notifyApiError(error);
+			if ((error as { response?: { status?: number } }).response?.status === 409) await refreshTimer();
 		} finally {
 			setPendingAction(null);
 		}
@@ -116,6 +120,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 			// Success toast comes from the backend message via the axios interceptor.
 		} catch (error) {
 			notifyApiError(error);
+			if ([409, 422].includes((error as { response?: { status?: number } }).response?.status ?? 0)) await refreshTimer();
 		} finally {
 			setPendingAction(null);
 		}
@@ -153,7 +158,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
 								<p className="font-medium">{activeTimer.trackableDisplayName}</p>
-								<p className="text-xs text-muted-foreground">Click to view task</p>
+								<p className="max-w-72 text-xs text-muted-foreground">{activeTimer.targetMessage || "Click to view task"}</p>
 							</TooltipContent>
 						</Tooltip>
 						<Button
@@ -166,7 +171,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 						>
 							{pendingAction === "pause" ? <Loader2 className="h-3 w-3 animate-spin" /> : <CirclePause className="h-3 w-3 text-amber-500" />}
 						</Button>
-						{activeTimer.trackableType.includes("Task") && (
+						{activeTimer.trackableType.includes("Task") && (!activeTimer.targetStatus || activeTimer.targetStatus === "available") && (
 							<Button
 								size="icon"
 								variant="ghost"
@@ -182,6 +187,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 							size="icon"
 							variant="ghost"
 							onClick={() => handleTimerAction("end")}
+							title={activeTimer.targetMessage ? "Stop the timer and save recorded work time" : "End timer and complete task"}
 							disabled={pendingAction !== null}
 							className="h-7 w-7"
 							aria-label="End timer"

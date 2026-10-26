@@ -351,7 +351,7 @@ export const useActiveTimers = () => {
 		queryKey: [...timeEntryKeys.all, "activeTimers", userId],
 		queryFn: timeEntriesApi.getActiveTimers,
 		enabled: canView && !!userId,
-		refetchInterval: 30_000,
+		refetchInterval: 10_000,
 		staleTime: 10 * 1000, // 10 seconds (very fresh for active timers)
 		gcTime: 2 * 60 * 1000, // 2 minutes
 	});
@@ -367,6 +367,7 @@ export const useStopTimerAdmin = () => {
 	return useMutation<void, Error, number>({
 		mutationFn: timeEntriesApi.stopTimerAdmin,
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
 			// Invalidate active timers to refresh the list
 			queryClient.invalidateQueries({ queryKey: [...timeEntryKeys.all, "activeTimers"] });
 			// Also invalidate regular time entries and active timer
