@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +21,16 @@ interface ActiveTimersSheetProps {
 export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 	const canStopTimers = useAuthStore((state) => state.hasPermission("edit_time_entries"));
 	const [open, setOpen] = useState(false);
+	const [now, setNow] = useState(Date.now);
 	const { data: activeTimers = [], isLoading, error } = useActiveTimers();
 	const stopTimerMutation = useStopTimerAdmin();
+	useEffect(() => {
+		if (!open) return;
+		// Elapsed time is a local display clock, not a reason to fetch the API.
+		const interval = window.setInterval(() => setNow(Date.now()), 1_000);
+		return () => window.clearInterval(interval);
+	}, [open]);
+	const elapsedMinutes = (timer: ActiveTimer) => Math.max(0, (now - new Date(timer.startTime).getTime()) / 60_000);
 
 	const handleStopTimer = async (timer: ActiveTimer) => {
 		try {
@@ -61,7 +69,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 	return (
 		<Sheet
 			open={open}
-			onOpenChange={setOpen}
+			onOpenChange={(nextOpen) => { if (nextOpen) setNow(Date.now()); setOpen(nextOpen); }}
 		>
 			<SheetTrigger asChild>{children}</SheetTrigger>
 			<SheetContent
@@ -147,7 +155,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 													variant="outline"
 													className="text-xs font-mono"
 												>
-													{formatElapsedTime(timer.elapsedMinutes)}
+													{formatElapsedTime(elapsedMinutes(timer))}
 												</Badge>
 											</div>
 										</div>
@@ -167,7 +175,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 												</div>
 												<div className="flex items-center gap-1">
 													<Clock className="h-3 w-3" />
-													{Math.round(timer.elapsedMinutes)} minutes
+													{Math.round(elapsedMinutes(timer))} minutes
 												</div>
 											</div>
 
@@ -215,7 +223,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 									<Clock className="h-4 w-4 text-green-600" />
 								</div>
 								<div className="text-right">
-									<p className="text-sm font-medium">{formatElapsedTime(activeTimers.reduce((acc, t) => acc + t.elapsedMinutes, 0))}</p>
+									<p className="text-sm font-medium">{formatElapsedTime(activeTimers.reduce((acc, t) => acc + elapsedMinutes(t), 0))}</p>
 									<p className="text-xs text-muted-foreground">Total time today</p>
 								</div>
 							</div>
@@ -223,7 +231,7 @@ export function ActiveTimersSheet({ children }: ActiveTimersSheetProps) {
 						<Separator />
 						<div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
 							<div className="h-1.5 w-1.5 bg-green-500 rounded-full animate-pulse" />
-							<span>Live • Auto-refreshes every 30s</span>
+							<span>Realtime updates • reconnect fallback</span>
 						</div>
 					</div>
 				)}

@@ -18,7 +18,6 @@ export const useDashboardStats = () => {
 		queryKey: [DASHBOARD_STATS_KEY, user?.userId, role],
 		queryFn: dashboardStatsApi.getOverview,
 		staleTime: 0,
-		refetchInterval: 10_000,
 		refetchOnWindowFocus: true,
 	});
 };

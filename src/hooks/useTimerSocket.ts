@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getEcho } from "@/lib/echo";
+import { subscribeWithFallback } from "@/lib/realtimeSubscription";
 import { useAuthStore } from "@/store/authStore";
 import { TimeEntryData, useTimerStore } from "@/store/timerStore";
 import api from "@/lib/axios";
 import { useQueryClient } from "@tanstack/react-query";
 
-interface TimerUpdateEvent {
-	action: string;
-	timeEntry: TimeEntryData | null;
-}
-
+let synchronizationVersion = 0;
 async function synchronizeTimer() {
+	const version = ++synchronizationVersion;
+	const userId = useAuthStore.getState().user?.userId;
 	const snapshot = useTimerStore.getState();
 	try {
 		const activeResponse = await api.get<{ data: TimeEntryData | null }>("/time-entries/active", { skipErrorToast: true });
@@ -23,7 +21,8 @@ async function synchronizeTimer() {
 		const current = useTimerStore.getState();
 		// A start/resume/stop or heartbeat may have completed during this fetch.
 		// An older snapshot must not overwrite that newer state.
-		if (current.activeTimer !== snapshot.activeTimer || current.resumableTimer !== snapshot.resumableTimer) return;
+		if (version !== synchronizationVersion || useAuthStore.getState().user?.userId !== userId
+			|| current.activeTimer !== snapshot.activeTimer || current.resumableTimer !== snapshot.resumableTimer) return;
 		useTimerStore.setState({ activeTimer: activeTimer?.isActive ? activeTimer : null, resumableTimer });
 	} catch {
 		// A network failure is not confirmation that the timer was paused.
@@ -36,8 +35,7 @@ async function synchronizeTimer() {
 export function useTimerSocketInit() {
 	const queryClient = useQueryClient();
 	const { user } = useAuthStore();
-	const { activeTimer, resumableTimer, isLoading, setActiveTimer, setResumableTimer, setIsConnected } = useTimerStore();
-	const channelRef = useRef<unknown>(null);
+	const { activeTimer, resumableTimer, isLoading, setIsConnected } = useTimerStore();
 	const lastTimerState = useRef<string | null>(null);
 	const activeId = activeTimer?.timeEntryId;
 	const resumableId = resumableTimer?.timeEntryId;
@@ -109,56 +107,14 @@ export function useTimerSocketInit() {
 	useEffect(() => {
 		if (!user?.userId) return;
 		void fetchActiveTimer();
-		const refreshIfVisible = () => { if (document.visibilityState === "visible" && navigator.onLine) void fetchActiveTimer(); };
-		const interval = window.setInterval(refreshIfVisible, 30_000);
-		document.addEventListener("visibilitychange", refreshIfVisible);
-		window.addEventListener("online", refreshIfVisible);
-		const cleanUpRefresh = () => {
-			window.clearInterval(interval);
-			document.removeEventListener("visibilitychange", refreshIfVisible);
-			window.removeEventListener("online", refreshIfVisible);
-		};
-
-		const echo = getEcho();
-		if (!echo) {
-			return cleanUpRefresh;
-		}
-
-		console.log("[Timer] Subscribing to channel user." + user.userId);
-
-		// Subscribe to private channel
-		const channel = echo.private(`user.${user.userId}`);
-		channelRef.current = channel;
-
-		channel
-			.listen(".timer.updated", (event: TimerUpdateEvent) => {
-				console.log("[Timer] Received event:", event);
-				if (event.timeEntry?.isActive) {
-					setActiveTimer(event.timeEntry);
-					setResumableTimer(null);
-				} else {
-					void fetchActiveTimer();
-				}
-			})
-			.subscribed(() => {
-				console.log("[Timer] Successfully subscribed to channel");
-				setIsConnected(true);
-			})
-			.error((error: unknown) => {
-				console.error("[Timer] Subscription error:", error);
-				setIsConnected(false);
-			});
-
-		return () => {
-			cleanUpRefresh();
-			console.log("[Timer] Leaving channel");
-			if (channelRef.current) {
-				echo.leave(`user.${user.userId}`);
-				channelRef.current = null;
-				setIsConnected(false);
-			}
-		};
-	}, [user?.userId, fetchActiveTimer, setActiveTimer, setIsConnected, setResumableTimer]);
+		return subscribeWithFallback({
+			channelName: `user.${user.userId}`,
+			event: ".timer.updated",
+			onEvent: () => { void fetchActiveTimer(); },
+			onRefresh: () => { void fetchActiveTimer(); },
+			onConnectionChange: setIsConnected,
+		});
+	}, [user?.userId, fetchActiveTimer, setIsConnected]);
 }
 
 // Hook to use timer state (use in any component)

@@ -6,6 +6,7 @@ import { Navbar } from "./Navbar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useSidebarStore } from "@/store/sidebarStore";
 import { useTimerSocketInit } from "@/hooks/useTimerSocket";
+import { useWorkMonitoringSocketInit } from "@/hooks/useWorkMonitoringSocket";
 import { useNotificationSocketInit } from "@/hooks/useNotificationSocket";
 import { cn } from "@/lib/utils";
 import { TimerReminderDialog } from "@/components/TimerReminderDialog";
@@ -29,6 +30,7 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 
 	// Initialize WebSocket connections
 	useTimerSocketInit();
+	useWorkMonitoringSocketInit();
 	useNotificationSocketInit();
 	usePermissionSync();
 

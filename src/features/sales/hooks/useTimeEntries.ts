@@ -351,7 +351,6 @@ export const useActiveTimers = () => {
 		queryKey: [...timeEntryKeys.all, "activeTimers", userId],
 		queryFn: timeEntriesApi.getActiveTimers,
 		enabled: canView && !!userId,
-		refetchInterval: 10_000,
 		staleTime: 10 * 1000, // 10 seconds (very fresh for active timers)
 		gcTime: 2 * 60 * 1000, // 2 minutes
 	});

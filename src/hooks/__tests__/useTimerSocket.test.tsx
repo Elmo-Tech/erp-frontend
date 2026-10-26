@@ -12,7 +12,10 @@ function renderTimerHook<T>(callback: () => T) { return renderHook(callback, { w
 
 vi.mock("@/lib/axios", () => ({ default: { get: vi.fn(), post: vi.fn() } }));
 vi.mock("@/lib/echo", () => ({ getEcho: () => null }));
-vi.mock("@/store/authStore", () => ({ useAuthStore: () => ({ user: { userId: 7 } }) }));
+vi.mock("@/store/authStore", () => {
+	const state = { user: { userId: 7 } };
+	return { useAuthStore: Object.assign(() => state, { getState: () => state }) };
+});
 
 const timer: TimeEntryData = {
 	timeEntryId: 42, sessionId: "timer-session", isActive: true,
@@ -105,10 +108,10 @@ describe("timer synchronization", () => {
 		renderTimerHook(() => useTimerSocketInit());
 		await act(async () => {});
 		running = true;
-		await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+		await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
 		expect(useTimerStore.getState().activeTimer?.timeEntryId).toBe(timer.timeEntryId);
 		running = false;
-		await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+		await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
 		expect(useTimerStore.getState().activeTimer).toBeNull();
 	});
 });
