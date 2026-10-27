@@ -41,6 +41,7 @@ export interface DeveloperDashboardStats {
 	myHoursChange: number;
 	myActiveProjects: number;
 	clockedIn: boolean;
+	clockedOut?: boolean;
 	todayHours: number;
 }
 

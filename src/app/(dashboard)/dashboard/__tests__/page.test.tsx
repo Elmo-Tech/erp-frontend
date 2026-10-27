@@ -77,6 +77,20 @@ describe("DashboardPage", () => {
 		} as unknown as ReturnType<typeof useDashboardStats>);
 	});
 
+	it.each([
+		[false, false, "Not clocked in"],
+		[true, false, "Clocked in"],
+		[false, true, "Clocked out"],
+		[true, true, "Clocked out"],
+	])("shows the employee attendance state (in=%s, out=%s)", (clockedIn, clockedOut, label) => {
+		mockUseDashboardStats.mockReturnValue({ isLoading: false, isError: false, data: { success: true, data: {
+			role: "developer", stats: { clockedIn, clockedOut }, recentTasks: [], projects: [], recentActivities: [],
+		} } } as unknown as ReturnType<typeof useDashboardStats>);
+		renderWithClient(<DashboardPage />);
+		expect(screen.getByText(label)).toBeVisible();
+		if (clockedOut) expect(screen.queryByText("Clocked in", { exact: true })).not.toBeInTheDocument();
+	});
+
 	it("renders the admin KPI, operational charts, and delivery timeline", () => {
 		renderWithClient(<DashboardPage />);
 

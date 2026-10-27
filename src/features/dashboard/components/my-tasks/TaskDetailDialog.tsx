@@ -92,6 +92,7 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 				</div>
 			}
 			showFooter={false}
+			description="Task details, assigned employees, supervision, and time tracking."
 			size="xxl"
 		>
 			<div className="space-y-6 py-4">

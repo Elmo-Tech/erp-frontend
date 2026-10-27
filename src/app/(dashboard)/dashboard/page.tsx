@@ -241,7 +241,7 @@ function EmployeeDashboard({ data }: { data: DeveloperDashboardOverview }) {
 			color: data?.stats?.clockedIn ? "text-green-600" : "text-gray-600",
 			bgColor: data?.stats?.clockedIn ? "bg-green-100 dark:bg-green-900/30" : "bg-gray-100 dark:bg-gray-900/30",
 			format: (v: number) => `${v}h`,
-			subtitle: data?.stats?.clockedIn ? "Clocked in" : "Not clocked in",
+			subtitle: data?.stats?.clockedOut ? "Clocked out" : data?.stats?.clockedIn ? "Clocked in" : "Not clocked in",
 		},
 	];
 

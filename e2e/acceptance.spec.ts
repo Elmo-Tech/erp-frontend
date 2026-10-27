@@ -244,6 +244,8 @@ test('service worker is served with valid script headers and registers', async (
 
 test('completed tasks remain in My Tasks board and read-only employees see no creation controls', async ({ page }) => {
  const failures: string[] = [];
+ const warnings: string[] = [];
+ page.on('console', message => { if (/DialogContent.*DialogTitle|Missing.*Description/.test(message.text())) warnings.push(message.text()); });
  page.on('response', response => {
   if (response.url().startsWith(api) && response.status() >= 400) failures.push(`${response.status()} ${new URL(response.url()).pathname}`);
  });
@@ -260,6 +262,9 @@ test('completed tasks remain in My Tasks board and read-only employees see no cr
  expect(failures).toEqual([]);
  await expect(page.locator('[data-sonner-toast][data-type="error"]')).toHaveCount(0);
  await page.screenshot({ path: test.info().outputPath('my-tasks-completed.png'), fullPage: true });
+ await page.getByRole('heading', { name: 'QA Completed Task', exact: true }).click();
+ await expect(page.getByRole('dialog')).toHaveAccessibleDescription('Task details, assigned employees, supervision, and time tracking.');
+ expect(warnings).toEqual([]);
 });
 
 test('clock out refreshes history and preserves elapsed and idle totals after reload', async ({ page }) => {
@@ -279,6 +284,8 @@ test('clock out refreshes history and preserves elapsed and idle totals after re
   await expect(page.getByText('Idle', { exact: true }).first().locator('..')).not.toHaveText(/Idle\s*0m$/);
  }
  await page.screenshot({ path: test.info().outputPath('clocked-out-summary.png'), fullPage: true });
+ await page.goto('/dashboard');
+ await expect(page.getByText('Clocked out', { exact: true })).toBeVisible();
 });
 
 test('task assignment refreshes project overview and task dialog has no accessibility warnings', async ({ page }) => {
