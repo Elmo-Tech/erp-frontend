@@ -116,18 +116,18 @@ function MyLeaves({ employeeId, year }: { employeeId: number; year: number }) {
 		<Card>
 			<CardHeader>
 				<CardTitle>My leaves {year}</CardTitle>
-				<CardDescription>Pending requests can be edited. Approved requests must be cancelled and recreated.</CardDescription>
+				<CardDescription>Decisions are Approved or Rejected. You can edit a submitted request before it is reviewed.</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<div className="flex flex-wrap gap-2">
 					{balances.map((b) => (
 						<span key={b.leaveTypeId} className="rounded-full bg-muted px-3 py-1 text-xs">
 							{b.leaveType.name}: {b.remainingDays}/{b.allocatedDays} left
-							{` · ${leaves.filter((leave) => leave.leaveTypeId === b.leaveTypeId && leave.status === "pending").reduce((days, leave) => days + leave.workingDays, 0)} working days awaiting approval`}
+							{` · ${leaves.filter((leave) => leave.leaveTypeId === b.leaveTypeId && leave.status === null).reduce((days, leave) => days + leave.workingDays, 0)} working days in submitted requests`}
 						</span>
 					))}
 				</div>
-				<p className="text-sm text-muted-foreground">Balances deduct approved working days only. Pending requests do not consume leave balance until approval.</p>
+				<p className="text-sm text-muted-foreground">Only approved working days consume your leave balance. Submitting a request does not deduct any days.</p>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
 					<select aria-label="Leave type" {...form.register("leaveTypeId")} className="rounded border px-2 py-2 text-sm">
 						<option value="">Select type</option>
@@ -141,11 +141,12 @@ function MyLeaves({ employeeId, year }: { employeeId: number; year: number }) {
 					<Button type="submit" disabled={createLeave.isPending || updateLeave.isPending}>{editingId ? "Update" : "Submit"}</Button>
 				</form>
 				<div className="space-y-2">
+					{leaves.some((leave) => leave.status === null) && <p className="text-sm text-muted-foreground">Your submitted requests are saved below. A decision appears after your manager reviews them.</p>}
 					{leaves.map((l) => (
 						<div key={l.id} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
-							<span>{l.startDate} → {l.endDate} · {l.status} · {l.workingDays}d</span>
+							<span>{l.startDate} → {l.endDate}{l.status ? ` · ${l.status}` : ""} · {l.workingDays}d</span>
 							<span className="flex gap-2">
-								{l.status === "pending" && (
+								{l.status === null && (
 									<Button
 										size="sm"
 										variant="outline"
@@ -157,7 +158,7 @@ function MyLeaves({ employeeId, year }: { employeeId: number; year: number }) {
 										Edit
 									</Button>
 								)}
-								{(l.status === "pending" || l.status === "approved") && (
+								{(l.status === null || l.status === "approved") && (
 									<Button
 										size="sm"
 										variant="ghost"

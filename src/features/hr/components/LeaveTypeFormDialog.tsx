@@ -164,7 +164,7 @@ export function LeaveTypeFormDialog({ leaveType, open, onOpenChange }: LeaveType
 						/>
 
 						<p className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
-							Changing an allowance applies to new balance initialization only. Historical balances are not changed.
+							Changes update current-year company-default allocations for this leave type. Used days, custom employee allocations, other leave types, and previous years are preserved.
 						</p>
 
 						<DialogFooter>

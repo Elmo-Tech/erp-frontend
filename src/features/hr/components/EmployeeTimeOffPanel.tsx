@@ -28,7 +28,7 @@ export function EmployeeTimeOffPanel(props: EmployeeMoneyPanelProps) {
 	const data = query.data;
 	const monthEnd = `${month}-${new Date(Number(month.slice(0, 4)), Number(month.slice(5)), 0).getDate()}`;
 	const history = [
-		...(leaves.data?.leaves ?? []).filter((leave) => leave.startDate <= monthEnd && leave.endDate >= `${month}-01`).map((leave) => ({ id: `leave-${leave.id}`, date: leave.startDate, label: leave.leaveType.name, duration: `${leave.workingDays} days`, status: leave.status })),
+		...(leaves.data?.leaves ?? []).filter((leave) => leave.status !== null && leave.startDate <= monthEnd && leave.endDate >= `${month}-01`).map((leave) => ({ id: `leave-${leave.id}`, date: leave.startDate, label: leave.leaveType.name, duration: `${leave.workingDays} days`, status: leave.status })),
 		...(permissions.data?.permissions ?? []).map((permission) => ({ id: `permission-${permission.id}`, date: permission.permissionDate, label: "Short permission", duration: formatPermissionDuration(permission.durationMinutes), status: permission.status })),
 	].sort((a, b) => b.date.localeCompare(a.date));
 	return <div className="min-w-0 space-y-5">

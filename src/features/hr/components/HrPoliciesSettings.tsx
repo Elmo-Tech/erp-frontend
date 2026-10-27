@@ -198,38 +198,6 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 						</CardContent>
 					</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Leave &amp; permissions</CardTitle>
-							<CardDescription>Configure leave allowances and permission treatment.</CardDescription>
-						</CardHeader>
-						<CardContent className="grid gap-4 sm:grid-cols-2">
-							<div className="grid gap-2">
-								<Label htmlFor="annual-leave-days">Annual leave days</Label>
-								<Input id="annual-leave-days" type="number" disabled={createPolicy.isPending} {...form.register("settings.annualLeaveDays", { required: true, valueAsNumber: true })} />
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="sick-leave-days">Sick leave days</Label>
-								<Input id="sick-leave-days" type="number" disabled={createPolicy.isPending} {...form.register("settings.sickLeaveDays", { required: true, valueAsNumber: true })} />
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="emergency-leave-days">Emergency leave days</Label>
-								<Input id="emergency-leave-days" type="number" disabled={createPolicy.isPending} {...form.register("settings.emergencyLeaveDays", { required: true, valueAsNumber: true })} />
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="monthly-paid-permission-hours">Monthly paid permission hours</Label>
-								<Input id="monthly-paid-permission-hours" type="number" step="any" disabled={createPolicy.isPending} {...form.register("settings.monthlyPaidPermissionHours", { required: true, valueAsNumber: true })} />
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="leave-workflow">Leave workflow</Label>
-								<Input id="leave-workflow" disabled={createPolicy.isPending} {...form.register("settings.leaveWorkflow", { required: true })} />
-							</div>
-							<div className="grid gap-2">
-								<Label htmlFor="permission-overage-behavior">Permission overage behavior</Label>
-								<Input id="permission-overage-behavior" disabled={createPolicy.isPending} {...form.register("settings.permissionOverageBehavior", { required: true })} />
-							</div>
-						</CardContent>
-					</Card>
 
 					<Card className="xl:col-span-2">
 						<CardHeader>

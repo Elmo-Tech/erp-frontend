@@ -16,7 +16,7 @@ it("Request leave across working and non-working days", async () => {
 		leaves, balances: [{ leaveTypeId: 1, leaveType: type, allocatedDays: 21, usedDays: 0, remainingDays: 21 }],
 	} } }));
 	vi.mocked(api.post).mockImplementation(async (_url, payload) => {
-		leaves = [{ ...(payload as CreateEmployeeLeavePayload), id: 1, employeeId: 7, workingDays: 2, leaveType: type, status: "pending", isPaid: true, createdAt: "2026-10-11T10:00:00" }];
+		leaves = [{ ...(payload as CreateEmployeeLeavePayload), id: 1, employeeId: 7, workingDays: 2, leaveType: type, status: null, needsReview: true, isPaid: true, createdAt: "2026-10-11T10:00:00" }];
 		return { data: { data: leaves[0] } };
 	});
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -26,7 +26,8 @@ it("Request leave across working and non-working days", async () => {
 	fireEvent.change(screen.getByLabelText("Leave start date"), { target: { value: "2026-10-09" } });
 	fireEvent.change(screen.getByLabelText("Leave end date"), { target: { value: "2026-10-12" } });
 	fireEvent.click(screen.getByRole("button", { name: "Submit" }));
-	await screen.findByText("2026-10-09 → 2026-10-12 · pending · 2d");
-	expect(screen.getByText(/Annual: 21\/21 left · 2 working days awaiting approval/)).toBeVisible();
-	expect(screen.getByText(/Pending requests do not consume leave balance until approval/)).toBeVisible();
+	await screen.findByText("2026-10-09 → 2026-10-12 · 2d");
+	expect(screen.queryByText(/pending/i)).not.toBeInTheDocument();
+	expect(screen.getByText(/Annual: 21\/21 left · 2 working days in submitted requests/)).toBeVisible();
+	expect(screen.getByText(/Submitting a request does not deduct any days/)).toBeVisible();
 });

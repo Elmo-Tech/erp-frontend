@@ -32,20 +32,18 @@ interface EmployeeLeavesPanelProps {
 
 type LeaveReviewAction = "approve" | "reject" | "cancel";
 
-interface PendingLeaveReview {
+interface LeaveReview {
 	leave: EmployeeLeave;
 	action: LeaveReviewAction;
 }
 
-const statusLabels: Record<EmployeeLeaveStatus, string> = {
-	pending: "Pending",
+const statusLabels: Record<Exclude<EmployeeLeaveStatus, null>, string> = {
 	approved: "Approved",
 	rejected: "Rejected",
 	cancelled: "Cancelled",
 };
 
-const statusVariants: Record<EmployeeLeaveStatus, BadgeProps["variant"]> = {
-	pending: "secondary",
+const statusVariants: Record<Exclude<EmployeeLeaveStatus, null>, BadgeProps["variant"]> = {
 	approved: "default",
 	rejected: "destructive",
 	cancelled: "outline",
@@ -79,7 +77,7 @@ function formatLeaveDateTime(value: string): string {
 }
 
 function getAvailableReviewActions(status: EmployeeLeaveStatus): LeaveReviewAction[] {
-	if (status === "pending") return ["approve", "reject"];
+	if (status === null) return ["approve", "reject"];
 	return [];
 }
 
@@ -93,7 +91,7 @@ function LeaveRequestSummary({ leave, canManage, isReviewing, onReview }: { leav
 				<div className="space-y-1">
 					<div className="flex flex-wrap items-center gap-2">
 						<h4 className="font-medium">{leave.leaveType.name}</h4>
-						<Badge variant={statusVariants[leave.status]}>{statusLabels[leave.status]}</Badge>
+						{leave.status !== null && <Badge variant={statusVariants[leave.status]}>{statusLabels[leave.status]}</Badge>}
 						<Badge variant="outline">{leave.isPaid ? "Paid" : "Unpaid"}</Badge>
 					</div>
 					<p className="text-sm text-muted-foreground">
@@ -147,7 +145,7 @@ function LeaveRequestSummary({ leave, canManage, isReviewing, onReview }: { leav
 export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isActive }: EmployeeLeavesPanelProps) {
 	const currentYear = new Date().getFullYear();
 	const [year, setYear] = useState(currentYear);
-	const [pendingReview, setPendingReview] = useState<PendingLeaveReview | null>(null);
+	const [pendingReview, setPendingReview] = useState<LeaveReview | null>(null);
 	const [reviewNote, setReviewNote] = useState("");
 	const leavesQuery = useEmployeeLeaves(employeeId, year, isActive && canManage);
 	const leaveTypesQuery = useLeaveTypes(isActive && canManage);
@@ -163,8 +161,8 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 	const leaveTypes = [...(leaveTypesQuery.data ?? [])].sort((left, right) => left.displayOrder - right.displayOrder || left.name.localeCompare(right.name));
 	const leaves = [...(leavesQuery.data?.leaves ?? [])].sort((left, right) => right.startDate.localeCompare(left.startDate));
 	const balances = leavesQuery.data?.balances ?? [];
-	const pendingLeaves = leaves.filter((leave) => leave.status === "pending");
-	const historicalLeaves = leaves.filter((leave) => leave.status !== "pending");
+	const unreviewedLeaves = leaves.filter((leave) => leave.status === null);
+	const historicalLeaves = leaves.filter((leave) => leave.status !== null);
 	const isReviewing = approveLeave.isPending || rejectLeave.isPending || cancelLeave.isPending;
 	const isRequesting = createLeave.isPending;
 	const isRequestDisabled = isRequesting || leaveTypesQuery.isLoading || leaveTypesQuery.isError || leaveTypes.length === 0;
@@ -384,14 +382,14 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 								)}
 							</section>
 
-							{pendingLeaves.length > 0 && <section className="space-y-3 border-t pt-5">
+							{unreviewedLeaves.length > 0 && <section className="space-y-3 border-t pt-5">
 								<div>
-									<h3 className="font-semibold">Pending requests</h3>
+									<h3 className="font-semibold">Requests to review</h3>
 									<p className="text-sm text-muted-foreground">Requests awaiting a decision.</p>
 								</div>
-								{pendingLeaves.length > 0 ? (
+								{unreviewedLeaves.length > 0 ? (
 									<div className="space-y-3">
-										{pendingLeaves.map((leave) => (
+										{unreviewedLeaves.map((leave) => (
 											<LeaveRequestSummary
 												key={leave.id}
 												leave={leave}
@@ -405,7 +403,7 @@ export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isAct
 										))}
 									</div>
 								) : (
-									<p className="py-2 text-sm text-muted-foreground">No pending leave requests.</p>
+									<p className="py-2 text-sm text-muted-foreground">No leave requests need review.</p>
 								)}
 							</section>}
 

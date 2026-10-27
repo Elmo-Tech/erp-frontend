@@ -23,7 +23,7 @@ export type UpdateLeaveTypePayload = Partial<LeaveTypePayload>;
 
 export type LeaveTypeFormValues = LeaveTypePayload;
 
-export type EmployeeLeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
+export type EmployeeLeaveStatus = "approved" | "rejected" | "cancelled" | null;
 
 export interface EmployeeLeave {
 	id: number;
@@ -34,6 +34,7 @@ export interface EmployeeLeave {
 	endDate: string;
 	workingDays: number;
 	status: EmployeeLeaveStatus;
+	needsReview: boolean;
 	isPaid: boolean;
 	reason?: string | null;
 	reviewedBy?: number | null;
