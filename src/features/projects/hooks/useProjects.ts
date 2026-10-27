@@ -23,10 +23,11 @@ export const projectKeys = {
  * Hook to fetch all projects with optional filtering and pagination
  * Requirement 11.7: Frontend hooks for project operations
  */
-export const useProjects = (filters?: ProjectFilters) => {
+export const useProjects = (filters?: ProjectFilters, enabled = true) => {
 	return useQuery<ProjectListResponse, Error>({
 		queryKey: projectKeys.list(filters),
 		queryFn: () => projectsApi.getAll(filters),
+		enabled,
 		staleTime: 5 * 60 * 1000, // 5 minutes
 		gcTime: 10 * 60 * 1000, // 10 minutes
 	});

@@ -6,7 +6,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form } from "@/components/ui/form";
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useCreateTask, useTags } from "../../hooks/useTasks";
 import { useTaskCategories } from "@/features/admin/hooks/useEnums";
+import { useAuthStore } from "@/store/authStore";
 import { useEmployees } from "@/features/hr/hooks";
 import { TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels, TaskPriority, TaskPriorityLabels } from "../../types/task";
 
@@ -44,13 +45,15 @@ interface CreateTaskDialogProps {
 	onOpenChange: (open: boolean) => void;
 	projects: Array<{ projectId: number; title: string }>;
 	currentUserId?: number;
+	allowedTypes: TaskType[];
 }
 
-export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId, allowedTypes }: CreateTaskDialogProps) {
 	const createTask = useCreateTask();
 	const { data: tags } = useTags();
 	const { data: taskCategoriesData } = useTaskCategories();
-	const { data: employeesData } = useEmployees({ perPage: 100 });
+	const canListEmployees = useAuthStore(state => state.hasPermission("view_employees") || state.hasPermission("manage_employees"));
+	const { data: employeesData } = useEmployees({ perPage: 100 }, open && canListEmployees);
 
 	// Get today's date in YYYY-MM-DD format
 	const today = new Date().toISOString().split("T")[0];
@@ -62,7 +65,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 			description: "",
 			projectId: "",
 			status: TaskStatus.TODO,
-			type: TaskType.MAIN,
+			type: allowedTypes[0],
 			priority: TaskPriority.MEDIUM,
 			assignedTo: currentUserId?.toString() || "none",
 			taskCategory: "none",
@@ -76,7 +79,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 		},
 	});
 
-	const selectedTagIds = form.watch("tagIds") || [];
+	const selectedTagIds = useWatch({ control: form.control, name: "tagIds" }) || [];
 
 	const toggleTag = (tagId: number) => {
 		const current = form.getValues("tagIds") || [];
@@ -126,7 +129,7 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 		label: TaskStatusLabels[status],
 	}));
 
-	const typeOptions = Object.values(TaskType).map((type) => ({
+	const typeOptions = allowedTypes.map((type) => ({
 		value: type,
 		label: TaskTypeLabels[type],
 	}));
@@ -157,16 +160,17 @@ export function CreateTaskDialog({ open, onOpenChange, projects, currentUserId }
 
 	const assigneeOptions = useMemo(() => {
 		const options = [{ value: "none", label: "Unassigned" }];
+		if (currentUserId) options.push({ value: String(currentUserId), label: "Me" });
 		if (employeesData?.employees) {
 			options.push(
-				...employeesData.employees.map((employee) => ({
+				...employeesData.employees.filter(employee => employee.userId !== currentUserId).map((employee) => ({
 					value: employee.userId.toString(),
 					label: employee.name,
 				}))
 			);
 		}
 		return options;
-	}, [employeesData]);
+	}, [employeesData, currentUserId]);
 
 	return (
 		<FormDialog

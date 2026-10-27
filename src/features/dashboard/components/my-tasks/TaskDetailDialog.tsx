@@ -3,6 +3,8 @@
  * Shows full task details with subtasks
  */
 
+import Link from "next/link";
+import { useMyTaskAccess } from "./useMyTaskAccess";
 import { FormDialog } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +107,7 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 			</div>
 
 			<div className="flex justify-end gap-2 pt-4 border-t">
+				{task.isPipelineTask && task.projectId && <Button asChild variant="outline"><Link href={`/dashboard/projects/${task.projectId}`}>Open project</Link></Button>}
 				<Button
 					variant="outline"
 					onClick={onClose}
@@ -140,12 +143,14 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 
 // Meta section with status, priority, dates
 function TaskMetaSection({ task, onStatusChange }: { task: Task; onStatusChange: (task: Task, status: TaskStatus) => void }) {
+	const access = useMyTaskAccess();
 	return (
 		<div className="flex flex-wrap gap-4">
 			<div className="space-y-1">
 				<Label className="text-xs text-muted-foreground">Status</Label>
 				<Select
 					value={task.status}
+					disabled={!access.canEdit(task)}
 					onValueChange={(v) => onStatusChange(task, v as TaskStatus)}
 				>
 					<SelectTrigger className="w-40">

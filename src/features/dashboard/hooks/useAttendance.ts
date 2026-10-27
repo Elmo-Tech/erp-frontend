@@ -43,7 +43,7 @@ export const useClockOut = () => {
 
 	return useMutation<Attendance, Error, void>({
 		mutationFn: attendanceApi.clockOut,
-		onSuccess: (updatedAttendance) => {
+		onSuccess: async (updatedAttendance) => {
 			// Update today's attendance cache with the new data
 			queryClient.setQueryData(attendanceKeys.today(), (oldData: TodayAttendance | undefined) => {
 				if (!oldData) return oldData;
@@ -56,7 +56,7 @@ export const useClockOut = () => {
 			});
 
 			// Invalidate to ensure fresh data on next fetch
-			queryClient.invalidateQueries({ queryKey: attendanceKeys.today() });
+			await queryClient.invalidateQueries({ queryKey: attendanceKeys.all });
 		},
 		onError: (error) => {
 			console.error("Failed to clock out:", error);
@@ -76,17 +76,17 @@ export const useAttendanceStatus = () => {
 	const isClockedOut = !!todayAttendance?.attendance?.clockOut;
 	const hasActiveTimer = todayAttendance?.hasActiveTimer || false;
 	const totalWorkedMinutes = todayAttendance?.totalWorkedMinutes || 0;
-	const currentIdleMinutes = todayAttendance?.currentIdleMinutes;
+	const currentIdleMinutes = todayAttendance?.currentIdleMinutes ?? todayAttendance?.attendance?.idleMinutes;
 
 	// Calculate current work duration if clocked in but not out
 	const getCurrentWorkDuration = (): number => {
-		if (!todayAttendance?.attendance?.clockIn || isClockedOut) {
-			return totalWorkedMinutes;
+		if (!todayAttendance?.attendance?.clockIn) {
+			return 0;
 		}
 
 		const clockInTime = new Date(todayAttendance.attendance.clockIn);
-		const now = new Date();
-		const totalMinutes = Math.floor((now.getTime() - clockInTime.getTime()) / (1000 * 60));
+		const endTime = todayAttendance.attendance.clockOut ? new Date(todayAttendance.attendance.clockOut) : new Date();
+		const totalMinutes = Math.floor((endTime.getTime() - clockInTime.getTime()) / (1000 * 60));
 
 		return Math.max(0, totalMinutes);
 	};

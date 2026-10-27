@@ -18,6 +18,7 @@ import { useProjects } from "@/features/projects/hooks/useProjects";
 import { useAuthStore } from "@/store/authStore";
 import { Task, TaskFilters, TaskStatus, TaskStatusLabels } from "../../types/task";
 
+import { useMyTaskAccess } from "./useMyTaskAccess";
 import { StatsCard } from "./StatsCard";
 import { TaskFiltersBar } from "./TaskFilters";
 import { KanbanView, TaskCardOverlay } from "./KanbanView";
@@ -29,6 +30,7 @@ import { LoadingSkeleton } from "./LoadingSkeleton";
 
 export function MyTasksPage() {
 	const { user } = useAuthStore();
+	const access = useMyTaskAccess();
 	const searchParams = useSearchParams();
 	const highlightParam = searchParams.get("highlight");
 	const [highlightedTaskId, setHighlightedTaskId] = useState<number | null>(null);
@@ -41,8 +43,18 @@ export function MyTasksPage() {
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 
 	const { data: tasksData, isLoading } = useMyAssignedTasks(filters);
-	const { data: projectsData } = useProjects({ page: 1, perPage: 100 });
+	const { data: projectsData } = useProjects({ page: 1, perPage: 100 }, access.canCreate);
 	const updateTask = useUpdateTask();
+	const projectOptions = useMemo(() => {
+		const projects = new Map<number, { projectId: number; title: string }>();
+		if (access.canCreate) projectsData?.projects.forEach(project => projects.set(project.projectId, project));
+		const collect = (tasks: Task[]) => tasks.forEach(task => {
+			if (task.project) projects.set(task.project.projectId, task.project);
+			if (task.children?.length) collect(task.children);
+		});
+		collect(tasksData?.tasks || []);
+		return [...projects.values()];
+	}, [access.canCreate, projectsData?.projects, tasksData?.tasks]);
 
 	// Handle highlight from URL
 	useEffect(() => {
@@ -62,14 +74,17 @@ export function MyTasksPage() {
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }), useSensor(KeyboardSensor));
 
 	/**
-	 * Extract all leaf tasks (tasks with canStartTimer = true) from hierarchy
-	 * This flattens the tree to get only actionable tasks
+	 * Extract structural leaf tasks regardless of timer eligibility
+	 * Completed and otherwise non-timer tasks must remain visible on the board
 	 */
 	const extractAllLeafTasks = useCallback((tasks: Task[]): Task[] => {
 		const leafTasks: Task[] = [];
+		const seen = new Set<number>();
 
 		function traverse(task: Task) {
-			if (task.canStartTimer) {
+			if (seen.has(task.taskId)) return;
+			seen.add(task.taskId);
+			if (!task.hasChildren && !task.children?.length) {
 				leafTasks.push(task);
 			}
 			if (task.children && task.children.length > 0) {
@@ -146,14 +161,14 @@ export function MyTasksPage() {
 	// Stats
 	const stats = useMemo(
 		() => ({
-			total: filteredTasks.length,
+			total: filteredLeafTasks.length,
 			todo: tasksByStatus[TaskStatus.TODO].length,
 			inProgress: tasksByStatus[TaskStatus.IN_PROGRESS].length,
 			review: tasksByStatus[TaskStatus.REVIEW].length,
 			testing: tasksByStatus[TaskStatus.TESTING].length,
 			completed: tasksByStatus[TaskStatus.COMPLETED].length,
 		}),
-		[filteredTasks, tasksByStatus],
+		[filteredLeafTasks, tasksByStatus],
 	);
 
 	const toggleExpand = useCallback((taskId: number) => {
@@ -194,7 +209,7 @@ export function MyTasksPage() {
 		const newStatus = over.id as TaskStatus;
 		const task = filteredLeafTasks.find((t) => t.taskId === taskId);
 
-		if (!task || task.status === newStatus) return;
+		if (!task || !access.canEdit(task) || task.status === newStatus) return;
 
 		try {
 			await updateTask.mutateAsync({ id: taskId, payload: { status: newStatus } });
@@ -205,7 +220,7 @@ export function MyTasksPage() {
 	};
 
 	const handleStatusChange = async (task: Task, newStatus: TaskStatus) => {
-		if (task.status === newStatus) return;
+		if (!access.canEdit(task) || task.status === newStatus) return;
 		try {
 			await updateTask.mutateAsync({ id: task.taskId, payload: { status: newStatus } });
 			toast.success(`Task moved to ${TaskStatusLabels[newStatus]}`);
@@ -223,13 +238,13 @@ export function MyTasksPage() {
 						<h1 className="text-2xl font-bold tracking-tight">My Tasks</h1>
 						<p className="text-muted-foreground">Manage your personal and project tasks</p>
 					</div>
-					<Button
+					{access.canCreate && <Button
 						onClick={() => setShowCreateDialog(true)}
 						className="gap-2"
 					>
 						<Plus className="h-4 w-4" />
 						New Task
-					</Button>
+					</Button>}
 				</div>
 
 				{/* Stats Cards */}
@@ -276,7 +291,7 @@ export function MyTasksPage() {
 					filters={filters}
 					searchTerm={searchTerm}
 					view={view}
-					projects={projectsData?.projects || []}
+					projects={projectOptions}
 					hasActiveFilters={!!hasActiveFilters}
 					onSearchChange={setSearchTerm}
 					onFilterChange={handleFilterChange}
@@ -287,9 +302,9 @@ export function MyTasksPage() {
 				{/* Content */}
 				{isLoading ? (
 					<LoadingSkeleton view={view} />
-				) : filteredTasks.length === 0 ? (
+				) : (view === "kanban" ? filteredLeafTasks.length : filteredTasks.length) === 0 ? (
 					<EmptyState
-						onCreateTask={() => setShowCreateDialog(true)}
+						onCreateTask={access.canCreate ? () => setShowCreateDialog(true) : undefined}
 						hasFilters={!!hasActiveFilters}
 					/>
 				) : view === "kanban" ? (
@@ -321,12 +336,13 @@ export function MyTasksPage() {
 				)}
 
 				{/* Dialogs */}
-				<CreateTaskDialog
+				{showCreateDialog && access.canCreate && <CreateTaskDialog
 					open={showCreateDialog}
 					onOpenChange={setShowCreateDialog}
-					projects={projectsData?.projects || []}
+					projects={projectOptions}
 					currentUserId={user?.userId}
-				/>
+					allowedTypes={access.allowedTypes}
+				/>}
 				<TaskDetailDialog
 					task={selectedTask}
 					onClose={() => setSelectedTask(null)}

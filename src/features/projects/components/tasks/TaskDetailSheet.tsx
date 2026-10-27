@@ -105,6 +105,8 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 			<SheetContent className="w-full sm:max-w-3xl! p-0 flex flex-col h-full overflow-hidden">
 				{isLoading ? (
 					<div className="flex items-center justify-center h-full">
+						<SheetTitle className="sr-only">Loading task details</SheetTitle>
+						<SheetDescription className="sr-only">Fetching task details and work history.</SheetDescription>
 						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
 					</div>
 				) : task ? (
@@ -361,7 +363,10 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 						</Tabs>
 					</div>
 				) : (
-					<div className="flex items-center justify-center h-full text-muted-foreground">Task not found</div>
+					<div className="flex items-center justify-center h-full text-muted-foreground">
+						<SheetTitle>Task not found</SheetTitle>
+						<SheetDescription className="sr-only">The task could not be loaded. Close this dialog and try again.</SheetDescription>
+					</div>
 				)}
 			</SheetContent>
 		</Sheet>

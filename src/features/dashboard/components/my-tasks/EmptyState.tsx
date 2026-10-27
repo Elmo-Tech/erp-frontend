@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Plus } from "lucide-react";
 
 interface EmptyStateProps {
-	onCreateTask: () => void;
+	onCreateTask?: () => void;
 	hasFilters: boolean;
 }
 
@@ -21,9 +21,9 @@ export function EmptyState({ onCreateTask, hasFilters }: EmptyStateProps) {
 				</div>
 				<h3 className="text-lg font-semibold mb-1">{hasFilters ? "No matching tasks" : "No tasks yet"}</h3>
 				<p className="text-muted-foreground text-sm text-center max-w-sm mb-6">
-					{hasFilters ? "Try adjusting your filters to find what you're looking for." : "Create your first task to get started. You can add personal tasks or tasks linked to your projects."}
+					{hasFilters ? "Try adjusting your filters to find what you're looking for." : onCreateTask ? "Create your first task to get started. You can add personal tasks or tasks linked to your projects." : "Your assigned tasks will appear here."}
 				</p>
-				{!hasFilters && (
+				{!hasFilters && onCreateTask && (
 					<Button
 						onClick={onCreateTask}
 						className="gap-2"

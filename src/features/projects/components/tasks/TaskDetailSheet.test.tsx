@@ -28,6 +28,18 @@ describe("TaskDetailSheet tests visibility", () => {
 		queries.useTestScenarios.mockReturnValue({ data: [] });
 	});
 
+	it.each([true, false])("keeps an accessible title and description before a task is available (loading=%s)", (isLoading) => {
+		queries.useTask.mockReturnValue({ data: undefined, isLoading });
+		const error = vi.spyOn(console, "error");
+		const warn = vi.spyOn(console, "warn");
+		render(<TaskDetailSheet taskId={12} open onOpenChange={vi.fn()} />);
+		expect(screen.getByRole("dialog", { name: isLoading ? "Loading task details" : "Task not found" })).toHaveAccessibleDescription();
+		expect(error).not.toHaveBeenCalled();
+		expect(warn).not.toHaveBeenCalled();
+		error.mockRestore();
+		warn.mockRestore();
+	});
+
 	it("hides the Tests tab and statistic when the task has no test scenarios", () => {
 		render(<TaskDetailSheet taskId={12} open onOpenChange={vi.fn()} />);
 		expect(screen.queryByRole("tab", { name: /Tests/ })).not.toBeInTheDocument();

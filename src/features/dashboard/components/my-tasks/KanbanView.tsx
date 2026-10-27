@@ -5,6 +5,7 @@
  * Tasks are pre-grouped by their own status from MyTasksPage
  */
 
+import { useMyTaskAccess } from "./useMyTaskAccess";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,7 +151,8 @@ function DroppableColumn({ status, children }: { status: TaskStatus; children: R
 
 // Draggable Card Wrapper
 function DraggableCard({ task, children }: { task: Task; children: React.ReactNode }) {
-	const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: task.taskId });
+	const access = useMyTaskAccess();
+	const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: task.taskId, disabled: !access.canEdit(task) });
 
 	const style = {
 		transform: CSS.Translate.toString(transform),
@@ -197,6 +199,7 @@ function KanbanCard({
 	onStopTimer: () => void;
 	isTimerLoading: boolean;
 }) {
+	const access = useMyTaskAccess();
 	const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== TaskStatus.COMPLETED;
 	const isDueToday = task.dueDate && isToday(new Date(task.dueDate));
 	const isDueTomorrow = task.dueDate && isTomorrow(new Date(task.dueDate));
@@ -230,6 +233,7 @@ function KanbanCard({
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button
+								aria-label={`Actions for ${task.title}`}
 								variant="ghost"
 								size="sm"
 								className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -251,7 +255,7 @@ function KanbanCard({
 							{Object.values(TaskStatus).map((status) => (
 								<DropdownMenuItem
 									key={status}
-									disabled={task.status === status}
+									disabled={!access.canEdit(task) || task.status === status}
 									onClick={() => onStatusChange(task, status)}
 								>
 									{StatusIcons[status]}

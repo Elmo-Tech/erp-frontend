@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { projectKeys } from "./useProjects";
 import { projectPipelineApi } from "../api/projectPipeline";
 import type { CreatePipelineTaskPayload, EditableWorkflowStage, UpdatePipelineTaskPayload } from "../types/pipeline";
 
@@ -24,6 +25,8 @@ export const useCreatePipelineTask = (projectId: number) => {
 		onSuccess: () => Promise.all([
 			queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
 			queryClient.invalidateQueries({ queryKey: ["projectMembers"] }),
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) }),
+			queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
 			queryClient.invalidateQueries({ queryKey: ["tasks"] }),
 		]),
 	});
@@ -50,6 +53,8 @@ export const useUpdatePipelineTask = (projectId: number) => {
 		onSuccess: () => Promise.all([
 			queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
 			queryClient.invalidateQueries({ queryKey: ["projectMembers"] }),
+			queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) }),
+			queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
 			queryClient.invalidateQueries({ queryKey: ["tasks"] }),
 			queryClient.invalidateQueries({ queryKey: ["task-supervision"] }),
 		]),

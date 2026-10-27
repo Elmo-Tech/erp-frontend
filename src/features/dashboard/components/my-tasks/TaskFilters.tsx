@@ -123,6 +123,7 @@ export function TaskFiltersBar({ filters, searchTerm, view, projects, hasActiveF
 						<TabsList>
 							<TabsTrigger
 								value="kanban"
+								aria-label="Board"
 								className="gap-2"
 							>
 								<LayoutGrid className="h-4 w-4" />
@@ -130,6 +131,7 @@ export function TaskFiltersBar({ filters, searchTerm, view, projects, hasActiveF
 							</TabsTrigger>
 							<TabsTrigger
 								value="list"
+								aria-label="List"
 								className="gap-2"
 							>
 								<List className="h-4 w-4" />

@@ -27,7 +27,7 @@ export interface TodayAttendance {
 	attendance: Attendance | null;
 	hasActiveTimer: boolean;
 	totalWorkedMinutes: number;
-	currentIdleMinutes?: number; // Only calculated if clocked out
+	currentIdleMinutes?: number | null; // Only calculated if clocked out
 }
 
 /**

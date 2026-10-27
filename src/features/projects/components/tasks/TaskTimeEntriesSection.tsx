@@ -81,8 +81,9 @@ export function TaskTimeEntriesSection({ task }: TaskTimeEntriesSectionProps) {
 		}
 	};
 
-	const formatDuration = (minutes?: number) => {
-		if (!minutes) return "In progress";
+	const formatDuration = (entry: TimeEntry) => {
+		if (!entry.endTime) return "In progress";
+		const minutes = entry.durationMinutes ?? 0;
 		const hours = Math.floor(minutes / 60);
 		const mins = minutes % 60;
 		if (hours === 0) return `${mins}m`;
@@ -140,7 +141,7 @@ export function TaskTimeEntriesSection({ task }: TaskTimeEntriesSectionProps) {
 											{entry.endTime && ` - ${format(new Date(entry.endTime), "HH:mm")}`}
 										</span>
 										<span>•</span>
-										<span>{formatDuration(entry.durationMinutes)}</span>
+										<span>{formatDuration(entry)}</span>
 										{entry.user && (
 											<>
 												<span>•</span>

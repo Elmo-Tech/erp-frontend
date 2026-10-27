@@ -242,6 +242,68 @@ test('service worker is served with valid script headers and registers', async (
  expect(await page.evaluate(async () => { const r = await navigator.serviceWorker.register('/push-sw.js'); await navigator.serviceWorker.ready; return r.scope; })).toBe(new URL('/', page.url()).href);
 });
 
+test('completed tasks remain in My Tasks board and read-only employees see no creation controls', async ({ page }) => {
+ const failures: string[] = [];
+ page.on('response', response => {
+  if (response.url().startsWith(api) && response.status() >= 400) failures.push(`${response.status()} ${new URL(response.url()).pathname}`);
+ });
+ await login(page, 'qa-other@thetables.com');
+ await page.goto('/dashboard/my-tasks');
+ await page.getByPlaceholder('Search tasks...').fill('QA Completed Task');
+ await expect(page.getByRole('heading', { name: 'QA Completed Task', exact: true })).toBeVisible();
+ const doneSummary = page.locator('[data-slot="card-content"]').filter({ has: page.getByText('Done', { exact: true }) });
+ await expect(doneSummary).toContainText('1');
+ await expect(page.getByRole('button', { name: 'New Task', exact: true })).toHaveCount(0);
+ await page.getByRole('tab', { name: 'List', exact: true }).click();
+ await expect(page.getByRole('heading', { name: 'QA Completed Task', exact: true })).toBeVisible();
+ await expect(page.getByRole('button', { name: 'Change status for QA Completed Task', exact: true })).toBeDisabled();
+ expect(failures).toEqual([]);
+ await expect(page.locator('[data-sonner-toast][data-type="error"]')).toHaveCount(0);
+ await page.screenshot({ path: test.info().outputPath('my-tasks-completed.png'), fullPage: true });
+});
+
+test('clock out refreshes history and preserves elapsed and idle totals after reload', async ({ page }) => {
+ const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date());
+ const created = await admin.post('attendance', { data: { userId: fixtures.other, date, clockIn: `${date}T08:00:00` } });
+ expect(created.status(), await created.text()).toBe(201);
+ await login(page, 'qa-other@thetables.com');
+ await page.goto('/dashboard/my-attendance');
+ await page.getByRole('button', { name: 'Clock Out', exact: true }).click();
+ await expect(page.getByText('Clocked Out', { exact: true })).toBeVisible();
+ await expect(page.getByRole('row').filter({ hasText: 'Today' }).getByRole('cell').nth(2)).not.toHaveText('—');
+ const today = (await (await other.get('attendance/today')).json()).data;
+ expect(today.currentIdleMinutes).toBeGreaterThan(0);
+ for (let pass = 0; pass < 2; pass++) {
+  if (pass) await page.reload();
+  await expect(page.getByText('Total', { exact: true }).locator('..')).not.toHaveText(/Total\s*0m$/);
+  await expect(page.getByText('Idle', { exact: true }).first().locator('..')).not.toHaveText(/Idle\s*0m$/);
+ }
+ await page.screenshot({ path: test.info().outputPath('clocked-out-summary.png'), fullPage: true });
+});
+
+test('task assignment refreshes project overview and task dialog has no accessibility warnings', async ({ page }) => {
+ const warnings: string[] = [];
+ page.on('console', message => { if (/DialogContent.*DialogTitle|Missing.*Description/.test(message.text())) warnings.push(message.text()); });
+ await login(page);
+ await page.goto(`/dashboard/projects/${fixtures.projects['QA Restore Project']}`);
+ await page.getByRole('tab', { name: 'Overview', exact: true }).click();
+ await expect(page.locator('main')).not.toContainText('Other QA Employee');
+ await page.getByRole('tab', { name: 'Pipeline', exact: true }).click();
+ await page.getByRole('button', { name: 'Add task to Backlog', exact: true }).click();
+ await page.getByRole('textbox', { name: 'Title', exact: true }).fill('QA Membership Refresh');
+ await page.getByRole('combobox', { name: 'Choose employees for this task', exact: true }).click();
+ await page.getByRole('option').filter({ hasText: 'Other QA Employee' }).click();
+ await page.getByRole('listbox', { name: 'Suggestions', exact: true }).press('Escape');
+ await page.getByRole('button', { name: 'Create task', exact: true }).click();
+ await expect(page.getByRole('dialog', { name: 'Create task in Backlog', exact: true })).toBeHidden();
+ await page.getByRole('tab', { name: 'Overview', exact: true }).click();
+ await expect(page.locator('main')).toContainText('Other QA Employee');
+ await page.getByRole('tab', { name: 'Pipeline', exact: true }).click();
+ await page.getByRole('button', { name: 'Open task details: QA Membership Refresh', exact: true }).click();
+ await expect(page.getByRole('dialog', { name: 'QA Membership Refresh', exact: true })).toBeVisible();
+ expect(warnings).toEqual([]);
+});
+
 async function deleteProjectDialog(page: Page, title: string) {
  await page.goto('/dashboard/projects');
  const row = page.getByRole('row').filter({ hasText: title });

@@ -3,6 +3,7 @@
  * Table/list view for tasks with expandable subtasks (hierarchical display)
  */
 
+import { useMyTaskAccess } from "./useMyTaskAccess";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,11 +11,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { format, isPast } from "date-fns";
-import { ChevronRight, ChevronDown, Play, Square, MoreVertical, Eye, Edit, GitBranch, Calendar, Clock, CheckCircle2, Loader2, Timer } from "lucide-react";
+import { ChevronRight, ChevronDown, Play, Square, MoreVertical, Eye, GitBranch, Calendar, Clock, CheckCircle2, Loader2, Timer } from "lucide-react";
 import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels } from "../../types/task";
 import { PriorityColors, StatusColors } from "./constants";
 import { StatusIcons } from "./StatusIcons";
-import { useStartTimer, useStopTimer, useActiveTimer } from "@/features/sales/hooks";
+import { useStartTimer, useStopTimer } from "@/features/sales/hooks";
 import { TrackableType } from "@/features/sales/types";
 import { useTimerStore } from "@/store/timerStore";
 import { toast } from "sonner";
@@ -144,6 +145,7 @@ function ListItem({
 	isTimerLoading,
 	hasActiveTimer,
 }: ListItemProps) {
+	const access = useMyTaskAccess();
 	const hasChildren = task.hasChildren || (task.children && task.children.length > 0);
 	const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== TaskStatus.COMPLETED;
 	const myAssignment = task.assignees?.find((a) => a.userId === currentUserId);
@@ -185,14 +187,14 @@ function ListItem({
 				{/* Status Dropdown */}
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<button className="shrink-0 hover:scale-110 transition-transform">{StatusIcons[task.status]}</button>
+						<button aria-label={`Change status for ${task.title}`} disabled={!access.canEdit(task)} className="shrink-0 hover:scale-110 transition-transform">{StatusIcons[task.status]}</button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="start">
 						<div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Change Status</div>
 						{Object.values(TaskStatus).map((status) => (
 							<DropdownMenuItem
 								key={status}
-								disabled={task.status === status}
+								disabled={!access.canEdit(task) || task.status === status}
 								onClick={() => onStatusChange(task, status)}
 							>
 								{StatusIcons[status]}
@@ -319,10 +321,6 @@ function ListItem({
 							<DropdownMenuItem onClick={() => onViewTask(task)}>
 								<Eye className="h-4 w-4 mr-2" />
 								View Details
-							</DropdownMenuItem>
-							<DropdownMenuItem>
-								<Edit className="h-4 w-4 mr-2" />
-								Edit Task
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
