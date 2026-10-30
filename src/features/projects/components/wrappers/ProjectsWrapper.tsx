@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProjectsTable, CreateProjectForm, UpdateProjectForm } from "../projects";
 import { Project } from "../../types/project";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { FolderKanban } from "lucide-react";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 
 export function ProjectsWrapper() {
@@ -28,10 +30,7 @@ export function ProjectsWrapper() {
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h1 className="text-2xl font-bold">Projects</h1>
-				<p className="text-muted-foreground">Manage projects and contracts</p>
-			</div>
+			<PageHeader title="Projects" description="Bring your projects, people, and progress together." icon={FolderKanban} />
 
 			<ProjectsTable
 				onProjectClick={handleProjectClick}

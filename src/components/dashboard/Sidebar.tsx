@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, Clock, Shield, BookOpen, BarChart3, Building2, X, ListTodo, User } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, ChevronLeft, ChevronRight, Clock, Shield, BookOpen, BarChart3, Building2, X, ListTodo, User, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useSidebarStore } from "@/store/sidebarStore";
@@ -20,6 +20,7 @@ const navIcons: Record<string, React.ElementType> = {
 	wiki: BookOpen,
 	employees: Users,
 	"my-attendance": Clock,
+	"my-requests": ClipboardList,
 	"attendance-management": Clock,
 	reports: BarChart3,
 	roles: Shield,
@@ -108,6 +109,7 @@ export function Sidebar() {
 						variant="ghost"
 						size="icon"
 						onClick={closeMobile}
+						aria-label="Close navigation"
 						className="h-8 w-8 lg:hidden"
 					>
 						<X className="h-4 w-4" />
@@ -117,6 +119,7 @@ export function Sidebar() {
 							variant="ghost"
 							size="icon"
 							onClick={toggleCollapsed}
+							aria-label="Collapse navigation"
 							className="hidden h-8 w-8 lg:flex"
 						>
 							<ChevronLeft className="h-4 w-4" />
@@ -131,6 +134,7 @@ export function Sidebar() {
 							variant="ghost"
 							size="icon"
 							onClick={toggleCollapsed}
+							aria-label="Expand navigation"
 							className="h-8 w-8"
 						>
 							<ChevronRight className="h-4 w-4" />
@@ -139,7 +143,7 @@ export function Sidebar() {
 				)}
 
 				{/* Navigation */}
-				<nav className="flex-1 overflow-y-auto py-4">
+				<nav aria-label="Main navigation" className="flex-1 overflow-y-auto py-5">
 					{dashboardNavGroups.map((group) => {
 						const filteredItems = filterItems(group.items);
 						if (filteredItems.length === 0) return null;
@@ -150,7 +154,7 @@ export function Sidebar() {
 								className="mb-6"
 							>
 								{/* Group Header */}
-								{!showCollapsed && <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{group.title}</h3>}
+								{!showCollapsed && <h3 className="px-5 mb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.14em]">{group.title}</h3>}
 								{showCollapsed && <div className="h-px bg-border mx-3 mb-2" />}
 
 								{/* Group Items */}
@@ -162,13 +166,14 @@ export function Sidebar() {
 										const linkContent = (
 											<Link
 												href={item.href}
+												aria-current={isActive ? "page" : undefined}
 												className={cn(
-													"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
-													isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+													"flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+													isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
 													showCollapsed && "justify-center px-2",
 												)}
 											>
-												<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary-foreground")} />
+												<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
 												{!showCollapsed && <span>{item.title}</span>}
 											</Link>
 										);
@@ -196,7 +201,7 @@ export function Sidebar() {
 				</nav>
 
 				{/* Footer */}
-				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">© 2026 {TABLES_APP_NAME}</p>}</div>
+				<div className="border-t p-4">{(!isCollapsed || isMobileOpen) && <p className="text-xs text-muted-foreground text-center">Your workspace, in flow</p>}</div>
 			</aside>
 		</TooltipProvider>
 	);

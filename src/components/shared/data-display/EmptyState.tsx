@@ -20,7 +20,7 @@ interface EmptyStateProps {
 export function EmptyState({ icon: Icon = FolderOpen, title, description, action, className, children }: EmptyStateProps) {
 	return (
 		<div className={cn("flex flex-col items-center justify-center py-12 text-center", className)}>
-			<Icon className="h-12 w-12 text-muted-foreground mb-4" />
+			<div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary"><Icon className="h-7 w-7" /></div>
 			<h3 className="text-lg font-semibold mb-2">{title}</h3>
 			{description && <p className="text-sm text-muted-foreground mb-4 max-w-sm">{description}</p>}
 			{action && (

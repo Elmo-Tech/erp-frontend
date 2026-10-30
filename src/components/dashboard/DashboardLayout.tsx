@@ -40,6 +40,7 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 			requiredPermission={requiredPermission}
 		>
 			<div className="min-h-screen bg-background">
+				<a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground">Skip to content</a>
 				<TimerReminderDialog />
 				{/* Sidebar */}
 				<Sidebar />
@@ -49,7 +50,7 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 					className={cn(
 						"transition-all duration-300",
 						// Desktop: margin based on sidebar state
-						isCollapsed ? "lg:ml-16" : "lg:ml-64",
+						isCollapsed ? "lg:ml-[70px]" : "lg:ml-64",
 						// Mobile: no margin (sidebar is overlay)
 						"ml-0"
 					)}
@@ -58,7 +59,7 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 					<Navbar />
 
 					{/* Page Content */}
-					<main className="p-4 lg:p-6">{allowed ? children : <div role="alert" className="rounded-xl border p-6">You do not have permission to access this page.</div>}</main>
+					<main id="main-content" className="mx-auto max-w-[1600px] p-4 lg:p-7">{allowed ? children : <div role="alert" className="rounded-xl border p-6">You do not have permission to access this page.</div>}</main>
 				</div>
 			</div>
 		</ProtectedRoute>

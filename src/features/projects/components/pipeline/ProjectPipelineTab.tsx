@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { DndContext, DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { format, isBefore, parseISO, startOfToday } from "date-fns";
-import { CalendarDays, Clock3, Flag, GripVertical, MoreHorizontal, Pencil, Plus, Settings2, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
+import { BarChart3, CalendarDays, Clock3, Columns3, Flag, GripVertical, List, MoreHorizontal, Pencil, Plus, Settings2, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { notifyApiError } from "@/lib/errorHandling";
 import { FormCombobox } from "@/components/shared/forms";
@@ -33,6 +33,8 @@ import { useDeletePipelineTask, useMovePipelineTask, useProjectPipeline } from "
 import type { PipelineTask, ProjectWorkflowStage } from "../../types/pipeline";
 import { PipelineTaskDialog } from "./PipelineTaskDialog";
 import { WorkflowSettingsDialog } from "./WorkflowSettingsDialog";
+import { ProjectTaskDashboard, ProjectTaskList } from "./ProjectTaskViews";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 const priorityClasses: Record<PipelineTask["priority"], string> = {
 	low: "text-slate-600 dark:text-slate-300",
@@ -224,8 +226,8 @@ function PipelineColumn({ stage, capabilities, actions }: PipelineColumnProps) {
 	const { setNodeRef, isOver } = useDroppable({ id: `pipeline-stage-${stage.stageId}`, data: { stageId: stage.stageId } });
 
 	return (
-		<section ref={setNodeRef} className={cn("w-[340px] shrink-0 rounded-xl bg-muted/40 p-2.5 transition-colors", isOver && "bg-primary/10 ring-2 ring-primary/20")}>
-			<header className="mb-2 flex h-10 items-center justify-between px-1">
+		<section ref={setNodeRef} className={cn("w-[min(340px,85vw)] shrink-0 rounded-2xl border bg-muted/40 p-2.5 transition-colors", isOver && "bg-primary/10 ring-2 ring-primary/20")}>
+			<header className="mb-2 flex h-10 items-center justify-between rounded-xl px-2" style={{ backgroundColor: `color-mix(in oklch, ${stage.color} 12%, transparent)` }}>
 				<div className="flex items-center gap-2">
 					<span className="h-2.5 w-2.5 rounded-full shadow-xs" style={{ backgroundColor: stage.color }} />
 					<h3 className="text-sm font-semibold">{stage.name}</h3>
@@ -336,6 +338,12 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 
 	return (
 		<div className="space-y-4">
+			<Tabs defaultValue="board" className="gap-4">
+				<TabsList aria-label="Project views" className="h-auto w-full justify-start gap-1 rounded-none border-b bg-transparent p-0">
+					<TabsTrigger value="board" className="h-11 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"><Columns3 />Board</TabsTrigger>
+					<TabsTrigger value="list" className="h-11 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"><List />List</TabsTrigger>
+					<TabsTrigger value="dashboard" className="h-11 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent px-4 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"><BarChart3 />Dashboard</TabsTrigger>
+				</TabsList>
 			<div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
 				<div className="w-full md:w-80">
 					<FormCombobox
@@ -358,13 +366,7 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 					</Button>
 				)}
 			</div>
-
-			<div className="flex flex-col gap-1 border-b pb-3">
-				<h2 className="text-sm font-semibold">Project board</h2>
-				<p className="text-xs text-muted-foreground">Open a task for its team, supervision, and time history. Manage work directly from each card.</p>
-			</div>
-
-			<DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+				<TabsContent value="board"><DndContext sensors={sensors} onDragEnd={handleDragEnd}>
 				<div className="flex gap-3 overflow-x-auto pb-4">
 					{pipeline.data.stages.map((stage) => (
 						<PipelineColumn
@@ -380,7 +382,10 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 						/>
 					))}
 				</div>
-			</DndContext>
+			</DndContext></TabsContent>
+				<TabsContent value="list"><ProjectTaskList stages={pipeline.data.stages} canCreate={canCreate} onOpen={(task) => setSelectedTaskId(task.taskId)} onCreate={(stage) => setTaskDialog({ stage })} /></TabsContent>
+				<TabsContent value="dashboard"><ProjectTaskDashboard stages={pipeline.data.stages} /></TabsContent>
+			</Tabs>
 
 			{selectedTaskId && (
 				<TaskDetailSheet key={selectedTaskId} taskId={selectedTaskId} open onOpenChange={(open) => !open && setSelectedTaskId(null)} onEdit={canEdit ? (task) => {

@@ -2,19 +2,13 @@
 
 import { AttendanceDashboard } from "./AttendanceDashboard";
 import { AttendanceHistoryTable } from "./AttendanceHistoryTable";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Clock } from "lucide-react";
 
 export function MyAttendanceWrapper() {
 	return (
 		<div className="space-y-6">
-			{/* Page Header */}
-			<div>
-				<h1 className="text-2xl font-bold flex items-center gap-2">
-					<Clock className="h-6 w-6" />
-					My Attendance
-				</h1>
-				<p className="text-muted-foreground">Track your daily attendance and work hours</p>
-			</div>
+			<PageHeader title="My Attendance" description="Track your daily attendance and work hours." icon={Clock} />
 
 			{/* Main Content - Widget + History Table */}
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Building2 } from "lucide-react";
 import { ClientsTable, CreateClientForm, UpdateClientForm } from "../clients";
 import { Client } from "../../types";
 
@@ -25,12 +26,8 @@ export function ClientsWrapper() {
 	};
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>Clients Management</CardTitle>
-				<CardDescription>Manage your clients and their information</CardDescription>
-			</CardHeader>
-			<CardContent>
+		<div className="space-y-6">
+			<PageHeader title="Clients Management" description="Keep client details and projects close at hand." icon={Building2} />
 				<ClientsTable
 					onAdd={handleAdd}
 					onEdit={handleEdit}
@@ -48,7 +45,6 @@ export function ClientsWrapper() {
 						client={selectedClient}
 					/>
 				)}
-			</CardContent>
-		</Card>
+		</div>
 	);
 }

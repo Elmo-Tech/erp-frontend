@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Settings2 } from "lucide-react";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,5 +38,5 @@ function SettingsContent() {
 	];
 	if (!tabs.length) return <p>You do not have permission to manage settings.</p>;
 	const initial = tabs.some((tab) => tab.id === params.get("tab")) ? params.get("tab")! : tabs[0].id;
-	return <div className="space-y-6"><h1 className="text-3xl font-bold">Settings</h1><p className="text-muted-foreground">Available sections are controlled by your role permissions.</p><Tabs key={initial} defaultValue={initial} className="space-y-4"><TabsList className="h-auto w-full flex-wrap justify-start">{tabs.map((tab) => <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>)}</TabsList>{tabs.map((tab) => <TabsContent key={tab.id} value={tab.id}>{tab.content}</TabsContent>)}</Tabs></div>;
+	return <div className="space-y-6"><PageHeader title="Settings" description="Available sections are controlled by your role permissions." icon={Settings2} /><Tabs key={initial} defaultValue={initial} className="space-y-4"><TabsList className="h-auto w-full flex-wrap justify-start">{tabs.map((tab) => <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>)}</TabsList>{tabs.map((tab) => <TabsContent key={tab.id} value={tab.id}>{tab.content}</TabsContent>)}</Tabs></div>;
 }

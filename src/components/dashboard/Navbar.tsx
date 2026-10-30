@@ -10,7 +10,6 @@ import { useSidebarStore } from "@/store/sidebarStore";
 import { useLogout } from "@/features/auth/hooks/useLogout";
 import { NavbarTimer } from "@/components/NavbarTimer";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
-// import { LanguageToggle } from "@/components/LanguageToggle";
 import { GlobalSearchDialog } from "@/components/dashboard/GlobalSearchDialog";
 import { ActiveTimersSheet } from "@/features/admin/components/ActiveTimersSheet";
 import { useActiveTimers } from "@/features/sales/hooks/useTimeEntries";
@@ -54,7 +53,7 @@ export function Navbar() {
 	};
 
 	return (
-		<header className="sticky top-0 z-30 flex min-h-16 flex-wrap items-center justify-between gap-y-2 border-b bg-background/95 px-2 py-2 sm:h-16 sm:flex-nowrap sm:px-4 sm:py-0 lg:px-6 backdrop-blur supports-backdrop-filter:bg-background/60">
+		<header className="sticky top-0 z-30 flex min-h-16 flex-wrap items-center justify-between gap-y-2 border-b bg-card/90 px-2 py-2 sm:h-16 sm:flex-nowrap sm:px-4 sm:py-0 lg:px-6 backdrop-blur supports-backdrop-filter:bg-card/75">
 			{/* Left side - Mobile menu + Search */}
 			<div className="flex items-center gap-1 sm:gap-3">
 				{/* Mobile menu button */}
@@ -100,7 +99,6 @@ export function Navbar() {
 				{/* Theme Toggle */}
 				<ThemeToggle />
 
-				{/* <LanguageToggle /> */}
 
 				{/* Notifications */}
 				<NotificationDropdown />

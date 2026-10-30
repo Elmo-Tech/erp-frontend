@@ -1,5 +1,7 @@
 "use client";
 
+import { PageHeader } from "@/components/shared/PageHeader";
+import { UserRound } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { AvatarUpload, ProfileForm, SecuritySettings } from "@/features/profile";
 import { getRoleLabel } from "@/config/simplification";
@@ -11,10 +13,7 @@ export default function ProfilePage() {
 
 	return (
 		<div className="space-y-6 max-w-5xl">
-			<div>
-				<h1 className="text-2xl font-bold">Profile</h1>
-				<p className="text-muted-foreground">Manage your account information</p>
-			</div>
+			<PageHeader title="Profile" description="Your account details and preferences, all in one place." icon={UserRound} />
 
 			{/* Avatar Section */}
 			<AvatarUpload

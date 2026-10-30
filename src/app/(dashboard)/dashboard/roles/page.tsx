@@ -8,6 +8,7 @@
 "use client";
 
 import React from "react";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { RolesMatrix } from "@/features/admin/components/RolesMatrix";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -26,11 +27,8 @@ export default function RolesManagementPage() {
 	// Permission check for manage_roles
 	if (!canManageRoles) {
 		return (
-			<div className="container mx-auto p-6">
-				<div className="mb-6">
-					<h1 className="text-3xl font-bold">Roles Management</h1>
-					<p className="text-muted-foreground">Manage role permissions and access control</p>
-				</div>
+			<div className="space-y-6">
+				<PageHeader title="Roles Management" description="Manage role permissions and access control." icon={Shield} />
 
 				<Alert variant="destructive">
 					<AlertCircle className="h-4 w-4" />
@@ -41,15 +39,8 @@ export default function RolesManagementPage() {
 	}
 
 	return (
-		<div className="container mx-auto p-6 space-y-6">
-			{/* Header */}
-			<div className="mb-6">
-				<h1 className="text-3xl font-bold flex items-center gap-2">
-					<Shield className="h-8 w-8" />
-					Roles Management
-				</h1>
-				<p className="text-muted-foreground">Manage role permissions and access control for the system</p>
-			</div>
+		<div className="space-y-6">
+			<PageHeader title="Roles Management" description="Manage role permissions and access control for the system." icon={Shield} />
 
 			{/* Information Card */}
 			<Card>

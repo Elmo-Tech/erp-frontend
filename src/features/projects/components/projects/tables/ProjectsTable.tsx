@@ -169,8 +169,8 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 				emptyState={{
 					icon: FolderOpen,
 					title: filters.search || filters.status || filters.clientId || filters.projectTypeId ? "No projects match your filters" : "No projects yet",
-					description: "Get started by creating your first project.",
-					action: onCreateProject ? { label: "Create Project", onClick: onCreateProject } : undefined,
+					description: filters.search || filters.status || filters.clientId || filters.projectTypeId ? "Try a different search or filter to see more projects." : "Get started by creating your first project.",
+					action: onCreateProject && !(filters.search || filters.status || filters.clientId || filters.projectTypeId) ? { label: "Create Project", onClick: onCreateProject } : undefined,
 				}}
 				headerActions={
 					<FilterBar

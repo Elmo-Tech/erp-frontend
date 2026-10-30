@@ -77,7 +77,7 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 		return (
 			<Card className={className}>
 				{(title || headerActions) && (
-					<CardHeader className="flex flex-row items-center justify-between">
+					<CardHeader className="flex flex-col items-stretch gap-4 xl:flex-row xl:items-center xl:justify-between">
 						{title && <CardTitle>{title}</CardTitle>}
 						{headerActions}
 					</CardHeader>
@@ -97,7 +97,7 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 	return (
 		<Card className={className}>
 			{(title || headerActions) && (
-				<CardHeader className="flex flex-row items-center justify-between">
+				<CardHeader className="flex flex-col items-stretch gap-4 xl:flex-row xl:items-center xl:justify-between">
 					<div className="flex items-center gap-2">
 						{title && <CardTitle>{title}</CardTitle>}
 						{titleBadge && <Badge variant="secondary">{titleBadge}</Badge>}
@@ -106,7 +106,7 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 				</CardHeader>
 			)}
 			<CardContent>
-				<div className="rounded-md border">
+				<div className="overflow-hidden rounded-xl border">
 					<Table>
 						<TableHeader>
 							<TableRow>

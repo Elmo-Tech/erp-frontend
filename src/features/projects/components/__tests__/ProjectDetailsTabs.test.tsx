@@ -74,58 +74,44 @@ describe("ProjectDetailsTabs", () => {
 		canViewProjectTasks = true;
 	});
 
-	it("opens the pipeline first and keeps only the streamlined admin tabs", () => {
+	it("opens the work area directly and keeps project sections in the menu", () => {
 		render(<ProjectDetailsTabs projectId={1} />);
-
-		expect(screen.getByRole("tab", { name: /pipeline/i })).toHaveAttribute("data-state", "active");
 		expect(screen.getByText("Pipeline board")).toBeInTheDocument();
+		expect(screen.queryByRole("tab", { name: /pipeline/i })).not.toBeInTheDocument();
+		expect(screen.queryByRole("tab", { name: /overview/i })).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Open project menu" }));
+		expect(screen.getByRole("dialog", { name: "Project menu" })).toBeInTheDocument();
 		expect(screen.getByRole("tab", { name: /overview/i })).toBeInTheDocument();
 		expect(screen.getByRole("tab", { name: /files/i })).toBeInTheDocument();
 		expect(screen.getByRole("tab", { name: /history/i })).toBeInTheDocument();
-		expect(screen.queryByRole("tab", { name: /legacy tasks/i })).not.toBeInTheDocument();
 		expect(screen.queryByRole("tab", { name: /wiki/i })).not.toBeInTheDocument();
 	});
 
-	it("keeps project metrics inside the overview tab", () => {
+	it("shows project metrics inside the menu and returns to the work area on close", () => {
 		render(<ProjectDetailsTabs projectId={1} />);
-
 		expect(screen.queryByText("Deadline")).not.toBeInTheDocument();
-		expect(screen.queryByText("Progress")).not.toBeInTheDocument();
-		expect(screen.queryByText("Time Spent")).not.toBeInTheDocument();
-
-		fireEvent.mouseDown(screen.getByRole("tab", { name: /overview/i }), {
-			button: 0,
-			ctrlKey: false,
-		});
-
+		fireEvent.click(screen.getByRole("button", { name: "Open project menu" }));
 		expect(screen.getByText("Deadline")).toBeInTheDocument();
 		expect(screen.getByText("Jul 31, 2026")).toBeInTheDocument();
-		expect(screen.getByText("Progress")).toBeInTheDocument();
 		expect(screen.getByText("40%")).toBeInTheDocument();
-		expect(screen.getByText("Time Spent")).toBeInTheDocument();
 		expect(screen.getByText("2h 5m")).toBeInTheDocument();
-		expect(screen.getByText("Project Type")).toBeInTheDocument();
 		expect(screen.getByText("Website")).toBeInTheDocument();
-	});
-
-	it("shows assigned-project users only the pipeline tab", () => {
-		isAdminWorkspace = false;
-
-		render(<ProjectDetailsTabs projectId={1} />);
-
-		expect(screen.getAllByRole("tab")).toHaveLength(1);
-		expect(screen.getByRole("tab", { name: /pipeline/i })).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Close" }));
 		expect(screen.getByText("Pipeline board")).toBeInTheDocument();
 	});
 
-	it("opens overview when project management is available without task access", () => {
-		canViewProjectTasks = false;
-
+	it("does not expose the project menu to assigned-project users without management permission", () => {
+		isAdminWorkspace = false;
 		render(<ProjectDetailsTabs projectId={1} />);
+		expect(screen.getByText("Pipeline board")).toBeInTheDocument();
+		expect(screen.queryByRole("button", { name: "Open project menu" })).not.toBeInTheDocument();
+	});
 
-		expect(screen.getAllByRole("tab")).toHaveLength(3);
-		expect(screen.getByRole("tab", { name: /overview/i })).toHaveAttribute("data-state", "active");
-		expect(screen.getByText("Deadline")).toBeInTheDocument();
+	it("keeps the menu accessible when project management is available without task access", () => {
+		canViewProjectTasks = false;
+		render(<ProjectDetailsTabs projectId={1} />);
 		expect(screen.queryByText("Pipeline board")).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Open project menu" }));
+		expect(screen.getByText("Deadline")).toBeInTheDocument();
 	});
 });

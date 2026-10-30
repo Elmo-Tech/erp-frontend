@@ -73,6 +73,7 @@ export function SearchInput({ value: controlledValue, onChange, placeholder = "S
 				<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 				<Input
 					value={internalValue}
+					aria-label={placeholder}
 					onChange={handleChange}
 					onKeyDown={handleKeyDown}
 					placeholder={placeholder}
@@ -81,6 +82,7 @@ export function SearchInput({ value: controlledValue, onChange, placeholder = "S
 				{showClear && internalValue && (
 					<button
 						type="button"
+						aria-label="Clear search"
 						onClick={handleClear}
 						className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
 					>

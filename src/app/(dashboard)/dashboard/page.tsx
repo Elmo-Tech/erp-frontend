@@ -13,6 +13,7 @@ import type { AdminDashboardOverview, ManagerDashboardOverview, DeveloperDashboa
 import { getRoleLabel } from "@/config/simplification";
 import { DashboardOperationsCharts } from "@/features/dashboard/components/DashboardOperationsCharts";
 import { DeliveryTimeline } from "@/features/dashboard/components/DeliveryTimeline";
+import { DashboardWelcome } from "@/features/dashboard/components/DashboardWelcome";
 
 export default function DashboardPage() {
 	const { user } = useAuthStore();
@@ -37,15 +38,7 @@ export default function DashboardPage() {
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h1 className="text-2xl font-bold">Welcome back, {user?.name || "User"} 👋</h1>
-				<p className="text-muted-foreground">
-					{role === "admin" && "Here's an overview of your business today"}
-					{role === "manager" && "Here's how your team is performing"}
-					{role === "developer" && "Here's your work summary"}
-					{!role && "Here's your dashboard"}
-				</p>
-			</div>
+			<DashboardWelcome name={user?.name} role={role} />
 
 			{role === "admin" && dashboardData && <AdminDashboard data={dashboardData as AdminDashboardOverview} />}
 			{role === "manager" && dashboardData && <ManagerDashboard data={dashboardData as ManagerDashboardOverview} />}
@@ -362,7 +355,7 @@ function StatsGrid({ stats }: { stats: StatItem[] }) {
 				const changeDisplay = stat.isAbsolute ? `${(stat.change ?? 0) >= 0 ? "+" : ""}${stat.change}` : `${(stat.change ?? 0) >= 0 ? "+" : ""}${Math.abs(stat.change ?? 0)}%`;
 
 				return (
-					<Card key={stat.title}>
+					<Card key={stat.title} className="gap-3 transition-shadow hover:shadow-md">
 						<CardHeader className="flex flex-row items-center justify-between pb-2">
 							<CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
 							<div className={`rounded-lg p-2 ${stat.bgColor}`}>
@@ -370,7 +363,7 @@ function StatsGrid({ stats }: { stats: StatItem[] }) {
 							</div>
 						</CardHeader>
 						<CardContent>
-							<div className="text-2xl font-bold">{stat.format(stat.value)}</div>
+							<div className="text-3xl font-semibold tracking-tight">{stat.format(stat.value)}</div>
 							{hasChange ? (
 								<div className="flex items-center gap-1 text-xs">
 									{trend === "up" ? <ArrowUpRight className="h-3 w-3 text-green-600" /> : <ArrowDownRight className="h-3 w-3 text-red-600" />}

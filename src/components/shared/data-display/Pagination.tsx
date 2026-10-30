@@ -57,14 +57,14 @@ export function Pagination({ pagination, onPageChange, className, showInfo = tru
 	};
 
 	return (
-		<div className={cn("flex items-center justify-between", className)}>
+		<div className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
 			{showInfo && (
 				<p className="text-sm text-muted-foreground">
 					Showing {startItem} to {endItem} of {total}
 				</p>
 			)}
 
-			<div className="flex items-center gap-2">
+			<nav aria-label="Pagination" className="flex flex-wrap items-center gap-2">
 				<Button
 					variant="outline"
 					size="sm"
@@ -86,6 +86,8 @@ export function Pagination({ pagination, onPageChange, className, showInfo = tru
 						) : (
 							<Button
 								key={page}
+								aria-label={`Page ${page}`}
+								aria-current={currentPage === page ? "page" : undefined}
 								variant={currentPage === page ? "default" : "outline"}
 								size="sm"
 								onClick={() => onPageChange(page)}
@@ -105,7 +107,7 @@ export function Pagination({ pagination, onPageChange, className, showInfo = tru
 				>
 					Next
 				</Button>
-			</div>
+			</nav>
 		</div>
 	);
 }

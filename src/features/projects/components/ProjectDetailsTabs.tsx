@@ -7,11 +7,12 @@ import { ProjectStatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useProject } from "../hooks/useProjects";
 import { UpdateProjectForm } from "./projects";
 import { FilesTab, HistoryTab } from "./tabs";
 import { ProjectPipelineTab } from "./pipeline";
-import { ArrowLeft, Calendar, ListTodo, Clock, Pencil, Users, FileText, History, Columns3 } from "lucide-react";
+import { ArrowLeft, Calendar, ListTodo, Clock, Pencil, Users, FileText, History, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
@@ -25,7 +26,8 @@ interface ProjectDetailsTabsProps {
 export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 	const router = useRouter();
 	const { data: project, isLoading } = useProject(projectId);
-	const [activeTab, setActiveTab] = useState("pipeline");
+	const [activeTab, setActiveTab] = useState("overview");
+	const [projectMenuOpen, setProjectMenuOpen] = useState(false);
 	const [editDialogOpen, setEditDialogOpen] = useState(false);
 
 	// Permission checks
@@ -63,22 +65,22 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 
 	const filesCount = project.files?.length || 0;
 	const canShowUIApproval = isModuleEnabled(moduleKeys.uiApproval);
-	const visibleActiveTab = activeTab === "pipeline" && !canViewTasks ? "overview" : activeTab;
 
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-4">
+			<div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary/10 bg-gradient-to-r from-primary/10 via-card to-card p-4 sm:p-5">
+				<div className="flex min-w-0 items-center gap-3">
 					<Button
 						variant="ghost"
 						size="icon"
 						onClick={() => router.push("/dashboard/projects")}
+						aria-label="Back to projects"
 					>
 						<ArrowLeft className="h-4 w-4" />
 					</Button>
 					<div>
-						<h1 className="text-3xl font-bold flex items-center gap-2">
+						<h1 className="flex flex-wrap items-center gap-2 text-2xl font-semibold tracking-tight sm:text-3xl">
 							{project.title}
 							<ProjectStatusBadge status={project.status} />
 						</h1>
@@ -87,51 +89,26 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 						</p>
 					</div>
 				</div>
-				{canEditProjects && (
-					<Button onClick={() => setEditDialogOpen(true)}>
-						<Pencil className="h-4 w-4 mr-2" />
-						Edit Project
-					</Button>
-				)}
+				<div className="flex items-center gap-2">
+					{canEditProjects && <Button variant="outline" onClick={() => setEditDialogOpen(true)}><Pencil className="h-4 w-4" />Edit Project</Button>}
+					{canManageProjects && <Button variant="outline" size="icon" aria-label="Open project menu" onClick={() => setProjectMenuOpen(true)}><SlidersHorizontal className="h-4 w-4" /></Button>}
+				</div>
 			</div>
 
-			{/* Tabs */}
-			<Tabs
-				value={visibleActiveTab}
-				onValueChange={setActiveTab}
-				className="space-y-4"
-			>
-				<TabsList className="h-auto flex-wrap justify-start">
-					{canViewTasks && (
-						<TabsTrigger
-							value="pipeline"
-							className="gap-2"
-						>
-							<Columns3 className="h-4 w-4" />
-							Pipeline
-						</TabsTrigger>
-					)}
-					{canManageProjects && <TabsTrigger value="overview">Overview</TabsTrigger>}
-					{canManageProjects && canViewProjectFiles && (
-						<TabsTrigger
-							value="files"
-							className="gap-2"
-						>
-							<FileText className="h-4 w-4" />
-							Files ({filesCount})
-						</TabsTrigger>
-					)}
-					{canManageProjects && canViewProjectHistory && (
-						<TabsTrigger
-							value="history"
-							className="gap-2"
-						>
-							<History className="h-4 w-4" />
-							History
-						</TabsTrigger>
-					)}
-				</TabsList>
+			{canViewTasks ? <ProjectPipelineTab projectId={projectId} /> : <div className="rounded-2xl border bg-card p-6 text-sm text-muted-foreground">You do not have access to project tasks.{canManageProjects && " Open the project menu to view available project information."}</div>}
 
+			{canManageProjects && <Sheet open={projectMenuOpen} onOpenChange={setProjectMenuOpen}>
+				<SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
+					<SheetHeader className="border-b pr-12">
+						<SheetTitle>Project menu</SheetTitle>
+						<SheetDescription>{project.title} · Overview, files, and history</SheetDescription>
+					</SheetHeader>
+					<Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0 px-4 pb-6">
+						<TabsList className="h-auto max-w-full flex-wrap justify-start">
+							<TabsTrigger value="overview">Overview</TabsTrigger>
+							{canViewProjectFiles && <TabsTrigger value="files" className="gap-2"><FileText className="h-4 w-4" />Files ({filesCount})</TabsTrigger>}
+							{canViewProjectHistory && <TabsTrigger value="history" className="gap-2"><History className="h-4 w-4" />History</TabsTrigger>}
+						</TabsList>
 				{/* Overview Tab */}
 				{canManageProjects && <TabsContent
 					value="overview"
@@ -227,13 +204,6 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 					</div>
 				</TabsContent>}
 
-				{/* Tasks Tab */}
-				{canViewTasks && (
-					<TabsContent value="pipeline">
-						<ProjectPipelineTab projectId={projectId} />
-					</TabsContent>
-				)}
-
 				{/* Files Tab */}
 				{canManageProjects && canViewProjectFiles && (
 					<TabsContent value="files">
@@ -253,7 +223,9 @@ export function ProjectDetailsTabs({ projectId }: ProjectDetailsTabsProps) {
 					</TabsContent>
 				)}
 
-			</Tabs>
+					</Tabs>
+				</SheetContent>
+			</Sheet>}
 
 			{/* Edit Project Dialog */}
 			<UpdateProjectForm

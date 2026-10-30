@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Users } from "lucide-react";
@@ -25,7 +26,7 @@ export function EmployeesWrapper() {
 	const [showUpdateDialog, setShowUpdateDialog] = useState(false);
 	const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-	const { data, isLoading } = useEmployees({
+	const { data, isLoading, isError, refetch } = useEmployees({
 		search: search || undefined,
 		isActive: statusFilter === "all" ? undefined : statusFilter === "active",
 	});
@@ -87,26 +88,15 @@ export function EmployeesWrapper() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-bold flex items-center gap-2">
-						<Users className="h-6 w-6" />
-						Employees
-					</h1>
-					<p className="text-muted-foreground">Manage your team members</p>
-				</div>
-				{canCreateEmployees && (
-					<Button onClick={() => setShowCreateDialog(true)}>
-						<Plus className="h-4 w-4 mr-2" />
-						Add Employee
-					</Button>
-				)}
-			</div>
+			<PageHeader title="Employees" description="Find your teammates and their information in one place." icon={Users}
+				actions={canCreateEmployees && <Button onClick={() => setShowCreateDialog(true)}><Plus className="h-4 w-4" />Add Employee</Button>}
+			/>
 
-			<div className="flex gap-4">
-				<div className="relative flex-1 max-w-sm">
+			<div className="flex flex-wrap gap-3">
+				<div className="relative min-w-[min(100%,14rem)] flex-1 max-w-sm">
 					<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 					<Input
+						aria-label="Search employees"
 						placeholder="Search employees..."
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
@@ -117,7 +107,7 @@ export function EmployeesWrapper() {
 					value={statusFilter}
 					onValueChange={setStatusFilter}
 				>
-					<SelectTrigger className="w-[150px]">
+					<SelectTrigger aria-label="Employee status" className="w-[150px]">
 						<SelectValue placeholder="Status" />
 					</SelectTrigger>
 					<SelectContent>
@@ -137,6 +127,12 @@ export function EmployeesWrapper() {
 						/>
 					))}
 				</div>
+			) : isError ? (
+				<div role="alert" className="rounded-2xl border bg-card p-8 text-center">
+					<p className="font-medium">Could not load employees</p>
+					<p className="mt-1 text-sm text-muted-foreground">Please try again.</p>
+					<Button variant="outline" className="mt-4" onClick={() => void refetch()}>Retry</Button>
+				</div>
 			) : data?.employees && data.employees.length > 0 ? (
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{data.employees.map((employee) => (
@@ -153,8 +149,9 @@ export function EmployeesWrapper() {
 			) : (
 				<div className="text-center py-12 text-muted-foreground">
 					<Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-					<p>No employees found</p>
-					{canCreateEmployees && (
+					<p>{search || statusFilter !== "all" ? "No employees match your filters" : "No employees found"}</p>
+					{(search || statusFilter !== "all") && <Button variant="outline" className="mt-4" onClick={() => { setSearch(""); setStatusFilter("all"); }}>Clear filters</Button>}
+					{canCreateEmployees && !search && statusFilter === "all" && (
 						<Button
 							variant="outline"
 							className="mt-4"

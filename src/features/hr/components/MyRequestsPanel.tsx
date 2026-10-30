@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { ClipboardList } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
@@ -61,12 +63,9 @@ export function MyRequestsPanel() {
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h1 className="text-2xl font-semibold">My requests</h1>
-				<p className="text-sm text-muted-foreground">Submit leave, short permission, and overtime requests. Approval is done by your manager.</p>
-			</div>
+			<PageHeader title="My requests" description="Submit leave, short permission, and overtime requests. Approval is done by your manager." icon={ClipboardList} />
 			<Tabs defaultValue="leaves" className="gap-6">
-				<TabsList>
+				<TabsList className="h-auto max-w-full flex-wrap justify-start">
 					<TabsTrigger value="leaves">Leaves</TabsTrigger>
 					<TabsTrigger value="permissions">Short permissions</TabsTrigger>
 					<TabsTrigger value="overtime">Overtime</TabsTrigger>
@@ -277,9 +276,9 @@ function MyOvertime({ employeeId, year, month }: { employeeId: number; year: num
 			</CardHeader>
 			<CardContent className="space-y-4">
 				<form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]">
-					<input type="date" {...form.register("overtimeDate")} className="rounded border px-2 py-2 text-sm" />
-					<input type="time" {...form.register("startTime")} className="rounded border px-2 py-2 text-sm" />
-					<input type="time" {...form.register("endTime")} className="rounded border px-2 py-2 text-sm" />
+					<input aria-label="Overtime date" type="date" {...form.register("overtimeDate")} className="rounded border px-2 py-2 text-sm" />
+					<input aria-label="Overtime start time" type="time" {...form.register("startTime")} className="rounded border px-2 py-2 text-sm" />
+					<input aria-label="Overtime end time" type="time" {...form.register("endTime")} className="rounded border px-2 py-2 text-sm" />
 					<input {...form.register("reason")} placeholder="Reason" className="rounded border px-2 py-2 text-sm" />
 					<Button type="submit">Submit</Button>
 				</form>

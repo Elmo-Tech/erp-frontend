@@ -269,7 +269,7 @@ test('completed tasks remain in My Tasks board and read-only employees see no cr
 
 test('clock out refreshes history and preserves elapsed and idle totals after reload', async ({ page }) => {
  const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo' }).format(new Date());
- const created = await admin.post('attendance', { data: { userId: fixtures.other, date, clockIn: `${date}T08:00:00` } });
+ const created = await admin.post('attendance', { data: { userId: fixtures.other, date, clockIn: `${date}T00:00:00` } });
  expect(created.status(), await created.text()).toBe(201);
  await login(page, 'qa-other@thetables.com');
  await page.goto('/dashboard/my-attendance');
@@ -293,9 +293,9 @@ test('task assignment refreshes project overview and task dialog has no accessib
  page.on('console', message => { if (/DialogContent.*DialogTitle|Missing.*Description/.test(message.text())) warnings.push(message.text()); });
  await login(page);
  await page.goto(`/dashboard/projects/${fixtures.projects['QA Restore Project']}`);
- await page.getByRole('tab', { name: 'Overview', exact: true }).click();
- await expect(page.locator('main')).not.toContainText('Other QA Employee');
- await page.getByRole('tab', { name: 'Pipeline', exact: true }).click();
+ await page.getByRole('button', { name: 'Open project menu' }).click();
+ await expect(page.getByRole('dialog', { name: 'Project menu' })).not.toContainText('Other QA Employee');
+ await page.getByRole('dialog', { name: 'Project menu' }).getByRole('button', { name: 'Close' }).click();
  await page.getByRole('button', { name: 'Add task to Backlog', exact: true }).click();
  await page.getByRole('textbox', { name: 'Title', exact: true }).fill('QA Membership Refresh');
  await page.getByRole('combobox', { name: 'Choose employees for this task', exact: true }).click();
@@ -303,12 +303,29 @@ test('task assignment refreshes project overview and task dialog has no accessib
  await page.getByRole('listbox', { name: 'Suggestions', exact: true }).press('Escape');
  await page.getByRole('button', { name: 'Create task', exact: true }).click();
  await expect(page.getByRole('dialog', { name: 'Create task in Backlog', exact: true })).toBeHidden();
+ await page.getByRole('button', { name: 'Open project menu' }).click();
  await page.getByRole('tab', { name: 'Overview', exact: true }).click();
- await expect(page.locator('main')).toContainText('Other QA Employee');
- await page.getByRole('tab', { name: 'Pipeline', exact: true }).click();
+ await expect(page.getByRole('dialog', { name: 'Project menu' })).toContainText('Other QA Employee');
+ await page.getByRole('dialog', { name: 'Project menu' }).getByRole('button', { name: 'Close' }).click();
  await page.getByRole('button', { name: 'Open task details: QA Membership Refresh', exact: true }).click();
  await expect(page.getByRole('dialog', { name: 'QA Membership Refresh', exact: true })).toBeVisible();
  expect(warnings).toEqual([]);
+});
+
+test('project list and dashboard reflect live pipeline tasks', async ({ page }) => {
+ await login(page);
+ await page.goto(`/dashboard/projects/${fixtures.projects['QA Restore Project']}`);
+ await page.getByRole('tab', { name: 'List', exact: true }).click();
+ await expect(page.getByRole('button', { name: 'QA Membership Refresh', exact: true })).toBeVisible();
+ await expect(page.getByRole('row').filter({ hasText: 'QA Membership Refresh' })).toContainText('Other QA Employee');
+ await page.screenshot({ path: test.info().outputPath('project-task-list.png'), fullPage: true });
+ await page.getByRole('textbox', { name: 'Search project tasks' }).fill('does not exist');
+ await expect(page.getByRole('button', { name: 'QA Membership Refresh', exact: true })).toHaveCount(0);
+ await page.getByRole('tab', { name: 'Dashboard', exact: true }).click();
+ await expect(page.getByText('Total tasks', { exact: true })).toBeVisible();
+ await expect(page.getByText('Other QA Employee', { exact: true })).toBeVisible();
+ await expect(page.getByText('1 total · 1 open · 0 completed', { exact: true })).toBeVisible();
+ await page.screenshot({ path: test.info().outputPath('project-task-dashboard.png'), fullPage: true });
 });
 
 async function deleteProjectDialog(page: Page, title: string) {
