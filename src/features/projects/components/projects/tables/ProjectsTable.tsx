@@ -12,7 +12,6 @@ import { useProjects, usePinProject, useUnpinProject } from "../../../hooks/useP
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { Project, ProjectFilters } from "../../../types/project";
-import { ProjectStatus, ProjectStatusLabels } from "@/lib/statusHelpers";
 import { getProjectsColumns } from "./columns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
@@ -46,10 +45,11 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 
 	const { data: projectsResponse, isLoading, error } = useProjects(filters);
 	const { data: projectTypesResponse, isLoading: isProjectTypesLoading } = useLookupOptions("project_type");
+	const { data: projectStatusesResponse } = useLookupOptions("project_status");
 
-	const statusOptions: FilterOption[] = Object.values(ProjectStatus).map((status) => ({
-		value: status,
-		label: ProjectStatusLabels[status],
+	const statusOptions: FilterOption[] = (projectStatusesResponse?.data ?? []).map((status) => ({
+		value: status.value,
+		label: status.is_active ? status.label : `${status.label} (Inactive)`,
 	}));
 
 	const clientOptions: FilterOption[] = useMemo(() => {
@@ -83,7 +83,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 	const handleStatusChange = (value: string | undefined) => {
 		setFilters((prev) => ({
 			...prev,
-			status: value as ProjectStatus | undefined,
+			status: value,
 			page: 1,
 		}));
 	};

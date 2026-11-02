@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FormDialog } from "@/components/shared";
@@ -20,7 +20,7 @@ const projectSchema = z.object({
 	description: z.string().optional(),
 	budget: z.number().min(0, "Budget must be positive"),
 	deadline: z.string().optional(),
-	status: z.nativeEnum(ProjectStatus),
+	status: z.string().min(1, "Select a project status"),
 	projectTypeId: z.number().int().positive().optional(),
 	reason: z.string().optional(),
 });
@@ -37,6 +37,8 @@ interface CreateProjectFormProps {
 export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: CreateProjectFormProps) {
 	const createProject = useCreateDirectProject();
 	const { data: projectTypesResponse, isLoading: isProjectTypesLoading } = useLookupOptions("project_type");
+	const { data: statusesResponse, isLoading: isStatusesLoading, isError: statusesError } = useLookupOptions("project_status");
+	const statusOptions = useMemo(() => (statusesResponse?.data ?? []).filter((status) => status.is_active).map((status) => ({ value: status.value, label: status.label })), [statusesResponse?.data]);
 	const [selectedClientId, setSelectedClientId] = useState<number | undefined>(clientId && clientId > 0 ? clientId : undefined);
 	const projectTypeOptions = useMemo(
 		() => (projectTypesResponse?.data ?? [])
@@ -53,11 +55,18 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 			description: "",
 			budget: 0,
 			deadline: "",
-			status: ProjectStatus.DRAFT,
+			status: "",
 			projectTypeId: undefined,
 			reason: "",
 		},
 	});
+	const selectedStatus = useWatch({ control: form.control, name: "status" });
+
+	useEffect(() => {
+		if (open && !form.getValues("status") && statusOptions.length) {
+			form.setValue("status", statusOptions.find((option) => option.value === ProjectStatus.DRAFT)?.value ?? statusOptions[0].value, { shouldValidate: true });
+		}
+	}, [form, open, statusOptions]);
 
 	const resetForm = () => {
 		setSelectedClientId(clientId && clientId > 0 ? clientId : undefined);
@@ -66,7 +75,7 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 			description: "",
 			budget: 0,
 			deadline: "",
-			status: ProjectStatus.DRAFT,
+			status: statusOptions.find((option) => option.value === ProjectStatus.DRAFT)?.value ?? statusOptions[0]?.value ?? "",
 			projectTypeId: undefined,
 			reason: "",
 		});
@@ -112,8 +121,10 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 			submitLabel="Create Project"
 			onSubmit={form.handleSubmit(handleSubmit)}
 			isLoading={createProject.isPending}
-			isSubmitDisabled={!form.formState.isValid || !(clientId && clientId > 0 ? clientId : selectedClientId)}
+			isSubmitDisabled={!form.formState.isValid || isStatusesLoading || statusesError || !statusOptions.some((option) => option.value === selectedStatus) || !(clientId && clientId > 0 ? clientId : selectedClientId)}
 		>
+			{statusesError && <p role="alert" className="text-sm text-destructive">Unable to load project statuses. Please reopen the form or try again.</p>}
+			{!isStatusesLoading && !statusesError && statusOptions.length === 0 && <p role="alert" className="text-sm text-destructive">No active project statuses are available. Add or activate one in Settings.</p>}
 			{!(clientId && clientId > 0) && (
 				<ClientPicker
 					selectedClientId={selectedClientId}
@@ -124,6 +135,8 @@ export function CreateProjectForm({ open, onOpenChange, clientId, onSuccess }: C
 				form={form}
 				projectTypeOptions={projectTypeOptions}
 				isProjectTypesLoading={isProjectTypesLoading}
+				statusOptions={statusOptions}
+				isStatusesLoading={isStatusesLoading}
 			/>
 		</FormDialog>
 	);

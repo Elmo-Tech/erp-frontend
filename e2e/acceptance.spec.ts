@@ -392,6 +392,27 @@ test('project type is dynamic, linked deletion explains blocker, unused deletion
  await expect(page.getByText('QA Browser Type', { exact: true })).toBeHidden();
 });
 
+test('configured project status appears in edit and filters and saves to the project', async ({ page }) => {
+ const response = await admin.post('settings/lookup-options', { data: { type: 'project_status', value: 'qa_client_review', label: 'QA Client Review', is_active: true } });
+ expect(response.status(), await response.text()).toBe(201);
+ const id = fixtures.projects['QA Type Project'];
+ await login(page);
+ await page.goto(`/dashboard/projects/${id}`);
+ await page.getByRole('button', { name: 'Edit Project', exact: true }).click();
+ const dialog = page.getByRole('dialog', { name: 'Edit Project' });
+ await dialog.getByRole('combobox', { name: 'Status', exact: true }).click();
+ await page.getByRole('option', { name: 'QA Client Review', exact: true }).click();
+ await dialog.getByRole('button', { name: 'Update Project', exact: true }).click();
+ await expect(dialog).toBeHidden();
+ await expect(page.getByText('QA Client Review', { exact: true }).first()).toBeVisible();
+ expect((await (await admin.get(`projects/${id}`)).json()).data.status).toBe('qa_client_review');
+ await page.goto('/dashboard/projects');
+ const statusFilter = page.getByRole('combobox').filter({ hasText: 'All' }).first();
+ await statusFilter.click();
+ await page.getByRole('option', { name: 'QA Client Review', exact: true }).click();
+ await expect(page.getByText('QA Type Project', { exact: true })).toBeVisible();
+});
+
 test('per-employee allocation editor saves and returns to company default', async ({ page }) => {
  await login(page);
  const panel = await leavePanel(page);

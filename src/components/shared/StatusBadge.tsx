@@ -41,7 +41,8 @@ import {
 	MilestoneStatusLabels,
 	MilestoneStatusColors,
 } from "@/lib/statusHelpers";
-import { useProjectStatuses, useTaskStatuses } from "@/features/admin/hooks/useEnums";
+import { useTaskStatuses } from "@/features/admin/hooks/useEnums";
+import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
 
 type StatusType = "lead" | "leadPriority" | "quotation" | "contract" | "project" | "task" | "taskType" | "taskPriority" | "taskCategory" | "client" | "invoice" | "milestone";
 
@@ -77,7 +78,7 @@ const SIZE_CLASSES = {
 };
 
 export function StatusBadge({ type, status, size = "md", showBorder = true, className }: StatusBadgeProps) {
-	const { data: projectStatuses } = useProjectStatuses();
+	const { data: projectStatuses } = useLookupOptions("project_status", type === "project");
 	const { data: taskStatuses } = useTaskStatuses();
 
 	const config = STATUS_CONFIG[type];

@@ -10,10 +10,11 @@ import {
 } from '../api/lookupOptionsApi';
 
 
-export const useLookupOptions = (type: LookupType) => {
+export const useLookupOptions = (type: LookupType, enabled = true) => {
   return useQuery({
     queryKey: ['settings', 'lookup-options', type],
     queryFn: () => fetchLookupOptions(type),
+    enabled,
   });
 };
 

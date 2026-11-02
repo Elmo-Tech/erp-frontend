@@ -40,17 +40,20 @@ describe("CreateProjectForm", () => {
 			mutateAsync,
 			isPending: false,
 		} as unknown as ReturnType<typeof useCreateDirectProject>);
-		mockUseLookupOptions.mockReturnValue({
+		mockUseLookupOptions.mockImplementation((type) => ({
 			data: {
 				success: true,
 				message: "Project types retrieved",
-				data: [
+				data: type === "project_status" ? [
+					{ id: 7, label: "Client Review", value: "client_review", is_active: true },
+					{ id: 8, label: "Retired Status", value: "retired", is_active: false },
+				] : [
 					{ id: 3, label: "Website", value: "website", is_active: true },
 					{ id: 4, label: "Legacy", value: "legacy", is_active: false },
 				],
 			},
 			isLoading: false,
-		} as ReturnType<typeof useLookupOptions>);
+		} as ReturnType<typeof useLookupOptions>));
 		mockUseClients.mockReturnValue({
 			data: {
 				clients: [
@@ -87,6 +90,10 @@ describe("CreateProjectForm", () => {
 		);
 
 		expect(screen.getByText("Client")).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("combobox", { name: "Status" }));
+		expect(screen.getByRole("option", { name: "Client Review" })).toBeInTheDocument();
+		expect(screen.queryByRole("option", { name: "Retired Status" })).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole("option", { name: "Client Review" }));
 		fireEvent.click(screen.getByRole("combobox", { name: "Client" }));
 		fireEvent.click(await screen.findByText("The Tables Company"));
 		fireEvent.click(screen.getByRole("combobox", { name: "Project Type" }));
@@ -103,6 +110,7 @@ describe("CreateProjectForm", () => {
 				expect.objectContaining({
 					clientId: 7,
 					projectTypeId: 3,
+					status: "client_review",
 					title: "Website rebuild",
 			})
 		));

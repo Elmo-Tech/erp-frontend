@@ -1,6 +1,5 @@
 // Re-export enums from centralized statusHelpers
 export { ProjectStatus, ProjectStatusLabels, ProjectStatusColors, PROJECT_STATUS_TRANSITIONS as STATUS_TRANSITIONS } from "@/lib/statusHelpers";
-import { ProjectStatus } from "@/lib/statusHelpers";
 
 export interface ProjectClient {
 	clientId: number;
@@ -50,8 +49,8 @@ export interface Project {
 	quotationId: number | null;
 	title: string;
 	description: string | null;
-	status: ProjectStatus;
-	previousStatus: ProjectStatus | null;
+	status: string;
+	previousStatus: string | null;
 	budget: number | null;
 	currency?: string;
 	estimatedHours?: number;
@@ -141,14 +140,14 @@ export interface CreateDirectProjectPayload {
 	description?: string;
 	budget: number;
 	deadline?: string;
-	status?: ProjectStatus;
+	status?: string;
 }
 
 export interface UpdateProjectPayload {
 	projectTypeId?: number;
 	title?: string;
 	description?: string;
-	status?: ProjectStatus;
+	status?: string;
 	budget?: number;
 	deadline?: string;
 	reason?: string; // Required when changing budget or deadline
@@ -174,7 +173,7 @@ export interface ProjectListResponse {
 
 export interface ProjectFilters {
 	search?: string;
-	status?: ProjectStatus;
+	status?: string;
 	clientId?: number;
 	projectTypeId?: number;
 	page?: number;

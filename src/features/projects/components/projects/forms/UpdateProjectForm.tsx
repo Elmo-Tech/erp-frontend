@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FormDialog } from "@/components/shared";
 import { useUpdateProject } from "../../../hooks/useProjects";
-import { Project, ProjectStatus } from "../../../types/project";
+import { Project } from "../../../types/project";
 import { ProjectFormFields } from "./ProjectFormFields";
 import { notifyApiError } from "@/lib/errorHandling";
 import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
@@ -15,7 +15,7 @@ const projectSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	description: z.string().optional(),
 	deadline: z.string().optional(),
-	status: z.nativeEnum(ProjectStatus),
+	status: z.string().min(1, "Select a project status"),
 	projectTypeId: z.number().int().positive().optional(),
 	reason: z.string().optional(),
 });
@@ -32,6 +32,16 @@ interface UpdateProjectFormProps {
 export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: UpdateProjectFormProps) {
 	const updateProject = useUpdateProject();
 	const { data: projectTypesResponse, isLoading: isProjectTypesLoading } = useLookupOptions("project_type");
+	const { data: statusesResponse, isLoading: isStatusesLoading, isError: statusesError } = useLookupOptions("project_status");
+	const statusOptions = useMemo(() => {
+		const statuses = statusesResponse?.data ?? [];
+		const options = statuses.filter((status) => status.is_active).map((status) => ({ value: status.value, label: status.label }));
+		if (!options.some((status) => status.value === project.status)) {
+			const current = statuses.find((status) => status.value === project.status);
+			options.push({ value: project.status, label: `${current?.label ?? project.status} (Inactive)` });
+		}
+		return options;
+	}, [project.status, statusesResponse?.data]);
 	const projectTypeOptions = useMemo(() => {
 		const projectTypes = projectTypesResponse?.data ?? [];
 		const options = projectTypes
@@ -116,13 +126,16 @@ export function UpdateProjectForm({ open, onOpenChange, project, onSuccess }: Up
 			submitLabel="Update Project"
 			onSubmit={form.handleSubmit(handleSubmit)}
 			isLoading={updateProject.isPending}
-			isSubmitDisabled={!form.formState.isValid || (showReasonField && !watchedReason?.trim())}
+			isSubmitDisabled={!form.formState.isValid || isStatusesLoading || statusesError || (showReasonField && !watchedReason?.trim())}
 		>
+			{statusesError && <p role="alert" className="text-sm text-destructive">Unable to load project statuses. Please reopen the form or try again.</p>}
 			<ProjectFormFields
 				form={form}
 				showReasonField={showReasonField}
 				projectTypeOptions={projectTypeOptions}
 				isProjectTypesLoading={isProjectTypesLoading}
+				statusOptions={statusOptions}
+				isStatusesLoading={isStatusesLoading}
 			/>
 		</FormDialog>
 	);

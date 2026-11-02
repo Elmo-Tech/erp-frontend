@@ -16,7 +16,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useProject, useUpdateProject, useApproveUI } from "../hooks/useProjects";
 import { Project } from "../types/project";
-import { ProjectStatus, getAvailableProjectTransitions } from "@/lib/statusHelpers";
+import { ProjectStatus } from "@/lib/statusHelpers";
+import { useProjectStatuses } from "@/features/admin/hooks/useEnums";
 import { ProjectStatusBadge } from "./ProjectStatusBadge";
 import { updateProjectSchema, UpdateProjectFormData } from "../schemas/projectSchema";
 import { WikiList } from "./WikiList";
@@ -42,6 +43,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onPro
 	const { data: project, isLoading, error } = useProject(projectId);
 	const updateProjectMutation = useUpdateProject();
 	const approveUIMutation = useApproveUI();
+	const { data: projectStatuses } = useProjectStatuses();
 
 	// Form setup
 	const defaultValues = React.useMemo(
@@ -80,7 +82,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onPro
 	};
 
 	// Handle status transition
-	const handleStatusTransition = async (newStatus: ProjectStatus) => {
+	const handleStatusTransition = async (newStatus: string) => {
 		if (!project) return;
 
 		try {
@@ -172,7 +174,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onPro
 		);
 	}
 
-	const availableTransitions = getAvailableProjectTransitions(project.status, project.previousStatus);
+	const availableTransitions = (projectStatuses?.data ?? []).filter((status) => status.value !== project.status);
 
 	return (
 		<div className={className}>
@@ -451,13 +453,13 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({ projectId, onPro
 											<div className="mt-2 flex flex-wrap gap-2">
 												{availableTransitions.map((status) => (
 													<Button
-														key={status}
+																key={status.value}
 														variant="outline"
 														size="sm"
-														onClick={() => handleStatusTransition(status)}
+																onClick={() => handleStatusTransition(status.value)}
 														disabled={updateProjectMutation.isPending}
 													>
-														Move to {status.replace("_", " ")}
+																Move to {status.label}
 													</Button>
 												))}
 											</div>
