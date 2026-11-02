@@ -17,10 +17,10 @@ import { EmployeeShortPermissionsPanel } from "./EmployeeShortPermissionsDialog"
 import { EmployeeHrStats, EmployeeTimeOffBalances } from "./EmployeeHrSummary";
 import type { EmployeeMoneyPanelProps } from "./EmployeeMoneyPanel";
 
-export function EmployeeTimeOffPanel(props: EmployeeMoneyPanelProps) {
+export function EmployeeTimeOffPanel(props: EmployeeMoneyPanelProps & { reviewKind?: "leave" | "permission"; reviewMonth?: string }) {
 	const access = useHrAccess();
-	const [month, setMonth] = useState(getCurrentPermissionMonth);
-	const [dialog, setDialog] = useState<"attendance" | "leave" | "permission" | null>(null);
+	const [month, setMonth] = useState(props.reviewMonth ?? getCurrentPermissionMonth());
+	const [dialog, setDialog] = useState<"attendance" | "leave" | "permission" | null>(props.reviewKind ?? null);
 	const query = useEmployeeOverview(props.employeeId, month, props.isActive && access.overview && isValidPermissionMonth(month));
 	const leaves = useEmployeeLeaves(props.employeeId, Number(month.slice(0, 4)), props.isActive && access.leaves && isValidPermissionMonth(month));
 	const permissions = useEmployeeShortPermissions(props.employeeId, month, props.isActive && access.permissions && isValidPermissionMonth(month));
@@ -51,7 +51,7 @@ export function EmployeeTimeOffPanel(props: EmployeeMoneyPanelProps) {
 		{data && <EmployeeTimeOffBalances data={data} />}
 		<Dialog open={dialog !== null} onOpenChange={(open) => { if (!open) { setDialog(null); void refreshEmployeeHr(client, props.employeeId); } }}><DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl"><DialogHeader><DialogTitle>{dialog === "attendance" ? "Attendance details" : dialog === "leave" ? "Leave management" : "Short permissions"}</DialogTitle><DialogDescription>{props.employeeName}</DialogDescription></DialogHeader>
 			{dialog === "attendance" && access.attendance && <EmployeeAttendancePanel {...props} isActive month={month} />}
-			{dialog === "leave" && access.leaves && <EmployeeLeavesPanel {...props} canManage isActive />}
+			{dialog === "leave" && access.leaves && <EmployeeLeavesPanel {...props} canManage isActive initialYear={Number(month.slice(0, 4))} />}
 			{dialog === "permission" && access.permissions && <EmployeeShortPermissionsPanel {...props} canManage isActive initialMonth={month} />}
 		</DialogContent></Dialog>
 	</div>;

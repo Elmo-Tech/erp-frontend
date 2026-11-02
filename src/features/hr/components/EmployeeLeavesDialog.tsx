@@ -28,6 +28,7 @@ interface EmployeeLeavesPanelProps {
 	employeeName: string;
 	canManage: boolean;
 	isActive: boolean;
+	initialYear?: number;
 }
 
 type LeaveReviewAction = "approve" | "reject" | "cancel";
@@ -142,9 +143,9 @@ function LeaveRequestSummary({ leave, canManage, isReviewing, onReview }: { leav
 	);
 }
 
-export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isActive }: EmployeeLeavesPanelProps) {
+export function EmployeeLeavesPanel({ employeeId, employeeName, canManage, isActive, initialYear }: EmployeeLeavesPanelProps) {
 	const currentYear = new Date().getFullYear();
-	const [year, setYear] = useState(currentYear);
+	const [year, setYear] = useState(initialYear ?? currentYear);
 	const [pendingReview, setPendingReview] = useState<LeaveReview | null>(null);
 	const [reviewNote, setReviewNote] = useState("");
 	const leavesQuery = useEmployeeLeaves(employeeId, year, isActive && canManage);

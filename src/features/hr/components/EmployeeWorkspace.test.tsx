@@ -51,6 +51,11 @@ const employee: Employee = {
 };
 
 describe("EmployeeWorkspace", () => {
+	it("opens time off when arriving from a review notification", () => {
+		render(<EmployeeWorkspace employee={employee} canManage onEdit={vi.fn()} reviewKind="leave" reviewMonth="2027-02" />);
+		expect(screen.getByRole("tab", { name: "Attendance & time off" })).toHaveAttribute("data-state", "active");
+		expect(screen.getByTestId("time-off-panel")).toHaveAttribute("data-active", "true");
+	});
 	it("opens the contracts tab for a contract creator and hides unrelated sections and approval actions", () => {
 		useAuthStore.setState({ role: "contract-clerk", permissions: [{ permissionName: "create_employee_contracts", access: true }] });
 		render(<><EmployeeWorkspace employee={employee} canManage={false} onEdit={vi.fn()} /><HrAction resource="employee_contracts" action="create"><button>Create agreement</button></HrAction><HrAction resource="leaves" action="approve"><button>Approve leave</button></HrAction></>);

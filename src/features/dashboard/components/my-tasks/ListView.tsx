@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { format, isPast } from "date-fns";
+import { format, isBefore, parseISO, startOfToday } from "date-fns";
 import { ChevronRight, ChevronDown, Play, Square, MoreVertical, Eye, GitBranch, Calendar, Clock, CheckCircle2, Loader2, Timer } from "lucide-react";
 import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels } from "../../types/task";
 import { PriorityColors, StatusColors } from "./constants";
@@ -147,7 +147,7 @@ function ListItem({
 }: ListItemProps) {
 	const access = useMyTaskAccess();
 	const hasChildren = task.hasChildren || (task.children && task.children.length > 0);
-	const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== TaskStatus.COMPLETED;
+	const isOverdue = task.dueDate && isBefore(parseISO(task.dueDate), startOfToday()) && task.status !== TaskStatus.COMPLETED;
 	const myAssignment = task.assignees?.find((a) => a.userId === currentUserId);
 	const isTimerRunningOnThis = activeTaskId === task.taskId;
 	const isTimerRunningOnOther = hasActiveTimer && !isTimerRunningOnThis;

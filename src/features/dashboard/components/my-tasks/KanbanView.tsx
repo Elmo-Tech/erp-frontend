@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useDroppable, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { format, isPast, isToday, isTomorrow } from "date-fns";
+import { format, isBefore, isToday, isTomorrow, parseISO, startOfToday } from "date-fns";
 import { MoreVertical, Eye, Folder, Calendar, Clock, Timer, Play, Square, Loader2 } from "lucide-react";
 import { Task, TaskStatus, TaskStatusLabels, TaskPriorityLabels, TaskType, TaskTypeLabels } from "../../types/task";
 import { KanbanColumns, PriorityColors, PriorityBorderColors } from "./constants";
@@ -200,9 +200,9 @@ function KanbanCard({
 	isTimerLoading: boolean;
 }) {
 	const access = useMyTaskAccess();
-	const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== TaskStatus.COMPLETED;
-	const isDueToday = task.dueDate && isToday(new Date(task.dueDate));
-	const isDueTomorrow = task.dueDate && isTomorrow(new Date(task.dueDate));
+	const isOverdue = task.dueDate && isBefore(parseISO(task.dueDate), startOfToday()) && task.status !== TaskStatus.COMPLETED;
+	const isDueToday = task.dueDate && isToday(parseISO(task.dueDate));
+	const isDueTomorrow = task.dueDate && isTomorrow(parseISO(task.dueDate));
 	const myAssignment = task.assignees?.find((a) => a.userId === currentUserId);
 	const isTimerRunningOnThis = activeTaskId === task.taskId;
 	const isTimerRunningOnOther = hasActiveTimer && !isTimerRunningOnThis;

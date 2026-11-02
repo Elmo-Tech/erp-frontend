@@ -27,10 +27,12 @@ interface EmployeeWorkspaceProps {
 	employee: Employee;
 	canManage: boolean;
 	onEdit: (employee: Employee) => void;
+	reviewKind?: "leave" | "permission";
+	reviewMonth?: string;
 }
 
-export function EmployeeWorkspace({ employee, canManage, onEdit }: EmployeeWorkspaceProps) {
-	const [activeTab, setActiveTab] = useState("overview");
+export function EmployeeWorkspace({ employee, canManage, onEdit, reviewKind, reviewMonth }: EmployeeWorkspaceProps) {
+	const [activeTab, setActiveTab] = useState(reviewKind ? "attendance" : "overview");
 	const [reportOpen, setReportOpen] = useState(false);
 	const { hasPermission: has } = useAuthStore((state) => state);
 	const sectionPermissions: Record<string, string[]> = { contracts: resourcePermissions("employee_contracts"), attendance: [...resourcePermissions("leaves"), ...resourcePermissions("permissions"), "view_all_attendance", "manage_attendance"], payroll: ["manage_employee_salary", "view_employee_salary", ...resourcePermissions("employee_advances"), ...resourcePermissions("deductions"), ...resourcePermissions("overtime")], documents: resourcePermissions("employee_documents") };
@@ -74,7 +76,7 @@ export function EmployeeWorkspace({ employee, canManage, onEdit }: EmployeeWorks
 					<TabsContent value="overview" forceMount hidden={activeTab !== "overview"} className="mt-0 data-[state=inactive]:hidden"><EmployeeOverviewPanel employee={employee} canManage={canManage} isActive={activeTab === "overview"} /></TabsContent>
 					{available.map(({ value, Panel }) => (
 						<TabsContent key={value} value={value} forceMount hidden={activeTab !== value} className="mt-0 data-[state=inactive]:hidden">
-							<Panel {...panelProps} canManage={canManage || sectionPermissions[value].some(has)} isActive={activeTab === value} />
+							<Panel {...panelProps} canManage={canManage || sectionPermissions[value].some(has)} isActive={activeTab === value} {...(value === "attendance" ? { reviewKind, reviewMonth } : {})} />
 						</TabsContent>
 					))}
 				</div>

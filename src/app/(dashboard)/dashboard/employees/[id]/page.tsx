@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,11 @@ import { useAuthStore } from "@/store/authStore";
 
 export default function EmployeePage() {
 	const { id } = useParams<{ id: string }>();
+	const searchParams = useSearchParams();
+	const review = searchParams.get("review");
+	const reviewKind = review === "leave" || review === "permission" ? review : undefined;
+	const month = searchParams.get("month") ?? "";
+	const reviewMonth = /^\d{4}-(0[1-9]|1[0-2])$/.test(month) ? month : undefined;
 	const employeeQuery = useEmployee(Number(id));
 	const canManage = useAuthStore((state) => state.hasPermission("manage_employees"));
 	const canEdit = useAuthStore((state) => state.hasPermission("manage_employees") || state.hasPermission("edit_employees"));
@@ -29,7 +34,7 @@ export default function EmployeePage() {
 			<Button variant="ghost" asChild><Link href="/dashboard/employees"><ArrowLeft />Back to employees</Link></Button>
 			{employeeQuery.isLoading ? <Skeleton className="h-96 w-full" /> : employeeQuery.data ? (
 				<>
-					<EmployeeWorkspace key={id} employee={employeeQuery.data} canManage={canManage} onEdit={() => setEditing(true)} />
+					<EmployeeWorkspace key={`${id}-${reviewKind}-${reviewMonth}`} employee={employeeQuery.data} canManage={canManage} onEdit={() => setEditing(true)} reviewKind={reviewKind} reviewMonth={reviewMonth} />
 					{canEdit && <UpdateEmployeeForm employee={employeeQuery.data} roles={roles} open={editing} onOpenChange={setEditing} />}
 				</>
 			) : (
