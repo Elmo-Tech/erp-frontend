@@ -405,6 +405,37 @@ test('per-employee allocation editor saves and returns to company default', asyn
  expect((await history()).balances[0].isCustom).toBe(false);
 });
 
+test('profile shortcut adjusts annual leave for a selected year and persists without altering used days', async ({ page }) => {
+ const annual = types.find(t => t.slug === 'annual')!;
+ const leaveResponse = await admin.post(`employees/${fixtures.employee}/leaves`, { data: { leaveTypeId: annual.id, startDate: `${year}-11-23`, endDate: `${year}-11-23` } });
+ expect(leaveResponse.status(), await leaveResponse.text()).toBe(201);
+ const leave = (await leaveResponse.json()).data;
+ await login(page);
+ await page.goto(`/dashboard/employees/${fixtures.employee}`);
+ await page.getByRole('button', { name: 'Adjust leave balance', exact: true }).click();
+ const dialog = page.getByRole('dialog', { name: 'Adjust leave balances' });
+ await expect(dialog).toBeVisible();
+ const section = dialog.locator('section').filter({ has: page.getByRole('heading', { name: annual.name, exact: true }) });
+ const before = (await history()).balances.find((b: LeaveBalance) => b.leaveTypeId === annual.id);
+ expect(before.usedDays).toBeGreaterThan(0);
+ await section.getByRole('button', { name: 'Edit allocation' }).click();
+ await section.getByLabel('Total allocation (used days stay unchanged)').fill('18');
+ const saved = page.waitForResponse(r => r.request().method() === 'PUT' && r.url().endsWith(`/employees/${fixtures.employee}/leave-balances/${annual.id}`));
+ await section.getByRole('button', { name: 'Save allocation' }).click();
+ expect((await saved).status()).toBe(200);
+ await expect(section).toContainText('18 total days');
+ const updated = (await history()).balances.find((b: LeaveBalance) => b.leaveTypeId === annual.id);
+ expect(updated.allocatedDays).toBe(18);
+ expect(updated.usedDays).toBe(before.usedDays);
+ await page.reload();
+ await page.getByRole('button', { name: 'Adjust leave balance', exact: true }).click();
+ await expect(page.getByRole('dialog', { name: 'Adjust leave balances' }).locator('section').filter({ has: page.getByRole('heading', { name: annual.name, exact: true }) })).toContainText('18 total days');
+ await page.getByLabel('Balance year').fill(String(year + 1));
+ await expect(page.getByRole('dialog').locator('section').filter({ has: page.getByRole('heading', { name: annual.name, exact: true }) })).toContainText(`${annual.annualAllowanceDays} total days`);
+ await admin.post(`employee-leaves/${leave.id}/cancel`);
+ await admin.put(`employees/${fixtures.employee}/leave-balances/${annual.id}`, { data: { year, useDefault: true } });
+});
+
 test('short permission request notifies admin and approval notifies employee once', async () => {
  const created = await employee.post(`employees/${fixtures.employee}/short-permissions`, { data: { permissionDate: `${year}-11-16`, startTime: '09:00', endTime: '10:00', reason: 'QA appointment' } });
  expect(created.status(), await created.text()).toBe(201);

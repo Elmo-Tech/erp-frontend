@@ -13,6 +13,7 @@ import { EmployeeOverviewPanel } from "./EmployeeOverviewPanel";
 import { EmployeeTimeOffPanel } from "./EmployeeTimeOffPanel";
 import { EmployeeFinancialPanel } from "./EmployeeFinancialPanel";
 import { EmployeeReportDialog } from "./EmployeeReportDialog";
+import { LeaveBalanceDialog } from "./LeaveBalanceDialog";
 import { useAuthStore } from "@/store/authStore";
 import { resourcePermissions } from "@/config/access";
 
@@ -34,7 +35,9 @@ interface EmployeeWorkspaceProps {
 export function EmployeeWorkspace({ employee, canManage, onEdit, reviewKind, reviewMonth }: EmployeeWorkspaceProps) {
 	const [activeTab, setActiveTab] = useState(reviewKind ? "attendance" : "overview");
 	const [reportOpen, setReportOpen] = useState(false);
-	const { hasPermission: has } = useAuthStore((state) => state);
+	const [balanceOpen, setBalanceOpen] = useState(false);
+	const { hasPermission: has, user } = useAuthStore((state) => state);
+	const canAllocateLeave = (canManage || has("manage_leaves") || has("allocate_leaves")) && user?.userId !== employee.userId;
 	const sectionPermissions: Record<string, string[]> = { contracts: resourcePermissions("employee_contracts"), attendance: [...resourcePermissions("leaves"), ...resourcePermissions("permissions"), "view_all_attendance", "manage_attendance"], payroll: ["manage_employee_salary", "view_employee_salary", ...resourcePermissions("employee_advances"), ...resourcePermissions("deductions"), ...resourcePermissions("overtime")], documents: resourcePermissions("employee_documents") };
 	const available = workflows.filter(({ value }) => canManage || sectionPermissions[value].some(has));
 	const panelProps = {
@@ -58,7 +61,7 @@ export function EmployeeWorkspace({ employee, canManage, onEdit, reviewKind, rev
 						</div>
 						<p className="truncate text-sm text-muted-foreground">{employee.email}</p>
 					</div>
-					<div className="flex flex-wrap gap-2">{(canManage || has("edit_employees")) && <Button type="button" variant="outline" size="sm" onClick={() => onEdit(employee)}><Edit />Edit</Button>}{(canManage || has("view_employee_reports")) && <Button type="button" size="sm" onClick={() => setReportOpen(true)}><Download />Employee report</Button>}</div>
+					<div className="flex flex-wrap gap-2">{canAllocateLeave && <Button type="button" variant="outline" size="sm" onClick={() => setBalanceOpen(true)}>Adjust leave balance</Button>}{(canManage || has("edit_employees")) && <Button type="button" variant="outline" size="sm" onClick={() => onEdit(employee)}><Edit />Edit</Button>}{(canManage || has("view_employee_reports")) && <Button type="button" size="sm" onClick={() => setReportOpen(true)}><Download />Employee report</Button>}</div>
 				</div>
 			</header>
 
@@ -82,6 +85,7 @@ export function EmployeeWorkspace({ employee, canManage, onEdit, reviewKind, rev
 				</div>
 			</Tabs>
 			{(canManage || has("view_employee_reports")) && <EmployeeReportDialog employeeId={employee.userId} employeeName={employee.name} open={reportOpen} onOpenChange={setReportOpen} />}
+			{canAllocateLeave && balanceOpen && <LeaveBalanceDialog employeeId={employee.userId} employeeName={employee.name} open={balanceOpen} onOpenChange={setBalanceOpen} />}
 		</div>
 	);
 }

@@ -51,6 +51,15 @@ const employee: Employee = {
 };
 
 describe("EmployeeWorkspace", () => {
+	it("shows the balance shortcut only to users with allocation access", () => {
+		useAuthStore.setState({ role: "hr", permissions: [{ permissionName: "allocate_leaves", access: true }] });
+		const { unmount } = render(<EmployeeWorkspace employee={employee} canManage={false} onEdit={vi.fn()} />);
+		expect(screen.getByRole("button", { name: "Adjust leave balance" })).toBeInTheDocument();
+		unmount();
+		useAuthStore.setState({ role: "hr", permissions: [{ permissionName: "view_leaves", access: true }] });
+		render(<EmployeeWorkspace employee={employee} canManage={false} onEdit={vi.fn()} />);
+		expect(screen.queryByRole("button", { name: "Adjust leave balance" })).not.toBeInTheDocument();
+	});
 	it("opens time off when arriving from a review notification", () => {
 		render(<EmployeeWorkspace employee={employee} canManage onEdit={vi.fn()} reviewKind="leave" reviewMonth="2027-02" />);
 		expect(screen.getByRole("tab", { name: "Attendance & time off" })).toHaveAttribute("data-state", "active");
