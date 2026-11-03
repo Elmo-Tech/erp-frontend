@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore, Notification } from "@/store/notificationStore";
 import api from "@/lib/axios";
 import { toast } from "sonner";
+import { notificationTarget } from "@/lib/notificationTarget";
 
 type NotificationEvent = Record<string, unknown>;
 
@@ -74,13 +75,8 @@ export function useNotificationSocketInit() {
 				action: {
 					label: "View",
 					onClick: () => {
-						if (typeof notification.data?.url === "string") {
-							window.location.href = notification.data.url;
-						} else if (notification.data?.task_id) {
-							window.location.href = `/dashboard/my-tasks?highlight=${notification.data.task_id}`;
-						} else if (notification.data?.project_id) {
-							window.location.href = `/dashboard/projects/${notification.data.project_id}`;
-						}
+						const target = notificationTarget(notification);
+						if (target) window.location.href = target;
 					},
 				},
 			});

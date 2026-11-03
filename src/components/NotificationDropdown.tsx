@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { notificationTarget } from "@/lib/notificationTarget";
 
 export function NotificationDropdown() {
 	const router = useRouter();
@@ -37,21 +38,8 @@ export function NotificationDropdown() {
 			handleMarkAsRead(notification.notificationId);
 		}
 
-		// Navigate based on type
-		const data = notification.data as { task_id?: number; project_id?: number; employee_id?: number; body?: string };
-		if (/^(leave_submitted|permission_pending)$/.test(notification.type) && Number.isInteger(data.employee_id) && Number(data.employee_id) > 0) {
-			const kind = notification.type.startsWith("leave_") ? "leave" : "permission";
-			const month = typeof data.body === "string" ? data.body.slice(0, 7) : "";
-			const params = new URLSearchParams({ review: kind });
-			if (/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) params.set("month", month);
-			router.push(`/dashboard/employees/${data.employee_id}?${params}`);
-		} else if (/^(leave|permission)_(approved|rejected)$/.test(notification.type)) {
-			router.push("/dashboard/my-requests");
-		} else if (data.task_id) {
-			router.push(`/dashboard/my-tasks?highlight=${data.task_id}`);
-		} else if (data.project_id) {
-			router.push(`/dashboard/projects/${data.project_id}`);
-		}
+		const target = notificationTarget(notification);
+		if (target) router.push(target);
 	};
 
 	const getNotificationIcon = (type: string) => {

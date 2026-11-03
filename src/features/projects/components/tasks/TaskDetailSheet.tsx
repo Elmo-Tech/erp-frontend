@@ -17,7 +17,9 @@ import { TaskActivitySection } from "./TaskActivitySection";
 import { TaskTimerWidget } from "./TaskTimerWidget";
 import { TaskTimeEntriesSection } from "./TaskTimeEntriesSection";
 import { TaskSupervisionSection } from "./TaskSupervisionSection";
+import { TaskReferenceImages } from "./TaskReferenceImages";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
+import { useAuthStore } from "@/store/authStore";
 import { Clock, AlertCircle, CheckCircle2, Calendar, TrendingUp, TrendingDown, UserRoundCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -76,7 +78,8 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 	const { data: task, isLoading } = useTask(taskId ?? 0, !!taskId && open);
 	const { data: activities } = useTaskActivities(taskId ?? 0, !!taskId && open);
 	const { data: testScenarios } = useTestScenarios(taskId ?? 0, !!taskId && open);
-	const { canEditMainTasks, canEditWeeklyTasks, canEditSubtasks, canManageTasks } = usePermissions();
+	const { canEditMainTasks, canEditWeeklyTasks, canEditSubtasks, canManageTasks, canCreateMainTasks } = usePermissions();
+	const userId = useAuthStore((state) => state.user?.userId);
 	const scenarios = testScenarios ?? task?.testScenarios ?? [];
 	const hasTests = scenarios.length > 0;
 	const selectedTab = activeTab === "tests" && !hasTests ? "details" : activeTab;
@@ -154,6 +157,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 							</div>
 							<SheetDescription className="sr-only">Task details, assigned employees, supervision, and work history.</SheetDescription>
 						</SheetHeader>
+						<TaskReferenceImages task={task} canManage={Boolean(canManageTasks || canEditMainTasks || (canCreateMainTasks && userId === task.createdBy))} />
 						<div className="mx-6 mt-3 flex items-center gap-2 rounded-md bg-muted/40 p-3 text-sm">
 							<UserRoundCheck className="h-4 w-4 text-muted-foreground" />
 							<span>Supervisor: <strong>{task.supervisor?.name ?? "Not assigned"}</strong></span>

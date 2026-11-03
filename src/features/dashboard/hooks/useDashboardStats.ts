@@ -19,5 +19,6 @@ export const useDashboardStats = () => {
 		queryFn: dashboardStatsApi.getOverview,
 		staleTime: 0,
 		refetchOnWindowFocus: true,
+		refetchInterval: 30_000,
 	});
 };

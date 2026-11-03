@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-const MAX_COVER_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_COVER_SIZE_BYTES = 25 * 1024 * 1024;
 const COVER_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 interface PipelineTaskCoverFieldProps {
@@ -35,7 +35,7 @@ export function PipelineTaskCoverField({ currentCoverImageUrl, disabled, onChang
 		}
 
 		if (file.size > MAX_COVER_SIZE_BYTES) {
-			toast.error("Cover image must be 5 MB or smaller");
+			toast.error("Cover image must be 25 MB or smaller");
 			return;
 		}
 
@@ -76,7 +76,7 @@ export function PipelineTaskCoverField({ currentCoverImageUrl, disabled, onChang
 				)}
 
 				<div className="flex flex-wrap items-center justify-between gap-3 bg-background px-3 py-2.5">
-					<p className="text-xs text-muted-foreground">JPG, PNG, or WebP · max 5 MB</p>
+					<p className="text-xs text-muted-foreground">JPG, PNG, or WebP · max 25 MB</p>
 					<div className="flex items-center gap-2">
 						{previewUrl && (
 							<Button type="button" variant="ghost" size="sm" onClick={removeCoverImage} disabled={disabled}>

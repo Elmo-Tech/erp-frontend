@@ -28,6 +28,7 @@ export function pagePermissions(pathname: string): string[] {
 	if (pathname.startsWith("/dashboard/my-attendance")) return ["view_attendance"];
 	if (pathname.startsWith("/dashboard/my-requests")) return ["view_my_requests", "view_attendance"];
 	if (pathname.startsWith("/dashboard/my-tasks")) return ["view_tasks", "manage_tasks"];
+	if (pathname.startsWith("/dashboard/tasks")) return ["view_tasks", "manage_tasks"];
 	if (pathname.startsWith("/dashboard/wiki")) return ["view_wiki", "manage_wiki"];
 	return [];
 }

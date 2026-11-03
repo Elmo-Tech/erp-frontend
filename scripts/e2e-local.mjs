@@ -106,7 +106,7 @@ try {
   const report = path.join(reportRoot, projects[index]);
   mkdirSync(report, { recursive: true });
   try {
-   await run('npx', ['playwright', 'test', `--project=${projects[index]}`, '--output', path.join(report, 'artifacts')], root, {
+   await run('npx', ['playwright', 'test', `--project=${projects[index]}`, '--output', path.join(report, 'artifacts'), ...(process.env.E2E_GREP ? ['--grep', process.env.E2E_GREP] : [])], root, {
     E2E_REPORT_DIR: report,
    });
   } catch (error) { failed = true; console.error(error.message); }

@@ -103,7 +103,7 @@ function AdminDashboard({ data }: { data: AdminDashboardOverview }) {
 }
 
 function LiveWorkPanel({ data }: { data: NonNullable<AdminDashboardOverview["liveWork"]> }) {
-	return <div className="grid gap-4 md:grid-cols-2">
+	return <div className="grid gap-4 md:grid-cols-3">
 		<Card><CardHeader><CardTitle>Working now ({data.working.length})</CardTitle><CardDescription>Employees with an active work timer</CardDescription></CardHeader><CardContent className="space-y-3">
 			{data.working.length ? data.working.map((session) => {
 				const content = <><p className="font-medium">{session.name}</p><p className="text-sm text-muted-foreground">{session.taskTitle}</p>{session.targetMessage && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{session.targetMessage}</p>}</>;
@@ -111,6 +111,12 @@ function LiveWorkPanel({ data }: { data: NonNullable<AdminDashboardOverview["liv
 					? <div className="rounded-lg border border-amber-300 p-3" key={`${session.userId}-${session.taskId}`}>{content}</div>
 					: <Link className="block rounded-lg border p-3" key={`${session.userId}-${session.taskId}`} href={session.projectId ? `/dashboard/projects/${session.projectId}` : `/dashboard/my-tasks?highlight=${session.taskId}`}>{content}</Link>;
 			}) : <p className="text-sm text-muted-foreground">No work timers running.</p>}
+		</CardContent></Card>
+		<Card><CardHeader><CardTitle>Paused work ({data.paused?.length ?? 0})</CardTitle><CardDescription>Latest work session paused or put on hold</CardDescription></CardHeader><CardContent className="space-y-3">
+			{data.paused?.length ? data.paused.map((session) => {
+				const content = <><p className="font-medium">{session.name} · {session.reason === "hold" ? "On hold" : "Paused"}</p><p className="text-sm text-muted-foreground">{session.taskTitle}</p>{session.pausedAt && <p className="text-xs text-muted-foreground">Since {new Date(session.pausedAt).toLocaleString()}</p>}</>;
+				return session.targetStatus && session.targetStatus !== "available" ? <div className="rounded-lg border p-3" key={session.userId}>{content}</div> : <Link className="block rounded-lg border p-3" key={session.userId} href={session.projectId ? `/dashboard/projects/${session.projectId}` : `/dashboard/my-tasks?highlight=${session.taskId}`}>{content}</Link>;
+			}) : <p className="text-sm text-muted-foreground">No paused work sessions.</p>}
 		</CardContent></Card>
 		<Card><CardHeader><CardTitle>No active timer ({data.idle.length})</CardTitle><CardDescription>Timer status is independent of fingerprint attendance</CardDescription></CardHeader><CardContent className="flex flex-wrap gap-2">{data.idle.map((employee) => <span key={employee.userId} className="rounded-full bg-muted px-3 py-1 text-sm">{employee.name}</span>)}</CardContent></Card>
 	</div>;

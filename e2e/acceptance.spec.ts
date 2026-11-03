@@ -102,6 +102,15 @@ test('employee sees personal details, own contract and reminder preferences', as
  expect(invalid.status()).toBe(422);
 });
 
+test('task page lists project tasks and opens their details', async ({ page }) => {
+ await login(page);
+ await page.getByRole('link', { name: 'Tasks', exact: true }).click();
+ await expect(page).toHaveURL(/\/dashboard\/tasks$/);
+ await page.getByRole('textbox', { name: 'Search tasks' }).fill('QA Timer Task');
+ await page.getByRole('button', { name: /QA Timer Task/ }).click();
+ await expect(page.getByRole('dialog')).toContainText('QA Timer Task');
+});
+
 test('employee submits leave through UI and admin receives exactly one notification', async ({ page, browser }) => {
  const adminPage = await browser.newPage();
  await login(adminPage);
@@ -125,6 +134,9 @@ test('employee submits leave through UI and admin receives exactly one notificat
  await expect.poll(async () => (await notifications(admin)).filter((n: Notice) => n.data.type === 'leave_submitted' && n.data.request_id === leaveId).length).toBe(1);
  await adminPage.getByRole('button', { name: /Notifications/ }).click();
  await expect(adminPage.getByText('QA Employee submitted a leave request', { exact: true }).first()).toBeVisible();
+ await adminPage.getByRole('menuitem').filter({ hasText: 'QA Employee submitted a leave request' }).first().click();
+ await expect(adminPage.getByRole('dialog').getByRole('button', { name: 'Approve', exact: true })).toBeVisible();
+ await expect(adminPage.getByRole('dialog').getByRole('button', { name: 'Reject', exact: true })).toBeVisible();
  await adminPage.close();
 });
 
@@ -215,10 +227,12 @@ test('timer lifecycle updates other admin browser through real WebSocket', async
  await expect(employeePage.getByRole('button', { name: 'Pause timer', exact: true })).toBeVisible();
  await employeePage.getByRole('button', { name: 'Pause timer', exact: true }).click();
  await expect(page.getByText('Working now (0)', { exact: true })).toBeVisible();
+ await expect(page.getByText('Paused work (1)', { exact: true })).toBeVisible();
  await employeePage.mouse.move(0, 200);
  await expect(employeePage.locator('[data-sonner-toast]')).toHaveCount(0);
  await employeePage.getByRole('button', { name: /Resume QA Timer Task/ }).click();
  await expect(page.getByText('Working now (1)', { exact: true })).toBeVisible();
+ await expect(page.getByText('Paused work (0)', { exact: true })).toBeVisible();
  await employeePage.clock.install();
  await employeePage.clock.fastForward(5 * 60 * 1000);
  await expect(employeePage.getByRole('dialog', { name: 'Your work timer is still running' })).toBeVisible();
@@ -411,6 +425,34 @@ test('configured project status appears in edit and filters and saves to the pro
  await statusFilter.click();
  await page.getByRole('option', { name: 'QA Client Review', exact: true }).click();
  await expect(page.getByText('QA Type Project', { exact: true })).toBeVisible();
+});
+
+test('deleted statuses are absent from the project filter, creation and editing menus', async ({ page }) => {
+ const options = (await (await admin.get('settings/lookup-options?type=project_status')).json()).data;
+ for (const value of ['ui_ux', 'development', 'testing']) {
+  const item = options.find((status: { value: string }) => status.value === value);
+  const response = await admin.delete(`settings/lookup-options/${item.id}`);
+  expect(response.status(), await response.text()).toBe(200);
+ }
+ await login(page);
+ await page.goto('/dashboard/projects');
+ await page.getByRole('combobox').filter({ hasText: 'All' }).first().click();
+ for (const label of ['UI/UX Phase', 'Development', 'Testing']) await expect(page.getByRole('option', { name: label, exact: true })).toHaveCount(0);
+ for (const label of ['Draft', 'Active', 'Completed', 'On Hold', 'Cancelled']) await expect(page.getByRole('option', { name: label, exact: true })).toBeVisible();
+ await page.keyboard.press('Escape');
+ await page.getByRole('button', { name: 'Create Project', exact: true }).click();
+ const create = page.getByRole('dialog', { name: 'Create Project' });
+ await create.getByRole('combobox', { name: 'Status', exact: true }).click();
+ for (const label of ['UI/UX', 'Development', 'Testing']) await expect(page.getByRole('option', { name: label, exact: true })).toHaveCount(0);
+ for (const label of ['Draft', 'Active', 'Completed', 'On Hold', 'Cancelled']) await expect(page.getByRole('option', { name: label, exact: true })).toBeVisible();
+ await page.keyboard.press('Escape');
+ await create.getByRole('button', { name: 'Close', exact: true }).click();
+ await page.goto(`/dashboard/projects/${fixtures.projects['QA Type Project']}`);
+ await page.getByRole('button', { name: 'Edit Project', exact: true }).click();
+ const edit = page.getByRole('dialog', { name: 'Edit Project' });
+ await edit.getByRole('combobox', { name: 'Status', exact: true }).click();
+ for (const label of ['UI/UX', 'Development', 'Testing']) await expect(page.getByRole('option', { name: label, exact: true })).toHaveCount(0);
+ for (const label of ['Draft', 'Active', 'Completed', 'On Hold', 'Cancelled']) await expect(page.getByRole('option', { name: label, exact: true })).toBeVisible();
 });
 
 test('per-employee allocation editor saves and returns to company default', async ({ page }) => {

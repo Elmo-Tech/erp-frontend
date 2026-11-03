@@ -103,7 +103,7 @@ export interface DeliveryTimelineItem {
 
 // Role-based Dashboard Responses
 export interface AdminDashboardOverview {
-	liveWork?: { activeTimerCount: number; working: { userId: number; name: string; taskId: number; taskTitle: string; projectId: number | null; startedAt: string; targetStatus?: string; targetMessage?: string | null }[]; idle: { userId: number; name: string }[] };
+	liveWork?: { activeTimerCount: number; working: { userId: number; name: string; taskId: number; taskTitle: string; projectId: number | null; startedAt: string; targetStatus?: string; targetMessage?: string | null }[]; paused?: { userId: number; name: string; taskId: number; taskTitle: string; projectId: number | null; reason: string; pausedAt: string | null; targetStatus?: string }[]; idle: { userId: number; name: string }[] };
 	role: "admin";
 	stats: AdminDashboardStats;
 	recentProjects: RecentProject[];

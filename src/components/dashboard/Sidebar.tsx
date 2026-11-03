@@ -17,6 +17,7 @@ const navIcons: Record<string, React.ElementType> = {
 	clients: Building2,
 	projects: FolderKanban,
 	"my-tasks": ListTodo,
+	"tasks": ListTodo,
 	wiki: BookOpen,
 	employees: Users,
 	"my-attendance": Clock,
