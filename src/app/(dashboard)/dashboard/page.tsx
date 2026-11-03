@@ -14,6 +14,7 @@ import { getRoleLabel } from "@/config/simplification";
 import { DashboardOperationsCharts } from "@/features/dashboard/components/DashboardOperationsCharts";
 import { DeliveryTimeline } from "@/features/dashboard/components/DeliveryTimeline";
 import { DashboardWelcome } from "@/features/dashboard/components/DashboardWelcome";
+import { CompanyTasksList } from "@/features/dashboard/components/CompanyTasksList";
 
 export default function DashboardPage() {
 	const { user } = useAuthStore();
@@ -92,6 +93,7 @@ function AdminDashboard({ data }: { data: AdminDashboardOverview }) {
 		<>
 			<StatsGrid stats={stats} />
 			{data.liveWork && <LiveWorkPanel data={data.liveWork} />}
+			<CompanyTasksList />
 			<DashboardOperationsCharts stats={data.stats} />
 			<DeliveryTimeline entries={data.timeline ?? []} />
 			<div className="grid gap-4 md:grid-cols-2">
@@ -163,6 +165,7 @@ function ManagerDashboard({ data }: { data: ManagerDashboardOverview }) {
 	return (
 		<>
 			<StatsGrid stats={stats} />
+			<CompanyTasksList />
 			<div className="grid gap-4 md:grid-cols-2">
 				<Card>
 					<CardHeader>

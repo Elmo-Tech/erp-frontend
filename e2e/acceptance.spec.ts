@@ -111,6 +111,16 @@ test('task page lists project tasks and opens their details', async ({ page }) =
  await expect(page.getByRole('dialog')).toContainText('QA Timer Task');
 });
 
+test('dashboard groups company tasks by status and opens task details', async ({ page }) => {
+ await login(page);
+ await expect(page.getByText('Tasks by status', { exact: true })).toBeVisible();
+ await expect(page.getByRole('region', { name: 'Completed tasks' })).toContainText('QA Completed Task');
+ await expect(page.getByRole('region', { name: /To Do tasks/i })).toContainText('QA Timer Task');
+ await page.getByRole('textbox', { name: 'Search dashboard tasks' }).fill('QA Timer Task');
+ await page.getByRole('button', { name: /QA Timer Task/ }).click();
+ await expect(page.getByRole('dialog')).toContainText('QA Timer Task');
+});
+
 test('employee submits leave through UI and admin receives exactly one notification', async ({ page, browser }) => {
  const adminPage = await browser.newPage();
  await login(adminPage);
