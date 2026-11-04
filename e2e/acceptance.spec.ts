@@ -106,6 +106,8 @@ test('task page lists project tasks and opens their details', async ({ page }) =
  await login(page);
  await page.getByRole('link', { name: 'Tasks', exact: true }).click();
  await expect(page).toHaveURL(/\/dashboard\/tasks$/);
+ await expect(page.getByText('Tasks by status', { exact: true })).toBeVisible();
+ await page.screenshot({ path: test.info().outputPath('tasks-list.png'), fullPage: true });
  await page.getByRole('textbox', { name: 'Search tasks' }).fill('QA Timer Task');
  await page.getByRole('button', { name: /QA Timer Task/ }).click();
  await expect(page.getByRole('dialog')).toContainText('QA Timer Task');
@@ -116,9 +118,21 @@ test('dashboard groups company tasks by status and opens task details', async ({
  await expect(page.getByText('Tasks by status', { exact: true })).toBeVisible();
  await expect(page.getByRole('region', { name: 'Completed tasks' })).toContainText('QA Completed Task');
  await expect(page.getByRole('region', { name: /To Do tasks/i })).toContainText('QA Timer Task');
+ await page.screenshot({ path: test.info().outputPath('dashboard-task-list.png'), fullPage: true });
  await page.getByRole('textbox', { name: 'Search dashboard tasks' }).fill('QA Timer Task');
  await page.getByRole('button', { name: /QA Timer Task/ }).click();
  await expect(page.getByRole('dialog')).toContainText('QA Timer Task');
+});
+
+test('task list keeps wide tables scrollable on a narrow screen', async ({ page }) => {
+ await page.setViewportSize({ width: 390, height: 844 });
+ await login(page);
+ await page.goto('/dashboard/tasks');
+ const group = page.getByRole('region', { name: /To Do tasks/i });
+ await expect(group).toContainText('QA Timer Task');
+ const scrollArea = group.locator('table').locator('..');
+ expect(await scrollArea.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+ expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test('employee submits leave through UI and admin receives exactly one notification', async ({ page, browser }) => {
