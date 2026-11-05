@@ -17,7 +17,7 @@ const policy: HrPolicy = {
 			{ minimumMinutes: 60, maximumMinutes: null, percentages: [30, 40, 50, 60] },
 		],
 		overtimeRequiresPreapproval: true, overtimeMultiplier: 1.5, advanceLimitSalaryPercentage: 100,
-		advanceSettlement: "next_payroll", allowAdvanceInstallments: true, payrollPaymentDay: 1, midMonthHirePaidDays: 15, taskSupervisorLimit: 1,
+		advanceSettlement: "next_payroll", allowAdvanceInstallments: true, payrollPaymentDay: 1, midMonthHirePaidDays: 15, taskSupervisorLimit: 1, afterHoursIntervalMinutes: 60, afterHoursGraceMinutes: 10,
 	},
 };
 let currentPolicy = policy;

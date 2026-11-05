@@ -28,6 +28,8 @@ export interface HrPolicySettings {
 	payrollPaymentDay: number;
 	midMonthHirePaidDays: number;
 	taskSupervisorLimit: number;
+	afterHoursIntervalMinutes?: number;
+	afterHoursGraceMinutes?: number;
 }
 
 export interface HrPolicy {

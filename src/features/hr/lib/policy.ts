@@ -37,6 +37,8 @@ export function normalizeHrPolicySettings(settings: HrPolicySettings): HrPolicyS
 		...settings,
 		// Tasks have one persisted supervisor, so the policy value is fixed to one.
 		taskSupervisorLimit: 1,
+		afterHoursIntervalMinutes: settings.afterHoursIntervalMinutes ?? 60,
+		afterHoursGraceMinutes: settings.afterHoursGraceMinutes ?? 10,
 		workingDays: [...settings.workingDays],
 		lateDeductionTiers: settings.lateDeductionTiers.map((tier) => ({
 			...tier,

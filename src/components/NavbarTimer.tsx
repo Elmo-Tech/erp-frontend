@@ -204,7 +204,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 						className="gap-2"
 					>
 						{pendingAction === "resume" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
-						Resume {resumableTimer.trackableDisplayName}
+						{resumableTimer.stopReason === "after_hours_timeout" ? `Automatically paused${resumableTimer.endTime ? ` at ${new Date(resumableTimer.endTime).toLocaleString()}` : ""} — Resume ` : "Resume "}{resumableTimer.trackableDisplayName}
 					</Button>
 				) : (
 					<div className="flex items-center gap-1 text-muted-foreground">

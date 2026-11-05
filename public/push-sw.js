@@ -10,7 +10,7 @@ self.addEventListener("push", (event) => {
       body: data.body || "Open the application for details.",
       tag: data.tag || "erp-notification",
       renotify: true,
-      requireInteraction: data.type === "timer_reminder",
+      requireInteraction: data.type === "timer_reminder" || data.type === "after_hours_confirmation",
       data: { url: data.url || "/dashboard" },
     });
     if (data.type === "timer_reminder") {

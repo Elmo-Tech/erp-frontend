@@ -29,6 +29,8 @@ const defaultSettings: HrPolicySettings = {
 	payrollPaymentDay: 1,
 	midMonthHirePaidDays: 15,
 	taskSupervisorLimit: 1,
+	afterHoursIntervalMinutes: 60,
+	afterHoursGraceMinutes: 10,
 };
 
 const defaultPolicy: HrPolicy = {

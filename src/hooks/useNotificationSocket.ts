@@ -63,6 +63,10 @@ export function useNotificationSocketInit() {
 
 		const handleNotification = (event: NotificationEvent) => {
 			const notification = normalizeNotification(event);
+			if (notification.type === "after_hours_confirmation") {
+				void import("@/hooks/useTimerSocket").then(({ synchronizeTimer }) => synchronizeTimer());
+				return;
+			}
 			if (notification.type === "timer_reminder") {
 				window.dispatchEvent(new CustomEvent("timer-reminder", { detail: notification.data }));
 				return;

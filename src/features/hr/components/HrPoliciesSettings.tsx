@@ -199,6 +199,14 @@ function HrPolicyForm({ policy }: { policy: HrPolicy }) {
 					</Card>
 
 
+					<Card>
+						<CardHeader><CardTitle>After-hours timer confirmation</CardTitle><CardDescription>After each employee’s scheduled work ends, ask whether their timer should continue. Changes apply to future reminders.</CardDescription></CardHeader>
+						<CardContent className="grid gap-4 sm:grid-cols-2">
+							<div className="grid gap-2"><Label htmlFor="after-hours-interval">Repeat after confirmation (minutes)</Label><Input id="after-hours-interval" type="number" min={1} max={1440} disabled={createPolicy.isPending} {...form.register("settings.afterHoursIntervalMinutes", { required: true, min: 1, max: 1440, valueAsNumber: true })} /></div>
+							<div className="grid gap-2"><Label htmlFor="after-hours-grace">Time to respond (minutes)</Label><Input id="after-hours-grace" type="number" min={1} max={1440} disabled={createPolicy.isPending} {...form.register("settings.afterHoursGraceMinutes", { required: true, min: 1, max: 1440, valueAsNumber: true })} /></div>
+						</CardContent>
+					</Card>
+
 					<Card className="xl:col-span-2">
 						<CardHeader>
 							<CardTitle>Late deductions</CardTitle>

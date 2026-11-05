@@ -8,7 +8,7 @@ import api from "@/lib/axios";
 import { useQueryClient } from "@tanstack/react-query";
 
 let synchronizationVersion = 0;
-async function synchronizeTimer() {
+export async function synchronizeTimer() {
 	const version = ++synchronizationVersion;
 	const userId = useAuthStore.getState().user?.userId;
 	const snapshot = useTimerStore.getState();

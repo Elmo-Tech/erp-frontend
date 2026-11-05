@@ -9,6 +9,7 @@ import { useTimerSocketInit } from "@/hooks/useTimerSocket";
 import { useWorkMonitoringSocketInit } from "@/hooks/useWorkMonitoringSocket";
 import { useNotificationSocketInit } from "@/hooks/useNotificationSocket";
 import { cn } from "@/lib/utils";
+import { AfterHoursTimerDialog } from "@/components/AfterHoursTimerDialog";
 import { TimerReminderDialog } from "@/components/TimerReminderDialog";
 import { usePathname } from "next/navigation";
 import { pagePermissions } from "@/config/access";
@@ -42,6 +43,7 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 			<div className="min-h-screen bg-background">
 				<a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground">Skip to content</a>
 				<TimerReminderDialog />
+				<AfterHoursTimerDialog />
 				{/* Sidebar */}
 				<Sidebar />
 
