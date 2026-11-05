@@ -7,3 +7,4 @@ export * from "./EmptyState";
 export * from "./LoadingState";
 export * from "./Pagination";
 export * from "./StatusBadge";
+export * from "./StatTile";

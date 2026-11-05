@@ -111,7 +111,7 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 			)}
 			<CardContent>
 				{filters && <div className="mb-4">{filters}</div>}
-				<div className="overflow-x-auto rounded-xl border border-border bg-surface-glass-soft">
+				<div className="overflow-x-auto rounded-lg border border-border bg-surface">
 					<Table>
 						<TableHeader>
 							<TableRow>

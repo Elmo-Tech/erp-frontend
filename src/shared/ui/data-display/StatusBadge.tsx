@@ -13,11 +13,11 @@ interface StatusBadgeProps {
 
 const variantClasses: Record<StatusVariant, string> = {
 	default: "bg-muted text-muted-foreground border-border",
-	success: "bg-green-100 text-green-800 border-green-200",
-	warning: "bg-yellow-100 text-yellow-800 border-yellow-200",
-	error: "bg-red-100 text-red-800 border-red-200",
-	info: "bg-blue-100 text-blue-800 border-blue-200",
-	secondary: "bg-purple-100 text-purple-800 border-purple-200",
+	success: "bg-success-soft text-success border-success/20",
+	warning: "bg-warning-soft text-warning border-warning/20",
+	error: "bg-destructive-soft text-destructive border-destructive/20",
+	info: "bg-info-soft text-info border-info/20",
+	secondary: "bg-primary-soft text-accent-foreground border-primary/15",
 };
 
 export function StatusBadge({ label, variant = "default", className }: StatusBadgeProps) {

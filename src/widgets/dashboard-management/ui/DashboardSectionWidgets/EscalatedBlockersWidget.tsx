@@ -20,8 +20,8 @@ export function EscalatedBlockersWidget({ blockers = [] }: EscalatedBlockersWidg
 	}
 
 	return (
-		<section className="overflow-hidden rounded-md border border-destructive/40 bg-[linear-gradient(180deg,hsl(var(--destructive)/0.055),hsl(var(--card))_42%)]">
-			<div className="flex items-center justify-between gap-3 border-b border-destructive/20 px-4 py-3">
+		<section className="overflow-hidden rounded-xl border border-destructive/30 bg-card shadow-[var(--shadow-card)]">
+			<div className="flex items-center justify-between gap-3 border-b border-destructive/20 bg-destructive-soft px-5 py-3.5">
 				<div className="min-w-0">
 					<div className="flex items-center gap-2">
 						<span className="size-2 rounded-full border border-destructive/40 bg-destructive/20 animate-pulse" />

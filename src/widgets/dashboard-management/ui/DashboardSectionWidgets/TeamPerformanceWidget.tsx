@@ -55,8 +55,8 @@ export function TeamPerformanceWidget({ team }: TeamPerformanceWidgetProps) {
 	] as const;
 
 	return (
-		<section className="overflow-hidden rounded-md border border-border bg-card">
-			<div className="border-b border-border px-4 py-3">
+		<section className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
+			<div className="border-b border-border px-5 py-4">
 				<h2 className="text-sm font-medium text-foreground">Team performance</h2>
 				<p className="mt-0.5 text-xs text-muted-foreground">{taskStats?.total ?? openWork} tracked work items</p>
 			</div>

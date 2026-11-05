@@ -5,15 +5,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-[transform,background-color,border-color,color,box-shadow,opacity] duration-200 ease-out disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 active:scale-[0.97]",
+	"inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-[background-color,border-color,color,box-shadow,opacity] duration-150 ease-out disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-60 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-1 focus-visible:ring-offset-background aria-invalid:border-destructive aria-invalid:ring-destructive/20",
 	{
 		variants: {
 			variant: {
-				default: "border border-primary/20 bg-[image:var(--gradient-primary)] text-primary-foreground shadow-[var(--glow-primary-small)] hover:shadow-[var(--glow-primary-hover)]",
-				destructive: "bg-destructive text-white shadow-sm hover:bg-destructive/90 focus-visible:ring-destructive/25",
-				outline: "border border-border bg-surface-glass-strong text-foreground shadow-xs backdrop-blur-sm hover:border-primary/35 hover:bg-accent hover:text-primary",
-				secondary: "border border-border/70 bg-secondary text-secondary-foreground shadow-xs hover:border-primary/20 hover:bg-accent",
-				ghost: "text-foreground hover:bg-accent hover:text-accent-foreground",
+				default: "border border-primary-hover/40 bg-primary text-primary-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.14),var(--elevation-xs)] hover:bg-primary-hover",
+				destructive: "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/25",
+				outline: "border border-border-strong bg-surface text-foreground shadow-xs hover:border-primary/30 hover:bg-surface-subtle hover:text-foreground",
+				secondary: "border border-transparent bg-secondary text-secondary-foreground hover:bg-accent hover:text-accent-foreground",
+				ghost: "text-muted-foreground hover:bg-secondary hover:text-foreground",
 				link: "text-primary underline-offset-4 hover:underline",
 			},
 			size: {

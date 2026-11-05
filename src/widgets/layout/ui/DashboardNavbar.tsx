@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, type MouseEvent } from "react";
+import { Fragment, useEffect, useMemo, useState, type MouseEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/shared/ui/breadcrumb";
+import { getBreadcrumbs } from "@/widgets/layout/model/breadcrumbs";
 import { Activity, ExternalLink, ListTodo, Loader2, LogIn, LogOut, Menu, Play, Search, Square, Timer, User } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -49,20 +51,23 @@ export function DashboardNavbar() {
     });
 
     return (
-		<header className="sticky top-3 z-30 mx-3 mt-3 flex h-16 items-center justify-between rounded-2xl border border-sidebar-border bg-sidebar px-4 text-sidebar-foreground shadow-[var(--shadow-nav)] backdrop-blur-xl lg:mx-4 lg:px-5">
-            <div className="flex items-center gap-3">
-                <Button type="button" variant="ghost" size="icon" onClick={toggleMobileOpen} className="lg:hidden" aria-label="Toggle menu">
+		<header className="glass sticky top-0 z-30 flex h-(--topbar-height) items-center justify-between gap-3 border-b px-4 text-foreground sm:px-6 lg:px-8">
+            <div className="flex min-w-0 items-center gap-2">
+                <Button type="button" variant="ghost" size="icon-sm" onClick={toggleMobileOpen} className="-ml-1 lg:hidden" aria-label="Open navigation">
                     <Menu />
                 </Button>
-				<Button type="button" variant="outline" size="sm" className="hidden w-64 justify-start bg-surface-glass-soft text-sidebar-foreground/70 disabled:opacity-80 md:flex" disabled>
+				<TopbarBreadcrumbs />
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1.5">
+				<Button type="button" variant="outline" size="sm" className="hidden w-56 justify-start font-normal text-muted-foreground disabled:opacity-70 2xl:flex" disabled>
                     <Search data-icon="inline-start" />
                     Search
                 </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
                 <AttendanceStatusPill />
                 <ActiveTimerPill />
+				<div className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden="true" />
+
                 <Can permission="view_team_pulse">
                     <TeamPulsePopover />
                 </Can>
@@ -73,14 +78,14 @@ export function DashboardNavbar() {
 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button type="button" variant="ghost" className="gap-2 px-2">
-                            <Avatar className="size-8">
+                        <Button type="button" variant="ghost" className="h-9 gap-2.5 rounded-lg px-1.5 md:pr-2.5" aria-label="Account menu">
+                            <Avatar className="size-7.5">
                                 <AvatarImage src={user?.avatar} alt={user?.name} />
-                                <AvatarFallback className="bg-primary text-xs text-primary-foreground">{initials}</AvatarFallback>
+                                <AvatarFallback className="bg-navy text-[0.6875rem] font-semibold text-white">{initials}</AvatarFallback>
                             </Avatar>
-                            <div className="hidden flex-col items-start text-left md:flex">
-                                <span className="text-sm font-medium">{user?.name || "User"}</span>
-                                <span className="text-xs text-sidebar-foreground/65">{role || "guest"}</span>
+                            <div className="hidden max-w-36 flex-col items-start text-left leading-tight md:flex">
+                                <span className="w-full truncate text-[0.8125rem] font-medium">{user?.name || "User"}</span>
+                                <span className="w-full truncate text-[0.6875rem] font-normal text-muted-foreground capitalize">{role || "guest"}</span>
                             </div>
                         </Button>
                     </DropdownMenuTrigger>
@@ -107,6 +112,40 @@ export function DashboardNavbar() {
                 </DropdownMenu>
             </div>
         </header>
+    );
+}
+
+function TopbarBreadcrumbs() {
+    const pathname = usePathname();
+    const crumbs = getBreadcrumbs(pathname);
+    const current = crumbs[crumbs.length - 1];
+
+    return (
+        <Breadcrumb className="min-w-0">
+            {/* Compact: current page only. */}
+            <p className="truncate text-sm font-semibold text-foreground sm:hidden">{current?.label}</p>
+            <BreadcrumbList className="hidden flex-nowrap gap-1.5 text-[0.8125rem] sm:flex sm:gap-2">
+                {crumbs.map((crumb, index) => {
+                    const isLast = index === crumbs.length - 1;
+                    return (
+                        <Fragment key={`${crumb.label}-${index}`}>
+                            {index > 0 && <BreadcrumbSeparator className={cn("text-muted-foreground/60", index === 1 && crumbs.length > 2 && "hidden md:block")} />}
+                            <BreadcrumbItem className={cn("min-w-0", !isLast && index === 0 && crumbs.length > 2 && "hidden md:inline-flex")}>
+                                {isLast ? (
+                                    <BreadcrumbPage className="truncate font-medium">{crumb.label}</BreadcrumbPage>
+                                ) : crumb.href ? (
+                                    <BreadcrumbLink asChild className="truncate">
+                                        <Link href={crumb.href}>{crumb.label}</Link>
+                                    </BreadcrumbLink>
+                                ) : (
+                                    <span className="truncate">{crumb.label}</span>
+                                )}
+                            </BreadcrumbItem>
+                        </Fragment>
+                    );
+                })}
+            </BreadcrumbList>
+        </Breadcrumb>
     );
 }
 
@@ -163,14 +202,14 @@ function ActiveTimerPill() {
                     type="button"
                     variant={hasActiveTimer ? "outline" : "ghost"}
                     size="sm"
-                    className={hasActiveTimer ? "max-w-[46vw] border-emerald-400/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 sm:max-w-[420px]" : "hidden sm:inline-flex"}
+                    className={hasActiveTimer ? "max-w-[46vw] border-success/25 bg-success-soft text-success hover:bg-success-soft hover:text-success sm:max-w-[420px]" : "hidden sm:inline-flex"}
                     aria-label="Open task timer"
                 >
                     <Timer className={hasActiveTimer ? "size-4 animate-pulse" : "size-4"} />
                     <span className="min-w-0 truncate text-xs font-semibold tabular-nums">{activeLabel}</span>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="z-50 w-96 border bg-popover p-0 text-popover-foreground shadow-xl">
+            <PopoverContent align="end" className="z-50 w-96 max-w-[calc(100vw-2rem)] p-0">
                 <div className="border-b px-4 py-3">
                     <p className="text-sm font-medium">Task Timer</p>
                     <p className="text-xs text-muted-foreground">{activeSubLabel}</p>
@@ -178,12 +217,12 @@ function ActiveTimerPill() {
 
                 {activeTimeEntry && projectId && taskId && (
                     <div className="border-b p-3">
-                        <div className="rounded-md border bg-emerald-500/5 p-3">
+                        <div className="rounded-md border bg-success-soft p-3">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                     <p className="truncate text-sm font-medium">{taskName}</p>
                                     <p className="truncate text-xs text-muted-foreground">{projectName}</p>
-                                    <p className="mt-2 font-mono text-lg font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">{projectElapsed}</p>
+                                    <p className="mt-2 font-mono text-lg font-semibold tabular-nums text-success">{projectElapsed}</p>
                                 </div>
                                 <div className="flex shrink-0 items-center gap-1">
                                     <Button type="button" variant="ghost" size="icon-sm" asChild>
@@ -202,12 +241,12 @@ function ActiveTimerPill() {
 
                 {activePersonalEntry && (
                     <div className="border-b p-3">
-                        <div className="rounded-md border bg-emerald-500/5 p-3">
+                        <div className="rounded-md border bg-success-soft p-3">
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
                                     <p className="truncate text-sm font-medium">{personalTaskName}</p>
                                     <p className="truncate text-xs text-muted-foreground">Personal</p>
-                                    <p className="mt-2 font-mono text-lg font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">{personalElapsed}</p>
+                                    <p className="mt-2 font-mono text-lg font-semibold tabular-nums text-success">{personalElapsed}</p>
                                 </div>
                                 <Button type="button" variant="destructive" size="icon-sm" onClick={stopPersonalTimer} disabled={togglePersonalTimer.isPending} aria-label="Stop personal timer">
                                     {togglePersonalTimer.isPending ? <Loader2 className="size-4 animate-spin" /> : <Square className="size-4" />}
@@ -339,7 +378,7 @@ function AttendanceStatusPill() {
     if (checkedInAt && todayQuery.data?.isClockedIn) {
         return (
             <div className="hidden items-center gap-1 sm:flex">
-                <Button type="button" variant="outline" size="sm" className="border-emerald-400/40 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-300" asChild>
+                <Button type="button" variant="outline" size="sm" className="border-success/25 bg-success-soft text-xs text-success hover:bg-success-soft hover:text-success" asChild>
                     <Link href="/dashboard/hr/attendance">In {formatAttendanceTime(checkedInAt)}</Link>
                 </Button>
                 <Button type="button" variant="destructive" size="sm" onClick={() => checkOut.mutate()} disabled={checkOut.isPending}>
@@ -366,7 +405,7 @@ function TeamPulsePopover() {
                     <Activity />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="z-50 w-96 border bg-popover p-0 text-popover-foreground shadow-xl">
+            <PopoverContent align="end" className="z-50 w-96 max-w-[calc(100vw-2rem)] p-0">
                 <TeamPulseContent />
             </PopoverContent>
         </Popover>
@@ -498,7 +537,7 @@ function TeamPulseRow({ item, now, selected, onSelect }: { item: TeamPulseItem; 
         <button type="button" className={cn("w-full rounded-md px-3 py-2 text-left hover:bg-muted/50", selected && "bg-muted")} onClick={onSelect}>
             <div className="flex items-start justify-between gap-3">
                 <p className="text-sm leading-5">{message}</p>
-				<span className={item.status === "clocked_in" ? "mt-1 size-2 rounded-full bg-emerald-500" : "mt-1 size-2 rounded-full bg-muted-foreground/40"} />
+				<span className={item.status === "clocked_in" ? "mt-1 size-2 rounded-full bg-success" : "mt-1 size-2 rounded-full bg-muted-foreground/40"} />
             </div>
             {item.activeProjectTitle && <p className="mt-0.5 text-xs text-muted-foreground">{item.activeProjectTitle}</p>}
         </button>

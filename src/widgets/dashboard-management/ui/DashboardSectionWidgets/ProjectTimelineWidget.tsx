@@ -35,8 +35,8 @@ export function ProjectTimelineWidget({ timeline = [] }: ProjectTimelineWidgetPr
 	const visibleProjects = timeline.slice(0, MAX_VISIBLE_PROJECTS);
 
 	return (
-		<section className="overflow-hidden rounded-md border border-border bg-card">
-			<div className="flex flex-col gap-2 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+		<section className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
+			<div className="flex flex-col gap-2 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="min-w-0">
 					<h2 className="text-sm font-medium text-foreground">Project timeline</h2>
 					<p className="mt-0.5 text-xs text-muted-foreground">{timeline.length} active timeline items</p>
@@ -167,15 +167,15 @@ function statusDotClass(status: string) {
 	const normalizedStatus = status.toLowerCase();
 
 	if (normalizedStatus.includes("complete") || normalizedStatus.includes("done")) {
-		return "bg-emerald-500/80";
+		return "bg-success";
 	}
 
 	if (normalizedStatus.includes("blocked") || normalizedStatus.includes("overdue")) {
-		return "bg-red-500/80";
+		return "bg-destructive";
 	}
 
 	if (normalizedStatus.includes("progress") || normalizedStatus.includes("active")) {
-		return "bg-primary/80";
+		return "bg-primary";
 	}
 
 	return "bg-muted-foreground/50";

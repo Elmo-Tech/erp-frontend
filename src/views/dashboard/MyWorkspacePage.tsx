@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
-import { Activity, CalendarClock, ExternalLink, LogIn, LogOut, Star, Timer, Trophy } from "lucide-react";
+import { CalendarClock, ExternalLink, LogIn, LogOut, Star, Timer, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/entities/user/model/auth.store";
 import { MEETING_TYPE_LABELS, useGetTodayMeetings, type PolyMeeting } from "@/entities/meetings";
@@ -15,6 +15,8 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
+import { PageHeader } from "@/shared/ui/page-header";
+import { StatStrip, StatTile } from "@/shared/ui/data-display/StatTile";
 
 function formatTime(value: string | null | undefined) {
 	if (!value) return "--:--";
@@ -56,7 +58,7 @@ function AttendanceControl() {
 	};
 
 	return (
-		<Card className="border-primary/20 bg-primary/4">
+		<Card className="relative overflow-hidden">
 			<CardHeader className="pb-3">
 				<CardTitle className="flex items-center gap-2 text-base">
 					<Timer className="size-4 text-primary" />
@@ -72,10 +74,10 @@ function AttendanceControl() {
 				) : (
 					<div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 						<div className="space-y-2">
-							<p className="text-3xl font-semibold tracking-tight tabular-nums">{checkedInAt ? formatTime(checkedInAt) : "Ready"}</p>
+							<p className="text-[1.75rem] leading-none font-semibold tracking-[-0.02em] tabular-nums">{checkedInAt ? formatTime(checkedInAt) : "Ready"}</p>
 							{checkedInAt ? (
 								<div className="flex flex-wrap items-center gap-2">
-									<Badge className="bg-emerald-600 text-white hover:bg-emerald-600">Checked in at {formatTime(checkedInAt)}</Badge>
+									<Badge className="border-success/20 bg-success-soft text-success">Checked in at {formatTime(checkedInAt)}</Badge>
 									{today?.clockOut ? <span className="text-sm text-muted-foreground">Checked out at {formatTime(today.clockOut)}</span> : null}
 								</div>
 							) : (
@@ -145,7 +147,7 @@ function DailySchedule() {
 				) : meetings.length || urgentTasks.length ? (
 					<div className="grid gap-3 lg:grid-cols-2">
 						<div className="space-y-2">
-							<p className="text-xs font-semibold uppercase text-muted-foreground">Meetings</p>
+							<p className="text-[0.6875rem] font-medium tracking-[0.06em] uppercase text-muted-foreground">Meetings</p>
 							{meetings.length ? meetings.map((meeting) => {
 								const href = meetingHref(meeting);
 								const detail = meeting.locationDetails || meeting.description;
@@ -153,7 +155,7 @@ function DailySchedule() {
 								return (
 									<div
 										key={meeting.id}
-										className="flex min-w-0 items-center justify-between gap-3 rounded-md border px-3 py-2"
+										className="flex min-w-0 items-center justify-between gap-3 rounded-lg border bg-surface-subtle px-3 py-2"
 									>
 										<div className="min-w-0">
 											<p className="truncate text-sm font-medium">{meeting.title}</p>
@@ -182,11 +184,11 @@ function DailySchedule() {
 							}) : <div className="rounded-md border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">No meetings today.</div>}
 						</div>
 						<div className="space-y-2">
-							<p className="text-xs font-semibold uppercase text-muted-foreground">Urgent Tasks</p>
+							<p className="text-[0.6875rem] font-medium tracking-[0.06em] uppercase text-muted-foreground">Urgent Tasks</p>
 							{urgentTasks.length ? urgentTasks.map((task) => (
 								<div
 									key={task.taskId}
-									className="flex min-w-0 items-center justify-between gap-3 rounded-md border px-3 py-2"
+									className="flex min-w-0 items-center justify-between gap-3 rounded-lg border bg-surface-subtle px-3 py-2"
 								>
 									<div className="min-w-0">
 										<p className="truncate text-sm font-medium">{task.title}</p>
@@ -212,32 +214,10 @@ function QuickStats() {
 	const completed = dashboardQuery.data?.personal_tasks?.summary.completed ?? 0;
 
 	return (
-		<div className="grid overflow-hidden rounded-lg border bg-card sm:grid-cols-2 sm:divide-x">
-			<div className="p-4">
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-sm font-medium">
-						My Points
-					</p>
-						<Star className="size-4 text-amber-500" />
-				</div>
-				<div className="mt-3">
-					<p className="text-3xl font-semibold tabular-nums">{pointsQuery.isLoading ? "--" : points}</p>
-					<p className="text-xs text-muted-foreground">Net across recent transactions</p>
-				</div>
-			</div>
-			<div className="border-t p-4 sm:border-t-0">
-				<div className="flex items-center justify-between gap-2">
-					<p className="text-sm font-medium">
-						Completed Tasks
-					</p>
-						<Trophy className="size-4 text-emerald-500" />
-				</div>
-				<div className="mt-3">
-					<p className="text-3xl font-semibold tabular-nums">{dashboardQuery.isLoading ? "--" : completed}</p>
-					<p className="text-xs text-muted-foreground">Project + personal tasks</p>
-				</div>
-			</div>
-		</div>
+		<StatStrip className="h-full sm:grid-cols-2 [&>*]:justify-center">
+			<StatTile label="My Points" value={points} icon={Star} hint="Net across recent transactions" isLoading={pointsQuery.isLoading} />
+			<StatTile label="Completed Tasks" value={completed} icon={Trophy} hint="Project + personal tasks" isLoading={dashboardQuery.isLoading} />
+		</StatStrip>
 	);
 }
 
@@ -248,10 +228,10 @@ function WeeklyWorkRhythm() {
 	const coverage = summary?.expectedMinutes ? Math.min(100, Math.round((summary.actualWorkedMinutes / summary.expectedMinutes) * 100)) : 0;
 
 	return (
-		<div className="overflow-hidden rounded-lg border bg-card lg:col-span-2">
+		<div className="overflow-hidden rounded-xl border bg-card shadow-[var(--shadow-card)] lg:col-span-2">
 			<div className="flex items-start justify-between gap-3 border-b px-5 py-4">
-				<div><h2 className="text-sm font-semibold">Weekly work rhythm</h2><p className="mt-1 text-xs text-muted-foreground">Logged time compared with expected hours on recorded days</p></div>
-				<Activity className="size-4 text-primary" />
+				<div><h2 className="text-[0.9375rem] font-semibold tracking-tight">Weekly work rhythm</h2><p className="mt-0.5 text-xs text-muted-foreground">Logged time compared with expected hours on recorded days</p></div>
+				<div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-2 rounded-[2px] bg-chart-1" aria-hidden="true" />Logged</span><span className="flex items-center gap-1.5"><span className="size-2 rounded-[2px] bg-chart-track ring-1 ring-border" aria-hidden="true" />Expected</span></div>
 			</div>
 			{summaryQuery.isLoading ? (
 				<div className="grid gap-4 p-5 md:grid-cols-[minmax(0,1fr)_260px]"><Skeleton className="h-36" /><Skeleton className="h-36" /></div>
@@ -273,13 +253,13 @@ function WeeklyWorkRhythm() {
 
 function WorkloadBars({ days }: { days: Array<{ date: string; expectedMinutes: number; actualWorkedMinutes: number }> }) {
 	return (
-		<div className="flex h-36 items-end justify-around gap-3 border-b px-2">
+		<div className="relative flex h-36 items-end justify-around gap-3 border-b border-border px-2" role="img" aria-label="Daily logged time against expected time">
 			{days.map((day) => {
 				const ratio = day.expectedMinutes ? day.actualWorkedMinutes / day.expectedMinutes : 0;
 				return (
 					<div key={day.date} className="flex h-full min-w-8 flex-1 flex-col items-center justify-end gap-2">
-						<div className="relative h-24 w-full max-w-8 overflow-hidden rounded-t-sm bg-muted" title={`${formatDuration(day.actualWorkedMinutes)} logged / ${formatDuration(day.expectedMinutes)} expected`}>
-							<div className="absolute inset-x-0 bottom-0 bg-primary transition-[height] duration-200 motion-reduce:transition-none" style={{ height: `${Math.min(100, Math.round(ratio * 100))}%` }} />
+						<div className="relative h-24 w-full max-w-8 overflow-hidden rounded-t-[4px] bg-chart-track" title={`${formatDuration(day.actualWorkedMinutes)} logged / ${formatDuration(day.expectedMinutes)} expected`}>
+							<div className="absolute inset-x-0 bottom-0 rounded-t-[4px] bg-chart-1 transition-[height] duration-200 motion-reduce:transition-none" style={{ height: `${Math.min(100, Math.round(ratio * 100))}%` }} />
 						</div>
 						<span className="text-[11px] text-muted-foreground">{format(new Date(`${day.date}T00:00:00`), "EEE")}</span>
 					</div>
@@ -299,19 +279,17 @@ function formatDuration(minutes: number) {
 
 export default function MyWorkspacePage() {
 	return (
-		<section className="space-y-5">
-			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-semibold tracking-tight">My Workspace</h1>
-				<p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, dd MMM yyyy")}</p>
-			</div>
+		<section className="space-y-6">
+			<PageHeader title="My Workspace" description={format(new Date(), "EEEE, dd MMM yyyy")} />
 
+			{/* Today first: attendance and KPIs, then the daily brief and work queues, then weekly analytics. */}
 			<div className="grid gap-4 lg:grid-cols-2">
 				<AttendanceControl />
 				<QuickStats />
-				<WeeklyWorkRhythm />
 				<DailySchedule />
 				<PersonalTasksSummaryCard />
 				<MyActiveProjectTasksCard />
+				<WeeklyWorkRhythm />
 			</div>
 		</section>
 	);

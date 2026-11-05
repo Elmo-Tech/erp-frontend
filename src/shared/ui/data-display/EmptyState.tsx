@@ -79,8 +79,8 @@ export function EmptyMedia({ variant = "icon", className, children }: EmptyMedia
 	return (
 		<div
 			className={cn(
-				"mb-2 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground",
-				variant === "icon" ? "size-14 [&>svg]:size-6" : "size-24",
+				"mb-2 flex items-center justify-center rounded-xl border border-border bg-surface-subtle text-muted-foreground shadow-xs",
+				variant === "icon" ? "size-11 [&>svg]:size-5" : "size-24",
 				className,
 			)}
 		>
@@ -96,7 +96,7 @@ interface EmptyTitleProps {
 }
 
 export function EmptyTitle({ className, children }: EmptyTitleProps) {
-	return <h3 className={cn("text-lg font-semibold", className)}>{children}</h3>;
+	return <h3 className={cn("text-base font-semibold tracking-tight", className)}>{children}</h3>;
 }
 
 /* ─── Description ─── */

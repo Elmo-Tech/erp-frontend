@@ -68,7 +68,7 @@ export function PersonalTasksDashboardWidget({ personalTasks, blockers = [], sho
 	return (
 		<section className={cn("grid gap-4", showTasksPanel && "xl:grid-cols-[minmax(0,1fr)_380px]")}>
 			{showTasksPanel && (
-				<div className="overflow-hidden rounded-md border border-border bg-card">
+				<div className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
 					<PanelHeader
 						title="My tasks"
 						description={`${personalTasks?.summary?.total ?? tasks.length} assigned today`}
@@ -91,7 +91,7 @@ export function PersonalTasksDashboardWidget({ personalTasks, blockers = [], sho
 				</div>
 			)}
 
-			<div className="overflow-hidden rounded-md border border-destructive/20 bg-destructive/3">
+			<div className="overflow-hidden rounded-xl border border-destructive/25 bg-card shadow-[var(--shadow-card)]">
 				<PanelHeader
 					title={blockersTitle}
 					description={`${blockers.length} waiting on action`}
@@ -140,7 +140,7 @@ function TaskRow({ task }: { task: PersonalTaskItem }) {
 
 function BlockerRow({ blocker, onEscalate, isEscalating }: { blocker: BlockerItem; onEscalate?: (blocker: BlockerItem) => void; isEscalating?: boolean }) {
 	return (
-		<div className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2">
+		<div className="rounded-lg border border-destructive/20 bg-destructive-soft px-3 py-2">
 			<div className="flex min-w-0 items-start justify-between gap-3">
 				<div className="flex min-w-0 items-start gap-2">
 					<AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive/80" />
@@ -174,7 +174,7 @@ function BlockerRow({ blocker, onEscalate, isEscalating }: { blocker: BlockerIte
 
 function PanelHeader({ title, description, className }: { title: string; description: string; className?: string }) {
 	return (
-		<div className={cn("flex items-center justify-between gap-3 border-b border-border px-4 py-3", className)}>
+		<div className={cn("flex items-center justify-between gap-3 border-b border-border px-5 py-4", className)}>
 			<div className="min-w-0">
 				<h2 className="text-sm font-medium text-foreground">{title}</h2>
 				<p className="mt-0.5 text-xs text-muted-foreground">{description}</p>

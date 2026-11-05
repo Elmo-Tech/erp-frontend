@@ -3,19 +3,45 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Elmo ERP design system
+ * ----------------------
+ * Semantic tokens live on :root / .dark and are exposed to Tailwind below.
+ * Palette is derived from the brand mark: royal blue (#315DDF) to deep navy (#101C46).
+ *
+ * Surface rules:
+ *  - Content surfaces (cards, tables, forms, dialogs) are opaque for readability.
+ *  - Glass (translucent + blur) is reserved for floating chrome: top bar,
+ *    dropdowns, popovers, select menus and floating toolbars.
+ */
+
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
 	--color-canvas: var(--canvas);
+	--color-navy: var(--navy);
+	--color-surface: var(--surface);
+	--color-surface-subtle: var(--surface-subtle);
 	--color-surface-deep: var(--surface-deep);
 	--color-surface-solid: var(--surface-solid);
 	--color-surface-menu: var(--surface-menu);
 	--color-surface-glass: var(--surface-glass);
 	--color-surface-glass-soft: var(--surface-glass-soft);
 	--color-surface-glass-strong: var(--surface-glass-strong);
+	--color-glass: var(--glass);
+	--color-glass-border: var(--glass-border);
 	--color-cyan: var(--cyan);
 	--color-sky: var(--sky);
 	--color-periwinkle: var(--periwinkle);
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-success-soft: var(--success-soft);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
+	--color-warning-soft: var(--warning-soft);
+	--color-info: var(--info);
+	--color-info-soft: var(--info-soft);
+	--color-destructive-soft: var(--destructive-soft);
 	--font-sans: var(--font-sans);
 	--font-mono: var(--font-mono);
 	--font-display: var(--font-display);
@@ -26,15 +52,19 @@
 	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
 	--color-sidebar-primary: var(--sidebar-primary);
 	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-muted: var(--sidebar-muted);
 	--color-sidebar: var(--sidebar);
 	--color-chart-5: var(--chart-5);
 	--color-chart-4: var(--chart-4);
 	--color-chart-3: var(--chart-3);
 	--color-chart-2: var(--chart-2);
 	--color-chart-1: var(--chart-1);
+	--color-chart-grid: var(--chart-grid);
+	--color-chart-track: var(--chart-track);
 	--color-ring: var(--ring);
 	--color-input: var(--input);
 	--color-border: var(--border);
+	--color-border-strong: var(--border-strong);
 	--color-destructive: var(--destructive);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-accent: var(--accent);
@@ -43,6 +73,8 @@
 	--color-secondary-foreground: var(--secondary-foreground);
 	--color-secondary: var(--secondary);
 	--color-primary-foreground: var(--primary-foreground);
+	--color-primary-hover: var(--primary-hover);
+	--color-primary-soft: var(--primary-soft);
 	--color-primary: var(--primary);
 	--color-popover-foreground: var(--popover-foreground);
 	--color-popover: var(--popover);
@@ -51,115 +83,207 @@
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) + 4px);
-	--radius-2xl: calc(var(--radius) + 8px);
-	--radius-3xl: calc(var(--radius) + 12px);
-	--radius-4xl: calc(var(--radius) + 16px);
+	--radius-xl: calc(var(--radius) + 2px);
+	--radius-2xl: calc(var(--radius) + 4px);
+	--radius-3xl: calc(var(--radius) + 8px);
+	--radius-4xl: calc(var(--radius) + 12px);
+	--shadow-xs: var(--elevation-xs);
+	--shadow-sm: var(--elevation-sm);
+	--shadow-md: var(--elevation-md);
+	--shadow-lg: var(--elevation-lg);
+	--shadow-xl: var(--elevation-overlay);
 }
 
 :root {
 	color-scheme: light;
-	/* Light mode keeps the airy canvas while the app background provides depth. */
-	--font-sans: Arial, "IBM Plex Sans Arabic", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-	--font-mono: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-	--font-display: Arial, "IBM Plex Sans Arabic", system-ui, sans-serif;
-	--primary: #0052ff;
-	--primary-dark: #2b418f;
+
+	--font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "IBM Plex Sans Arabic", Roboto, "Helvetica Neue", Arial, sans-serif;
+	--font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+	--font-display: var(--font-sans);
+
+	/* Brand */
+	--primary: #315ddf;
+	--primary-hover: #244bc1;
+	--primary-soft: #ebf0fc;
 	--primary-foreground: #ffffff;
-	--cyan: #47d6ff;
-	--sky: #439ff7;
-	--periwinkle: #b7c4ff;
-	--gradient-brand: linear-gradient(90deg, #0068c9 0%, #0052ff 49.52%, #2b418f 100%);
-	--gradient-primary: linear-gradient(90deg, #0052ff 0%, #2b418f 100%);
-	--canvas: #f4f8ff;
-	--background: #edf4ff;
-	--foreground: #071426;
-	--surface-deep: #e3edfb;
+	--primary-dark: #1b3384;
+	--navy: #101c46;
+	--cyan: #3aa7d9;
+	--sky: #5b86ec;
+	--periwinkle: #b9c7f5;
+	--gradient-brand: linear-gradient(135deg, #315ddf 0%, #101c46 100%);
+	--gradient-primary: linear-gradient(180deg, #3864e3 0%, #2f58d6 100%);
+
+	/* Canvas & surfaces */
+	--canvas: #f4f6fb;
+	--background: #f4f6fb;
+	--foreground: #17213a;
+	--surface: #ffffff;
+	--surface-subtle: #f8f9fc;
+	--surface-deep: #eceff6;
 	--surface-solid: #ffffff;
 	--surface-menu: #ffffff;
-	--surface-glass: rgb(255 255 255 / 78%);
-	--surface-glass-soft: rgb(244 248 255 / 68%);
-	--surface-glass-strong: rgb(255 255 255 / 94%);
-	--card: rgb(255 255 255 / 78%);
-	--card-foreground: #071426;
-	--popover: rgb(255 255 255 / 96%);
-	--popover-foreground: #071426;
-	--secondary: #e3edfb;
-	--secondary-foreground: #1f3652;
-	--muted: #e7f0ff;
-	--muted-foreground: #52657d;
-	--accent: #e3edfb;
-	--accent-foreground: #071426;
-	--destructive: #b42318;
-	--border: rgb(15 47 89 / 15%);
-	--input: rgb(15 47 89 / 22%);
-	--ring: #0052ff;
-	--chart-1: #0052ff;
-	--chart-2: #0068c9;
-	--chart-3: #2b418f;
-	--chart-4: #0f8a8d;
-	--chart-5: #a15c00;
-	--sidebar: rgb(255 255 255 / 86%);
-	--sidebar-foreground: #071426;
-	--sidebar-primary: #0052ff;
+	/* Legacy aliases — kept opaque so older screens stay readable. */
+	--surface-glass: #ffffff;
+	--surface-glass-soft: #f8f9fc;
+	--surface-glass-strong: #ffffff;
+	--card: #ffffff;
+	--card-foreground: #17213a;
+
+	/* Glass — floating chrome only */
+	--glass: rgb(255 255 255 / 72%);
+	--glass-strong: rgb(255 255 255 / 86%);
+	--glass-border: rgb(255 255 255 / 70%);
+	--glass-blur: 18px;
+	--popover: rgb(255 255 255 / 90%);
+	--popover-foreground: #17213a;
+
+	/* Neutrals */
+	--secondary: #eef1f7;
+	--secondary-foreground: #1d2a4d;
+	--muted: #eef1f7;
+	--muted-foreground: #5a6782;
+	--accent: #edf1fc;
+	--accent-foreground: #1e3fa8;
+	--border: #e3e8f2;
+	--border-strong: #d3dae8;
+	--input: #d6dde9;
+	--ring: #315ddf;
+
+	/* Status */
+	--destructive: #c9372c;
+	--destructive-soft: #fdeeec;
+	--success: #12805c;
+	--success-foreground: #ffffff;
+	--success-soft: #e7f5ef;
+	--warning: #a8620a;
+	--warning-foreground: #ffffff;
+	--warning-soft: #fdf3e3;
+	--info: #2c6fb3;
+	--info-soft: #e8f1fb;
+
+	/* Data visualisation */
+	/* Categorical order validated (CVD + contrast) against #ffffff. */
+	--chart-1: #315ddf;
+	--chart-2: #0e8f80;
+	--chart-3: #c27a0e;
+	--chart-4: #8b5bd6;
+	--chart-5: #d0507a;
+	--chart-track: #eef1f7;
+	--chart-grid: #e8ecf4;
+
+	/* Sidebar — restrained deep navy */
+	--sidebar: #101c46;
+	--sidebar-foreground: #e4e9f7;
+	--sidebar-muted: #8f9cc0;
+	--sidebar-primary: #315ddf;
 	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: #e3edfb;
-	--sidebar-accent-foreground: #071426;
-	--sidebar-border: rgb(15 47 89 / 15%);
-	--sidebar-ring: #0052ff;
-	--glow-primary: 0 12px 32px rgb(0 82 255 / 18%);
-	--glow-primary-hover: 0 14px 38px rgb(0 82 255 / 28%);
-	--glow-primary-small: 0 6px 18px rgb(0 82 255 / 16%);
-	--shadow-card: 0 18px 40px -20px rgb(20 54 92 / 28%);
-	--shadow-nav: 0 12px 32px rgb(20 54 92 / 14%);
-	--radius: 0.875rem;
+	--sidebar-accent: rgb(255 255 255 / 6%);
+	--sidebar-accent-foreground: #ffffff;
+	--sidebar-border: rgb(255 255 255 / 8%);
+	--sidebar-ring: #7d9af0;
+
+	/* Elevation */
+	--elevation-xs: 0 1px 2px rgb(16 28 70 / 5%);
+	--elevation-sm: 0 1px 2px rgb(16 28 70 / 4%), 0 1px 3px rgb(16 28 70 / 6%);
+	--elevation-md: 0 1px 2px rgb(16 28 70 / 4%), 0 4px 12px -2px rgb(16 28 70 / 8%);
+	--elevation-lg: 0 2px 4px rgb(16 28 70 / 4%), 0 12px 28px -6px rgb(16 28 70 / 12%);
+	--elevation-overlay: 0 2px 6px rgb(16 28 70 / 6%), 0 18px 40px -8px rgb(16 28 70 / 20%);
+	--shadow-card: var(--elevation-sm);
+	--shadow-nav: 0 1px 0 rgb(16 28 70 / 4%), 0 6px 20px -12px rgb(16 28 70 / 18%);
+	--highlight-top: inset 0 1px 0 rgb(255 255 255 / 70%);
+
+	/* Retired glows mapped to quiet elevations. */
+	--glow-primary: var(--elevation-md);
+	--glow-primary-hover: var(--elevation-md);
+	--glow-primary-small: var(--elevation-xs);
+
+	--radius: 0.5rem;
+
+	/* Layout */
+	--sidebar-width: 16rem;
+	--sidebar-width-collapsed: 4.5rem;
+	--topbar-height: 3.75rem;
+	--content-max: 1600px;
 }
 
 .dark {
 	color-scheme: dark;
-	/* Dark mode preserves the original deep-navy surface hierarchy. */
-	--gradient-brand: linear-gradient(90deg, #47d6ff 0%, #439ff7 49.52%, #3e66ef 100%);
-	--canvas: #020b1a;
-	--background: #091423;
-	--foreground: #ffffff;
-	--surface-deep: #040e1d;
-	--surface-solid: #0a192f;
-	--surface-menu: #0a0f1e;
-	--surface-glass: rgb(4 14 29 / 70%);
-	--surface-glass-soft: rgb(10 25 47 / 40%);
-	--surface-glass-strong: rgb(10 25 47 / 80%);
-	--card: rgb(4 14 29 / 70%);
-	--card-foreground: #ffffff;
-	--popover: rgb(10 25 47 / 96%);
-	--popover-foreground: #ffffff;
-	--secondary: #0a192f;
-	--secondary-foreground: #d8e3f9;
-	--muted: #0a192f;
-	--muted-foreground: #94a3b8;
-	--accent: #102746;
-	--accent-foreground: #ffffff;
-	--destructive: #f87171;
-	--border: rgb(216 227 249 / 15%);
-	--input: rgb(216 227 249 / 24%);
-	--ring: #47d6ff;
-	--chart-1: #47d6ff;
-	--chart-2: #439ff7;
-	--chart-3: #3e66ef;
-	--chart-4: #b7c4ff;
-	--chart-5: #fbbf24;
-	--sidebar: rgb(4 14 29 / 88%);
-	--sidebar-foreground: #ffffff;
-	--sidebar-primary: #0052ff;
+
+	--primary: #5b80f0;
+	--primary-hover: #7895f4;
+	--primary-soft: rgb(91 128 240 / 14%);
+	--primary-foreground: #ffffff;
+	--navy: #0b1435;
+	--gradient-brand: linear-gradient(135deg, #5b80f0 0%, #1b2f6e 100%);
+	--gradient-primary: linear-gradient(180deg, #5b80f0 0%, #4d73e8 100%);
+
+	--canvas: #0a1230;
+	--background: #0a1230;
+	--foreground: #e6ebf7;
+	--surface: #111b3d;
+	--surface-subtle: #0e1736;
+	--surface-deep: #0c1533;
+	--surface-solid: #111b3d;
+	--surface-menu: #131f45;
+	--surface-glass: #111b3d;
+	--surface-glass-soft: #0e1736;
+	--surface-glass-strong: #111b3d;
+	--card: #111b3d;
+	--card-foreground: #e6ebf7;
+
+	--glass: rgb(14 23 54 / 72%);
+	--glass-strong: rgb(17 27 61 / 88%);
+	--glass-border: rgb(255 255 255 / 7%);
+	--popover: rgb(19 31 69 / 92%);
+	--popover-foreground: #e6ebf7;
+
+	--secondary: #18244d;
+	--secondary-foreground: #d5ddf2;
+	--muted: #16214a;
+	--muted-foreground: #96a3c4;
+	--accent: rgb(91 128 240 / 12%);
+	--accent-foreground: #c4d2fb;
+	--border: rgb(255 255 255 / 8%);
+	--border-strong: rgb(255 255 255 / 14%);
+	--input: rgb(255 255 255 / 14%);
+	--ring: #7895f4;
+
+	--destructive: #f07167;
+	--destructive-soft: rgb(240 113 103 / 12%);
+	--success: #3cc493;
+	--success-soft: rgb(60 196 147 / 12%);
+	--warning: #f0b14a;
+	--warning-soft: rgb(240 177 74 / 12%);
+	--info: #6aa9e8;
+	--info-soft: rgb(106 169 232 / 12%);
+
+	/* Categorical order validated (CVD + contrast) against #111b3d. */
+	--chart-1: #6d8ff2;
+	--chart-2: #26a091;
+	--chart-3: #bd8428;
+	--chart-4: #9a76e2;
+	--chart-5: #d6607f;
+	--chart-track: rgb(255 255 255 / 6%);
+	--chart-grid: rgb(255 255 255 / 7%);
+
+	--sidebar: #070e26;
+	--sidebar-foreground: #e4e9f7;
+	--sidebar-muted: #7f8bb0;
+	--sidebar-primary: #5b80f0;
 	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: rgb(71 214 255 / 10%);
-	--sidebar-accent-foreground: #d8e3f9;
-	--sidebar-border: rgb(216 227 249 / 15%);
-	--sidebar-ring: #47d6ff;
-	--glow-primary: 0 0 50px rgb(0 82 255 / 50%);
-	--glow-primary-hover: 0 0 60px rgb(0 82 255 / 70%);
-	--glow-primary-small: 0 0 20px rgb(0 82 255 / 40%);
-	--shadow-card: 0 25px 50px -12px rgb(0 0 0 / 25%);
-	--shadow-nav: 0 4px 30px rgb(0 0 0 / 20%);
+	--sidebar-accent: rgb(255 255 255 / 5%);
+	--sidebar-accent-foreground: #ffffff;
+	--sidebar-border: rgb(255 255 255 / 6%);
+	--sidebar-ring: #7895f4;
+
+	--elevation-xs: 0 1px 2px rgb(0 0 0 / 30%);
+	--elevation-sm: 0 1px 2px rgb(0 0 0 / 30%), 0 1px 3px rgb(0 0 0 / 20%);
+	--elevation-md: 0 2px 4px rgb(0 0 0 / 25%), 0 6px 16px -4px rgb(0 0 0 / 35%);
+	--elevation-lg: 0 2px 4px rgb(0 0 0 / 25%), 0 14px 32px -8px rgb(0 0 0 / 45%);
+	--elevation-overlay: 0 2px 6px rgb(0 0 0 / 30%), 0 20px 44px -8px rgb(0 0 0 / 55%);
+	--shadow-nav: 0 1px 0 rgb(0 0 0 / 20%), 0 8px 24px -14px rgb(0 0 0 / 50%);
+	--highlight-top: inset 0 1px 0 rgb(255 255 255 / 4%);
 }
 
 @layer base {
@@ -173,28 +297,17 @@
 
 	body {
 		@apply relative min-h-screen overflow-x-hidden bg-background text-foreground antialiased;
-		background-image:
-			radial-gradient(ellipse 80% 38% at 8% -8%, rgb(71 214 255 / 18%), transparent 72%),
-			radial-gradient(ellipse 70% 34% at 96% 2%, rgb(0 82 255 / 12%), transparent 74%),
-			linear-gradient(180deg, var(--canvas), var(--background));
-		background-attachment: fixed;
 		font-family: var(--font-sans);
+		font-feature-settings: "cv11", "ss01";
 		text-rendering: optimizeLegibility;
-	}
-
-	.dark body {
-		background-image:
-			radial-gradient(ellipse 85% 34% at 10% -8%, rgb(71 214 255 / 18%), transparent 72%),
-			radial-gradient(ellipse 75% 36% at 96% 0%, rgb(0 82 255 / 24%), transparent 74%),
-			linear-gradient(180deg, #020b1a, #091423 58%, #020b1a);
 	}
 
 	h1,
 	h2,
 	h3 {
 		font-family: var(--font-display);
-		font-weight: 700;
-		letter-spacing: -0.02em;
+		font-weight: 600;
+		letter-spacing: -0.015em;
 		text-wrap: balance;
 	}
 
@@ -203,25 +316,49 @@
 	}
 
 	::selection {
-		background: rgb(0 82 255 / 20%);
+		background: rgb(49 93 223 / 18%);
 		color: var(--foreground);
 	}
 
 	.dark ::selection {
-		background: rgb(71 214 255 / 28%);
+		background: rgb(91 128 240 / 32%);
 	}
 
 	:focus-visible {
 		outline-color: var(--ring);
 	}
+
+	/* Thin, quiet scrollbars across the workspace. */
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--border-strong) transparent;
+	}
+}
+
+/* Glass surface for floating chrome (top bar, floating toolbars). */
+@utility glass {
+	background-color: var(--glass);
+	border-color: var(--glass-border);
+	box-shadow: var(--highlight-top), var(--shadow-nav);
+	backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+	-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+}
+
+/* Opaque, readable content surface. */
+@utility surface-card {
+	background-color: var(--card);
+	color: var(--card-foreground);
+	border: 1px solid var(--border);
+	border-radius: calc(var(--radius) + 4px);
+	box-shadow: var(--elevation-sm);
 }
 
 @layer components {
+	/* Legacy class: now an opaque card surface. */
 	.elmo-glass {
-		background: var(--surface-glass);
+		background: var(--card);
 		border: 1px solid var(--border);
-		box-shadow: var(--shadow-card);
-		backdrop-filter: blur(14px);
+		box-shadow: var(--elevation-sm);
 	}
 
 	.elmo-brand-text {
@@ -229,20 +366,39 @@
 	}
 
 	.elmo-brand-mark {
-		background: var(--gradient-primary);
-		box-shadow: var(--glow-primary-small);
+		background: var(--surface);
+		box-shadow: var(--elevation-xs);
 	}
 
-	[data-slot="dialog-content"],
-	[data-slot="sheet-content"],
+	/* Floating overlays get the controlled glass treatment. */
 	[data-slot="popover-content"],
 	[data-slot="dropdown-menu-content"],
 	[data-slot="dropdown-menu-sub-content"],
 	[data-slot="select-content"] {
 		background: var(--popover);
 		border-color: var(--border);
-		box-shadow: var(--shadow-card);
-		backdrop-filter: blur(18px);
+		box-shadow: var(--highlight-top), var(--elevation-overlay);
+		backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+		-webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+	}
+
+	/* Modal surfaces hold forms: keep them opaque. */
+	[data-slot="dialog-content"],
+	[data-slot="alert-dialog-content"],
+	[data-slot="sheet-content"] {
+		background: var(--card);
+		border-color: var(--border);
+		box-shadow: var(--elevation-overlay);
+	}
+
+	/* Brand arc: a single curved stroke echoing the helmet crest. */
+	.brand-arc {
+		position: absolute;
+		pointer-events: none;
+		border-radius: 9999px;
+		border: 1px solid currentColor;
+		border-color: currentColor transparent transparent transparent;
+		transform: rotate(-24deg);
 	}
 }
 

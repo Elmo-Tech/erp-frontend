@@ -1,12 +1,7 @@
-import { BriefcaseBusiness, CircleDollarSign, Clock3, FolderKanban, TrendingDown, TrendingUp } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+import { BriefcaseBusiness, CircleDollarSign, Clock3, FolderKanban } from "lucide-react";
+import { StatStrip, StatTile } from "@/shared/ui/data-display/StatTile";
 
-type TrendDirection = "up" | "down" | "neutral";
-
-interface FinancialTrend {
-	value: string;
-	direction?: TrendDirection;
-}
+import type { StatTrend as FinancialTrend } from "@/shared/ui/data-display/StatTile";
 
 // Accepts the current backend keys plus executive-friendly aliases used by the dashboard contract.
 export interface ExecutiveFinancialSnapshot {
@@ -77,44 +72,11 @@ export function ExecutiveStatsWidget({ financial }: ExecutiveStatsWidgetProps) {
 	] as const;
 
 	return (
-		<section className="grid overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] backdrop-blur-[14px] md:grid-cols-2 lg:grid-cols-4 lg:divide-x lg:divide-border">
-			{stats.map((stat) => {
-				const Icon = stat.icon;
-
-				return (
-					<div
-						key={stat.key}
-						className="border-b border-border p-4 last:border-b-0 lg:border-b-0 lg:border-r lg:last:border-r-0"
-					>
-						<div className="flex items-start justify-between gap-3">
-							<div className="min-w-0">
-								<p className="truncate text-xs font-medium text-muted-foreground">{stat.label}</p>
-								<p className="mt-2 truncate text-2xl font-semibold tracking-tight tabular-nums text-foreground">{stat.value}</p>
-							</div>
-							<span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon className="size-4" /></span>
-						</div>
-						<TrendLine trend={stat.trend} />
-					</div>
-				);
-			})}
-		</section>
-	);
-}
-
-function TrendLine({ trend }: { trend?: FinancialTrend }) {
-	if (!trend) {
-		return <p className="mt-3 text-xs text-muted-foreground">Updated live</p>;
-	}
-
-	const isPositive = trend.direction === "up";
-	const isNegative = trend.direction === "down";
-	const TrendIcon = isNegative ? TrendingDown : TrendingUp;
-
-	return (
-		<div className={cn("mt-3 flex items-center gap-1 text-xs", isPositive ? "text-emerald-600 dark:text-emerald-400" : isNegative ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
-			{trend.direction && trend.direction !== "neutral" ? <TrendIcon className="size-3" /> : null}
-			<span>{trend.value}</span>
-		</div>
+		<StatStrip className="lg:grid-cols-4">
+			{stats.map((stat) => (
+				<StatTile key={stat.key} label={stat.label} value={stat.value} icon={stat.icon} trend={stat.trend} />
+			))}
+		</StatStrip>
 	);
 }
 

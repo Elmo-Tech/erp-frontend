@@ -10,13 +10,13 @@ interface TeamDailyPulseWidgetProps {
 
 export function TeamDailyPulseWidget({ pulse = [] }: TeamDailyPulseWidgetProps) {
 	return (
-		<section className="overflow-hidden rounded-md border border-border bg-card">
-			<div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+		<section className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
+			<div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
 				<div className="min-w-0">
 					<h2 className="text-sm font-medium text-foreground">Daily pulse</h2>
 					<p className="mt-0.5 text-xs text-muted-foreground">{pulse.length} SOP submission{pulse.length === 1 ? "" : "s"} today</p>
 				</div>
-				<CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+				<CheckCircle2 className="size-4 shrink-0 text-success" />
 			</div>
 
 			{pulse.length ? (
