@@ -12,6 +12,8 @@ import { UpdateProfileForm, type UpdateProfileFormValues } from "@/features/prof
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { PageHeader } from "@/shared/ui/page-header";
+import { TimeReminderSettingsCard } from "@/features/time-reminder";
 
 function initials(name: string | undefined) {
 	return (name || "User")
@@ -87,11 +89,8 @@ export default function ProfilePage() {
 	};
 
 	return (
-		<section className="space-y-5">
-			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-				<p className="text-sm text-muted-foreground">Manage your account identity and password.</p>
-			</div>
+		<section className="space-y-6">
+			<PageHeader title="Profile" description="Manage your account identity, password, and personal preferences." />
 
 			<div className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
 				<Card>
@@ -142,6 +141,8 @@ export default function ProfilePage() {
 							<ChangePasswordForm isLoading={changePassword.isPending} onSubmit={handlePasswordSubmit} />
 						</CardContent>
 					</Card>
+
+					<TimeReminderSettingsCard />
 				</div>
 			</div>
 		</section>

@@ -6,6 +6,7 @@ import { useSidebarStore } from "../model/sidebar.store";
 import { cn } from "@/shared/lib/utils";
 import { DashboardNavbar } from "./DashboardNavbar";
 import { ProtectedDashboardRoute } from "./ProtectedDashboardRoute";
+import { TimeReminderHost } from "@/features/time-reminder";
 
 interface DashboardLayoutProps {
 	children: ReactNode;
@@ -34,6 +35,7 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 						{children}
 					</main>
 				</div>
+				<TimeReminderHost />
 			</div>
 		</ProtectedDashboardRoute>
 	);
