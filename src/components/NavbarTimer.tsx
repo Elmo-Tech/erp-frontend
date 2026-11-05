@@ -194,17 +194,6 @@ export function NavbarTimer({ className }: { className?: string }) {
 						>
 							{pendingAction === "end" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Square className="h-3 w-3 text-red-500" />}
 						</Button>
-						{(
-							<Button
-								size="icon"
-								variant="ghost"
-								onClick={enableNotifications}
-								className="h-7 w-7"
-								aria-label="Enable timer notifications"
-							>
-								<Bell className="h-3 w-3" />
-							</Button>
-						)}
 					</>
 				) : resumableTimer ? (
 					<Button
@@ -223,6 +212,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 						<span className="text-sm">No timer</span>
 					</div>
 				)}
+				<Button size="icon" variant="ghost" onClick={enableNotifications} className="h-7 w-7" aria-label="Notification preferences"><Bell className="h-3 w-3" /></Button>
 			</div>
 			<Dialog
 				open={holdDialogOpen}

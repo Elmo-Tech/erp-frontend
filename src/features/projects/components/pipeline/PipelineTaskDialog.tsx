@@ -1,8 +1,11 @@
 "use client";
 
 import { toast } from "sonner";
+import api from "@/lib/axios";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { taskKeys } from "@/features/dashboard/hooks/useTasks";
 import { Loader2 } from "lucide-react";
 import { DatePicker } from "@/components/shared/forms/DatePicker";
 import { Button } from "@/components/ui/button";
@@ -37,6 +40,7 @@ interface PipelineTaskDialogProps {
 }
 
 export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpenChange }: PipelineTaskDialogProps) {
+	const queryClient = useQueryClient();
 	const createTask = useCreatePipelineTask(projectId);
 	const updateTask = useUpdatePipelineTask(projectId);
 	const uploadCover = useUploadPipelineTaskCover(projectId);
@@ -61,9 +65,11 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 	const [estimatedHours, setEstimatedHours] = useState(task?.estimatedHours != null ? String(task.estimatedHours) : "");
 	const [workflowStageId, setWorkflowStageId] = useState(String(task?.workflowStageId ?? stage?.stageId ?? ""));
 	const [coverImage, setCoverImage] = useState<File | null>(null);
+	const [referenceImages, setReferenceImages] = useState<File[]>([]);
+	const [uploadingReferences, setUploadingReferences] = useState(false);
 	const [removeExistingCover, setRemoveExistingCover] = useState(false);
 	const isEditing = Boolean(task);
-	const isPending = createTask.isPending || updateTask.isPending || uploadCover.isPending || deleteCover.isPending;
+	const isPending = createTask.isPending || updateTask.isPending || uploadCover.isPending || deleteCover.isPending || uploadingReferences;
 
 	const saveCoverImage = async (taskId: number) => {
 		if (coverImage) {
@@ -118,6 +124,21 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 			toast.warning("Task saved, but its cover image could not be updated");
 		}
 
+		if (referenceImages.length) {
+			setUploadingReferences(true);
+			try {
+				for (const file of referenceImages) {
+					const data = new FormData();
+					data.append("images[]", file);
+					await api.post(`/projects/${projectId}/pipeline/tasks/${savedTask.taskId}/references`, data, { skipSuccessToast: true });
+				}
+			} catch {
+				toast.warning("Task saved, but reference images could not be uploaded. Add them from task details.");
+			} finally {
+				await queryClient.invalidateQueries({ queryKey: taskKeys.detail(savedTask.taskId) });
+				setUploadingReferences(false);
+			}
+		}
 		onOpenChange(false);
 	};
 
@@ -152,6 +173,16 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 							setRemoveExistingCover(shouldRemoveExistingCover);
 						}}
 					/>
+
+					<div className="space-y-2">
+						<Label htmlFor="pipeline-task-references">Reference images</Label>
+						<Input id="pipeline-task-references" type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={isPending} onChange={(event) => {
+							const files = Array.from(event.target.files ?? []);
+							if (files.length > 10 || files.some((file) => !["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 25 * 1024 * 1024)) { toast.error("Select up to 10 JPG, PNG or WebP images, up to 25 MB each"); event.target.value = ""; setReferenceImages([]); return; }
+							setReferenceImages(files);
+						}} />
+						<p className="text-xs text-muted-foreground">Up to 10 images per task, JPG, PNG or WebP, 25 MB each. Existing images can be managed in task details.</p>
+					</div>
 
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="space-y-2">

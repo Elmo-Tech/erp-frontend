@@ -34,4 +34,6 @@ it("shows the same grouped table on the tasks page", async () => {
 	expect(await screen.findByRole("textbox", { name: "Search tasks" })).toBeVisible();
 	const table = await screen.findByRole("table");
 	for (const value of ["Prepare artwork", "Launch", "Aya", "2026-11-10", "high"]) expect(within(table).getByText(value)).toBeVisible();
+	fireEvent.doubleClick(within(table).getByText("Launch"));
+	expect(screen.getByRole("dialog")).toHaveTextContent("Details for 7");
 });
