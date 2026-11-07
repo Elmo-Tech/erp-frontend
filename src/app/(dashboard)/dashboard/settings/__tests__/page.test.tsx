@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
 vi.mock("@/features/settings/components/LookupOptionsManager", () => ({ LookupOptionsManager: () => <p>Lookup settings</p> }));
+vi.mock("@/features/settings/components/GlobalWorkflowSettings", () => ({ GlobalWorkflowSettings: () => <p>Workflow settings</p> }));
 vi.mock("@/features/settings/components/TagsManager", () => ({ TagsManager: () => null }));
 vi.mock("@/features/settings/components/GoogleDriveSettings", () => ({ GoogleDriveSettings: () => null }));
 vi.mock("@/features/hr/components/HrPoliciesSettings", () => ({ HrPoliciesSettings: () => null }));

@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LookupOptionsManager } from "@/features/settings/components/LookupOptionsManager";
 import { TagsManager } from "@/features/settings/components/TagsManager";
+import { GlobalWorkflowSettings } from "@/features/settings/components/GlobalWorkflowSettings";
 import { GoogleDriveSettings } from "@/features/settings/components/GoogleDriveSettings";
 import { HrPoliciesSettings } from "@/features/hr/components/HrPoliciesSettings";
 import { LeaveTypesSettings } from "@/features/hr/components/LeaveTypesSettings";
@@ -29,6 +30,7 @@ function SettingsContent() {
 	const { hasPermission: has } = useAuthStore((state) => state);
 	const params = useSearchParams();
 	const tabs = [
+		...(has("manage_workflow_templates") ? [{ id: "workflow", label: "Workflow", content: <GlobalWorkflowSettings /> }] : []),
 		...lists.filter((tab) => has("manage_lookup_options") || ["manage", "create", "edit", "delete", "reorder"].some((action) => has(tab.permission.replace(/^manage/, action)))).map((tab) => ({ id: tab.id, label: tab.label, content: <LookupOptionsManager type={tab.type} title={tab.label} description={`Manage ${tab.label.toLowerCase()} used throughout the system.`} /> })),
 		...(has("manage_tags") ? [{ id: "tags", label: "Tags", content: <TagsManager /> }] : []),
 		...(has("manage_google_drive") ? [{ id: "google_drive", label: "Google Drive", content: <GoogleDriveSettings oauthError={params.get("googleDrive") === "error"} /> }] : []),

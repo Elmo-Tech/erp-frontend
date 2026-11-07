@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { DndContext, DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { format, isBefore, parseISO, startOfToday } from "date-fns";
-import { BarChart3, CalendarDays, Clock3, Columns3, Flag, GripVertical, List, MoreHorizontal, Pencil, Plus, Settings2, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
+import { BarChart3, CalendarDays, Clock3, Columns3, Flag, GripVertical, List, MoreHorizontal, Pencil, Plus, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { notifyApiError } from "@/lib/errorHandling";
 import { FormCombobox } from "@/components/shared/forms";
@@ -32,7 +32,6 @@ import { useProjects } from "../../hooks/useProjects";
 import { useDeletePipelineTask, useMovePipelineTask, useProjectPipeline } from "../../hooks/useProjectPipeline";
 import type { PipelineTask, ProjectWorkflowStage } from "../../types/pipeline";
 import { PipelineTaskDialog } from "./PipelineTaskDialog";
-import { WorkflowSettingsDialog } from "./WorkflowSettingsDialog";
 import { ProjectTaskDashboard, ProjectTaskList } from "./ProjectTaskViews";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
@@ -278,7 +277,6 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 	const [projectSearch, setProjectSearch] = useState("");
 	const [taskDialog, setTaskDialog] = useState<{ stage: ProjectWorkflowStage; task?: PipelineTask } | null>(null);
 	const [taskToDelete, setTaskToDelete] = useState<PipelineTask | null>(null);
-	const [workflowOpen, setWorkflowOpen] = useState(false);
 	const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -359,12 +357,6 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 						isLoading={projects.isLoading}
 					/>
 				</div>
-				{permissions.canManageProjectWorkflows && (
-					<Button type="button" variant="outline" onClick={() => setWorkflowOpen(true)}>
-						<Settings2 className="mr-2 h-4 w-4" />
-						Workflow settings
-					</Button>
-				)}
 			</div>
 				<TabsContent value="board"><DndContext sensors={sensors} onDragEnd={handleDragEnd}>
 				<div className="flex gap-3 overflow-x-auto pb-4">
@@ -430,15 +422,6 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			{permissions.canManageProjectWorkflows && workflowOpen && (
-				<WorkflowSettingsDialog
-					projectId={projectId}
-					stages={pipeline.data.stages}
-					canManageTemplates={permissions.canManageWorkflowTemplates}
-					open
-					onOpenChange={setWorkflowOpen}
-				/>
-			)}
 		</div>
 	);
 }

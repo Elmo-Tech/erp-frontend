@@ -10,7 +10,7 @@ export const hrActions: Record<string, string[]> = {
 export const resourcePermissions = (resource: string) => [`manage_${resource}`, ...(hrActions[resource] ?? []).map((action) => `${action}_${resource}`)];
 export const employeePermissions = ["manage_employees", "view_employees", "create_employees", "edit_employees", "delete_employees", "toggle_employee_status", "manage_employee_salary", "view_employee_salary", "manage_supervision", "view_employee_reports", "view_hr_overview", ...Object.keys(hrActions).flatMap(resourcePermissions)];
 
-export const settingsPermissions = ["manage_lookup_options", "manage_tags", "manage_google_drive", "manage_hr_settings", "manage_leave_types", "manage_devices", ...["specializations", "task_categories", "project_types", "project_statuses", "task_statuses", "contract_durations"].flatMap((resource) => ["manage", "create", "edit", "delete", "reorder"].map((action) => `${action}_${resource}`))];
+export const settingsPermissions = ["manage_workflow_templates", "manage_lookup_options", "manage_tags", "manage_google_drive", "manage_hr_settings", "manage_leave_types", "manage_devices", ...["specializations", "task_categories", "project_types", "project_statuses", "task_statuses", "contract_durations"].flatMap((resource) => ["manage", "create", "edit", "delete", "reorder"].map((action) => `${action}_${resource}`))];
 
 export function pagePermissions(pathname: string): string[] {
 	if (pathname === "/dashboard") return ["view_dashboard"];

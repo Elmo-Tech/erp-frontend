@@ -2,28 +2,30 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TaskDetailSheet } from "./TaskDetailSheet";
 
-const queries = vi.hoisted(() => ({ useTask: vi.fn(), useTestScenarios: vi.fn() }));
+const queries = vi.hoisted(() => ({ useTask: vi.fn(), useTestScenarios: vi.fn(), permissions: {} as Record<string, boolean> }));
 vi.mock("@/features/dashboard/hooks/useTasks", () => ({
 	useTask: queries.useTask,
 	useTestScenarios: queries.useTestScenarios,
 	useTaskActivities: () => ({ data: [] }),
 }));
-vi.mock("@/features/admin/hooks/usePermissions", () => ({ usePermissions: () => ({}) }));
+vi.mock("@/features/admin/hooks/usePermissions", () => ({ usePermissions: () => queries.permissions }));
 vi.mock("@/components/shared/StatusBadge", () => ({ TaskStatusBadge: () => null, TaskTypeBadge: () => null, TaskPriorityBadge: () => null, TaskCategoryBadge: () => null }));
 vi.mock("./TaskAssigneesSection", () => ({ TaskAssigneesSection: () => null }));
 vi.mock("./TaskActivitySection", () => ({ TaskActivitySection: () => null }));
+vi.mock("./TaskReferenceImages", () => ({ TaskReferenceImages: () => null }));
 vi.mock("./TaskTimerWidget", () => ({ TaskTimerWidget: () => null }));
 vi.mock("./TaskTimeEntriesSection", () => ({ TaskTimeEntriesSection: () => null }));
 vi.mock("./TaskSupervisionSection", () => ({ TaskSupervisionSection: () => null }));
 vi.mock("./TaskTestScenariosSection", () => ({ TaskTestScenariosSection: () => <div>Existing test scenarios</div> }));
 
 const task = {
-	taskId: 12, title: "Delivery task", isPipelineTask: true, estimatedHours: 3, totalTimeSpent: 95,
+	taskId: 12, title: "Delivery task", type: "main", isPipelineTask: true, estimatedHours: 3, totalTimeSpent: 95,
 	testCompletionPercentage: 0, canStartTimer: false, assignees: [], deliveryStatus: { isCompleted: false },
 };
 
 describe("TaskDetailSheet tests visibility", () => {
 	beforeEach(() => {
+		queries.permissions = {};
 		queries.useTask.mockReturnValue({ data: task, isLoading: false });
 		queries.useTestScenarios.mockReturnValue({ data: [] });
 	});
@@ -58,4 +60,14 @@ describe("TaskDetailSheet tests visibility", () => {
 		expect(screen.queryByRole("tab", { name: /Tests/ })).not.toBeInTheDocument();
 		expect(screen.getByRole("tab", { name: "Details" })).toHaveAttribute("data-state", "active");
 	});
+	it("only shows editing to users with permission for the task", () => {
+		const onEdit = vi.fn();
+		const view = render(<TaskDetailSheet taskId={12} open onOpenChange={vi.fn()} onEdit={onEdit} />);
+		expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+		queries.permissions = { canEditMainTasks: true };
+		view.rerender(<TaskDetailSheet taskId={12} open onOpenChange={vi.fn()} onEdit={onEdit} />);
+		fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+		expect(onEdit).toHaveBeenCalledWith(task);
+	});
+
 });

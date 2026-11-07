@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { projectsApi } from "../../../api/projects";
+import { projectKeys } from "../../../hooks/useProjects";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/shared/data-display/DataTable";
@@ -8,7 +11,7 @@ import { SearchInput } from "@/components/shared/filters/SearchInput";
 import { FilterSelect, FilterOption } from "@/components/shared/filters/FilterSelect";
 import { FilterBar } from "@/components/shared/filters/FilterBar";
 import { DeleteProjectDialog } from "../dialogs/DeleteProjectDialog";
-import { useProjects, usePinProject, useUnpinProject } from "../../../hooks/useProjects";
+import { usePinProject, useUnpinProject } from "../../../hooks/useProjects";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
 import { Project, ProjectFilters } from "../../../types/project";
@@ -37,13 +40,31 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		status: undefined,
 		clientId: undefined,
 		projectTypeId: undefined,
-		page: 1,
 		perPage: 10,
 	});
 
 	const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
-	const { data: projectsResponse, isLoading, error } = useProjects(filters);
+	const { data: projectsResponse, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage, isFetchNextPageError } = useInfiniteQuery({
+		queryKey: [...projectKeys.lists(), "infinite", filters],
+		queryFn: ({ pageParam }) => projectsApi.getAll({ ...filters, page: pageParam }),
+		initialPageParam: 1,
+		getNextPageParam: (last) => last.pagination.currentPage < last.pagination.totalPages ? last.pagination.currentPage + 1 : undefined,
+		staleTime: 5 * 60 * 1000,
+	});
+	const projects = useMemo(() => {
+		const unique = new Map<number, Project>();
+		for (const page of projectsResponse?.pages ?? []) for (const project of page.projects) unique.set(project.projectId, project);
+		return [...unique.values()];
+	}, [projectsResponse]);
+	const sentinel = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const element = sentinel.current;
+		if (!element || !hasNextPage || isFetchingNextPage || isFetchNextPageError || typeof IntersectionObserver === "undefined") return;
+		const observer = new IntersectionObserver((entries) => { if (entries.some((entry) => entry.isIntersecting)) void fetchNextPage(); }, { rootMargin: "200px" });
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError, projects.length]);
 	const { data: projectTypesResponse, isLoading: isProjectTypesLoading } = useLookupOptions("project_type");
 	const { data: projectStatusesResponse } = useLookupOptions("project_status");
 
@@ -53,8 +74,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 	}));
 
 	const clientOptions: FilterOption[] = useMemo(() => {
-		const projects = projectsResponse?.projects;
-		if (!projects) return [];
+		if (!projects.length) return [];
 
 		const clientMap = new Map();
 		projects.forEach((project) => {
@@ -67,7 +87,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		});
 
 		return Array.from(clientMap.values());
-	}, [projectsResponse?.projects]);
+	}, [projects]);
 
 	const projectTypeOptions: FilterOption[] = useMemo(
 		() => (projectTypesResponse?.data ?? [])
@@ -77,14 +97,13 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 	);
 
 	const handleSearchChange = (value: string) => {
-		setFilters((prev) => ({ ...prev, search: value || undefined, page: 1 }));
+		setFilters((prev) => ({ ...prev, search: value || undefined }));
 	};
 
 	const handleStatusChange = (value: string | undefined) => {
 		setFilters((prev) => ({
 			...prev,
 			status: value,
-			page: 1,
 		}));
 	};
 
@@ -92,7 +111,6 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		setFilters((prev) => ({
 			...prev,
 			clientId: value ? parseInt(value) : undefined,
-			page: 1,
 		}));
 	};
 
@@ -100,12 +118,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		setFilters((prev) => ({
 			...prev,
 			projectTypeId: value ? parseInt(value) : undefined,
-			page: 1,
 		}));
-	};
-
-	const handlePageChange = (page: number) => {
-		setFilters((prev) => ({ ...prev, page }));
 	};
 
 	const handleRowClick = (project: Project) => {
@@ -139,8 +152,6 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		}
 	};
 
-	// Sorting is now handled server-side, use projects directly
-	const projects = projectsResponse?.projects || [];
 
 	const columns = getProjectsColumns({
 		onView: handleViewProject,
@@ -156,14 +167,13 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 			{canViewTrash && <Button asChild variant="outline" className="mb-3"><Link href="/dashboard/projects/trash">Deleted projects</Link></Button>}
 			<DataTable
 				title="Projects"
-				titleBadge={projectsResponse?.pagination ? `${projectsResponse.pagination.total} ${projectsResponse.pagination.total === 1 ? "project" : "projects"}` : undefined}
+				titleBadge={projectsResponse?.pages[0]?.pagination ? `${projectsResponse.pages[0].pagination.total} ${projectsResponse.pages[0].pagination.total === 1 ? "project" : "projects"}` : undefined}
 				columns={columns}
 				data={projects}
 				keyExtractor={(project) => project.projectId}
 				isLoading={isLoading}
-				error={error}
-				pagination={projectsResponse?.pagination}
-				onPageChange={handlePageChange}
+				error={projectsResponse ? null : error}
+				footer={hasNextPage ? <div ref={sentinel} className="flex justify-center py-4"><Button variant="outline" disabled={isFetchingNextPage} onClick={() => void fetchNextPage()}>{isFetchingNextPage ? "Loading more projects…" : isFetchNextPageError ? "Retry loading projects" : "Load more projects"}</Button></div> : undefined}
 				onRowClick={handleRowClick}
 				className={className}
 				emptyState={{

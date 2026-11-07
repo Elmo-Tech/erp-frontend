@@ -35,10 +35,11 @@ interface DataTableProps<T> {
 		action?: { label: string; onClick: () => void };
 	};
 	headerActions?: ReactNode;
+	footer?: ReactNode;
 	className?: string;
 }
 
-export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, isLoading = false, error, pagination, onPageChange, onRowClick, emptyState, headerActions, className }: DataTableProps<T>) {
+export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, isLoading = false, error, pagination, onPageChange, onRowClick, emptyState, headerActions, footer, className }: DataTableProps<T>) {
 	// Loading state
 	if (isLoading) {
 		return (
@@ -141,6 +142,7 @@ export function DataTable<T>({ title, titleBadge, columns, data, keyExtractor, i
 					</Table>
 				</div>
 
+				{footer}
 				{pagination && onPageChange && (
 					<Pagination
 						pagination={pagination}
