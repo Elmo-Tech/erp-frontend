@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DndContext, DragEndEvent, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, DragEndEvent, PointerSensor, KeyboardSensor, closestCenter, pointerWithin, type CollisionDetection, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { format, isBefore, parseISO, startOfToday } from "date-fns";
 import { BarChart3, CalendarDays, Clock3, Columns3, Flag, GripVertical, List, MoreHorizontal, Pencil, Plus, Trash2, UserRoundCheck, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -31,6 +32,7 @@ import { TaskDetailSheet } from "../tasks/TaskDetailSheet";
 import { useProjects } from "../../hooks/useProjects";
 import { useDeletePipelineTask, useMovePipelineTask, useProjectPipeline } from "../../hooks/useProjectPipeline";
 import type { PipelineTask, ProjectWorkflowStage } from "../../types/pipeline";
+import { resolvePipelineDrop } from "./pipelineDrop";
 import { PipelineTaskDialog } from "./PipelineTaskDialog";
 import { ProjectTaskDashboard, ProjectTaskList } from "./ProjectTaskViews";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -40,6 +42,15 @@ const priorityClasses: Record<PipelineTask["priority"], string> = {
 	medium: "text-blue-600 dark:text-blue-300",
 	high: "text-amber-700 dark:text-amber-300",
 	urgent: "text-red-600 dark:text-red-300",
+};
+
+const pipelineCollisionDetection: CollisionDetection = (args) => {
+	const hits = pointerWithin(args);
+	if (hits.length) {
+		const cards = hits.filter((hit) => String(hit.id).startsWith("pipeline-task-"));
+		return cards.length ? cards : hits;
+	}
+	return closestCenter(args);
 };
 
 interface DraggableTaskCardProps {
@@ -59,7 +70,7 @@ interface PipelineTaskCardActions {
 }
 
 export function DraggableTaskCard({ task, dragDisabled, stage, actions }: DraggableTaskCardProps) {
-	const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+	const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
 		id: `pipeline-task-${task.taskId}`,
 		data: { taskId: task.taskId, stageId: task.workflowStageId },
 		disabled: dragDisabled,
@@ -74,7 +85,7 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 		<article
 			ref={setNodeRef}
 			style={{
-				transform: CSS.Translate.toString(transform),
+				transform: CSS.Transform.toString(transform),
 				willChange: isDragging ? "transform" : undefined,
 			}}
 			className={cn(
@@ -99,7 +110,7 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 				<button
 					type="button"
 					className={cn(
-						"relative z-20 -ml-1 mt-0.5 rounded p-1 text-muted-foreground opacity-40 transition hover:bg-muted hover:opacity-100 focus-visible:opacity-100",
+						"relative z-20 -ml-1 mt-0.5 touch-none rounded p-1 text-muted-foreground opacity-40 transition hover:bg-muted hover:opacity-100 focus-visible:opacity-100",
 						!dragDisabled && "cursor-grab active:cursor-grabbing",
 						dragDisabled && "cursor-default"
 					)}
@@ -235,6 +246,7 @@ function PipelineColumn({ stage, capabilities, actions }: PipelineColumnProps) {
 				{capabilities.canCreate && <Button type="button" variant="ghost" size="icon" className="h-8 w-8" aria-label={`Add task to ${stage.name}`} onClick={actions.onCreate}><Plus className="h-4 w-4" /></Button>}
 			</header>
 			<div className="min-h-24 space-y-2.5">
+				<SortableContext items={stage.tasks.map((task) => `pipeline-task-${task.taskId}`)} strategy={verticalListSortingStrategy}>
 				{stage.tasks.map((task) => {
 					const isAssignedToCurrentUser = task.assignees.some((assignee) => assignee.userId === capabilities.currentUserId);
 					return (
@@ -254,6 +266,7 @@ function PipelineColumn({ stage, capabilities, actions }: PipelineColumnProps) {
 						/>
 					);
 				})}
+				</SortableContext>
 				{stage.tasks.length === 0 && <div className="rounded-lg border border-dashed bg-background/35 p-6 text-center text-xs text-muted-foreground">Drop a task here</div>}
 				{capabilities.canCreate && (
 					<Button type="button" variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground" onClick={actions.onCreate}>
@@ -278,7 +291,7 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 	const [taskDialog, setTaskDialog] = useState<{ stage: ProjectWorkflowStage; task?: PipelineTask } | null>(null);
 	const [taskToDelete, setTaskToDelete] = useState<PipelineTask | null>(null);
 	const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
 	const canCreate = permissions.canCreateMainTasks || permissions.canManageTasks;
 	const canMove = permissions.canEditMainTasks || permissions.canManageTasks;
@@ -300,18 +313,12 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 	}, [projectSearch, projects.data]);
 
 	const handleDragEnd = async ({ active, over }: DragEndEvent) => {
-		if (!over) return;
-		const taskId = Number(active.data.current?.taskId);
-		const currentStageId = Number(active.data.current?.stageId);
-		const nextStageId = Number(over.data.current?.stageId);
-		if (!taskId || !nextStageId || currentStageId === nextStageId) return;
-
+		if (!over || !pipeline.data) return;
+		const move = resolvePipelineDrop(pipeline.data.stages, active.data.current, over.data.current);
+		if (!move) return;
 		try {
-			await moveTask.mutateAsync({ taskId, workflowStageId: nextStageId });
-			// Success toast comes from the backend message via the axios interceptor.
-		} catch (error) {
-			notifyApiError(error);
-		}
+			await moveTask.mutateAsync(move);
+		} catch (error) { notifyApiError(error); }
 	};
 
 	const handleDelete = async () => {
@@ -358,7 +365,7 @@ export function ProjectPipelineTab({ projectId }: { projectId: number }) {
 					/>
 				</div>
 			</div>
-				<TabsContent value="board"><DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+				<TabsContent value="board"><DndContext sensors={sensors} collisionDetection={pipelineCollisionDetection} onDragEnd={handleDragEnd}>
 				<div className="flex gap-3 overflow-x-auto pb-4">
 					{pipeline.data.stages.map((stage) => (
 						<PipelineColumn

@@ -36,7 +36,7 @@ export const useMovePipelineTask = (projectId: number) => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ taskId, workflowStageId }: { taskId: number; workflowStageId: number }) => projectPipelineApi.moveTask(projectId, taskId, workflowStageId),
+		mutationFn: ({ taskId, workflowStageId, position }: { taskId: number; workflowStageId: number; position?: number }) => projectPipelineApi.moveTask(projectId, taskId, workflowStageId, position),
 		onSuccess: () => Promise.all([
 			queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
 			queryClient.invalidateQueries({ queryKey: ["tasks"] }),

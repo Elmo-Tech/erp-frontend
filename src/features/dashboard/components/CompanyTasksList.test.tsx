@@ -39,18 +39,22 @@ it("groups the complete list by actual status, searches it, and opens task detai
 });
 
 it("shows the same grouped table on the tasks page", async () => {
-	vi.mocked(api.get).mockResolvedValue({ data: { data: [{ taskId: 7, title: "Prepare artwork", project: "Launch", status: "Review", statusColor: "#123456", priority: "high", dueDate: "2026-11-10", assignees: ["Aya"] }] } });
+	vi.mocked(api.get).mockResolvedValue({ data: { data: [{ taskId: 7, title: "Prepare artwork", project: "Launch", projectId: 2, status: "Review", statusColor: "#123456", priority: "high", dueDate: "2026-11-10", assignees: ["Aya"] }] } });
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(<QueryClientProvider client={client}><CompanyTasksList variant="page" /></QueryClientProvider>);
 	expect(await screen.findByRole("textbox", { name: "Search tasks" })).toBeVisible();
 	const table = await screen.findByRole("table");
 	for (const value of ["Prepare artwork", "Launch", "Aya", "2026-11-10", "high"]) expect(within(table).getByText(value)).toBeVisible();
-	fireEvent.doubleClick(within(table).getByText("Launch"));
+	const projectLink = within(table).getByRole("link", { name: "Launch" });
+	expect(projectLink).toHaveAttribute("href", "/dashboard/projects/2");
+	fireEvent.doubleClick(projectLink);
+	expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+	fireEvent.doubleClick(within(table).getByText("Aya"));
 	expect(screen.getByRole("dialog")).toHaveTextContent("Details for 7");
 });
 
 it("remembers collapsed groups for the same user and keeps other users separate", async () => {
-	vi.mocked(api.get).mockResolvedValue({ data: { data: [{ taskId: 7, title: "Prepare artwork", project: "Launch", status: "Review", statusColor: null, priority: null, dueDate: null, assignees: [] }] } });
+	vi.mocked(api.get).mockResolvedValue({ data: { data: [{ taskId: 7, title: "Prepare artwork", project: "Launch", projectId: 2, status: "Review", statusColor: null, priority: null, dueDate: null, assignees: [] }] } });
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const view = render(<QueryClientProvider client={client}><CompanyTasksList variant="page" /></QueryClientProvider>);
 	fireEvent.click(await screen.findByRole("button", { name: /Review/ }));
@@ -65,7 +69,7 @@ it("remembers collapsed groups for the same user and keeps other users separate"
 });
 
 it("opens the project pipeline editor from the task details", async () => {
-	vi.mocked(api.get).mockResolvedValue({ data: { data: [{ taskId: 7, title: "Prepare artwork", project: "Launch", status: "Review", statusColor: null, priority: null, dueDate: null, assignees: [] }] } });
+	vi.mocked(api.get).mockResolvedValue({ data: { data: [{ taskId: 7, title: "Prepare artwork", project: "Launch", projectId: 2, status: "Review", statusColor: null, priority: null, dueDate: null, assignees: [] }] } });
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(<QueryClientProvider client={client}><CompanyTasksList variant="page" /></QueryClientProvider>);
 	fireEvent.click(await screen.findByRole("button", { name: "Prepare artwork" }));

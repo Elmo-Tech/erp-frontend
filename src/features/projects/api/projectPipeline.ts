@@ -37,9 +37,10 @@ export const projectPipelineApi = {
 		return response.data.data;
 	},
 
-	moveTask: async (projectId: number, taskId: number, workflowStageId: number): Promise<PipelineTask> => {
+	moveTask: async (projectId: number, taskId: number, workflowStageId: number, position?: number): Promise<PipelineTask> => {
 		const response = await api.patch<{ data: PipelineTask }>(`/projects/${projectId}/pipeline/tasks/${taskId}/stage`, {
 			workflowStageId,
+			...(position !== undefined ? { position } : {}),
 		});
 		return response.data.data;
 	},

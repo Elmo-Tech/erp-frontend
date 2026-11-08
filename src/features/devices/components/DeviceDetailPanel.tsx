@@ -29,6 +29,7 @@ import {
 	useDisableDeviceWebhook,
 	useEnableDeviceWebhook,
 	useLinkDeviceUser,
+	useMapExistingDeviceUser,
 	usePollDevice,
 	usePushDeviceUsers,
 	useTestDeviceConnection,
@@ -51,9 +52,17 @@ export function DeviceDetailPanel({ deviceId, onClose }: DeviceDetailPanelProps)
 	const enableWebhook = useEnableDeviceWebhook();
 	const disableWebhook = useDisableDeviceWebhook();
 	const linkUser = useLinkDeviceUser();
+	const mapExisting = useMapExistingDeviceUser();
 	const unlinkUser = useUnlinkDeviceUser();
 
 	const [employeeNumber, setEmployeeNumber] = useState("");
+	const [existingUserId, setExistingUserId] = useState("");
+	const [terminalNumber, setTerminalNumber] = useState("");
+	const handleMapExisting = async () => {
+		const userId = Number(existingUserId);
+		if (!Number.isInteger(userId) || userId < 1 || !terminalNumber.trim()) { toast.error("Enter the ERP user ID and the existing terminal employee number"); return; }
+		try { await mapExisting.mutateAsync({ deviceId, userId, deviceEmployeeNo: terminalNumber.trim() }); setExistingUserId(""); setTerminalNumber(""); toast.success("Employee linked without changing the device"); } catch { /* API error is shown by the client. */ }
+	};
 
 	const handleLink = async () => {
 		const value = employeeNumber.trim();
@@ -216,6 +225,11 @@ export function DeviceDetailPanel({ deviceId, onClose }: DeviceDetailPanelProps)
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
+					<div className="space-y-2 rounded-md border p-3">
+						<p className="text-sm font-medium">Link an existing terminal employee</p>
+						<p className="text-xs text-muted-foreground">Only records a match in ERP; it does not change the terminal, fingerprints or access rights.</p>
+						<div className="flex flex-col gap-2 sm:flex-row"><Input value={existingUserId} onChange={(event) => setExistingUserId(event.target.value)} inputMode="numeric" aria-label="Existing ERP user id" placeholder="ERP user ID" /><Input value={terminalNumber} onChange={(event) => setTerminalNumber(event.target.value)} aria-label="Existing terminal employee number" placeholder="Terminal employee number" /><Button type="button" variant="outline" onClick={() => void handleMapExisting()} disabled={mapExisting.isPending}>Link existing</Button></div>
+					</div>
 					<div className="flex flex-col gap-2 sm:flex-row">
 						<Input
 							value={employeeNumber}
@@ -259,7 +273,7 @@ export function DeviceDetailPanel({ deviceId, onClose }: DeviceDetailPanelProps)
 													Enrolled
 												</Badge>
 											) : (
-												<Badge variant="secondary">Not enrolled</Badge>
+												<Badge variant="secondary">Not confirmed</Badge>
 											)}
 										</TableCell>
 										<TableCell className="text-right">

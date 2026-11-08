@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "next-themes";
 import { useEffect, useState, ReactNode } from "react";
+import { PwaInstallProvider } from "@/components/PwaInstall";
 import { useLocaleStore } from "@/store/localeStore";
 
 interface ProvidersProps {
@@ -41,7 +42,7 @@ export function Providers({ children }: ProvidersProps) {
 			disableTransitionOnChange
 		>
 			<QueryClientProvider client={queryClient}>
-				{children}
+				<PwaInstallProvider>{children}</PwaInstallProvider>
 				<Toaster
 					richColors
 					position={dir === "rtl" ? "top-left" : "top-right"}

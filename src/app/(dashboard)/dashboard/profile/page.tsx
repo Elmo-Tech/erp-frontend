@@ -5,6 +5,7 @@ import { UserRound } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { AvatarUpload, ProfileForm, SecuritySettings } from "@/features/profile";
 import { getRoleLabel } from "@/config/simplification";
+import { PwaInstallSettings } from "@/components/PwaInstall";
 import { DesktopNotificationSettings } from "@/components/DesktopNotificationSettings";
 import { MyEmployeeProfile } from "@/features/hr/components/MyEmployeeProfile";
 
@@ -30,6 +31,7 @@ export default function ProfilePage() {
 			/>
 
 			{/* Security Section */}
+			<PwaInstallSettings />
 			<DesktopNotificationSettings />
 			<MyEmployeeProfile />
 			<SecuritySettings />

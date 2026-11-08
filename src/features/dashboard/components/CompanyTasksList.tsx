@@ -55,7 +55,7 @@ export function CompanyTasksList({ variant = "dashboard" }: { variant?: "dashboa
 				<div className={variant === "dashboard" ? "max-h-[65vh] overflow-auto pr-1" : undefined}>
 					<TaskStatusSections showProject storageKey={variant === "page" && user?.userId ? `task-status-collapse:v1:${user.userId}` : undefined} groups={groups.map(([status, tasks]) => ({
 						id: status, name: status, color: tasks[0].statusColor,
-						tasks: tasks.map((task) => ({ id: task.taskId, title: task.title, project: task.project, assignees: task.assignees, dueDate: task.dueDate, priority: task.priority, onOpen: () => setSelected(task.taskId) })),
+						tasks: tasks.map((task) => ({ id: task.taskId, title: task.title, project: task.project, projectId: task.projectId, assignees: task.assignees, dueDate: task.dueDate, priority: task.priority, onOpen: () => setSelected(task.taskId) })),
 					}))} />
 					{groups.length === 0 && <p className="py-4 text-sm text-muted-foreground">No tasks found.</p>}
 				</div>

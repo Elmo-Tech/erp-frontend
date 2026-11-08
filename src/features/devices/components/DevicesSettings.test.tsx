@@ -17,6 +17,7 @@ vi.mock("@/features/devices/api/devices", () => ({
 		pushUsers: vi.fn(),
 		pullUsers: vi.fn(),
 		linkUser: vi.fn(),
+		mapExistingUser: vi.fn(),
 		unlinkUser: vi.fn(),
 		getEvents: vi.fn(),
 		enableWebhook: vi.fn(),

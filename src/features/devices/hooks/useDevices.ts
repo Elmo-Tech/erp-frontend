@@ -107,6 +107,14 @@ export function usePushDeviceUsers() {
 	});
 }
 
+export function useMapExistingDeviceUser() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ deviceId, userId, deviceEmployeeNo }: { deviceId: number; userId: number; deviceEmployeeNo: string }) => devicesApi.mapExistingUser(deviceId, userId, deviceEmployeeNo),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: deviceKeys.all }),
+	});
+}
+
 export function useLinkDeviceUser() {
 	const queryClient = useQueryClient();
 

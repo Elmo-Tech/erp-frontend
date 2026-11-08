@@ -52,6 +52,11 @@ export const devicesApi = {
 		return response.data.data;
 	},
 
+	mapExistingUser: async (deviceId: number, userId: number, deviceEmployeeNo: string) => {
+		const response = await api.post(`/devices/${deviceId}/users/map-existing`, { userId, deviceEmployeeNo });
+		return response.data.data;
+	},
+
 	linkUser: async (deviceId: number, userId: number) => {
 		const response = await api.post(`/devices/${deviceId}/users`, { userId });
 		return response.data.data;

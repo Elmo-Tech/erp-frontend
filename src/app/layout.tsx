@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 	authors: [{ name: TABLES_APP_NAME }],
 	creator: TABLES_APP_NAME,
 	publisher: TABLES_APP_NAME,
-	metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://the-tables-erp.local"),
+	metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://the-tables.elmotechsoft.online"),
 	openGraph: {
 		type: "website",
 		locale: "en_US",
@@ -42,9 +42,10 @@ export const metadata: Metadata = {
 	icons: {
 		icon: "/the-tables-logo.svg",
 		shortcut: "/the-tables-logo.svg",
-		apple: "/the-tables-logo.png",
+		apple: "/icons/apple-touch-icon.png",
 	},
 	manifest: "/manifest.json",
+	appleWebApp: { capable: true, title: "The Tables", statusBarStyle: "default" },
 	robots: {
 		index: true,
 		follow: true,

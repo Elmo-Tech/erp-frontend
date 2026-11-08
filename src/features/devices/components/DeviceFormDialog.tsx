@@ -34,7 +34,7 @@ const EMPTY_FORM: DeviceFormData = {
 	location: "",
 	verifyTls: false,
 	isActive: true,
-	autoSync: true,
+	autoSync: false,
 	syncIntervalMinutes: 5,
 };
 
@@ -241,7 +241,7 @@ export function DeviceFormDialog({ open, onOpenChange, device, onSaved }: Device
 								</p>
 							</div>
 							<Switch
-								checked={form.autoSync ?? true}
+								checked={form.autoSync ?? false}
 								onCheckedChange={(checked) => update("autoSync", checked)}
 							/>
 						</div>
