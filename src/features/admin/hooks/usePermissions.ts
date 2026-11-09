@@ -344,7 +344,7 @@ export const usePermissions = () => {
 
 			// Task Management
 			canManageTasks: hasPermission(ADMIN_PERMISSIONS.MANAGE_TASKS),
-			canViewTasks: hasPermission(ADMIN_PERMISSIONS.VIEW_TASKS),
+			canViewTasks: hasPermission(ADMIN_PERMISSIONS.VIEW_TASKS) || hasPermission(ADMIN_PERMISSIONS.MANAGE_TASKS) || hasPermission("view_all_tasks"),
 			canCreateTasks: hasPermission(ADMIN_PERMISSIONS.CREATE_TASKS),
 			canEditTasks: hasPermission(ADMIN_PERMISSIONS.EDIT_TASKS),
 			canDeleteTasks: hasPermission(ADMIN_PERMISSIONS.DELETE_TASKS),

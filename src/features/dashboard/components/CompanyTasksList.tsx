@@ -23,7 +23,7 @@ interface DashboardTask {
 
 export function CompanyTasksList({ variant = "dashboard" }: { variant?: "dashboard" | "page" }) {
 	const { hasPermission, user } = useAuthStore();
-	const enabled = Boolean(hasPermission?.("view_tasks") || hasPermission?.("manage_tasks"));
+	const enabled = Boolean(hasPermission?.("view_tasks") || hasPermission?.("manage_tasks") || hasPermission?.("view_all_tasks"));
 	const [search, setSearch] = useState("");
 	const [selected, setSelected] = useState<number | null>(null);
 	const [editing, setEditing] = useState<Task | null>(null);
@@ -46,7 +46,7 @@ export function CompanyTasksList({ variant = "dashboard" }: { variant?: "dashboa
 	const visibleCount = groups.reduce((count, [, tasks]) => count + tasks.length, 0);
 	return <Card>
 		<CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
-			<div><CardTitle>Tasks by status</CardTitle><CardDescription>All tasks in projects you can access, grouped by their actual status. Select a task for details.</CardDescription></div>
+			<div><CardTitle>Tasks by status</CardTitle><CardDescription>Tasks you can access, grouped by their actual status. Select a task for details.</CardDescription></div>
 			<div className="relative w-full sm:max-w-sm"><Search aria-hidden="true" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" aria-label={variant === "page" ? "Search tasks" : "Search dashboard tasks"} placeholder="Search tasks, projects or people" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
 		</CardHeader>
 		<CardContent>

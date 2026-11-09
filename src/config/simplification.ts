@@ -110,9 +110,9 @@ export const dashboardNavGroups: SimplifiedNavGroup[] = [
 				title: "Projects",
 				href: "/dashboard/projects",
 				module: moduleKeys.projects,
-				permission: "view_projects",
+				anyPermissions: ["view_projects", "view_all_projects", "manage_projects", "view_tasks", "manage_tasks", "view_all_tasks"],
 			},
-			{ id: "tasks", title: "Tasks", href: "/dashboard/tasks", module: moduleKeys.tasks, anyPermissions: ["view_tasks", "manage_tasks"] },
+			{ id: "tasks", title: "Tasks", href: "/dashboard/tasks", module: moduleKeys.tasks, anyPermissions: ["view_tasks", "manage_tasks", "view_all_tasks"] },
 			// {
 			// 	id: "my-tasks",
 			// 	title: "My Tasks",

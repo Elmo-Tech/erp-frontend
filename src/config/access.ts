@@ -15,7 +15,7 @@ export const settingsPermissions = ["manage_workflow_templates", "manage_lookup_
 export function pagePermissions(pathname: string): string[] {
 	if (pathname === "/dashboard") return ["view_dashboard"];
 	if (pathname.startsWith("/dashboard/projects/trash")) return ["view_deleted_projects"];
-	if (pathname.startsWith("/dashboard/projects")) return ["view_projects", "view_all_projects", "manage_projects"];
+	if (pathname.startsWith("/dashboard/projects")) return ["view_projects", "view_all_projects", "manage_projects", "view_tasks", "manage_tasks", "view_all_tasks"];
 	if (pathname.startsWith("/dashboard/employees")) return employeePermissions;
 	if (pathname.startsWith("/dashboard/settings")) return settingsPermissions;
 	if (pathname.startsWith("/dashboard/clients")) return ["view_clients", "manage_clients"];
@@ -27,8 +27,8 @@ export function pagePermissions(pathname: string): string[] {
 	if (pathname.startsWith("/dashboard/attendance")) return ["view_all_attendance", "manage_attendance"];
 	if (pathname.startsWith("/dashboard/my-attendance")) return ["view_attendance"];
 	if (pathname.startsWith("/dashboard/my-requests")) return ["view_my_requests", "view_attendance"];
-	if (pathname.startsWith("/dashboard/my-tasks")) return ["view_tasks", "manage_tasks"];
-	if (pathname.startsWith("/dashboard/tasks")) return ["view_tasks", "manage_tasks"];
+	if (pathname.startsWith("/dashboard/my-tasks")) return ["view_tasks", "manage_tasks", "view_all_tasks"];
+	if (pathname.startsWith("/dashboard/tasks")) return ["view_tasks", "manage_tasks", "view_all_tasks"];
 	if (pathname.startsWith("/dashboard/wiki")) return ["view_wiki", "manage_wiki"];
 	return [];
 }
