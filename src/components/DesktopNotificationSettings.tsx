@@ -33,7 +33,15 @@ export function DesktopNotificationSettings() {
 			if (!query.data?.enabled || !query.data.publicKey) throw new Error("Web Push keys need to be configured on the server.");
 			if (await Notification.requestPermission() !== "granted") throw new Error("Allow notifications in your browser's site settings.");
 			const registration = await registerNotificationWorker();
-			const subscription = await registration.pushManager.getSubscription() ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: applicationKey(query.data.publicKey) });
+			const key = applicationKey(query.data.publicKey);
+			let subscription = await registration.pushManager.getSubscription();
+			const existingKey = subscription?.options.applicationServerKey;
+			if (subscription && existingKey && (new Uint8Array(existingKey).length !== key.length || !new Uint8Array(existingKey).every((byte, index) => byte === key[index]))) {
+				await api.delete("/notifications/push-subscriptions", { data: { endpoint: subscription.endpoint } });
+				await subscription.unsubscribe();
+				subscription = null;
+			}
+			subscription ??= await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
 			await api.post("/notifications/push-subscriptions", subscription.toJSON());
 			setStatus("Desktop notifications enabled on this browser.");
 		} catch (error) {
@@ -52,9 +60,22 @@ export function DesktopNotificationSettings() {
 		} catch { setStatus("Unable to disable notifications. Please try again."); }
 		finally { setBusy(false); }
 	};
+	const testNotification = async () => {
+		setBusy(true);
+		setStatus("");
+		try {
+			if (!("Notification" in window) || Notification.permission !== "granted") throw new Error("Enable notifications and allow them in your browser first.");
+			const registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
+			const subscription = await registration?.pushManager.getSubscription();
+			if (!subscription) throw new Error("Enable desktop notifications on this browser first.");
+			await api.post("/notifications/test-push", { endpoint: subscription.endpoint });
+			setStatus("Test notification queued. Check your device notifications; delivery may take a moment.");
+		} catch (error) { setStatus(handleApiError(error)); }
+		finally { setBusy(false); }
+	};
 	return <section className="space-y-3 rounded-xl border p-5"><h2 className="font-semibold">Desktop notifications & timer reminders</h2><p className="text-sm text-muted-foreground">Reminders repeat while a timer is running. Closed-page delivery depends on browser and operating-system background notification support.</p>
 		{query.isLoading ? <p>Loading preferences…</p> : query.isError ? <Button variant="outline" onClick={() => query.refetch()}>Retry preferences</Button> : <label className="flex flex-wrap items-center gap-3 text-sm">Remind me every<select aria-label="Timer reminder interval" className="rounded-md border bg-background p-2" disabled={save.isPending} value={query.data?.reminderMinutes ?? 15} onChange={(event) => save.mutate(Number(event.target.value))}>{query.data?.intervals.map((minutes) => <option key={minutes} value={minutes}>{minutes} minutes</option>)}</select></label>}
-		<div className="flex flex-wrap gap-2"><Button onClick={enable} disabled={busy || !query.data?.enabled}>Enable desktop notifications</Button><Button variant="outline" onClick={disable} disabled={busy}>Disable on this browser</Button></div>
+		<div className="flex flex-wrap gap-2"><Button onClick={enable} disabled={busy || !query.data?.enabled}>Enable desktop notifications</Button><Button variant="outline" onClick={disable} disabled={busy}>Disable on this browser</Button><Button variant="outline" onClick={testNotification} disabled={busy || !query.data?.enabled}>Send test notification</Button></div>
 		{query.data && !query.data.enabled && <p className="text-sm text-muted-foreground">Desktop delivery awaits server Web Push configuration. In-app timer reminders remain available.</p>}
 		{status && <p role="status" className="text-sm">{status}</p>}
 		{technicalDetails && <details className="text-xs text-muted-foreground"><summary>Browser technical details</summary><p className="mt-2 break-words">{technicalDetails}</p></details>}

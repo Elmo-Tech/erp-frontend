@@ -39,6 +39,7 @@ export const useMovePipelineTask = (projectId: number) => {
 		mutationFn: ({ taskId, workflowStageId, position }: { taskId: number; workflowStageId: number; position?: number }) => projectPipelineApi.moveTask(projectId, taskId, workflowStageId, position),
 		onSuccess: () => Promise.all([
 			queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+			queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
 			queryClient.invalidateQueries({ queryKey: ["tasks"] }),
 		]),
 	});
@@ -66,7 +67,11 @@ export const useDeletePipelineTask = (projectId: number) => {
 
 	return useMutation({
 		mutationFn: (taskId: number) => projectPipelineApi.deleteTask(projectId, taskId),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+		onSuccess: () => Promise.all([
+			queryClient.invalidateQueries({ queryKey: projectPipelineKeys.detail(projectId) }),
+			queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
+			queryClient.invalidateQueries({ queryKey: ["tasks"] }),
+		]),
 	});
 };
 

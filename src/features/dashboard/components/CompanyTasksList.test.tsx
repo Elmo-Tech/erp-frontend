@@ -47,6 +47,7 @@ it("shows the same grouped table on the tasks page", async () => {
 	for (const value of ["Prepare artwork", "Launch", "Aya", "2026-11-10", "high"]) expect(within(table).getByText(value)).toBeVisible();
 	const projectLink = within(table).getByRole("link", { name: "Launch" });
 	expect(projectLink).toHaveAttribute("href", "/dashboard/projects/2");
+	expect(projectLink).toHaveStyle({ color: "#123456" });
 	fireEvent.doubleClick(projectLink);
 	expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	fireEvent.doubleClick(within(table).getByText("Aya"));

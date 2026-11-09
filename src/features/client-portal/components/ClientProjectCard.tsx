@@ -60,7 +60,7 @@ export const ClientProjectCard: React.FC<ClientProjectCardProps> = ({ project, c
 			<Card className={cn("hover:shadow-md transition-shadow cursor-pointer group", isOverdue && "border-red-200", className)}>
 				<CardHeader className="pb-2">
 					<div className="flex items-start justify-between gap-2">
-						<CardTitle className="text-lg font-semibold line-clamp-1 group-hover:text-primary transition-colors">{project.title}</CardTitle>
+						<CardTitle className="text-lg font-semibold line-clamp-1 transition-colors">{project.title}</CardTitle>
 						<Badge className={cn("shrink-0 border", getStatusBadgeColor(project.status))}>{project.statusLabel}</Badge>
 					</div>
 				</CardHeader>

@@ -58,6 +58,7 @@ export interface Project {
 	uiApprovedAt: string | null;
 	progress?: number;
 	totalTimeSpent?: number;
+	taskSummary?: { total: number; statuses: { name: string; color: string | null; count: number }[] };
 	client?: ProjectClient;
 	projectType?: ProjectType | null;
 	contract?: ProjectContract;

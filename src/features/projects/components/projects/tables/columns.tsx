@@ -3,7 +3,6 @@
 import { Column } from "@/components/shared/data-display/DataTable";
 import { ProjectStatusBadge } from "@/components/shared/StatusBadge";
 import { Project } from "../../../types/project";
-import { formatDateDisplay } from "@/lib/dateUtils";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Eye, Pencil, Trash2, Pin } from "lucide-react";
@@ -73,9 +72,16 @@ export function getProjectsColumns(options: ProjectColumnsOptions = {}): Column<
 			render: (project) => <ProjectStatusBadge status={project.status} />,
 		},
 		{
-			key: "deadline",
-			header: "Deadline",
-			render: (project) => <span className={project.deadline ? "" : "text-muted-foreground"}>{formatDateDisplay(project.deadline)}</span>,
+			key: "taskSummary",
+			header: "Tasks",
+			render: (project) => project.taskSummary ? (
+				<div className="min-w-48 space-y-1 text-xs">
+					<p className="font-medium">{project.taskSummary.total} {project.taskSummary.total === 1 ? "task" : "tasks"}</p>
+					<div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+						{project.taskSummary.statuses.map((status) => <span key={`${status.name}-${status.color ?? ""}`} className="inline-flex items-center gap-1"><span className="size-2 rounded-full" style={{ backgroundColor: status.color || "#64748b" }} aria-hidden="true" />{status.name}: {status.count}</span>)}
+					</div>
+				</div>
+			) : <span className="text-muted-foreground">—</span>,
 		},
 	];
 

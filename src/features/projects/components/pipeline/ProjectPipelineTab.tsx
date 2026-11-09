@@ -121,7 +121,7 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 				>
 					<GripVertical className="h-4 w-4" />
 				</button>
-				<h3 className="min-w-0 flex-1 text-sm font-semibold leading-5 text-foreground group-hover:text-primary">
+				<h3 className="min-w-0 flex-1 text-sm font-semibold leading-5" style={{ color: stage.color || "#64748b" }}>
 					{task.title}
 				</h3>
 				{(actions.canEdit || actions.canDelete) && (
@@ -236,7 +236,7 @@ function PipelineColumn({ stage, capabilities, actions }: PipelineColumnProps) {
 	const { setNodeRef, isOver } = useDroppable({ id: `pipeline-stage-${stage.stageId}`, data: { stageId: stage.stageId } });
 
 	return (
-		<section ref={setNodeRef} className={cn("w-[min(340px,85vw)] shrink-0 rounded-2xl border bg-muted/40 p-2.5 transition-colors", isOver && "bg-primary/10 ring-2 ring-primary/20")}>
+		<section ref={setNodeRef} className={cn("w-[min(340px,85vw)] shrink-0 rounded-2xl border bg-muted/40 p-2.5 transition-colors", isOver && "bg-muted ring-2 ring-muted-foreground/20")}>
 			<header className="mb-2 flex h-10 items-center justify-between rounded-xl px-2" style={{ backgroundColor: `color-mix(in oklch, ${stage.color} 12%, transparent)` }}>
 				<div className="flex items-center gap-2">
 					<span className="h-2.5 w-2.5 rounded-full shadow-xs" style={{ backgroundColor: stage.color }} />

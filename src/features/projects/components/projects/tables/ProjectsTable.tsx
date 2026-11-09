@@ -50,7 +50,8 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		queryFn: ({ pageParam }) => projectsApi.getAll({ ...filters, page: pageParam }),
 		initialPageParam: 1,
 		getNextPageParam: (last) => last.pagination.currentPage < last.pagination.totalPages ? last.pagination.currentPage + 1 : undefined,
-		staleTime: 5 * 60 * 1000,
+		staleTime: 30_000,
+		refetchInterval: 60_000,
 	});
 	const projects = useMemo(() => {
 		const unique = new Map<number, Project>();

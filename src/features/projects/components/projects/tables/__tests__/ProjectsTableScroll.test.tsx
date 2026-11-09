@@ -24,11 +24,14 @@ it("loads the next page on scroll and resets the list when searching", async () 
 	vi.mocked(projectsApi.getAll).mockImplementation(async (filters) => {
 		const page = filters?.page ?? 1;
 		const title = filters?.search ? "Search result" : page === 1 ? "First project" : "Second project";
-		return { projects: [{ projectId: filters?.search ? 3 : page, title, status: "active", isPinned: false }], pagination: { total: filters?.search ? 1 : 2, count: 1, perPage: 1, currentPage: page, totalPages: filters?.search ? 1 : 2 } } as never;
+		return { projects: [{ projectId: filters?.search ? 3 : page, title, status: "active", isPinned: false, taskSummary: { total: 3, statuses: [{ name: "To Do", color: "#334455", count: 1 }, { name: "Done", color: "#115533", count: 2 }] } }], pagination: { total: filters?.search ? 1 : 2, count: 1, perPage: 1, currentPage: page, totalPages: filters?.search ? 1 : 2 } } as never;
 	});
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(<QueryClientProvider client={client}><ProjectsTable /></QueryClientProvider>);
 	expect(await screen.findByText("First project")).toBeVisible();
+	expect(screen.getByText("3 tasks")).toBeVisible();
+	expect(screen.getByText("To Do: 1")).toBeVisible();
+	expect(screen.queryByRole("columnheader", { name: "Deadline" })).not.toBeInTheDocument();
 	expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
 	act(() => observerCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver));
 	expect(await screen.findByText("Second project")).toBeVisible();
