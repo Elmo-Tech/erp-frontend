@@ -29,6 +29,7 @@ import {
 import type { PipelineTask, ProjectWorkflowStage } from "../../types/pipeline";
 import { PipelineEmployeePicker } from "./PipelineEmployeePicker";
 import { PipelineTaskCoverField } from "./PipelineTaskCoverField";
+import { TaskTypesPicker } from "../tasks/TaskTypesPicker";
 
 interface PipelineTaskDialogProps {
 	projectId: number;
@@ -53,6 +54,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 	const members = useProjectMembers(projectId, canAssignSupervisor && open);
 	const [title, setTitle] = useState(task?.title ?? "");
 	const [description, setDescription] = useState(task?.description ?? "");
+	const [projectTypeIds, setProjectTypeIds] = useState<number[]>(task?.projectTypes?.map((type) => type.id) ?? []);
 	const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">(task?.priority ?? "medium");
 	const [assignedUserIds, setAssignedUserIds] = useState<number[]>(task?.assignees.map((assignee) => assignee.userId) ?? []);
 	const [supervisorId, setSupervisorId] = useState(task?.supervisorId ? String(task.supervisorId) : "none");
@@ -94,6 +96,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 						title: title.trim(),
 						description: description.trim() || null,
 						priority,
+						projectTypeIds,
 						...(canAssignEmployees ? { assignedUserIds } : {}),
 						...(canAssignSupervisor ? { supervisorId: supervisorId === "none" ? null : Number(supervisorId) } : {}),
 						dueDate: dueDate || null,
@@ -106,6 +109,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 					title: title.trim(),
 					description: description.trim() || undefined,
 					priority,
+					projectTypeIds,
 					assignedUserIds: assignedUserIds.length > 0 ? assignedUserIds : undefined,
 					...(canAssignSupervisor ? { supervisorId: supervisorId === "none" ? null : Number(supervisorId) } : {}),
 					dueDate: dueDate || undefined,
@@ -164,6 +168,8 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 						<Label htmlFor="pipeline-task-description">Description</Label>
 						<Textarea id="pipeline-task-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} />
 					</div>
+
+					<TaskTypesPicker selected={projectTypeIds} onChange={setProjectTypeIds} disabled={isPending} />
 
 					<PipelineTaskCoverField
 						currentCoverImageUrl={task?.coverImageUrl}

@@ -157,6 +157,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 							</div>
 							<SheetDescription className="sr-only">Task details, assigned employees, supervision, and work history.</SheetDescription>
 						</SheetHeader>
+						{(task.projectTypes?.length ?? 0) > 0 && <div className="mx-6 mt-3 flex flex-wrap items-center gap-2 text-sm"><span className="text-muted-foreground">Types:</span>{task.projectTypes?.map((type) => <Badge key={type.id} variant="outline">{type.label}</Badge>)}</div>}
 						<TaskReferenceImages task={task} canManage={Boolean(canManageTasks || canEditMainTasks || (canCreateMainTasks && userId === task.createdBy))} />
 						<div className="mx-6 mt-3 flex items-center gap-2 rounded-md bg-muted/40 p-3 text-sm">
 							<UserRoundCheck className="h-4 w-4 text-muted-foreground" />

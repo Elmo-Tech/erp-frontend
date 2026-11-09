@@ -32,6 +32,7 @@ it("loads the next page on scroll and resets the list when searching", async () 
 	expect(screen.getByText("3 tasks")).toBeVisible();
 	expect(screen.getByText("To Do: 1")).toBeVisible();
 	expect(screen.queryByRole("columnheader", { name: "Deadline" })).not.toBeInTheDocument();
+	expect(screen.queryByRole("columnheader", { name: "Type" })).not.toBeInTheDocument();
 	expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument();
 	act(() => observerCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver));
 	expect(await screen.findByText("Second project")).toBeVisible();

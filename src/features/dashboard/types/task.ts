@@ -194,6 +194,7 @@ export interface Task {
 	type: TaskType;
 	priority: TaskPriority;
 	taskCategory?: string;
+	projectTypes?: { id: number; label: string; color?: string | null }[];
 	dueDate: string | null;
 	expectedResolutionDate: string | null;
 	startDate: string | null;
@@ -269,6 +270,7 @@ export interface CreateTaskPayload {
 	type?: TaskType;
 	priority?: TaskPriority;
 	taskCategory?: string;
+	projectTypeIds?: number[];
 	dueDate?: string | null;
 	expectedResolutionDate?: string | null;
 	startDate?: string | null;
@@ -296,6 +298,7 @@ export interface UpdateTaskPayload {
 	type?: TaskType;
 	priority?: TaskPriority;
 	taskCategory?: string;
+	projectTypeIds?: number[];
 	dueDate?: string | null;
 	expectedResolutionDate?: string | null;
 	startDate?: string | null;

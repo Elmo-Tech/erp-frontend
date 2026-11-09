@@ -12,6 +12,9 @@ vi.mock("../../../hooks/useProjectMembers", () => ({ useProjectMembers: () => ({
 vi.mock("@/features/admin/hooks/usePermissions", () => ({ usePermissions: () => ({ canAssignTasks: true, canManageTaskTeam: true }) }));
 vi.mock("../PipelineEmployeePicker", () => ({ PipelineEmployeePicker: () => <div>Employees</div> }));
 vi.mock("../PipelineTaskCoverField", () => ({ PipelineTaskCoverField: () => null }));
+vi.mock("@/features/settings/hooks/useLookupOptions", () => ({ useLookupOptions: () => ({ data: { data: [
+	{ id: 1, label: "Design", is_active: true }, { id: 2, label: "Social", is_active: true }, { id: 3, label: "Video", is_active: true },
+] }, isLoading: false, isError: false }) }));
 
 const stage: ProjectWorkflowStage = { stageId: 3, name: "Planned", slug: "planned", color: "#2563EB", category: "planned", position: 1, isTerminal: false, tasks: [] };
 const task: PipelineTask = { taskId: 12, projectId: 2, workflowStageId: 3, title: "Delivery task", priority: "medium", assignees: [], position: 0, supervisorId: 9, supervisor: { userId: 9, name: "Sam Supervisor" } };
@@ -35,6 +38,17 @@ describe("PipelineTaskDialog supervisor assignment", () => {
 		fireEvent.click(await screen.findByRole("option", { name: "Sam Supervisor" }));
 		fireEvent.click(screen.getByRole("button", { name: "Create task" }));
 		await waitFor(() => expect(projectPipelineApi.createTask).toHaveBeenCalledWith(2, expect.objectContaining({ title: "Delivery task", supervisorId: 9 })));
+	});
+
+	it("saves up to two task types and prevents selecting a third", async () => {
+		vi.mocked(projectPipelineApi.createTask).mockResolvedValue(task);
+		renderDialog();
+		fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Delivery task" } });
+		fireEvent.click(screen.getByRole("checkbox", { name: "Design" }));
+		fireEvent.click(screen.getByRole("checkbox", { name: "Social" }));
+		expect(screen.getByRole("checkbox", { name: "Video" })).toBeDisabled();
+		fireEvent.click(screen.getByRole("button", { name: "Create task" }));
+		await waitFor(() => expect(projectPipelineApi.createTask).toHaveBeenCalledWith(2, expect.objectContaining({ projectTypeIds: [1, 2] })));
 	});
 
 	it("removes the supervisor explicitly when editing", async () => {

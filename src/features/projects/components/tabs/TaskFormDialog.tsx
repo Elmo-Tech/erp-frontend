@@ -17,6 +17,7 @@ import { Task, TaskStatus, TaskStatusLabels, TaskType, TaskTypeLabels, TaskPrior
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { notifyApiError } from "@/lib/errorHandling";
+import { TaskTypesPicker } from "../tasks/TaskTypesPicker";
 
 const taskSchema = z.object({
 	title: z.string().min(1, "Title is required"),
@@ -27,6 +28,7 @@ const taskSchema = z.object({
 	priority: z.enum([TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.URGENT]),
 	assignedTo: z.string().optional(),
 	taskCategory: z.string().optional(),
+	projectTypeIds: z.array(z.number()).max(2),
 	estimatedHours: z.number().min(0, "Must be 0 or greater"),
 	dueDate: z.string().optional().nullable(),
 	expectedResolutionDate: z.string().optional().nullable(),
@@ -49,6 +51,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 			priority: task.priority,
 			assignedTo: task.assignedTo?.toString() || "none",
 			taskCategory: task.taskCategory || "none",
+			projectTypeIds: task.projectTypes?.map((type) => type.id) ?? [],
 			estimatedHours: task.estimatedHours,
 			dueDate: task.dueDate,
 			expectedResolutionDate: task.expectedResolutionDate,
@@ -71,6 +74,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 		priority: TaskPriority.MEDIUM,
 		assignedTo: currentUserId ? currentUserId.toString() : "none",
 		taskCategory: "none",
+		projectTypeIds: [],
 		estimatedHours: 0,
 		dueDate: today,
 		expectedResolutionDate: null,
@@ -224,6 +228,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 				if (data.acceptanceCriteria !== (task.acceptanceCriteria || "")) payload.acceptanceCriteria = data.acceptanceCriteria;
 				if (data.status !== task.status) payload.status = data.status;
 				if (data.type !== task.type) payload.type = data.type;
+				if (JSON.stringify(data.projectTypeIds.slice().sort()) !== JSON.stringify((task.projectTypes ?? []).map((type) => type.id).sort())) payload.projectTypeIds = data.projectTypeIds;
 				if (data.priority !== task.priority) payload.priority = data.priority;
 				if (assignedTo !== task.assignedTo) payload.assignedTo = assignedTo;
 				if (data.taskCategory !== (task.taskCategory || "")) {
@@ -262,6 +267,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					priority: data.priority,
 					assignedTo,
 					taskCategory: data.taskCategory === "none" ? undefined : data.taskCategory,
+					projectTypeIds: data.projectTypeIds,
 					estimatedHours: Number(data.estimatedHours),
 					dueDate: data.dueDate,
 					expectedResolutionDate: data.expectedResolutionDate,
@@ -342,6 +348,8 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							description="Determines which employees can see this task"
 						/>
 					</div>
+
+					<TaskTypesPicker selected={form.watch("projectTypeIds")} onChange={(ids) => form.setValue("projectTypeIds", ids, { shouldDirty: true })} />
 
 					<FormTextarea
 						control={form.control}

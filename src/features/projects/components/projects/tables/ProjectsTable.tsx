@@ -18,7 +18,7 @@ import { Project, ProjectFilters } from "../../../types/project";
 import { getProjectsColumns } from "./columns";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useLookupOptions } from "@/features/settings/hooks/useLookupOptions";
-import { FolderOpen, Filter, Tags, Users, Plus } from "lucide-react";
+import { FolderOpen, Filter, Users, Plus } from "lucide-react";
 import { notifyApiError } from "@/lib/errorHandling";
 
 interface ProjectsTableProps {
@@ -39,7 +39,6 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		search: "",
 		status: undefined,
 		clientId: undefined,
-		projectTypeId: undefined,
 		perPage: 10,
 	});
 
@@ -66,7 +65,6 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		observer.observe(element);
 		return () => observer.disconnect();
 	}, [fetchNextPage, hasNextPage, isFetchingNextPage, isFetchNextPageError, projects.length]);
-	const { data: projectTypesResponse, isLoading: isProjectTypesLoading } = useLookupOptions("project_type");
 	const { data: projectStatusesResponse } = useLookupOptions("project_status");
 
 	const statusOptions: FilterOption[] = (projectStatusesResponse?.data ?? []).map((status) => ({
@@ -90,12 +88,6 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		return Array.from(clientMap.values());
 	}, [projects]);
 
-	const projectTypeOptions: FilterOption[] = useMemo(
-		() => (projectTypesResponse?.data ?? [])
-			.filter((projectType) => projectType.is_active)
-			.map((projectType) => ({ value: String(projectType.id), label: projectType.label })),
-		[projectTypesResponse?.data]
-	);
 
 	const handleSearchChange = (value: string) => {
 		setFilters((prev) => ({ ...prev, search: value || undefined }));
@@ -115,12 +107,6 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 		}));
 	};
 
-	const handleProjectTypeChange = (value: string | undefined) => {
-		setFilters((prev) => ({
-			...prev,
-			projectTypeId: value ? parseInt(value) : undefined,
-		}));
-	};
 
 	const handleRowClick = (project: Project) => {
 		if (onProjectClick) {
@@ -179,9 +165,9 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 				className={className}
 				emptyState={{
 					icon: FolderOpen,
-					title: filters.search || filters.status || filters.clientId || filters.projectTypeId ? "No projects match your filters" : "No projects yet",
-					description: filters.search || filters.status || filters.clientId || filters.projectTypeId ? "Try a different search or filter to see more projects." : "Get started by creating your first project.",
-					action: onCreateProject && !(filters.search || filters.status || filters.clientId || filters.projectTypeId) ? { label: "Create Project", onClick: onCreateProject } : undefined,
+					title: filters.search || filters.status || filters.clientId ? "No projects match your filters" : "No projects yet",
+					description: filters.search || filters.status || filters.clientId ? "Try a different search or filter to see more projects." : "Get started by creating your first project.",
+					action: onCreateProject && !(filters.search || filters.status || filters.clientId) ? { label: "Create Project", onClick: onCreateProject } : undefined,
 				}}
 				headerActions={
 					<FilterBar
@@ -214,14 +200,7 @@ export function ProjectsTable({ onProjectClick, onCreateProject, onEditProject, 
 							placeholder="All Clients"
 							icon={Users}
 						/>
-						<FilterSelect
-							value={filters.projectTypeId?.toString()}
-							onChange={handleProjectTypeChange}
-							options={projectTypeOptions}
-							placeholder="All Project Types"
-							icon={Tags}
-							disabled={isProjectTypesLoading}
-						/>
+
 					</FilterBar>
 				}
 			/>

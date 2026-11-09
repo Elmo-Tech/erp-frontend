@@ -13,6 +13,7 @@ export interface PipelineTask {
 	workflowStageId: number;
 	title: string;
 	description?: string | null;
+	projectTypes?: { id: number; label: string; color?: string | null }[];
 	coverImageUrl?: string | null;
 	priority: "low" | "medium" | "high" | "urgent";
 	assignedTo?: number | null;
@@ -63,6 +64,7 @@ export interface CreatePipelineTaskPayload {
 	workflowStageId: number;
 	title: string;
 	description?: string;
+	projectTypeIds?: number[];
 	assignedUserIds?: number[];
 	supervisorId?: number | null;
 	dueDate?: string;
@@ -74,6 +76,7 @@ export interface UpdatePipelineTaskPayload {
 	workflowStageId?: number;
 	title?: string;
 	description?: string | null;
+	projectTypeIds?: number[];
 	assignedUserIds?: number[] | null;
 	supervisorId?: number | null;
 	dueDate?: string | null;

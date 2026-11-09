@@ -17,6 +17,8 @@ vi.mock("@/store/authStore", () => ({
 	useAuthStore: () => ({ user: { userId: 1 } }),
 }));
 
+vi.mock("@/features/settings/hooks/useLookupOptions", () => ({ useLookupOptions: () => ({ data: { data: [] }, isLoading: false, isError: false }) }));
+
 vi.mock("@/features/admin/hooks/useEnums", () => ({
 	useTaskCategories: () => ({ data: { data: [{ value: "ui_ux", label: "UI/UX" }] } }),
 }));
