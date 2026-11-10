@@ -17,7 +17,11 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
 	const [error, setError] = useState<string | null>(null);
 	useEffect(() => {
 		const onPrompt = (event: Event) => { event.preventDefault(); setPrompt(event as InstallPromptEvent); };
-		const onInstalled = () => { setPrompt(null); setInstalled(true); };
+		const onInstalled = () => {
+			setPrompt(null); setInstalled(true);
+			try { localStorage.setItem("erp:install:already-added:v1", "1"); } catch { /* Installed state remains available until the page closes. */ }
+			window.dispatchEvent(new Event("erp-device-setup-changed"));
+		};
 		window.addEventListener("beforeinstallprompt", onPrompt);
 		window.addEventListener("appinstalled", onInstalled);
 		if ("serviceWorker" in navigator && window.isSecureContext) void registerNotificationWorker().catch(() => undefined);
@@ -31,8 +35,12 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
 	return <InstallContext.Provider value={{ prompt, install, installed, error }}>{children}</InstallContext.Provider>;
 }
 
+export function usePwaInstall() {
+	return useContext(InstallContext);
+}
+
 export function PwaInstallSettings() {
-	const { prompt, install, installed, error } = useContext(InstallContext);
+	const { prompt, install, installed, error } = usePwaInstall();
 	return <section className="space-y-3 rounded-xl border p-5"><h2 className="font-semibold">Install on your phone</h2>
 		<p className="text-sm text-muted-foreground">Open this same website on your phone, sign in, then add it to your home screen. An internet connection is required.</p>
 		<ol className="list-inside list-decimal space-y-1 text-sm"><li>iPhone: open in Safari, tap Share, then Add to Home Screen and Add. Select Open as Web App if shown.</li><li>Android: open in Chrome, open the menu, then choose Install app or Add to Home screen.</li></ol>

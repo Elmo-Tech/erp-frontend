@@ -10,6 +10,7 @@ import { useWorkMonitoringSocketInit } from "@/hooks/useWorkMonitoringSocket";
 import { useNotificationSocketInit } from "@/hooks/useNotificationSocket";
 import { cn } from "@/lib/utils";
 import { AfterHoursTimerDialog } from "@/components/AfterHoursTimerDialog";
+import { SetupCards } from "@/components/SetupCards";
 import { TimerReminderDialog } from "@/components/TimerReminderDialog";
 import { usePathname } from "next/navigation";
 import { pagePermissions } from "@/config/access";
@@ -61,7 +62,7 @@ export function DashboardLayout({ children, allowedRoles, requiredPermission }: 
 					<Navbar />
 
 					{/* Page Content */}
-					<main id="main-content" className="mx-auto max-w-[1600px] p-4 lg:p-7">{allowed ? children : <div role="alert" className="rounded-xl border p-6">You do not have permission to access this page.</div>}</main>
+					<main id="main-content" className="mx-auto max-w-[1600px] p-4 lg:p-7"><SetupCards />{allowed ? children : <div role="alert" className="rounded-xl border p-6">You do not have permission to access this page.</div>}</main>
 				</div>
 			</div>
 		</ProtectedRoute>
