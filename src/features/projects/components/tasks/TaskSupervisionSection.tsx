@@ -72,9 +72,10 @@ export function TaskSupervisionSection({ task }: TaskSupervisionSectionProps) {
 	const stopSession = useStopTaskSupervisionSession();
 
 	const supervision = supervisionQuery.data;
-	const supervisor = supervision?.supervisor ?? task.supervisor ?? null;
+	const supervisors = supervision?.supervisors ?? task.supervisors ?? (supervision?.supervisor ? [supervision.supervisor] : task.supervisor ? [task.supervisor] : []);
+	const supervisor = supervisors[0] ?? null;
 	const isAssignee = task.assignedTo === user?.userId || task.assignees?.some((assignee) => assignee.userId === user?.userId) === true;
-	const isSupervisor = supervisor?.userId === user?.userId;
+	const isSupervisor = supervisors.some((person) => person.userId === user?.userId);
 	const activeSession = activeSessionQuery.data;
 	const activeSessionForTask = activeSession?.taskId === task.taskId && activeSession.supervisorId === user?.userId ? activeSession : null;
 	const hasActiveSessionOnOtherTask = activeSession?.isActive === true && activeSession.supervisorId === user?.userId && activeSession.taskId !== task.taskId;
@@ -88,40 +89,30 @@ export function TaskSupervisionSection({ task }: TaskSupervisionSectionProps) {
 		...(task.assignees?.map((assignee) => toSupervisorUser(assignee.userId, assignee.user)) ?? []),
 		...(task.teamAssignees?.map((assignee) => toSupervisorUser(assignee.userId, assignee.user)) ?? []),
 	];
-	const supervisorCandidates = getViableSupervisorCandidates([...projectMemberCandidates, ...taskTeamCandidates, supervisor]);
+	const supervisorCandidates = getViableSupervisorCandidates([...projectMemberCandidates, ...taskTeamCandidates, ...supervisors]);
 	const helpRequests = supervision?.helpRequests ?? [];
 	const selectableHelpRequests = helpRequests.filter((request) => request.status === "open" || request.status === "acknowledged");
 
+	const sendHeartbeat = heartbeatSession.mutate;
 	useEffect(() => {
-		setHelpMessage("");
-		setSelectedHelpRequestId(NO_HELP_REQUEST_VALUE);
-		setSessionNotes("");
-		setStopReason("");
-		setResolvingRequestId(null);
-		setResolutionNote("");
-	}, [task.taskId]);
-
-	useEffect(() => {
-		if (!activeSessionForTask) {
-			setNow(Date.now());
-			return;
-		}
-
+		if (!activeSessionForTask) return;
 		const elapsedInterval = window.setInterval(() => setNow(Date.now()), 1_000);
-		const heartbeatInterval = window.setInterval(() => heartbeatSession.mutate({ sessionId: activeSessionForTask.sessionId }), 30_000);
-
+		const heartbeatInterval = window.setInterval(() => sendHeartbeat({ sessionId: activeSessionForTask.sessionId }), 30_000);
 		return () => {
 			window.clearInterval(elapsedInterval);
 			window.clearInterval(heartbeatInterval);
 		};
-	}, [activeSessionForTask, heartbeatSession.mutate]);
+	}, [activeSessionForTask, sendHeartbeat]);
 
-	const handleSupervisorChange = async (value: string) => {
+	const handleSupervisorChange = async (value: string, index = 0) => {
+		const ids = supervisors.map((person) => person.userId);
+		if (value === NO_SUPERVISOR_VALUE) ids.splice(index, 1);
+		else ids[index] = Number(value);
 		try {
 			await setSupervisor.mutateAsync({
 				taskId: task.taskId,
 				projectId: task.projectId,
-				payload: { supervisorId: value === NO_SUPERVISOR_VALUE ? null : Number(value) },
+				payload: { supervisorIds: ids.filter(Boolean) },
 			});
 			toast.success(value === NO_SUPERVISOR_VALUE ? "Supervisor removed" : "Supervisor assigned");
 		} catch (error) {
@@ -234,7 +225,7 @@ export function TaskSupervisionSection({ task }: TaskSupervisionSectionProps) {
 					</h4>
 					<p className="mt-1 text-xs text-muted-foreground">Supervisor help and sessions are separate from task work tracking.</p>
 				</div>
-				{supervisor ? <Badge variant="secondary">Supervisor: {supervisor.name}</Badge> : <Badge variant="outline">No supervisor assigned</Badge>}
+				{supervisors.length ? <Badge variant="secondary">Supervisors: {supervisors.map((person) => person.name).join(", ")}</Badge> : <Badge variant="outline">No supervisor assigned</Badge>}
 			</div>
 
 			<Alert>
@@ -250,7 +241,7 @@ export function TaskSupervisionSection({ task }: TaskSupervisionSectionProps) {
 					</div>
 					<Select
 						value={supervisor ? String(supervisor.userId) : NO_SUPERVISOR_VALUE}
-						onValueChange={handleSupervisorChange}
+						onValueChange={(value) => handleSupervisorChange(value, 0)}
 						disabled={setSupervisor.isPending || isMembersLoading}
 					>
 						<SelectTrigger id={`task-supervisor-${task.taskId}`}>
@@ -259,12 +250,19 @@ export function TaskSupervisionSection({ task }: TaskSupervisionSectionProps) {
 						<SelectContent>
 							<SelectItem value={NO_SUPERVISOR_VALUE}>No supervisor</SelectItem>
 							{supervisorCandidates.map((candidate) => (
-								<SelectItem key={candidate.userId} value={String(candidate.userId)}>
+								<SelectItem disabled={candidate.userId === supervisors[1]?.userId} key={candidate.userId} value={String(candidate.userId)}>
 									{candidate.name}
 								</SelectItem>
 							))}
 						</SelectContent>
 					</Select>
+					<div className="mt-3 space-y-2">
+						<Label htmlFor={`task-second-supervisor-${task.taskId}`}>Second supervisor</Label>
+						<Select value={supervisors[1] ? String(supervisors[1].userId) : NO_SUPERVISOR_VALUE} onValueChange={(value) => handleSupervisorChange(value, 1)} disabled={setSupervisor.isPending || isMembersLoading}>
+							<SelectTrigger id={`task-second-supervisor-${task.taskId}`}><SelectValue placeholder="Select a second supervisor" /></SelectTrigger>
+							<SelectContent><SelectItem value={NO_SUPERVISOR_VALUE}>No second supervisor</SelectItem>{supervisorCandidates.map((candidate) => <SelectItem disabled={candidate.userId === supervisors[0]?.userId} key={candidate.userId} value={String(candidate.userId)}>{candidate.name}</SelectItem>)}</SelectContent>
+						</Select>
+					</div>
 					{isMembersError && (
 						<div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
 							<span>Project members could not be loaded. Available task-team members are still shown.</span>

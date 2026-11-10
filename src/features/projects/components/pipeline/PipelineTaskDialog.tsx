@@ -30,6 +30,8 @@ import type { PipelineTask, ProjectWorkflowStage } from "../../types/pipeline";
 import { PipelineEmployeePicker } from "./PipelineEmployeePicker";
 import { PipelineTaskCoverField } from "./PipelineTaskCoverField";
 import { TaskTypesPicker } from "../tasks/TaskTypesPicker";
+import { DescriptionChecklistEditor } from "../tasks/DescriptionChecklistEditor";
+import type { ChecklistItem } from "@/features/dashboard/types/task";
 
 interface PipelineTaskDialogProps {
 	projectId: number;
@@ -54,14 +56,17 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 	const members = useProjectMembers(projectId, canAssignSupervisor && open);
 	const [title, setTitle] = useState(task?.title ?? "");
 	const [description, setDescription] = useState(task?.description ?? "");
+	const [checklist, setChecklist] = useState<ChecklistItem[]>(task?.checklist ?? []);
 	const [projectTypeIds, setProjectTypeIds] = useState<number[]>(task?.projectTypes?.map((type) => type.id) ?? []);
 	const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">(task?.priority ?? "medium");
 	const [assignedUserIds, setAssignedUserIds] = useState<number[]>(task?.assignees.map((assignee) => assignee.userId) ?? []);
-	const [supervisorId, setSupervisorId] = useState(task?.supervisorId ? String(task.supervisorId) : "none");
+	const initialSupervisors = task?.supervisors ?? (task?.supervisor ? [task.supervisor] : []);
+	const [supervisorId, setSupervisorId] = useState(initialSupervisors[0] ? String(initialSupervisors[0].userId) : "none");
+	const [secondSupervisorId, setSecondSupervisorId] = useState(initialSupervisors[1] ? String(initialSupervisors[1].userId) : "none");
 	const supervisorCandidates = getViableSupervisorCandidates([
 		...(employees.data?.employees ?? []),
 		...(members.data?.members.map((member) => member.user ?? { userId: member.userId, name: `User ${member.userId}` }) ?? []),
-		task?.supervisor,
+		...initialSupervisors,
 	]);
 	const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
 	const [estimatedHours, setEstimatedHours] = useState(task?.estimatedHours != null ? String(task.estimatedHours) : "");
@@ -95,10 +100,11 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 						workflowStageId: selectedStageId,
 						title: title.trim(),
 						description: description.trim() || null,
+						...(JSON.stringify(checklist) !== JSON.stringify(task.checklist ?? []) ? { checklist } : {}),
 						priority,
 						projectTypeIds,
 						...(canAssignEmployees ? { assignedUserIds } : {}),
-						...(canAssignSupervisor ? { supervisorId: supervisorId === "none" ? null : Number(supervisorId) } : {}),
+						...(canAssignSupervisor && JSON.stringify([supervisorId, secondSupervisorId].filter((id) => id !== "none").map(Number)) !== JSON.stringify(initialSupervisors.map((person) => person.userId)) ? { supervisorIds: [supervisorId, secondSupervisorId].filter((id) => id !== "none").map(Number) } : {}),
 						dueDate: dueDate || null,
 						estimatedHours: estimatedHours ? Number(estimatedHours) : null,
 					},
@@ -108,10 +114,11 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 					workflowStageId: selectedStageId,
 					title: title.trim(),
 					description: description.trim() || undefined,
+					checklist,
 					priority,
 					projectTypeIds,
 					assignedUserIds: assignedUserIds.length > 0 ? assignedUserIds : undefined,
-					...(canAssignSupervisor ? { supervisorId: supervisorId === "none" ? null : Number(supervisorId) } : {}),
+					...(canAssignSupervisor ? { supervisorIds: [supervisorId, secondSupervisorId].filter((id) => id !== "none").map(Number) } : {}),
 					dueDate: dueDate || undefined,
 					estimatedHours: estimatedHours ? Number(estimatedHours) : undefined,
 				});
@@ -168,6 +175,8 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 						<Label htmlFor="pipeline-task-description">Description</Label>
 						<Textarea id="pipeline-task-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} />
 					</div>
+
+					<DescriptionChecklistEditor items={checklist} onChange={setChecklist} />
 
 					<TaskTypesPicker selected={projectTypeIds} onChange={setProjectTypeIds} disabled={isPending} />
 
@@ -256,17 +265,22 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 								<SelectTrigger id="pipeline-task-supervisor"><SelectValue placeholder="Choose a supervisor" /></SelectTrigger>
 								<SelectContent>
 									<SelectItem value="none">No supervisor</SelectItem>
-									{supervisorCandidates.map((candidate) => <SelectItem key={candidate.userId} value={String(candidate.userId)}>{candidate.name}</SelectItem>)}
+									{supervisorCandidates.map((candidate) => <SelectItem disabled={String(candidate.userId) === secondSupervisorId} key={candidate.userId} value={String(candidate.userId)}>{candidate.name}</SelectItem>)}
 								</SelectContent>
 							</Select>
-							<p className="text-xs text-muted-foreground">Choose an active employee or project member. The supervisor is added to the project and tracks supervision separately from work.</p>
+							<Label htmlFor="pipeline-task-second-supervisor">Second supervisor</Label>
+							<Select value={secondSupervisorId} onValueChange={setSecondSupervisorId} disabled={isPending}>
+								<SelectTrigger id="pipeline-task-second-supervisor"><SelectValue placeholder="Choose a second supervisor" /></SelectTrigger>
+								<SelectContent><SelectItem value="none">No second supervisor</SelectItem>{supervisorCandidates.map((candidate) => <SelectItem disabled={String(candidate.userId) === supervisorId} key={candidate.userId} value={String(candidate.userId)}>{candidate.name}</SelectItem>)}</SelectContent>
+							</Select>
+							<p className="text-xs text-muted-foreground">Choose up to two active employees or project members.</p>
 							{(employees.isError || members.isError) && <p className="text-xs text-destructive">Some supervisor candidates could not be loaded. <button type="button" className="underline" onClick={() => { employees.refetch(); members.refetch(); }}>Try again</button></p>}
 						</div>
 					)}
 
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-						<Button type="submit" disabled={!title.trim() || !workflowStageId || isPending}>
+						<Button type="submit" disabled={!title.trim() || !workflowStageId || checklist.some((item) => !item.text.trim()) || isPending}>
 							{isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 							{isEditing ? "Save changes" : "Create task"}
 						</Button>

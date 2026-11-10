@@ -1,3 +1,5 @@
+import type { ChecklistItem } from "@/features/dashboard/types/task";
+
 export type WorkflowStageCategory = "backlog" | "planned" | "active" | "paused" | "review" | "done" | "cancelled";
 
 export interface PipelineAssignee {
@@ -13,6 +15,8 @@ export interface PipelineTask {
 	workflowStageId: number;
 	title: string;
 	description?: string | null;
+	checklist?: ChecklistItem[];
+	supervisors?: PipelineAssignee[];
 	projectTypes?: { id: number; label: string; color?: string | null }[];
 	coverImageUrl?: string | null;
 	priority: "low" | "medium" | "high" | "urgent";
@@ -64,6 +68,8 @@ export interface CreatePipelineTaskPayload {
 	workflowStageId: number;
 	title: string;
 	description?: string;
+	checklist?: ChecklistItem[];
+	supervisorIds?: number[];
 	projectTypeIds?: number[];
 	assignedUserIds?: number[];
 	supervisorId?: number | null;
@@ -76,6 +82,8 @@ export interface UpdatePipelineTaskPayload {
 	workflowStageId?: number;
 	title?: string;
 	description?: string | null;
+	checklist?: ChecklistItem[];
+	supervisorIds?: number[];
 	projectTypeIds?: number[];
 	assignedUserIds?: number[] | null;
 	supervisorId?: number | null;

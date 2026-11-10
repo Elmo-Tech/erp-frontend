@@ -7,7 +7,7 @@ import type { PipelineTask, ProjectWorkflowStage } from "../../../types/pipeline
 import { PipelineTaskDialog } from "../PipelineTaskDialog";
 
 vi.mock("../../../api/projectPipeline", () => ({ projectPipelineApi: { createTask: vi.fn(), updateTask: vi.fn() } }));
-vi.mock("@/features/hr/hooks/useEmployees", () => ({ useEmployees: () => ({ data: { employees: [{ userId: 9, name: "Sam Supervisor" }] } }) }));
+vi.mock("@/features/hr/hooks/useEmployees", () => ({ useEmployees: () => ({ data: { employees: [{ userId: 9, name: "Sam Supervisor" }, { userId: 10, name: "Nour Supervisor" }] } }) }));
 vi.mock("../../../hooks/useProjectMembers", () => ({ useProjectMembers: () => ({ data: { members: [] } }) }));
 vi.mock("@/features/admin/hooks/usePermissions", () => ({ usePermissions: () => ({ canAssignTasks: true, canManageTaskTeam: true }) }));
 vi.mock("../PipelineEmployeePicker", () => ({ PipelineEmployeePicker: () => <div>Employees</div> }));
@@ -37,7 +37,21 @@ describe("PipelineTaskDialog supervisor assignment", () => {
 		fireEvent.keyDown(screen.getByLabelText("Supervisor"), { key: "ArrowDown" });
 		fireEvent.click(await screen.findByRole("option", { name: "Sam Supervisor" }));
 		fireEvent.click(screen.getByRole("button", { name: "Create task" }));
-		await waitFor(() => expect(projectPipelineApi.createTask).toHaveBeenCalledWith(2, expect.objectContaining({ title: "Delivery task", supervisorId: 9 })));
+		await waitFor(() => expect(projectPipelineApi.createTask).toHaveBeenCalledWith(2, expect.objectContaining({ title: "Delivery task", supervisorIds: [9] })));
+	});
+
+	it("saves two supervisors and checklist items", async () => {
+		vi.mocked(projectPipelineApi.createTask).mockResolvedValue(task);
+		renderDialog();
+		fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Delivery task" } });
+		fireEvent.keyDown(screen.getByLabelText("Supervisor"), { key: "ArrowDown" });
+		fireEvent.click(await screen.findByRole("option", { name: "Sam Supervisor" }));
+		fireEvent.keyDown(screen.getByLabelText("Second supervisor"), { key: "ArrowDown" });
+		fireEvent.click(await screen.findByRole("option", { name: "Nour Supervisor" }));
+		fireEvent.click(screen.getByRole("button", { name: "Add checklist item" }));
+		fireEvent.change(screen.getByRole("textbox", { name: "Checklist item 1" }), { target: { value: "Draft layout" } });
+		fireEvent.click(screen.getByRole("button", { name: "Create task" }));
+		await waitFor(() => expect(projectPipelineApi.createTask).toHaveBeenCalledWith(2, expect.objectContaining({ supervisorIds: [9, 10], checklist: [expect.objectContaining({ text: "Draft layout", completed: false })] })));
 	});
 
 	it("saves up to two task types and prevents selecting a third", async () => {
@@ -57,6 +71,6 @@ describe("PipelineTaskDialog supervisor assignment", () => {
 		fireEvent.keyDown(screen.getByLabelText("Supervisor"), { key: "ArrowDown" });
 		fireEvent.click(await screen.findByRole("option", { name: "No supervisor" }));
 		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-		await waitFor(() => expect(projectPipelineApi.updateTask).toHaveBeenCalledWith(2, 12, expect.objectContaining({ supervisorId: null })));
+		await waitFor(() => expect(projectPipelineApi.updateTask).toHaveBeenCalledWith(2, 12, expect.objectContaining({ supervisorIds: [] })));
 	});
 });

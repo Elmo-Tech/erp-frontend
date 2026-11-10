@@ -58,6 +58,7 @@ export interface TaskSupervisionSummaryResponse {
 }
 
 export interface TaskSupervision {
+	supervisors?: TaskSupervisionUser[];
 	supervisor: TaskSupervisionUser | null;
 	helpRequests: TaskHelpRequest[];
 	sessions: TaskSupervisionSession[];
@@ -65,7 +66,8 @@ export interface TaskSupervision {
 }
 
 export interface SetTaskSupervisorPayload {
-	supervisorId: number | null;
+	supervisorId?: number | null;
+	supervisorIds?: number[];
 }
 
 export interface CreateTaskHelpRequestPayload {

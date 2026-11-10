@@ -12,6 +12,7 @@ vi.mock("@/features/admin/hooks/usePermissions", () => ({ usePermissions: () => 
 vi.mock("@/components/shared/StatusBadge", () => ({ TaskStatusBadge: () => null, TaskTypeBadge: () => null, TaskPriorityBadge: () => null, TaskCategoryBadge: () => null }));
 vi.mock("./TaskAssigneesSection", () => ({ TaskAssigneesSection: () => null }));
 vi.mock("./TaskActivitySection", () => ({ TaskActivitySection: () => null }));
+vi.mock("./DescriptionChecklist", () => ({ DescriptionChecklist: () => null }));
 vi.mock("./TaskReferenceImages", () => ({ TaskReferenceImages: () => null }));
 vi.mock("./TaskTimerWidget", () => ({ TaskTimerWidget: () => null }));
 vi.mock("./TaskTimeEntriesSection", () => ({ TaskTimeEntriesSection: () => null }));

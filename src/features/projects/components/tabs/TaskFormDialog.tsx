@@ -18,10 +18,12 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { notifyApiError } from "@/lib/errorHandling";
 import { TaskTypesPicker } from "../tasks/TaskTypesPicker";
+import { DescriptionChecklistEditor } from "../tasks/DescriptionChecklistEditor";
 
 const taskSchema = z.object({
 	title: z.string().min(1, "Title is required"),
 	description: z.string().optional(),
+	checklist: z.array(z.object({ id: z.string().uuid(), text: z.string().trim().min(1).max(500), completed: z.boolean() })).max(100),
 	acceptanceCriteria: z.string().optional(),
 	status: z.enum([TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.ON_HOLD, TaskStatus.REVIEW, TaskStatus.TESTING, TaskStatus.COMPLETED]),
 	type: z.enum([TaskType.MAIN, TaskType.WEEKLY, TaskType.SUBTASK]),
@@ -45,6 +47,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 		return {
 			title: task.title,
 			description: task.description || "",
+			checklist: task.checklist ?? [],
 			acceptanceCriteria: task.acceptanceCriteria || "",
 			status: task.status,
 			type: task.type,
@@ -68,6 +71,7 @@ const getDefaultValues = (task?: Task | null, defaultType: TaskType = TaskType.M
 	return {
 		title: "",
 		description: "",
+		checklist: [],
 		acceptanceCriteria: "",
 		status: TaskStatus.TODO,
 		type: defaultType,
@@ -224,6 +228,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 				const payload: Record<string, unknown> = {};
 
 				if (data.title !== task.title) payload.title = data.title;
+				if (JSON.stringify(data.checklist) !== JSON.stringify(task.checklist ?? [])) payload.checklist = data.checklist;
 				if (data.description !== (task.description || "")) payload.description = data.description;
 				if (data.acceptanceCriteria !== (task.acceptanceCriteria || "")) payload.acceptanceCriteria = data.acceptanceCriteria;
 				if (data.status !== task.status) payload.status = data.status;
@@ -261,6 +266,7 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 					parentId: parentId || null,
 					title: data.title,
 					description: data.description,
+					checklist: data.checklist,
 					acceptanceCriteria: data.acceptanceCriteria,
 					status: data.status,
 					type: data.type,
@@ -348,6 +354,8 @@ export function TaskFormDialog({ projectId, parentId, open, onOpenChange, task, 
 							description="Determines which employees can see this task"
 						/>
 					</div>
+
+					<DescriptionChecklistEditor items={form.watch("checklist")} onChange={(items) => form.setValue("checklist", items, { shouldDirty: true })} />
 
 					<TaskTypesPicker selected={form.watch("projectTypeIds")} onChange={(ids) => form.setValue("projectTypeIds", ids, { shouldDirty: true })} />
 

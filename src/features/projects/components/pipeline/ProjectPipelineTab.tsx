@@ -199,7 +199,7 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 				<div className="flex min-w-0 items-center gap-2 text-xs">
 					<UserRoundCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
 					<span className="text-muted-foreground">Supervisor</span>
-					<span className="min-w-0 truncate font-medium">{task.supervisor?.name ?? "Not assigned"}</span>
+					<span className="min-w-0 truncate font-medium">{task.supervisors?.map((supervisor) => supervisor.name).join(", ") || task.supervisor?.name || "Not assigned"}</span>
 				</div>
 				{task.holdReason && <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2 text-xs">On hold: {task.holdReason}</p>}
 				<div className="relative z-20">

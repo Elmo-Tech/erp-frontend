@@ -181,6 +181,8 @@ export interface SimpleAssignee {
 /**
  * Task interface with recursive hierarchy support
  */
+export interface ChecklistItem { id: string; text: string; completed: boolean }
+
 export interface Task {
 	taskId: number;
 	projectId: number;
@@ -189,6 +191,8 @@ export interface Task {
 	supervisorId: number | null;
 	title: string;
 	description: string;
+	checklist?: ChecklistItem[];
+	supervisors?: TaskSupervisionUser[];
 	acceptanceCriteria: string;
 	status: TaskStatus;
 	type: TaskType;
@@ -265,6 +269,7 @@ export interface CreateTaskPayload {
 	assignedTo?: number | null;
 	title: string;
 	description?: string;
+	checklist?: ChecklistItem[];
 	acceptanceCriteria?: string;
 	status?: TaskStatus;
 	type?: TaskType;
@@ -293,6 +298,7 @@ export interface UpdateTaskPayload {
 	assignedTo?: number | null;
 	title?: string;
 	description?: string;
+	checklist?: ChecklistItem[];
 	acceptanceCriteria?: string;
 	status?: TaskStatus;
 	type?: TaskType;

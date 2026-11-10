@@ -18,6 +18,7 @@ import { TaskTimerWidget } from "./TaskTimerWidget";
 import { TaskTimeEntriesSection } from "./TaskTimeEntriesSection";
 import { TaskSupervisionSection } from "./TaskSupervisionSection";
 import { TaskReferenceImages } from "./TaskReferenceImages";
+import { DescriptionChecklist } from "./DescriptionChecklist";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useAuthStore } from "@/store/authStore";
 import { Clock, AlertCircle, CheckCircle2, Calendar, TrendingUp, TrendingDown, UserRoundCheck } from "lucide-react";
@@ -87,7 +88,8 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 	if (!taskId) return null;
 
 	// Determine if user can edit this specific task based on its type
-	const canEditThisTask = task && onEdit && (canManageTasks || (task.type === TaskType.MAIN && canEditMainTasks) || (task.type === TaskType.WEEKLY && canEditWeeklyTasks) || (task.type === TaskType.SUBTASK && canEditSubtasks));
+	const canUpdateTask = !!task && (canManageTasks || (task.type === TaskType.MAIN && canEditMainTasks) || (task.type === TaskType.WEEKLY && canEditWeeklyTasks) || (task.type === TaskType.SUBTASK && canEditSubtasks));
+	const canEditThisTask = !!task && !!onEdit && canUpdateTask;
 
 	const formatTimeSpent = (minutes: number) => {
 		const hours = Math.floor(minutes / 60);
@@ -161,7 +163,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 						<TaskReferenceImages task={task} canManage={Boolean(canManageTasks || canEditMainTasks || (canCreateMainTasks && userId === task.createdBy))} />
 						<div className="mx-6 mt-3 flex items-center gap-2 rounded-md bg-muted/40 p-3 text-sm">
 							<UserRoundCheck className="h-4 w-4 text-muted-foreground" />
-							<span>Supervisor: <strong>{task.supervisor?.name ?? "Not assigned"}</strong></span>
+							<span>Supervisors: <strong>{task.supervisors?.map((supervisor) => supervisor.name).join(", ") || task.supervisor?.name || "Not assigned"}</strong></span>
 							<Button variant="link" size="sm" className="ml-auto h-auto p-0" onClick={() => setActiveTab("supervision")}>Manage supervision</Button>
 						</div>
 
@@ -240,6 +242,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 								>
 									<div className="space-y-4">
 										{/* Description */}
+										<DescriptionChecklist task={task} canEdit={Boolean(canUpdateTask || task.assignedTo === userId || task.assignees?.some((assignee) => assignee.userId === userId) || task.supervisors?.some((supervisor) => supervisor.userId === userId))} />
 										{task.description && (
 											<div>
 												<h4 className="text-sm font-medium mb-2">Description</h4>
@@ -335,7 +338,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 									value="supervision"
 									className="p-6 pt-4 m-0"
 								>
-									<TaskSupervisionSection task={task} />
+									<TaskSupervisionSection key={task.taskId} task={task} />
 								</TabsContent>
 
 								{hasTests && <TabsContent
