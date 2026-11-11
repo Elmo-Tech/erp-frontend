@@ -170,11 +170,11 @@ export function Sidebar() {
 												aria-current={isActive ? "page" : undefined}
 												className={cn(
 													"flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
-													isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+													isActive ? "bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-neutral-50" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
 													showCollapsed && "justify-center px-2",
 												)}
 											>
-												<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
+												<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-current")} />
 												{!showCollapsed && <span>{item.title}</span>}
 											</Link>
 										);

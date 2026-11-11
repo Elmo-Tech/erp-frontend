@@ -43,6 +43,15 @@ describe("TaskWorkControls", () => {
 		expect(useTimerStore.getState().resumableTimer).toBeNull();
 	});
 
+	it("starts a different task while an earlier timer is paused", async () => {
+		useTimerStore.setState({ activeTimer: null, resumableTimer: { ...entry, trackableId: 99, isActive: false, stopReason: "pause" } });
+		vi.mocked(timeEntriesApi.start).mockResolvedValue(entry);
+		renderControls();
+		fireEvent.click(screen.getByRole("button", { name: "Start work on Delivery task" }));
+		await waitFor(() => expect(timeEntriesApi.start).toHaveBeenCalledWith({ trackableType: "task", trackableId: 12 }, expect.anything()));
+		expect(useTimerStore.getState().activeTimer?.trackableId).toBe(12);
+	});
+
 	it("requires a hold reason and retains the resumable session", async () => {
 		useTimerStore.setState({ activeTimer: { ...entry, isActive: true } });
 		vi.mocked(timeEntriesApi.hold).mockResolvedValue({ ...entry, stopReason: "hold" });
@@ -98,6 +107,6 @@ describe("TaskWorkControls", () => {
 		renderControls(false);
 		expect(screen.getByRole("button", { name: "Start work on Delivery task" })).toBeDisabled();
 		expect(screen.queryByRole("button", { name: "End work on Delivery task" })).not.toBeInTheDocument();
-		expect(screen.getByText("Finish or resume your current timer first.")).toBeInTheDocument();
+		expect(screen.getByText("Pause or end your current timer first.")).toBeInTheDocument();
 	});
 });

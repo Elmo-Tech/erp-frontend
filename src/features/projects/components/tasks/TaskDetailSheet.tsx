@@ -18,6 +18,7 @@ import { TaskTimerWidget } from "./TaskTimerWidget";
 import { TaskTimeEntriesSection } from "./TaskTimeEntriesSection";
 import { TaskSupervisionSection } from "./TaskSupervisionSection";
 import { TaskReferenceImages } from "./TaskReferenceImages";
+import { TaskAttachments } from "./TaskAttachments";
 import { DescriptionChecklist } from "./DescriptionChecklist";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useAuthStore } from "@/store/authStore";
@@ -120,10 +121,7 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 							<div className="flex items-start justify-between gap-4">
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center gap-2 mb-2">
-										<TaskPriorityBadge
-											priority={task.priority}
-											size="sm"
-										/>
+										{task.workflowStage ? <Badge variant="outline" className="capitalize" style={{ color: task.workflowStage.color, borderColor: task.workflowStage.color }}>{task.priority}</Badge> : <TaskPriorityBadge priority={task.priority} size="sm" />}
 										{!task.isPipelineTask && <TaskTypeBadge
 											type={task.type}
 											size="sm"
@@ -249,6 +247,8 @@ export function TaskDetailSheet({ taskId, open, onOpenChange, onEdit }: TaskDeta
 												<p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
 											</div>
 										)}
+
+										<TaskAttachments taskId={task.taskId} userId={userId} canManage={Boolean(canUpdateTask || task.assignedTo === userId || task.assignees?.some((assignee) => assignee.userId === userId) || task.supervisors?.some((supervisor) => supervisor.userId === userId))} />
 
 										{/* Acceptance Criteria */}
 										{task.holdReason && <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-sm"><strong>On hold:</strong> {task.holdReason}</div>}

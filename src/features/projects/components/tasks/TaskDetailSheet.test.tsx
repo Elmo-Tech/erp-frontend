@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TaskDetailSheet } from "./TaskDetailSheet";
 
 const queries = vi.hoisted(() => ({ useTask: vi.fn(), useTestScenarios: vi.fn(), permissions: {} as Record<string, boolean> }));
+vi.mock("./TaskAttachments", () => ({ TaskAttachments: () => null }));
+
 vi.mock("@/features/dashboard/hooks/useTasks", () => ({
 	useTask: queries.useTask,
 	useTestScenarios: queries.useTestScenarios,

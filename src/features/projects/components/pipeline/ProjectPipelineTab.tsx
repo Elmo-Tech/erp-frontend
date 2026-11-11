@@ -37,13 +37,6 @@ import { PipelineTaskDialog } from "./PipelineTaskDialog";
 import { ProjectTaskDashboard, ProjectTaskList } from "./ProjectTaskViews";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-const priorityClasses: Record<PipelineTask["priority"], string> = {
-	low: "text-slate-600 dark:text-slate-300",
-	medium: "text-blue-600 dark:text-blue-300",
-	high: "text-amber-700 dark:text-amber-300",
-	urgent: "text-red-600 dark:text-red-300",
-};
-
 const pipelineCollisionDetection: CollisionDetection = (args) => {
 	const hits = pointerWithin(args);
 	if (hits.length) {
@@ -163,7 +156,7 @@ export function DraggableTaskCard({ task, dragDisabled, stage, actions }: Dragga
 			</div>
 
 			<div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs">
-				<span className={cn("flex items-center gap-1 font-medium capitalize", priorityClasses[task.priority])}>
+				<span className="flex items-center gap-1 font-medium capitalize" style={{ color: stage.color || "#64748b" }}>
 					<Flag className="h-3.5 w-3.5" />
 					{task.priority}
 				</span>

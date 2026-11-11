@@ -22,6 +22,7 @@ describe("PipelineTaskCard", () => {
 	it("keeps assignees, supervisor, and work time in compact rows without a details footer", () => {
 		render(<DraggableTaskCard task={task} stage={stage} dragDisabled actions={{ canEdit: false, canDelete: false, canStartTimer: false, onOpen: vi.fn(), onEdit: vi.fn(), onDelete: vi.fn() }} />);
 		expect(screen.getByText("Delivery task")).toHaveStyle({ color: "#F59E0B" });
+		expect(screen.getByText("high")).toHaveStyle({ color: "#F59E0B" });
 		expect(screen.getByText("Avery, Morgan")).toBeInTheDocument();
 		expect(screen.getByText("Sam Supervisor")).toBeInTheDocument();
 		expect(screen.getByLabelText("1h 35m logged of 3h estimated")).toHaveTextContent("1h 35m / 3h");

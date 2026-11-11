@@ -41,7 +41,7 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 	const resumeTimer = useResumeTimer();
 	const isRunning = !!activeTimer && activeTimer.trackableType.toLowerCase().includes("task") && Number(activeTimer.trackableId) === taskId;
 	const isResumable = !!resumableTimer && resumableTimer.trackableType.toLowerCase().includes("task") && Number(resumableTimer.trackableId) === taskId;
-	const isBlocked = (!!activeTimer && !isRunning) || (!!resumableTimer && !isResumable);
+	const isBlocked = !!activeTimer && !isRunning;
 	const hasLiveTimer = isRunning || activeWorkTimers.length > 0;
 
 	useEffect(() => {
@@ -104,7 +104,7 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 					</Button>
 				)}
 			</div>
-			{!isRunning && (isBlocked || !canWork) && <p className="text-xs text-muted-foreground">{isBlocked ? "Finish or resume your current timer first." : disabledReason ?? "Work controls are available to assigned employees."}</p>}
+			{!isRunning && (isBlocked || !canWork) && <p className="text-xs text-muted-foreground">{isBlocked ? "Pause or end your current timer first." : disabledReason ?? "Work controls are available to assigned employees."}</p>}
 			<Dialog open={holdOpen} onOpenChange={setHoldOpen}>
 				<DialogContent>
 					<DialogHeader><DialogTitle>Put task on hold</DialogTitle><DialogDescription>Pause work on “{title}” and record what is blocking it.</DialogDescription></DialogHeader>

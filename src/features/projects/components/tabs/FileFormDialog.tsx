@@ -74,6 +74,7 @@ export function FileFormDialog({ projectId, open, onOpenChange, driveFolderId }:
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (file) {
+			if (driveFolderId && file.size > 100 * 1024 * 1024) { toast.error("Google Drive files must be 100 MB or smaller."); e.target.value = ""; setSelectedFile(null); return; }
 			setSelectedFile(file);
 			// Auto-fill name if empty
 			if (!form.getValues("name")) {
@@ -133,7 +134,9 @@ export function FileFormDialog({ projectId, open, onOpenChange, driveFolderId }:
 			setSelectedFile(null);
 			onOpenChange(false);
 		} catch (error) {
-			notifyApiError(error);
+			if (typeof error === "object" && error !== null && "response" in error && (error as { response?: { status?: number } }).response?.status === 413) {
+				toast.error("The server rejected this file size. Contact your administrator to check upload limits.");
+			} else { notifyApiError(error); }
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -183,6 +186,7 @@ export function FileFormDialog({ projectId, open, onOpenChange, driveFolderId }:
 					{fileType === "file" && (
 						<div className="space-y-2">
 							<Label>File</Label>
+							{driveFolderId && <p className="text-xs text-muted-foreground">Google Drive upload: up to 100 MB per file, including videos.</p>}
 							<input
 								ref={fileInputRef}
 								type="file"

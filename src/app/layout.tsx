@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 	icons: {
 		icon: "/the-tables-logo.svg",
 		shortcut: "/the-tables-logo.svg",
-		apple: "/icons/apple-touch-icon.png",
+		apple: "/icons/apple-touch-icon.png?v=2",
 	},
 	manifest: "/manifest.json",
 	appleWebApp: { capable: true, title: "The Tables", statusBarStyle: "default" },

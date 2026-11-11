@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormDialog } from "@/components/shared";
 import { ExternalLink, Folder, RefreshCw } from "lucide-react";
-import { notifyApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
 import { projectDriveApi } from "../../api/projectDrive";
 import { useConnectProjectDriveFolder, useProjectDriveFolders } from "../../hooks/useProjectDrive";
 import { ProjectDriveFolder } from "../../types/project";
@@ -70,7 +70,8 @@ export function DriveFolderDialog({ projectId, open, onOpenChange }: DriveFolder
 
 				{folders.error ? (
 					<div className="space-y-3 rounded-md border p-4">
-						<p className="text-sm text-muted-foreground">Google Drive is not connected or folders could not be loaded.</p>
+						<p className="text-sm text-muted-foreground">{handleApiError(folders.error)}</p>
+						<Button type="button" variant="outline" onClick={() => folders.refetch()}>Try again</Button>
 						<Button
 							type="button"
 							onClick={handleOAuth}
