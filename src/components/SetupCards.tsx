@@ -106,7 +106,14 @@ function UserSetupCards({ userId }: { userId: number }) {
 	const enable = async () => {
 		if (!preferences.data?.publicKey || !preferences.data.enabled) return;
 		setBusy(true); setError("");
-		try { await enableBrowserPush(preferences.data.publicKey, api); refresh(); }
+		try {
+			await enableBrowserPush(preferences.data.publicKey, api);
+			const registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
+			const current = await registration?.pushManager.getSubscription();
+			if (!current) throw new Error("This browser subscription could not be found. Please try again.");
+			await api.post("/notifications/test-push", { endpoint: current.endpoint }, { skipErrorToast: true, skipSuccessToast: true });
+			refresh();
+		}
 		catch (cause) { setError(handleApiError(cause)); }
 		finally { setBusy(false); }
 	};
@@ -126,7 +133,7 @@ function UserSetupCards({ userId }: { userId: number }) {
 		<div className="flex-1 space-y-2"><h2 className="font-semibold">Open the app to enable notifications</h2><p className="text-sm text-muted-foreground">On iPhone, open The Tables from its home-screen icon. You can then turn on notifications inside the app.</p><Button variant="ghost" size="sm" onClick={() => defer("notification")}>Later</Button></div>
 	</section>;
 
-	if (!mayOfferNotifications || preferences.isLoading || (permission === "granted" && preferences.data?.enabled && subscription.isLoading) || (permission === "granted" && subscription.data === true)) return null;
+	if (!mayOfferNotifications || preferences.isLoading || (permission === "granted" && preferences.data?.enabled && subscription.isLoading) || (permission === "granted" && subscription.data === true && !busy && !error)) return null;
 	return <section aria-label="Set up notifications" className="relative mb-5 flex flex-col gap-4 rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50 via-card to-card p-4 shadow-sm dark:border-sky-900 dark:from-sky-950/40 sm:flex-row sm:items-start sm:p-5">
 		<div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-900/60 dark:text-sky-200"><BellRing className="size-5" aria-hidden="true" /></div>
 		<div className="min-w-0 flex-1 space-y-2"><h2 className="font-semibold">Stay up to date</h2><p className="text-sm text-muted-foreground">Turn on notifications for task updates and reminders on this device.</p>

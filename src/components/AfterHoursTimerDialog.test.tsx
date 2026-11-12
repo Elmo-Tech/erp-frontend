@@ -9,7 +9,8 @@ vi.mock("@/hooks/useTimerSocket", () => ({ useRealtimeTimer: () => ({ refetch: v
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	useTimerStore.setState({ activeTimer: { timeEntryId: 5, startTime: "2026-11-05T10:00:00", trackableType: "Task", trackableId: 7, trackableDisplayName: "Design", isActive: true, afterHoursPromptAt: "2026-11-05T18:00:00+02:00", afterHoursGraceMinutes: 10 }, resumableTimer: null });
+	useTimerStore.setState({ activeTimers: [], activeTimer: null, resumableTimer: null });
+	useTimerStore.getState().setActiveTimer({ timeEntryId: 5, startTime: "2026-11-05T10:00:00", trackableType: "Task", trackableId: 7, trackableDisplayName: "Design", isActive: true, afterHoursPromptAt: "2026-11-05T18:00:00+02:00", afterHoursGraceMinutes: 10 });
 });
 
 it("confirms the current reminder and clears it after the server accepts", async () => {

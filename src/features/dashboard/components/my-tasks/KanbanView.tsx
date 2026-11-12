@@ -35,7 +35,7 @@ interface KanbanViewProps {
 }
 
 export function KanbanView({ tasksByStatus, currentUserId, highlightedTaskId, onStatusChange, onViewTask }: KanbanViewProps) {
-	const { activeTimer } = useTimerStore();
+	const { activeTimers } = useTimerStore();
 	const startTimer = useStartTimer();
 	const stopTimer = useStopTimer();
 
@@ -43,8 +43,7 @@ export function KanbanView({ tasksByStatus, currentUserId, highlightedTaskId, on
 	// No need to extract again
 
 	// Check if active timer is for a task using global store (real-time)
-	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
-	const isTaskTimer = activeTimer?.trackableType?.toLowerCase().includes("task");
+	const activeTaskIds = activeTimers.filter((timer) => timer.trackableType.toLowerCase().includes("task")).map((timer) => Number(timer.trackableId));
 
 	// Auto-scroll to highlighted task
 	useEffect(() => {
@@ -57,8 +56,8 @@ export function KanbanView({ tasksByStatus, currentUserId, highlightedTaskId, on
 	}, [highlightedTaskId]);
 
 	const handleStartTimer = async (task: Task) => {
-		if (activeTimer) {
-			toast.error("Please stop the current timer first");
+		if (activeTimers.length >= 2) {
+			toast.error("Pause or stop one of your two timers first");
 			return;
 		}
 		try {
@@ -72,9 +71,9 @@ export function KanbanView({ tasksByStatus, currentUserId, highlightedTaskId, on
 		}
 	};
 
-	const handleStopTimer = async () => {
+	const handleStopTimer = async (taskId: number) => {
 		try {
-			await stopTimer.mutateAsync();
+			await stopTimer.mutateAsync(activeTimers.find((timer) => timer.trackableType.toLowerCase().includes("task") && Number(timer.trackableId) === taskId)?.timeEntryId);
 			toast.success("Timer stopped");
 		} catch {
 			toast.error("Failed to stop timer");
@@ -118,8 +117,8 @@ export function KanbanView({ tasksByStatus, currentUserId, highlightedTaskId, on
 										isHighlighted={highlightedTaskId === task.taskId}
 										onStatusChange={onStatusChange}
 										onViewTask={onViewTask}
-										activeTaskId={isTaskTimer ? activeTaskId : null}
-										hasActiveTimer={!!activeTimer}
+										activeTaskIds={activeTaskIds}
+										hasActiveTimer={activeTimers.length >= 2}
 										onStartTimer={handleStartTimer}
 										onStopTimer={handleStopTimer}
 										isTimerLoading={startTimer.isPending || stopTimer.isPending}
@@ -182,7 +181,7 @@ function KanbanCard({
 	isHighlighted,
 	onStatusChange,
 	onViewTask,
-	activeTaskId,
+	activeTaskIds,
 	hasActiveTimer,
 	onStartTimer,
 	onStopTimer,
@@ -193,10 +192,10 @@ function KanbanCard({
 	isHighlighted?: boolean;
 	onStatusChange: (task: Task, status: TaskStatus) => void;
 	onViewTask: (task: Task) => void;
-	activeTaskId: number | null;
+	activeTaskIds: number[];
 	hasActiveTimer: boolean;
 	onStartTimer: (task: Task) => void;
-	onStopTimer: () => void;
+	onStopTimer: (taskId: number) => void;
 	isTimerLoading: boolean;
 }) {
 	const access = useMyTaskAccess();
@@ -204,7 +203,7 @@ function KanbanCard({
 	const isDueToday = task.dueDate && isToday(parseISO(task.dueDate));
 	const isDueTomorrow = task.dueDate && isTomorrow(parseISO(task.dueDate));
 	const myAssignment = task.assignees?.find((a) => a.userId === currentUserId);
-	const isTimerRunningOnThis = activeTaskId === task.taskId;
+	const isTimerRunningOnThis = activeTaskIds.includes(task.taskId);
 	const isTimerRunningOnOther = hasActiveTimer && !isTimerRunningOnThis;
 
 	return (
@@ -339,7 +338,7 @@ function KanbanCard({
 											className="h-6 w-6 p-0"
 											onClick={(e) => {
 												e.stopPropagation();
-												onStopTimer();
+												onStopTimer(task.taskId);
 											}}
 											disabled={isTimerLoading}
 										>
@@ -360,7 +359,7 @@ function KanbanCard({
 										</Button>
 									)}
 								</TooltipTrigger>
-								<TooltipContent>{isTimerRunningOnThis ? "Stop Timer" : isTimerRunningOnOther ? "Stop other timer first" : "Start Timer"}</TooltipContent>
+								<TooltipContent>{isTimerRunningOnThis ? "Stop Timer" : isTimerRunningOnOther ? "Pause or stop one timer first" : "Start Timer"}</TooltipContent>
 							</Tooltip>
 						)}
 						{/* Priority Indicator */}

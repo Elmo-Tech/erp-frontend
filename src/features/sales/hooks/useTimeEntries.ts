@@ -120,7 +120,7 @@ export const useStartTimer = () => {
 				trackableProjectId: newTimeEntry.trackableProjectId,
 				isActive: true,
 			});
-			setResumableTimer(null);
+			if (useTimerStore.getState().resumableTimer?.trackableId === newTimeEntry.trackableId) setResumableTimer(null);
 
 			// Invalidate active timer query to show the new active timer
 			queryClient.invalidateQueries({ queryKey: timeEntryKeys.active() });
@@ -181,13 +181,12 @@ export const useResumeTimer = () => {
  */
 export const useStopTimer = () => {
 	const queryClient = useQueryClient();
-	const { setActiveTimer } = useTimerStore.getState();
-
-	return useMutation<TimeEntry, Error, void>({
+	return useMutation<TimeEntry, Error, number | undefined>({
 		mutationFn: timeEntriesApi.stop,
 		onSuccess: (stoppedTimeEntry) => {
 			// Update global timer store immediately for real-time UI
-			setActiveTimer(null);
+			const state = useTimerStore.getState();
+			state.setActiveTimers(state.activeTimers.filter((timer) => timer.timeEntryId !== stoppedTimeEntry.timeEntryId));
 
 			// Invalidate active timer query to clear the active timer
 			queryClient.invalidateQueries({ queryKey: timeEntryKeys.active() });

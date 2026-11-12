@@ -73,8 +73,8 @@ describe("realtime work monitoring", () => {
 			user: { userId: 7, name: "Monitor", email: "monitor@example.test", avatar: "", role: "admin" },
 			role: "admin", permissions: [{ permissionName: "view_all_time_entries", access: true }, { permissionName: "view_dashboard", access: true }],
 		});
-		useTimerStore.setState({ activeTimer: null, resumableTimer: null, isLoading: true, isConnected: false });
-		vi.mocked(api.get).mockResolvedValue({ data: { data: null } });
+		useTimerStore.setState({ activeTimer: null, activeTimers: [], resumableTimer: null, isLoading: true, isConnected: false });
+		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? [] : null } }));
 		Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
 		Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
 	});
@@ -181,7 +181,7 @@ describe("realtime work monitoring", () => {
 		await advance(0);
 		await act(async () => { echo.channel("user.7").acknowledge(); });
 		expect(useTimerStore.getState().isConnected).toBe(true);
-		vi.mocked(api.get).mockResolvedValue({ data: { data: timer } });
+		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? [timer] : null } }));
 		vi.mocked(api.post).mockResolvedValue({ data: { data: timer } });
 		await act(async () => { echo.channel("user.7").emit(".timer.updated"); });
 		expect(useTimerStore.getState().activeTimer?.timeEntryId).toBe(42);
@@ -191,7 +191,7 @@ describe("realtime work monitoring", () => {
 		expect(api.post).toHaveBeenCalledTimes(3);
 		act(() => { echo.state("unavailable"); });
 		expect(useTimerStore.getState().isConnected).toBe(false);
-		vi.mocked(api.get).mockResolvedValue({ data: { data: null } });
+		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? [] : null } }));
 		await advance(60_000);
 		expect(useTimerStore.getState().activeTimer).toBeNull();
 	});

@@ -73,6 +73,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 	const [workflowStageId, setWorkflowStageId] = useState(String(task?.workflowStageId ?? stage?.stageId ?? ""));
 	const [coverImage, setCoverImage] = useState<File | null>(null);
 	const [referenceImages, setReferenceImages] = useState<File[]>([]);
+	const [documents, setDocuments] = useState<File[]>([]);
 	const [uploadingReferences, setUploadingReferences] = useState(false);
 	const [removeExistingCover, setRemoveExistingCover] = useState(false);
 	const isEditing = Boolean(task);
@@ -150,6 +151,19 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 				setUploadingReferences(false);
 			}
 		}
+		if (documents.length) {
+			setUploadingReferences(true);
+			try {
+				for (const file of documents) {
+					const data = new FormData();
+					data.append("file", file);
+					await api.post(`/tasks/${savedTask.taskId}/attachments`, data, { skipSuccessToast: true, skipErrorToast: true });
+				}
+				await queryClient.invalidateQueries({ queryKey: ["task-attachments", savedTask.taskId] });
+			} catch {
+				toast.warning("Task saved, but some documents could not be uploaded. Add them from task details.");
+			} finally { setUploadingReferences(false); }
+		}
 		onOpenChange(false);
 	};
 
@@ -197,6 +211,16 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 							setReferenceImages(files);
 						}} />
 						<p className="text-xs text-muted-foreground">Up to 10 images per task, JPG, PNG or WebP, 25 MB each. Existing images can be managed in task details.</p>
+					</div>
+
+					<div className="space-y-2">
+						<Label htmlFor="pipeline-task-documents">Documents (PDF or PowerPoint)</Label>
+						<Input id="pipeline-task-documents" type="file" multiple accept=".pdf,.ppt,.pptx" disabled={isPending} onChange={(event) => {
+							const files = Array.from(event.target.files ?? []);
+							if (files.length > 10 || files.some((file) => !/\.(pdf|ppt|pptx)$/i.test(file.name) || file.size > 25 * 1024 * 1024)) { toast.error("Select up to 10 PDF or PowerPoint files, up to 25 MB each"); event.target.value = ""; setDocuments([]); return; }
+							setDocuments(files);
+						}} />
+						<p className="text-xs text-muted-foreground">Up to 10 documents per task, 25 MB each. Manage existing documents from task details.</p>
 					</div>
 
 					<div className="grid gap-4 sm:grid-cols-2">

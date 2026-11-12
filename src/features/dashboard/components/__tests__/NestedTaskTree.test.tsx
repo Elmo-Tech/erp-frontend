@@ -162,6 +162,7 @@ describe("NestedTaskTree", () => {
 
 		mockUseTimerStore.mockReturnValue({
 			activeTimer: null,
+			activeTimers: [],
 			isLoading: false,
 			isConnected: false,
 			setActiveTimer: vi.fn(),
@@ -322,6 +323,7 @@ describe("NestedTaskTree", () => {
 
 	it("shows active timer indicator", () => {
 		mockUseTimerStore.mockReturnValue({
+			activeTimers: [{ timeEntryId: 1, startTime: "2024-01-01T00:00:00Z", trackableType: "task", trackableId: 1, trackableDisplayName: "Parent Task 1", isActive: true }],
 			activeTimer: {
 				timeEntryId: 1,
 				startTime: "2024-01-01T00:00:00Z",

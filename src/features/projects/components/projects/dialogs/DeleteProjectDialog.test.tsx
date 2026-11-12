@@ -9,11 +9,11 @@ import { useTimerStore } from "@/store/timerStore";
 vi.mock("@/lib/axios", () => ({ default: { delete: vi.fn(), get: vi.fn() } }));
 beforeEach(() => {
 	vi.mocked(api.delete).mockReset();
-	vi.mocked(api.get).mockResolvedValue({ data: { data: null } });
-	useTimerStore.setState({ activeTimer: null, resumableTimer: null, isLoading: false });
+	vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? [] : null } }));
+	useTimerStore.setState({ activeTimer: null, activeTimers: [], resumableTimer: null, isLoading: false });
 	useAuthStore.setState({ role: "admin", permissions: [{ permissionName: "force_delete_projects", access: true }] });
 });
-afterEach(() => { cleanup(); useAuthStore.setState({ role: null, permissions: [] }); useTimerStore.setState({ activeTimer: null, resumableTimer: null, isLoading: true }); });
+afterEach(() => { cleanup(); useAuthStore.setState({ role: null, permissions: [] }); useTimerStore.setState({ activeTimer: null, activeTimers: [], resumableTimer: null, isLoading: true }); });
 
 function renderDialog() {
 	const onOpenChange = vi.fn();
@@ -24,12 +24,12 @@ function renderDialog() {
 
 it("omits soft-delete confirmation and refreshes a stale navbar timer after deletion", async () => {
 	vi.mocked(api.delete).mockResolvedValue({ data: {} });
-	useTimerStore.setState({ activeTimer: { timeEntryId: 99, startTime: "2026-10-26T09:00:00", trackableType: "App\\Models\\Task", trackableId: 1, trackableProjectId: 7, trackableDisplayName: "Old task", isActive: true } });
+	useTimerStore.getState().setActiveTimer({ timeEntryId: 99, startTime: "2026-10-26T09:00:00", trackableType: "App\\Models\\Task", trackableId: 1, trackableProjectId: 7, trackableDisplayName: "Old task", isActive: true });
 	const close = renderDialog();
 	fireEvent.click(screen.getAllByRole("button", { name: "Move to trash" }).at(-1)!);
 	await waitFor(() => expect(api.delete).toHaveBeenCalledWith("/projects/7", { data: { permanent: false } }));
 	await waitFor(() => expect(close).toHaveBeenCalledWith(false));
-	expect(api.get).toHaveBeenCalledWith("/time-entries/active", { skipErrorToast: true });
+	expect(api.get).toHaveBeenCalledWith("/time-entries/my-active", { skipErrorToast: true });
 	expect(useTimerStore.getState().activeTimer).toBeNull();
 });
 

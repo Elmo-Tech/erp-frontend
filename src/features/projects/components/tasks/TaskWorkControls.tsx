@@ -30,7 +30,8 @@ export function formatWorkDuration(seconds: number) {
 
 export function TaskWorkControls({ taskId, title, canWork, disabledReason, activeWorkTimers = [] }: TaskWorkControlsProps) {
 	const currentUserId = useAuthStore((state) => state.user?.userId);
-	const activeTimer = useTimerStore((state) => state.activeTimer);
+	const activeTimers = useTimerStore((state) => state.activeTimers);
+	const activeTimer = activeTimers.find((timer) => timer.trackableType.toLowerCase().includes("task") && Number(timer.trackableId) === taskId);
 	const resumableTimer = useTimerStore((state) => state.resumableTimer);
 	const isChecking = useTimerStore((state) => state.isLoading);
 	const [now, setNow] = useState(() => Date.now());
@@ -41,7 +42,7 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 	const resumeTimer = useResumeTimer();
 	const isRunning = !!activeTimer && activeTimer.trackableType.toLowerCase().includes("task") && Number(activeTimer.trackableId) === taskId;
 	const isResumable = !!resumableTimer && resumableTimer.trackableType.toLowerCase().includes("task") && Number(resumableTimer.trackableId) === taskId;
-	const isBlocked = !!activeTimer && !isRunning;
+	const isBlocked = !isRunning && (activeTimers.length >= 2 || activeTimers.some((timer) => !timer.trackableType.toLowerCase().includes("task")));
 	const hasLiveTimer = isRunning || activeWorkTimers.length > 0;
 
 	useEffect(() => {
@@ -56,9 +57,10 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 		queryClient.invalidateQueries({ queryKey: ["timeEntries"] }),
 	]);
 	const controlTimer = useMutation({
-		mutationFn: (action: "pause" | "hold" | "end") => action === "hold" ? timeEntriesApi.hold(holdReason.trim()) : action === "pause" ? timeEntriesApi.pause() : timeEntriesApi.end(),
+		mutationFn: (action: "pause" | "hold" | "end") => action === "hold" ? timeEntriesApi.hold(holdReason.trim(), activeTimer?.timeEntryId) : action === "pause" ? timeEntriesApi.pause(activeTimer?.timeEntryId) : timeEntriesApi.end(activeTimer?.timeEntryId),
 		onSuccess: async (entry, action) => {
-			useTimerStore.getState().setActiveTimer(null);
+			const state = useTimerStore.getState();
+			state.setActiveTimers(state.activeTimers.filter((timer) => timer.timeEntryId !== entry.timeEntryId));
 			useTimerStore.getState().setResumableTimer(action === "end" ? null : { ...entry, isActive: false });
 			setHoldOpen(false);
 			setHoldReason("");
@@ -104,7 +106,7 @@ export function TaskWorkControls({ taskId, title, canWork, disabledReason, activ
 					</Button>
 				)}
 			</div>
-			{!isRunning && (isBlocked || !canWork) && <p className="text-xs text-muted-foreground">{isBlocked ? "Pause or end your current timer first." : disabledReason ?? "Work controls are available to assigned employees."}</p>}
+			{!isRunning && (isBlocked || !canWork) && <p className="text-xs text-muted-foreground">{isBlocked ? "Pause or end one of your two running timers first." : disabledReason ?? "Work controls are available to assigned employees."}</p>}
 			<Dialog open={holdOpen} onOpenChange={setHoldOpen}>
 				<DialogContent>
 					<DialogHeader><DialogTitle>Put task on hold</DialogTitle><DialogDescription>Pause work on “{title}” and record what is blocking it.</DialogDescription></DialogHeader>

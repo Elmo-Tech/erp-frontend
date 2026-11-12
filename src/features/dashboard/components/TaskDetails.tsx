@@ -42,13 +42,14 @@ export const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onUpdate, classN
 
 	// Hooks
 	const updateTaskMutation = useUpdateTask();
-	const { activeTimer } = useTimerStore();
+	const { activeTimers } = useTimerStore();
+	const activeTimer = activeTimers.find((timer) => timer.trackableType.toLowerCase().includes("task") && Number(timer.trackableId) === task.taskId);
 	const startTimerMutation = useStartTimer();
 	const stopTimerMutation = useStopTimer();
 
 	// Check if timer is running for this task
-	const isRunning = activeTimer?.isActive ?? false;
-	const isTimerRunningForTask = isRunning && activeTimer?.trackableType === "task" && activeTimer?.trackableId === task.taskId;
+	const isRunning = activeTimers.length >= 2;
+	const isTimerRunningForTask = Boolean(activeTimer?.isActive);
 
 	// Format time display
 	const formatTime = (minutes: number): string => {
@@ -143,7 +144,7 @@ export const TaskDetails: React.FC<TaskDetailsProps> = ({ task, onUpdate, classN
 	// Handle timer stop
 	const handleStopTimer = async () => {
 		try {
-			await stopTimerMutation.mutateAsync();
+			await stopTimerMutation.mutateAsync(activeTimer?.timeEntryId);
 			// Refresh task data to show updated totalTimeSpent
 			// This will be handled by the parent component through onUpdate callback
 			// or by invalidating the task query cache

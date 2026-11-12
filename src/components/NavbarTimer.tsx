@@ -22,7 +22,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 	const { refetch: refreshTimer } = useRealtimeTimer();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const { activeTimer, resumableTimer, setActiveTimer, setResumableTimer, isLoading } = useTimerStore();
+	const { activeTimer, activeTimers, selectTimer, resumableTimer, setActiveTimer, setResumableTimer, isLoading } = useTimerStore();
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
 	const [pendingAction, setPendingAction] = useState<"pause" | "hold" | "end" | "resume" | null>(null);
 	const [holdDialogOpen, setHoldDialogOpen] = useState(false);
@@ -92,9 +92,10 @@ export function NavbarTimer({ className }: { className?: string }) {
 		try {
 			const response = await api.post<{ data: TimeEntryData }>(
 				`/time-entries/${action}`,
-				action === "hold" ? { reason: holdReason.trim() } : undefined
+				action === "hold" ? { reason: holdReason.trim(), timeEntryId: activeTimer?.timeEntryId } : { timeEntryId: activeTimer?.timeEntryId }
 			);
-			setActiveTimer(null);
+			const state = useTimerStore.getState();
+			state.setActiveTimers(state.activeTimers.filter((timer) => timer.timeEntryId !== response.data.data.timeEntryId));
 			setResumableTimer(action === "end" ? null : response.data.data);
 			setHoldDialogOpen(false);
 			setHoldReason("");
@@ -144,6 +145,7 @@ export function NavbarTimer({ className }: { className?: string }) {
 			<div className={cn("flex flex-wrap items-center gap-1 p-2 bg-muted/50 rounded-lg sm:flex-nowrap sm:gap-2", className)}>
 				{activeTimer ? (
 					<>
+						{activeTimers.length > 1 && <select aria-label="Select running timer" value={activeTimer.timeEntryId} onChange={(event) => selectTimer(Number(event.target.value))} className="max-w-36 rounded border bg-background text-xs">{activeTimers.map((timer) => <option key={timer.timeEntryId} value={timer.timeEntryId}>{timer.trackableDisplayName}</option>)}</select>}
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<button

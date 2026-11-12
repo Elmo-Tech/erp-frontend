@@ -7,7 +7,7 @@ import { useTimerStore } from "@/store/timerStore";
 
 export function TimerReminderDialog() {
 	const [reminder, setReminder] = useState<{ timer_id: number; body?: string } | null>(null);
-	const activeTimer = useTimerStore((state) => state.activeTimer);
+	const activeTimer = useTimerStore((state) => state.activeTimers.find((timer) => timer.timeEntryId === reminder?.timer_id));
 	const lastShown = useRef(new Map<number, number>());
 	useEffect(() => {
 		const show = (data: { timer_id: number; body?: string; reminderMinutes?: number }) => {

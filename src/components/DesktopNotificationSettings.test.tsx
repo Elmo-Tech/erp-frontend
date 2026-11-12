@@ -19,5 +19,5 @@ it("sends a test only to the current browser subscription", async () => {
 	await waitFor(() => expect(button).toBeEnabled());
 	fireEvent.click(button);
 	await waitFor(() => expect(api.post).toHaveBeenCalledWith("/notifications/test-push", { endpoint: "https://fcm.googleapis.com/test" }));
-	expect(await screen.findByRole("status")).toHaveTextContent("queued");
+	expect(await screen.findByRole("status")).toHaveTextContent("sent to the notification service");
 });

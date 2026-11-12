@@ -19,23 +19,23 @@ export const timeEntriesApi = {
 	 * Stop the active timer
 	 * Requirement 8.2: POST /api/v1/time-entries/stop endpoint to stop the active timer
 	 */
-	stop: async (): Promise<TimeEntry> => {
-		const response = await api.post<{ data: TimeEntry }>("/time-entries/stop");
+	stop: async (timeEntryId?: number): Promise<TimeEntry> => {
+		const response = await api.post<{ data: TimeEntry }>("/time-entries/stop", { timeEntryId });
 		return response.data.data;
 	},
 
-	pause: async (): Promise<TimeEntry> => {
-		const response = await api.post<{ data: TimeEntry }>("/time-entries/pause");
+	pause: async (timeEntryId?: number): Promise<TimeEntry> => {
+		const response = await api.post<{ data: TimeEntry }>("/time-entries/pause", { timeEntryId });
 		return response.data.data;
 	},
 
-	hold: async (reason: string): Promise<TimeEntry> => {
-		const response = await api.post<{ data: TimeEntry }>("/time-entries/hold", { reason });
+	hold: async (reason: string, timeEntryId?: number): Promise<TimeEntry> => {
+		const response = await api.post<{ data: TimeEntry }>("/time-entries/hold", { reason, timeEntryId });
 		return response.data.data;
 	},
 
-	end: async (): Promise<TimeEntry> => {
-		const response = await api.post<{ data: TimeEntry }>("/time-entries/end");
+	end: async (timeEntryId?: number): Promise<TimeEntry> => {
+		const response = await api.post<{ data: TimeEntry }>("/time-entries/end", { timeEntryId });
 		return response.data.data;
 	},
 

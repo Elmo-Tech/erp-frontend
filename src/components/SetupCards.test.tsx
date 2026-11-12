@@ -75,6 +75,18 @@ it("offers to register an existing permission for the current account and hides 
 	await waitFor(() => expect(screen.queryByRole("region", { name: "Set up notifications" })).not.toBeInTheDocument());
 });
 
+it("keeps the card visible when the test push fails after registration", async () => {
+	device("Desktop Chrome", false, "granted", { endpoint: "https://fcm.googleapis.com/test" });
+	vi.mocked(api.post).mockImplementation(async (url) => {
+		if (url === "/notifications/test-push") throw new Error("Test delivery failed");
+		return { data: { data: { registered: false } } };
+	});
+	show();
+	fireEvent.click(await screen.findByRole("button", { name: "Enable notifications" }));
+	expect(await screen.findByText("Test delivery failed")).toBeVisible();
+	expect(screen.getByRole("region", { name: "Set up notifications" })).toBeVisible();
+});
+
 it("explains blocked permissions instead of requesting permission repeatedly", async () => {
 	device("Desktop Chrome", false, "denied"); show();
 	fireEvent.click(await screen.findByRole("button", { name: "How to allow" }));

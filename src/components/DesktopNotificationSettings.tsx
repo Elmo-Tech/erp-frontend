@@ -26,7 +26,7 @@ export function DesktopNotificationSettings() {
 		try {
 			if (!query.data?.enabled || !query.data.publicKey) throw new Error("Web Push keys need to be configured on the server.");
 			await enableBrowserPush(query.data.publicKey, api);
-			setStatus("Desktop notifications enabled on this browser.");
+			setStatus("This browser is registered. Send a test notification to check delivery.");
 		} catch (error) {
 			setStatus(handleApiError(error));
 			if (error instanceof NotificationSetupError) setTechnicalDetails(error.technicalDetails ?? "");
@@ -53,7 +53,7 @@ export function DesktopNotificationSettings() {
 			const subscription = await registration?.pushManager.getSubscription();
 			if (!subscription) throw new Error("Enable desktop notifications on this browser first.");
 			await api.post("/notifications/test-push", { endpoint: subscription.endpoint });
-			setStatus("Test notification queued. Check your device notifications; delivery may take a moment.");
+			setStatus("Test sent to the notification service. Check your device notifications.");
 		} catch (error) { setStatus(handleApiError(error)); }
 		finally { setBusy(false); }
 	};

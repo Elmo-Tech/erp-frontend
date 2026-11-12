@@ -3,9 +3,10 @@ import { expect, it, vi } from "vitest";
 import { TaskDetailDialog } from "./TaskDetailDialog";
 import { Task, TaskPriority, TaskStatus, TaskType } from "../../types/task";
 
+vi.mock("@/features/projects/components/tasks/TaskAttachments", () => ({ TaskAttachments: () => null }));
 vi.mock("./useMyTaskAccess", () => ({ useMyTaskAccess: () => ({ canEdit: () => false }) }));
 vi.mock("@/features/sales/hooks", () => ({ useStartTimer: () => ({}), useStopTimer: () => ({}) }));
-vi.mock("@/store/timerStore", () => ({ useTimerStore: () => ({ activeTimer: null }) }));
+vi.mock("@/store/timerStore", () => ({ useTimerStore: () => ({ activeTimer: null, activeTimers: [] }) }));
 vi.mock("@/features/projects/components/tasks/TaskSupervisionSection", () => ({ TaskSupervisionSection: () => null }));
 
 it("gives the My Tasks details dialog an accessible description without warnings", () => {

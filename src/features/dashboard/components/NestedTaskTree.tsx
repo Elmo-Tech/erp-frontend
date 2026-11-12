@@ -65,8 +65,8 @@ const TaskNode: React.FC<TaskNodeProps> = ({ task, level, onTaskSelect, selected
 	const isExpanded = expandedTasks.has(task.taskId);
 	const isSelected = selectedTaskId === task.taskId;
 	const isHighlighted = highlightedTaskId === task.taskId;
-	const { activeTimer } = useTimerStore();
-	const isTimerActive = activeTimer?.isActive && activeTimer?.trackableType === "task" && activeTimer?.trackableId === task.taskId;
+	const { activeTimers } = useTimerStore();
+	const isTimerActive = activeTimers.some((timer) => timer.isActive && timer.trackableType.toLowerCase().includes("task") && Number(timer.trackableId) === task.taskId);
 
 	// Check if task has preloaded children or API says it has children
 	const hasPreloadedChildren = task.children && task.children.length > 0;

@@ -22,7 +22,7 @@ function renderControls(canWork = true) {
 describe("TaskWorkControls", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		useTimerStore.setState({ activeTimer: null, resumableTimer: null, isLoading: false });
+		useTimerStore.setState({ activeTimer: null, activeTimers: [], resumableTimer: null, isLoading: false });
 	});
 
 	it("starts, pauses, and resumes through the shared work timer store", async () => {
@@ -53,7 +53,7 @@ describe("TaskWorkControls", () => {
 	});
 
 	it("requires a hold reason and retains the resumable session", async () => {
-		useTimerStore.setState({ activeTimer: { ...entry, isActive: true } });
+		useTimerStore.getState().setActiveTimer({ ...entry, isActive: true });
 		vi.mocked(timeEntriesApi.hold).mockResolvedValue({ ...entry, stopReason: "hold" });
 		renderControls();
 		fireEvent.click(screen.getByRole("button", { name: "Hold work on Delivery task" }));
@@ -61,12 +61,12 @@ describe("TaskWorkControls", () => {
 		fireEvent.change(screen.getByLabelText("Hold reason"), { target: { value: "  Waiting for assets  " } });
 		fireEvent.click(screen.getByRole("button", { name: "Put on hold" }));
 		await waitFor(() => expect(useTimerStore.getState().resumableTimer?.stopReason).toBe("hold"));
-		expect(timeEntriesApi.hold).toHaveBeenCalledWith("Waiting for assets");
+		expect(timeEntriesApi.hold).toHaveBeenCalledWith("Waiting for assets", 41);
 		expect(useTimerStore.getState().activeTimer).toBeNull();
 	});
 
 	it("ends work without leaving a resumable timer", async () => {
-		useTimerStore.setState({ activeTimer: { ...entry, isActive: true } });
+		useTimerStore.getState().setActiveTimer({ ...entry, isActive: true });
 		vi.mocked(timeEntriesApi.end).mockResolvedValue({ ...entry, stopReason: "end" });
 		renderControls();
 		fireEvent.click(screen.getByRole("button", { name: "End work on Delivery task" }));
@@ -76,7 +76,7 @@ describe("TaskWorkControls", () => {
 	});
 
 	it("Complete a running task from the board", async () => {
-		useTimerStore.setState({ activeTimer: { ...entry, isActive: true } });
+		useTimerStore.getState().setActiveTimer({ ...entry, isActive: true });
 		let status = "In Progress";
 		vi.mocked(timeEntriesApi.end).mockImplementation(async () => { status = "Completed"; return { ...entry, stopReason: "end" }; });
 		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -93,7 +93,7 @@ describe("TaskWorkControls", () => {
 	});
 
 	it("does not mutate the timer on a failed pause", async () => {
-		useTimerStore.setState({ activeTimer: { ...entry, isActive: true } });
+		useTimerStore.getState().setActiveTimer({ ...entry, isActive: true });
 		vi.mocked(timeEntriesApi.pause).mockRejectedValue(new Error("Request failed"));
 		renderControls();
 		fireEvent.click(screen.getByRole("button", { name: "Pause work on Delivery task" }));
@@ -103,10 +103,10 @@ describe("TaskWorkControls", () => {
 	});
 
 	it("disables work for unassigned viewers and does not confuse another trackable with this task", () => {
-		useTimerStore.setState({ activeTimer: { ...entry, trackableType: "lead", isActive: true } });
+		useTimerStore.getState().setActiveTimer({ ...entry, trackableType: "lead", isActive: true });
 		renderControls(false);
 		expect(screen.getByRole("button", { name: "Start work on Delivery task" })).toBeDisabled();
 		expect(screen.queryByRole("button", { name: "End work on Delivery task" })).not.toBeInTheDocument();
-		expect(screen.getByText("Pause or end your current timer first.")).toBeInTheDocument();
+		expect(screen.getByText("Pause or end one of your two running timers first.")).toBeInTheDocument();
 	});
 });

@@ -34,13 +34,12 @@ interface ListViewProps {
 }
 
 export function ListView({ tasks, expandedTasks, currentUserId, highlightedTaskId, onToggleExpand, onStatusChange, onViewTask }: ListViewProps) {
-	const { activeTimer } = useTimerStore();
+	const { activeTimers } = useTimerStore();
 	const startTimer = useStartTimer();
 	const stopTimer = useStopTimer();
 
 	// Check if active timer is for a task using global store (real-time)
-	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
-	const isTaskTimer = activeTimer?.trackableType?.toLowerCase().includes("task");
+	const activeTaskIds = activeTimers.filter((timer) => timer.trackableType.toLowerCase().includes("task")).map((timer) => Number(timer.trackableId));
 
 	// Auto-scroll to highlighted task
 	useEffect(() => {
@@ -54,8 +53,8 @@ export function ListView({ tasks, expandedTasks, currentUserId, highlightedTaskI
 
 	const handleStartTimer = async (task: Task) => {
 		// Prevent starting if another timer is running
-		if (activeTimer) {
-			toast.error("Please stop the current timer first");
+		if (activeTimers.length >= 2) {
+			toast.error("Pause or stop one of your two timers first");
 			return;
 		}
 		try {
@@ -69,9 +68,9 @@ export function ListView({ tasks, expandedTasks, currentUserId, highlightedTaskI
 		}
 	};
 
-	const handleStopTimer = async () => {
+	const handleStopTimer = async (taskId: number) => {
 		try {
-			await stopTimer.mutateAsync();
+			await stopTimer.mutateAsync(activeTimers.find((timer) => timer.trackableType.toLowerCase().includes("task") && Number(timer.trackableId) === taskId)?.timeEntryId);
 			toast.success("Timer stopped");
 		} catch {
 			toast.error("Failed to stop timer");
@@ -94,11 +93,11 @@ export function ListView({ tasks, expandedTasks, currentUserId, highlightedTaskI
 							onViewTask={onViewTask}
 							expandedTasks={expandedTasks}
 							onToggleExpand={onToggleExpand}
-							activeTaskId={isTaskTimer ? activeTaskId : null}
+							activeTaskIds={activeTaskIds}
 							onStartTimer={handleStartTimer}
 							onStopTimer={handleStopTimer}
 							isTimerLoading={startTimer.isPending || stopTimer.isPending}
-							hasActiveTimer={!!activeTimer}
+							hasActiveTimer={activeTimers.length >= 2}
 							highlightedTaskId={highlightedTaskId}
 						/>
 					))}
@@ -120,9 +119,9 @@ interface ListItemProps {
 	expandedTasks: Set<number>;
 	onToggleExpand: (id: number) => void;
 	level?: number;
-	activeTaskId: number | null;
+	activeTaskIds: number[];
 	onStartTimer: (task: Task) => void;
-	onStopTimer: () => void;
+	onStopTimer: (taskId: number) => void;
 	isTimerLoading: boolean;
 	hasActiveTimer: boolean;
 }
@@ -139,7 +138,7 @@ function ListItem({
 	expandedTasks,
 	onToggleExpand,
 	level = 0,
-	activeTaskId,
+	activeTaskIds,
 	onStartTimer,
 	onStopTimer,
 	isTimerLoading,
@@ -149,7 +148,7 @@ function ListItem({
 	const hasChildren = task.hasChildren || (task.children && task.children.length > 0);
 	const isOverdue = task.dueDate && isBefore(parseISO(task.dueDate), startOfToday()) && task.status !== TaskStatus.COMPLETED;
 	const myAssignment = task.assignees?.find((a) => a.userId === currentUserId);
-	const isTimerRunningOnThis = activeTaskId === task.taskId;
+	const isTimerRunningOnThis = activeTaskIds.includes(task.taskId);
 	const isTimerRunningOnOther = hasActiveTimer && !isTimerRunningOnThis;
 
 	return (
@@ -287,7 +286,7 @@ function ListItem({
 										size="sm"
 										variant="destructive"
 										className="h-8 w-8 p-0"
-										onClick={() => onStopTimer()}
+										onClick={() => onStopTimer(task.taskId)}
 										disabled={isTimerLoading}
 									>
 										{isTimerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4" />}
@@ -304,7 +303,7 @@ function ListItem({
 									</Button>
 								)}
 							</TooltipTrigger>
-							<TooltipContent>{isTimerRunningOnThis ? "Stop Timer" : isTimerRunningOnOther ? "Stop other timer first" : "Start Timer"}</TooltipContent>
+							<TooltipContent>{isTimerRunningOnThis ? "Stop Timer" : isTimerRunningOnOther ? "Pause or stop one timer first" : "Start Timer"}</TooltipContent>
 						</Tooltip>
 					)}
 					<DropdownMenu>
@@ -344,7 +343,7 @@ function ListItem({
 							expandedTasks={expandedTasks}
 							onToggleExpand={onToggleExpand}
 							level={level + 1}
-							activeTaskId={activeTaskId}
+							activeTaskIds={activeTaskIds}
 							onStartTimer={onStartTimer}
 							onStopTimer={onStopTimer}
 							isTimerLoading={isTimerLoading}

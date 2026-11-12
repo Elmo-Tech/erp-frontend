@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar, CalendarClock, Clock, Play, Square, Loader2, Timer } from "lucide-react";
-import { Task, TaskStatus, TaskStatusLabels, TaskPriorityLabels } from "../../types/task";
+import { Task, TaskType, TaskStatus, TaskStatusLabels, TaskPriorityLabels } from "../../types/task";
 import { PriorityColors } from "./constants";
 import { StatusIcons } from "./StatusIcons";
 import { useStartTimer, useStopTimer } from "@/features/sales/hooks";
@@ -21,6 +21,9 @@ import { useTimerStore } from "@/store/timerStore";
 import { TrackableType } from "@/features/sales/types";
 import { toast } from "sonner";
 import { getRoleLabel } from "@/config/simplification";
+import { TaskAttachments } from "@/features/projects/components/tasks/TaskAttachments";
+import { usePermissions } from "@/features/admin/hooks/usePermissions";
+import { useAuthStore } from "@/store/authStore";
 import { TaskSupervisionSection } from "@/features/projects/components/tasks/TaskSupervisionSection";
 
 interface TaskDetailDialogProps {
@@ -30,7 +33,9 @@ interface TaskDetailDialogProps {
 }
 
 export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDialogProps) {
-	const { activeTimer } = useTimerStore();
+	const { activeTimers } = useTimerStore();
+	const userId = useAuthStore((state) => state.user?.userId);
+	const permissions = usePermissions();
 	const startTimer = useStartTimer();
 	const stopTimer = useStopTimer();
 
@@ -39,15 +44,14 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 	const hasSubtasks = task.hasChildren || (task.children && task.children.length > 0);
 
 	// Check if active timer is for a task using global store (real-time)
-	const activeTaskId = activeTimer ? Number(activeTimer.trackableId) : null;
-	const isTaskTimer = activeTimer?.trackableType?.toLowerCase().includes("task");
-	const isTimerRunningOnThis = isTaskTimer && activeTaskId === task.taskId;
-	const isTimerRunningOnOther = !!activeTimer && !isTimerRunningOnThis;
+	const activeTimer = activeTimers.find((timer) => timer.trackableType.toLowerCase().includes("task") && Number(timer.trackableId) === task.taskId);
+	const isTimerRunningOnThis = !!activeTimer;
+	const isTimerRunningOnOther = activeTimers.length >= 2 && !isTimerRunningOnThis;
 	const isTimerLoading = startTimer.isPending || stopTimer.isPending;
 
 	const handleStartTimer = async () => {
-		if (activeTimer) {
-			toast.error("Please stop the current timer first");
+		if (activeTimers.length >= 2) {
+			toast.error("Pause or stop one of your two timers first");
 			return;
 		}
 		try {
@@ -63,7 +67,7 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 
 	const handleStopTimer = async () => {
 		try {
-			await stopTimer.mutateAsync();
+			await stopTimer.mutateAsync(activeTimer?.timeEntryId);
 			toast.success("Timer stopped");
 		} catch {
 			toast.error("Failed to stop timer");
@@ -101,6 +105,7 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 					onStatusChange={onStatusChange}
 				/>
 				{task.description && <TaskDescriptionSection description={task.description} />}
+				<TaskAttachments taskId={task.taskId} userId={userId} canManage={Boolean(permissions.canManageTasks || (task.type === TaskType.MAIN && permissions.canEditMainTasks) || (task.type === TaskType.WEEKLY && permissions.canEditWeeklyTasks) || (task.type === TaskType.SUBTASK && permissions.canEditSubtasks) || task.assignedTo === userId || task.assignees?.some((assignee) => assignee.userId === userId) || task.supervisors?.some((supervisor) => supervisor.userId === userId))} />
 				{task.tags && task.tags.length > 0 && <TaskTagsSection tags={task.tags} />}
 				{hasSubtasks && task.children && <TaskSubtasksSection subtasks={task.children} />}
 				{task.assignees && task.assignees.length > 0 && <TaskAssigneesSection assignees={task.assignees} />}
@@ -134,7 +139,7 @@ export function TaskDetailDialog({ task, onClose, onStatusChange }: TaskDetailDi
 							disabled={isTimerLoading || isTimerRunningOnOther}
 						>
 							{isTimerLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-							{isTimerRunningOnOther ? "Stop other timer first" : "Start Timer"}
+							{isTimerRunningOnOther ? "Pause or stop one timer first" : "Start Timer"}
 						</Button>
 					))}
 			</div>

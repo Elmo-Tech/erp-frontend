@@ -1,3 +1,4 @@
+import api from "@/lib/axios";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +7,7 @@ import { projectPipelineApi } from "../../../api/projectPipeline";
 import type { PipelineTask, ProjectWorkflowStage } from "../../../types/pipeline";
 import { PipelineTaskDialog } from "../PipelineTaskDialog";
 
+vi.mock("@/lib/axios", () => ({ default: { post: vi.fn().mockResolvedValue({ data: {} }) } }));
 vi.mock("../../../api/projectPipeline", () => ({ projectPipelineApi: { createTask: vi.fn(), updateTask: vi.fn() } }));
 vi.mock("@/features/hr/hooks/useEmployees", () => ({ useEmployees: () => ({ data: { employees: [{ userId: 9, name: "Sam Supervisor" }, { userId: 10, name: "Nour Supervisor" }] } }) }));
 vi.mock("../../../hooks/useProjectMembers", () => ({ useProjectMembers: () => ({ data: { members: [] } }) }));
@@ -63,6 +65,17 @@ describe("PipelineTaskDialog supervisor assignment", () => {
 		expect(screen.getByRole("checkbox", { name: "Video" })).toBeDisabled();
 		fireEvent.click(screen.getByRole("button", { name: "Create task" }));
 		await waitFor(() => expect(projectPipelineApi.createTask).toHaveBeenCalledWith(2, expect.objectContaining({ projectTypeIds: [1, 2] })));
+	});
+
+	it("uploads a PDF selected in the task editor after saving the task", async () => {
+		vi.mocked(projectPipelineApi.updateTask).mockResolvedValue(task);
+		renderDialog(task);
+		const file = new File(["sample"], "brief.pdf", { type: "application/pdf" });
+		fireEvent.change(screen.getByLabelText("Documents (PDF or PowerPoint)"), { target: { files: [file] } });
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() => expect(api.post).toHaveBeenCalledWith("/tasks/12/attachments", expect.any(FormData), expect.any(Object)));
+		const form = vi.mocked(api.post).mock.calls[0][1] as FormData;
+		expect(form.get("file")).toBe(file);
 	});
 
 	it("removes the supervisor explicitly when editing", async () => {

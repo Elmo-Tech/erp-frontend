@@ -13,17 +13,14 @@ export async function synchronizeTimer() {
 	const userId = useAuthStore.getState().user?.userId;
 	const snapshot = useTimerStore.getState();
 	try {
-		const activeResponse = await api.get<{ data: TimeEntryData | null }>("/time-entries/active", { skipErrorToast: true });
-		const activeTimer = activeResponse.data.data;
-		const resumableTimer = activeTimer?.isActive
-			? null
-			: (await api.get<{ data: TimeEntryData | null }>("/time-entries/resumable", { skipErrorToast: true })).data.data;
+		const activeResponse = await api.get<{ data: TimeEntryData[] }>("/time-entries/my-active", { skipErrorToast: true });
+		const timers = activeResponse.data.data;
+		const candidate = (await api.get<{ data: TimeEntryData | null }>("/time-entries/resumable", { skipErrorToast: true })).data.data;
+		const resumableTimer = candidate && !timers.some((item) => item.trackableType === candidate.trackableType && item.trackableId === candidate.trackableId) ? candidate : null;
 		const current = useTimerStore.getState();
-		// A start/resume/stop or heartbeat may have completed during this fetch.
-		// An older snapshot must not overwrite that newer state.
-		if (version !== synchronizationVersion || useAuthStore.getState().user?.userId !== userId
-			|| current.activeTimer !== snapshot.activeTimer || current.resumableTimer !== snapshot.resumableTimer) return;
-		useTimerStore.setState({ activeTimer: activeTimer?.isActive ? activeTimer : null, resumableTimer });
+		if (version !== synchronizationVersion || useAuthStore.getState().user?.userId !== userId || current.activeTimers !== snapshot.activeTimers || current.resumableTimer !== snapshot.resumableTimer) return;
+		current.setActiveTimers(timers);
+		useTimerStore.setState({ resumableTimer });
 	} catch {
 		// A network failure is not confirmation that the timer was paused.
 	} finally {
@@ -35,73 +32,45 @@ export async function synchronizeTimer() {
 export function useTimerSocketInit() {
 	const queryClient = useQueryClient();
 	const { user } = useAuthStore();
-	const { activeTimer, resumableTimer, isLoading, setIsConnected } = useTimerStore();
+	const { activeTimer, activeTimers, resumableTimer, isLoading, setIsConnected } = useTimerStore();
 	const lastTimerState = useRef<string | null>(null);
 	const activeId = activeTimer?.timeEntryId;
 	const resumableId = resumableTimer?.timeEntryId;
 	useEffect(() => {
 		if (isLoading) return;
-		const signature = `${activeId ?? "none"}:${resumableId ?? "none"}`;
+		const signature = `${activeTimers.map((timer) => timer.timeEntryId).sort().join(",")}:${resumableId ?? "none"}`;
 		if (lastTimerState.current !== null && lastTimerState.current !== signature) {
 			void queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
 			void queryClient.invalidateQueries({ queryKey: ["timeEntries", "activeTimers"] });
 		}
 		lastTimerState.current = signature;
-	}, [activeId, resumableId, isLoading, queryClient]);
+	}, [activeId, activeTimers, resumableId, isLoading, queryClient]);
 
 	// Initial fetch
 	const fetchActiveTimer = synchronizeTimer;
 
+	const timerSignature = activeTimers.map((timer) => `${timer.timeEntryId}:${timer.sessionId}`).join(",");
 	useEffect(() => {
-		if (!activeTimer?.sessionId) {
-			return;
-		}
+		if (!timerSignature) return;
 		let disposed = false;
-
 		const sendHeartbeat = async () => {
-			if (!navigator.onLine) {
-				return;
-			}
-
-			try {
-				const response = await api.post<{ data: TimeEntryData }>(
-					"/time-entries/heartbeat",
-					{
-						timeEntryId: activeTimer.timeEntryId,
-						sessionId: activeTimer.sessionId,
-					},
-					{ skipErrorToast: true, skipSuccessToast: true }
-				);
-				const current = useTimerStore.getState().activeTimer;
-				if (!disposed && current?.timeEntryId === activeTimer.timeEntryId && current.sessionId === activeTimer.sessionId && response.data.data.isActive) {
-					useTimerStore.setState({ activeTimer: response.data.data, resumableTimer: null });
-				}
-			} catch (error: unknown) {
-				const status = (error as { response?: { status?: number } }).response?.status;
-				if (!disposed && status === 409) {
-					await fetchActiveTimer();
-				}
-			}
+			if (!navigator.onLine) return;
+			await Promise.all(useTimerStore.getState().activeTimers.map(async (timer) => {
+				if (!timer.sessionId) return;
+				try {
+					const response = await api.post<{ data: TimeEntryData }>("/time-entries/heartbeat", { timeEntryId: timer.timeEntryId, sessionId: timer.sessionId }, { skipErrorToast: true, skipSuccessToast: true });
+					const current = useTimerStore.getState();
+					if (!disposed && current.activeTimers.some((item) => item.timeEntryId === timer.timeEntryId && item.sessionId === timer.sessionId) && response.data.data.isActive) current.setActiveTimers(current.activeTimers.map((item) => item.timeEntryId === timer.timeEntryId ? response.data.data : item));
+				} catch (error: unknown) { if (!disposed && (error as { response?: { status?: number } }).response?.status === 409) await fetchActiveTimer(); }
+			}));
 		};
-
-		const handleVisibilityOrOnline = () => {
-			if (document.visibilityState === "visible" && navigator.onLine) {
-				void sendHeartbeat();
-			}
-		};
-
+		const handleVisibilityOrOnline = () => { if (document.visibilityState === "visible" && navigator.onLine) void sendHeartbeat(); };
 		void sendHeartbeat();
 		const interval = window.setInterval(sendHeartbeat, 45_000);
 		document.addEventListener("visibilitychange", handleVisibilityOrOnline);
 		window.addEventListener("online", handleVisibilityOrOnline);
-
-		return () => {
-			disposed = true;
-			window.clearInterval(interval);
-			document.removeEventListener("visibilitychange", handleVisibilityOrOnline);
-			window.removeEventListener("online", handleVisibilityOrOnline);
-		};
-	}, [activeTimer?.sessionId, activeTimer?.timeEntryId, fetchActiveTimer]);
+		return () => { disposed = true; window.clearInterval(interval); document.removeEventListener("visibilitychange", handleVisibilityOrOnline); window.removeEventListener("online", handleVisibilityOrOnline); };
+	}, [timerSignature, fetchActiveTimer]);
 
 	// Subscribe to WebSocket
 	useEffect(() => {

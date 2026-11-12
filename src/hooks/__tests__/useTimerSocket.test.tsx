@@ -29,13 +29,13 @@ describe("timer synchronization", () => {
 		vi.useFakeTimers();
 		vi.mocked(api.get).mockReset();
 		vi.mocked(api.post).mockReset();
-		useTimerStore.setState({ activeTimer: null, resumableTimer: null, isLoading: true, isConnected: false });
+		useTimerStore.setState({ activeTimer: null, activeTimers: [], resumableTimer: null, isLoading: true, isConnected: false });
 	});
 
 	afterEach(() => { client.clear(); vi.useRealTimers(); });
 
 	it("Keep a running timer open through two heartbeat intervals", async () => {
-		vi.mocked(api.get).mockResolvedValue({ data: { data: timer } });
+		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? [timer] : null } }));
 		vi.mocked(api.post).mockImplementation(async () => ({ data: { data: { ...timer, lastHeartbeatAt: new Date().toISOString() } } }));
 		renderTimerHook(() => useTimerSocketInit());
 		await act(async () => {});
@@ -48,6 +48,18 @@ describe("timer synchronization", () => {
 		expect(api.post).toHaveBeenLastCalledWith("/time-entries/heartbeat", { timeEntryId: 42, sessionId: "timer-session" }, { skipErrorToast: true, skipSuccessToast: true });
 	});
 
+	it("sends independent heartbeats for both running task timers", async () => {
+		const second = { ...timer, timeEntryId: 43, sessionId: "second-session", trackableId: 13 };
+		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? [timer, second] : null } }));
+		vi.mocked(api.post).mockImplementation(async (_url, payload) => ({ data: { data: (payload as { timeEntryId: number }).timeEntryId === 42 ? timer : second } }));
+		renderTimerHook(() => useTimerSocketInit());
+		await act(async () => {});
+		await act(async () => { await vi.advanceTimersByTimeAsync(45_000); });
+		expect(useTimerStore.getState().activeTimers).toHaveLength(2);
+		expect(vi.mocked(api.post).mock.calls.filter((call) => (call[1] as { timeEntryId: number }).timeEntryId === 42)).toHaveLength(2);
+		expect(vi.mocked(api.post).mock.calls.filter((call) => (call[1] as { timeEntryId: number }).timeEntryId === 43)).toHaveLength(2);
+	});
+
 	it("does not overwrite a newly started timer with an older paused snapshot", async () => {
 		let resolveActive!: (value: unknown) => void;
 		vi.mocked(api.get).mockImplementationOnce(() => new Promise((resolve) => { resolveActive = resolve; }));
@@ -57,7 +69,7 @@ describe("timer synchronization", () => {
 		act(() => { refresh = result.current.refetch(); });
 		act(() => { useTimerStore.getState().setActiveTimer(timer); });
 		await act(async () => {
-			resolveActive({ data: { data: null } });
+			resolveActive({ data: { data: [] } });
 			await refresh;
 		});
 		expect(result.current.activeTimer).toEqual(timer);
@@ -65,7 +77,8 @@ describe("timer synchronization", () => {
 	});
 
 	it("preserves a running timer when state refresh fails", async () => {
-		useTimerStore.setState({ activeTimer: timer, isLoading: false });
+		useTimerStore.getState().setActiveTimer(timer);
+		useTimerStore.setState({ isLoading: false });
 		vi.mocked(api.get).mockRejectedValueOnce(new Error("Network Error"));
 		const { result } = renderTimerHook(() => useRealtimeTimer());
 		await act(async () => { await result.current.refetch(); });
@@ -73,21 +86,21 @@ describe("timer synchronization", () => {
 	});
 
 	it("does not restore a paused timer from a late heartbeat response", async () => {
-		vi.mocked(api.get).mockResolvedValue({ data: { data: timer } });
+		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? [timer] : null } }));
 		let resolveHeartbeat!: (value: unknown) => void;
 		vi.mocked(api.post).mockImplementationOnce(() => new Promise((resolve) => { resolveHeartbeat = resolve; }));
 		renderTimerHook(() => useTimerSocketInit());
 		await act(async () => {});
 		const paused = { ...timer, isActive: false, stopReason: "pause" as const };
-		act(() => { useTimerStore.setState({ activeTimer: null, resumableTimer: paused }); });
+		act(() => { useTimerStore.getState().setActiveTimers([]); useTimerStore.setState({ resumableTimer: paused }); });
 		await act(async () => { resolveHeartbeat({ data: { data: timer } }); });
 		expect(useTimerStore.getState().activeTimer).toBeNull();
 		expect(useTimerStore.getState().resumableTimer).toEqual(paused);
 	});
 
 	it("refreshes dashboard and monitoring data on lifecycle changes but not each heartbeat", async () => {
-		vi.mocked(api.get).mockResolvedValue({ data: { data: null } });
-		vi.mocked(api.post).mockResolvedValue({ data: { data: timer } });
+		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? [] : null } }));
+		vi.mocked(api.post).mockResolvedValue({ data: { data: [timer] } });
 		renderTimerHook(() => useTimerSocketInit());
 		await act(async () => {});
 		const key = ["dashboard-stats", 7];
@@ -103,8 +116,8 @@ describe("timer synchronization", () => {
 
 	it("synchronizes starts and stops from another session when realtime is unavailable", async () => {
 		let running = false;
-		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/active" && running ? timer : null } }));
-		vi.mocked(api.post).mockResolvedValue({ data: { data: timer } });
+		vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url === "/time-entries/my-active" ? (running ? [timer] : []) : null } }));
+		vi.mocked(api.post).mockResolvedValue({ data: { data: [timer] } });
 		renderTimerHook(() => useTimerSocketInit());
 		await act(async () => {});
 		running = true;
