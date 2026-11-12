@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePermissions } from "@/features/admin/hooks/usePermissions";
 import { useEmployees } from "@/features/hr/hooks/useEmployees";
 import { useAuthStore } from "@/store/authStore";
-import { notifyApiError } from "@/lib/errorHandling";
+import { handleApiError, notifyApiError } from "@/lib/errorHandling";
 import { getViableSupervisorCandidates } from "@/features/dashboard/lib/taskSupervision";
 import { useProjectMembers } from "../../hooks/useProjectMembers";
 import {
@@ -74,9 +74,12 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 	const [coverImage, setCoverImage] = useState<File | null>(null);
 	const [referenceImages, setReferenceImages] = useState<File[]>([]);
 	const [documents, setDocuments] = useState<File[]>([]);
+	const [documentError, setDocumentError] = useState("");
+	const [createdTask, setCreatedTask] = useState<PipelineTask | null>(null);
 	const [uploadingReferences, setUploadingReferences] = useState(false);
 	const [removeExistingCover, setRemoveExistingCover] = useState(false);
-	const isEditing = Boolean(task);
+	const existingTask = task ?? createdTask;
+	const isEditing = Boolean(existingTask);
 	const isPending = createTask.isPending || updateTask.isPending || uploadCover.isPending || deleteCover.isPending || uploadingReferences;
 
 	const saveCoverImage = async (taskId: number) => {
@@ -94,14 +97,15 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 
 		let savedTask: PipelineTask;
 		try {
-			if (task) {
+			setDocumentError("");
+			if (existingTask) {
 				savedTask = await updateTask.mutateAsync({
-					taskId: task.taskId,
+					taskId: existingTask.taskId,
 					payload: {
 						workflowStageId: selectedStageId,
 						title: title.trim(),
 						description: description.trim() || null,
-						...(JSON.stringify(checklist) !== JSON.stringify(task.checklist ?? []) ? { checklist } : {}),
+						...(JSON.stringify(checklist) !== JSON.stringify(existingTask.checklist ?? []) ? { checklist } : {}),
 						priority,
 						projectTypeIds,
 						...(canAssignEmployees ? { assignedUserIds } : {}),
@@ -123,6 +127,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 					dueDate: dueDate || undefined,
 					estimatedHours: estimatedHours ? Number(estimatedHours) : undefined,
 				});
+				setCreatedTask(savedTask);
 			}
 		} catch (error) {
 			notifyApiError(error);
@@ -131,6 +136,8 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 
 		try {
 			await saveCoverImage(savedTask.taskId);
+			setCoverImage(null);
+			setRemoveExistingCover(false);
 			// Success toast comes from the backend message via the axios interceptor.
 		} catch {
 			toast.warning("Task saved, but its cover image could not be updated");
@@ -144,6 +151,7 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 					data.append("images[]", file);
 					await api.post(`/projects/${projectId}/pipeline/tasks/${savedTask.taskId}/references`, data, { skipSuccessToast: true });
 				}
+				setReferenceImages([]);
 			} catch {
 				toast.warning("Task saved, but reference images could not be uploaded. Add them from task details.");
 			} finally {
@@ -153,16 +161,25 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 		}
 		if (documents.length) {
 			setUploadingReferences(true);
+			let completed = 0;
 			try {
 				for (const file of documents) {
 					const data = new FormData();
 					data.append("file", file);
 					await api.post(`/tasks/${savedTask.taskId}/attachments`, data, { skipSuccessToast: true, skipErrorToast: true });
+					completed++;
 				}
+			} catch (error) {
+				const remaining = documents.slice(completed);
+				setDocuments(remaining);
+				const status = (error as { response?: { status?: number } })?.response?.status;
+				const detail = status === 413 ? "The server rejected the file size. Ask your administrator to check upload limits." : handleApiError(error);
+				setDocumentError(`Task saved. Could not upload ${remaining[0]?.name ?? "the document"}: ${detail} Fix the issue and save again to retry.`);
+				return;
+			} finally {
 				await queryClient.invalidateQueries({ queryKey: ["task-attachments", savedTask.taskId] });
-			} catch {
-				toast.warning("Task saved, but some documents could not be uploaded. Add them from task details.");
-			} finally { setUploadingReferences(false); }
+				setUploadingReferences(false);
+			}
 		}
 		onOpenChange(false);
 	};
@@ -219,7 +236,10 @@ export function PipelineTaskDialog({ projectId, stage, stages, task, open, onOpe
 							const files = Array.from(event.target.files ?? []);
 							if (files.length > 10 || files.some((file) => !/\.(pdf|ppt|pptx)$/i.test(file.name) || file.size > 25 * 1024 * 1024)) { toast.error("Select up to 10 PDF or PowerPoint files, up to 25 MB each"); event.target.value = ""; setDocuments([]); return; }
 							setDocuments(files);
+							setDocumentError("");
 						}} />
+						{documentError && <p role="alert" className="text-sm text-destructive">{documentError}</p>}
+						{documents.length > 0 && <p className="text-xs text-muted-foreground">Pending: {documents.map((file) => file.name).join(", ")}</p>}
 						<p className="text-xs text-muted-foreground">Up to 10 documents per task, 25 MB each. Manage existing documents from task details.</p>
 					</div>
 

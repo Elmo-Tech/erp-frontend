@@ -13,9 +13,11 @@ self.addEventListener("push", (event) => {
       requireInteraction: data.type === "timer_reminder" || data.type === "after_hours_confirmation",
       data: { url: data.url || "/dashboard" },
     });
-    if (data.type === "timer_reminder") {
-      const windows = await self.clients.matchAll({ type: "window" });
-      windows.forEach((client) => client.postMessage({ type: "timer_reminder", ...data }));
+    if (data.type === "timer_reminder" || (data.type === "notification_test" && data.testId)) {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      windows.forEach((client) => client.postMessage(data.type === "notification_test"
+        ? { type: "notification_test_received", testId: data.testId }
+        : { ...data, type: "timer_reminder" }));
     }
   })());
 });

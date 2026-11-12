@@ -78,6 +78,34 @@ describe("PipelineTaskDialog supervisor assignment", () => {
 		expect(form.get("file")).toBe(file);
 	});
 
+	it("keeps the failed document and shows the real error so an existing task upload can be retried", async () => {
+		vi.mocked(projectPipelineApi.updateTask).mockResolvedValue(task);
+		vi.mocked(api.post).mockRejectedValueOnce({ response: { status: 403, data: { message: "You cannot upload documents to this task." } } }).mockResolvedValueOnce({ data: {} });
+		renderDialog(task);
+		const file = new File(["sample"], "brief.pdf", { type: "application/pdf" });
+		fireEvent.change(screen.getByLabelText("Documents (PDF or PowerPoint)"), { target: { files: [file] } });
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		expect(await screen.findByRole("alert")).toHaveTextContent("You cannot upload documents to this task.");
+		expect(screen.getByText("Pending: brief.pdf")).toBeVisible();
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2));
+		expect((vi.mocked(api.post).mock.calls[1][1] as FormData).get("file")).toBe(file);
+	});
+
+	it("does not create the task twice when a document upload fails and is retried", async () => {
+		vi.mocked(projectPipelineApi.createTask).mockResolvedValue(task);
+		vi.mocked(projectPipelineApi.updateTask).mockResolvedValue(task);
+		vi.mocked(api.post).mockRejectedValueOnce({ response: { status: 413 } }).mockResolvedValueOnce({ data: {} });
+		renderDialog();
+		fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Delivery task" } });
+		fireEvent.change(screen.getByLabelText("Documents (PDF or PowerPoint)"), { target: { files: [new File(["x"], "brief.pdf", { type: "application/pdf" })] } });
+		fireEvent.click(screen.getByRole("button", { name: "Create task" }));
+		expect(await screen.findByRole("alert")).toHaveTextContent("server rejected the file size");
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2));
+		expect(projectPipelineApi.createTask).toHaveBeenCalledTimes(1);
+	});
+
 	it("removes the supervisor explicitly when editing", async () => {
 		vi.mocked(projectPipelineApi.updateTask).mockResolvedValue({ ...task, supervisorId: null, supervisor: null });
 		renderDialog(task);

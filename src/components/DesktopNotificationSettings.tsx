@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import { NotificationSetupError, enableBrowserPush, PUSH_CHANGED_EVENT } from "@/lib/desktopPush";
@@ -18,6 +18,18 @@ export function DesktopNotificationSettings() {
 	const [status, setStatus] = useState("");
 	const [technicalDetails, setTechnicalDetails] = useState("");
 	const [busy, setBusy] = useState(false);
+	const pendingTest = useRef<string | null>(null);
+	const testTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(() => {
+		const receive = (event: MessageEvent) => {
+			if (event.data?.type !== "notification_test_received" || !pendingTest.current || event.data?.testId !== pendingTest.current) return;
+			pendingTest.current = null;
+			if (testTimeout.current) clearTimeout(testTimeout.current);
+			setStatus("The browser received the test and asked your device to display it. If you did not see it, check your device notification settings and Focus or Do Not Disturb.");
+		};
+		navigator.serviceWorker?.addEventListener?.("message", receive);
+		return () => { navigator.serviceWorker?.removeEventListener?.("message", receive); if (testTimeout.current) clearTimeout(testTimeout.current); };
+	}, []);
 	const save = useMutation({ mutationFn: (reminderMinutes: number) => api.put("/notifications/preferences", { reminderMinutes }), onSuccess: () => query.refetch() });
 	const enable = async () => {
 		setBusy(true);
@@ -52,9 +64,17 @@ export function DesktopNotificationSettings() {
 			const registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
 			const subscription = await registration?.pushManager.getSubscription();
 			if (!subscription) throw new Error("Enable desktop notifications on this browser first.");
-			await api.post("/notifications/test-push", { endpoint: subscription.endpoint });
-			setStatus("Test sent to the notification service. Check your device notifications.");
-		} catch (error) { setStatus(handleApiError(error)); }
+			const testId = crypto.randomUUID();
+			pendingTest.current = testId;
+			if (testTimeout.current) clearTimeout(testTimeout.current);
+			setStatus("Sending test. Look for a separate notification from your device.");
+			await api.post("/notifications/test-push", { endpoint: subscription.endpoint, testId }, { skipSuccessToast: true });
+			if (pendingTest.current === testId) testTimeout.current = setTimeout(() => {
+				if (pendingTest.current !== testId) return;
+				pendingTest.current = null;
+				setStatus("The notification service accepted the test, but this browser has not confirmed receiving it. Check browser permissions, connection, and device settings, then try again.");
+			}, 20000);
+		} catch (error) { pendingTest.current = null; setStatus(handleApiError(error)); }
 		finally { setBusy(false); }
 	};
 	return <section className="space-y-3 rounded-xl border p-5"><h2 className="font-semibold">Desktop notifications & timer reminders</h2><p className="text-sm text-muted-foreground">Reminders repeat while a timer is running. Closed-page delivery depends on browser and operating-system background notification support.</p>
