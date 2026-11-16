@@ -17,8 +17,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Generate authentic npm 10 lockfile
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Generate authentic lockfile using patched npm 11
+        run: |
+          npm install --global npm@11
+          npm --version
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
       - name: Validate lock with npm ci and commit on task branch only
         run: |
           set -euo pipefail
