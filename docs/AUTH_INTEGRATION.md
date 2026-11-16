@@ -1,5 +1,14 @@
 # P0-02 SPA auth integration
 
+## Approved P0-02 security policy principles — ADR-020 (2026-11-16)
+
+The ERP owner has **APPROVED THE SECURITY PRINCIPLES** documented in [Backend ADR-020](https://github.com/Elmo-Tech/erp-backend/blob/task/p0-02-auth-rbac/docs/DECISIONS.md): mandatory MFA for management, Finance, HR and external accountants; trusted identity-verified first activation with independent approval; recovery-code-first or trusted two-person reset; company-legal-entity isolation and explicitly authorized consolidated reports; safe encryption-key lifecycle; first-party HTTPS/CSRF/CORS/session protection.
+
+**Not yet approved/verified:** named activation operator/approver, exact detailed role matrix, identity-check and recovery runbooks, key rotation steps, production origins/session lifetime, qualified independent human security review and separate merge/deployment authorization. Backend PR #6 and frontend PR #2 remain **Draft/open/unmerged**. Old statements below calling the *principles* PROPOSED reflect their historical status before ADR-020; operational details remain proposed.
+
+**Verified integration:** [Chromium #43885394390 PASS](https://github.com/Elmo-Tech/erp-frontend/actions/runs/43885394390) using pinned atomic backend `ceded61c936009105b0607c022c02967e2645a6b`, [Frontend CI #43885394399 PASS](https://github.com/Elmo-Tech/erp-frontend/actions/runs/43885394399), [Backend atomic CI #43881203049 PASS](https://github.com/Elmo-Tech/erp-backend/actions/runs/43881203049).
+
+---
 ## Latest tested integration — atomic MFA code (2026-11-16)
 
 - Workflow `.github/workflows/browser-e2e.yml` now pins **both** backend checkout and SHA verification to `ceded61c936009105b0607c022c02967e2645a6b`; workflow change committed as [frontend `85141d4`](https://github.com/Elmo-Tech/erp-frontend/commit/85141d4dab62ff13f778971fa7fd2beb28ac2de3).
@@ -23,5 +32,5 @@ Canonical API and security policy: [backend docs/AUTH_SECURITY_CONTRACT.md](http
 - **Backend code pinned to immutable SHA:** `0d2843ccb2df9c5df3629ce3f4ad0b56dfd44cea` (checked with `git rev-parse HEAD` in the E2E job). Test frontend SHA: `6b2b3f97c2dbe8321373cd7d4b195b95ed5f5869`.
 - **PASS** [Chromium run #43875272279](https://github.com/Elmo-Tech/erp-frontend/actions/runs/43875272279). Disposable PostgreSQL 18 + Laravel localhost:8000 + Vite localhost:5173. Tested real first privileged TOTP setup with externally provisioned synthetic trusted activation, expired OTP rejection, eight displayed once recovery codes, used-code replay denial, DOM clearance, /me no-store, CSRF 419, logout, global company visibility without raw finance/payroll, CORS block of untrusted origin.
 - **PASS** [Frontend CI #43875272312](https://github.com/Elmo-Tech/erp-frontend/actions/runs/43875272312) — typecheck, Vitest, Vite build and Docker/Nginx smoke. **PASS** [Backend CI #43874999124](https://github.com/Elmo-Tech/erp-backend/actions/runs/43874999124) — PostgreSQL migrations, 24 PHPUnit tests / 178 assertions, Docker/health.
-- The backend authentication model hides/encrypts MFA secrets and requires an unexpired `user_mfa_enrollment_authorizations` entry issued only by a trusted operational process. **This issuance/recovery/security policy is PROPOSED pending owner approval**. The SPA only shows setup seeds when enrolling, and clears them plus recovery codes from UI after confirmation/dismiss/logout. No application tokens in localStorage.
+- The backend authentication model hides/encrypts MFA secrets and requires an unexpired `user_mfa_enrollment_authorizations` entry issued only by a trusted operational process. **Owner-approved principles are in ADR-020; the issuance/recovery operating procedures still require definition and independent review**. The SPA only shows setup seeds when enrolling, and clears them plus recovery codes from UI after confirmation/dismiss/logout. No application tokens in localStorage.
 - All PRs remain Draft/unmerged; there is no production deployment or proof against real accounts.
