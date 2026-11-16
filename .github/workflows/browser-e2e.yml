@@ -42,8 +42,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Elmo-Tech/erp-backend
-          ref: task/p0-02-auth-rbac
+          ref: 0d2843ccb2df9c5df3629ce3f4ad0b56dfd44cea
           path: backend
+      - name: Verify immutable backend revision for reproducible E2E
+        working-directory: backend
+        run: |
+          test "$(git rev-parse HEAD)" = "0d2843ccb2df9c5df3629ce3f4ad0b56dfd44cea"
+          echo "Pinned backend SHA: $(git rev-parse HEAD)"
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -110,6 +115,21 @@ jobs:
               'code' => 'CI-IT', 'legal_name' => 'Synthetic Italy Test Entity',
               'country_code' => 'IT', 'base_currency_code' => 'EUR',
               'timezone' => 'Europe/Rome', 'status' => 'active',
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
+          // Trusted test-only first activation is provisioned in the disposable DB by CI.
+          $enroller = App\Models\User::create([
+              'name' => 'Browser Enroll', 'email' => 'enroll-ci@example.test',
+              'password' => 'browser-ci-only-password',
+          ]);
+          Illuminate\Support\Facades\DB::table('global_role_assignments')->insert([
+              'id' => (string) Illuminate\Support\Str::uuid7(), 'user_id' => $enroller->id,
+              'role_key' => 'central_management', 'status' => 'active',
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
+          Illuminate\Support\Facades\DB::table('user_mfa_enrollment_authorizations')->insert([
+              'user_id' => $enroller->id, 'approved_reference' => 'disposable-browser-ci',
+              'expires_at' => now()->addMinutes(10), 'consumed_at' => null,
               'created_at' => now(), 'updated_at' => now(),
           ]);
           PHP
