@@ -1,0 +1,166 @@
+name: P0-02 Browser SPA API E2E
+on:
+  pull_request:
+    branches: [rebuild/erp-v2]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: elmo
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: elmo_erp_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U elmo -d elmo_erp_test" --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_DATABASE: elmo_erp_test
+      DB_USERNAME: elmo
+      DB_PASSWORD: test-only
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: database
+      SPA_ALLOWED_ORIGINS: http://localhost:5173
+      SANCTUM_STATEFUL_DOMAINS: localhost:5173
+      SESSION_SAME_SITE: lax
+      VITE_API_ORIGIN: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: frontend
+      - uses: actions/checkout@v4
+        with:
+          repository: Elmo-Tech/erp-backend
+          ref: ceded61c936009105b0607c022c02967e2645a6b
+          path: backend
+      - name: Verify immutable backend revision for reproducible E2E
+        working-directory: backend
+        run: |
+          test "$(git rev-parse HEAD)" = "ceded61c936009105b0607c022c02967e2645a6b"
+          echo "Pinned backend SHA: $(git rev-parse HEAD)"
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_pgsql, intl, bcmath, redis
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Configure isolated backend and migrate PostgreSQL
+        working-directory: backend
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate:fresh --force
+      - name: Seed synthetic browser-only identity and company
+        shell: bash
+        run: |
+          cat > backend/e2e-seed.php <<'PHP'
+          <?php
+          require __DIR__.'/vendor/autoload.php';
+          $app = require __DIR__.'/bootstrap/app.php';
+          $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+          $user = App\Models\User::create([
+              'name' => 'Browser Test', 'email' => 'browser-ci@example.test', 'password' => 'browser-ci-only-password',
+          ]);
+          Illuminate\Support\Facades\DB::table('currencies')->insert([
+              'code' => 'EGP', 'name' => 'Egyptian Pound', 'minor_units' => 2, 'active' => true,
+          ]);
+          $id = (string) Illuminate\Support\Str::uuid7();
+          $member = (string) Illuminate\Support\Str::uuid7();
+          Illuminate\Support\Facades\DB::table('companies')->insert([
+              'id' => $id, 'code' => 'CI-EG', 'legal_name' => 'Synthetic Egypt Test Entity',
+              'country_code' => 'EG', 'base_currency_code' => 'EGP',
+              'timezone' => 'Africa/Cairo', 'status' => 'active',
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
+          Illuminate\Support\Facades\DB::table('company_memberships')->insert([
+              'id' => $member, 'company_id' => $id, 'user_id' => $user->id,
+              'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+          ]);
+          Illuminate\Support\Facades\DB::table('company_role_assignments')->insert([
+              'id' => (string) Illuminate\Support\Str::uuid7(),
+              'company_id' => $id, 'membership_id' => $member,
+              'role_key' => 'project_member', 'created_at' => now(), 'updated_at' => now(),
+          ]);
+          // Synthetic global manager has real TOTP enabled, never a real identity or secret.
+          $manager = App\Models\User::create([
+              'name' => 'Browser Global Manager', 'email' => 'manager-ci@example.test',
+              'password' => 'browser-ci-only-password',
+          ]);
+          $manager->mfa_secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+          $manager->save();
+          Illuminate\Support\Facades\DB::table('global_role_assignments')->insert([
+              'id' => (string) Illuminate\Support\Str::uuid7(), 'user_id' => $manager->id,
+              'role_key' => 'central_management', 'status' => 'active',
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
+          Illuminate\Support\Facades\DB::table('currencies')->insert([
+              'code' => 'EUR', 'name' => 'Euro', 'minor_units' => 2, 'active' => true,
+          ]);
+          Illuminate\Support\Facades\DB::table('companies')->insert([
+              'id' => (string) Illuminate\Support\Str::uuid7(),
+              'code' => 'CI-IT', 'legal_name' => 'Synthetic Italy Test Entity',
+              'country_code' => 'IT', 'base_currency_code' => 'EUR',
+              'timezone' => 'Europe/Rome', 'status' => 'active',
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
+          // Trusted test-only first activation is provisioned in the disposable DB by CI.
+          $enroller = App\Models\User::create([
+              'name' => 'Browser Enroll', 'email' => 'enroll-ci@example.test',
+              'password' => 'browser-ci-only-password',
+          ]);
+          Illuminate\Support\Facades\DB::table('global_role_assignments')->insert([
+              'id' => (string) Illuminate\Support\Str::uuid7(), 'user_id' => $enroller->id,
+              'role_key' => 'central_management', 'status' => 'active',
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
+          Illuminate\Support\Facades\DB::table('user_mfa_enrollment_authorizations')->insert([
+              'user_id' => $enroller->id, 'approved_reference' => 'disposable-browser-ci',
+              'expires_at' => now()->addMinutes(10), 'consumed_at' => null,
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
+          PHP
+          php backend/e2e-seed.php
+          rm backend/e2e-seed.php
+      - name: Install locked frontend dependencies and isolated browser tool
+        working-directory: frontend
+        run: |
+          npm install --global npm@11.21.2
+          npm ci --no-audit --no-fund
+          npm install --no-save --package-lock=false playwright@1.55.1
+          npx playwright install chromium --with-deps
+      - name: Start isolated Laravel and Vite processes
+        shell: bash
+        run: |
+          (cd backend && nohup php artisan serve --host=127.0.0.1 --port=8000 > /tmp/erp-api.log 2>&1 &)
+          (cd frontend && nohup npm run dev -- --host 127.0.0.1 > /tmp/erp-vite.log 2>&1 &)
+          (cd frontend && nohup python3 -m http.server 5999 --bind 127.0.0.1 > /tmp/erp-other-origin.log 2>&1 &)
+          for i in {1..40}; do
+            if curl -fsS http://localhost:8000/api/v1/health >/dev/null &&
+               curl -fsS http://localhost:5173/ >/dev/null &&
+               curl -fsS http://127.0.0.1:5999/ >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/erp-api.log /tmp/erp-vite.log /tmp/erp-other-origin.log
+          exit 1
+      - name: Run real Chromium origin, CSRF, login, authorization and logout checks
+        working-directory: frontend
+        run: node tests/browser/auth-smoke.mjs
+      - name: Print server logs if failed
+        if: failure()
+        run: |
+          tail -n 100 /tmp/erp-api.log 2>/dev/null || true
+          tail -n 100 /tmp/erp-vite.log 2>/dev/null || true
