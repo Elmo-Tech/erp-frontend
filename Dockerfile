@@ -1,7 +1,7 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+RUN npm install --global npm@11.21.2 && npm ci --no-audit --no-fund
 COPY . .
 ARG VITE_API_ORIGIN=http://localhost:8000
 ENV VITE_API_ORIGIN=${VITE_API_ORIGIN}
