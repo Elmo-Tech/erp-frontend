@@ -68,26 +68,37 @@ export default function App() {
   const login = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void act(async () => {
-      const result = await authApi.login(email, password);
-      setPassword('');
-      if ('status' in result && result.status === 'mfa_required') {
-        setMfa(result); setStage('mfa');
-      } else {
-        setIdentity(result as Identity);
-        setStage('ready');
+      try {
+        const result = await authApi.login(email, password);
+        setEnrollment(null);
+        setRecoveryCodes([]);
+        setCode('');
+        if ('status' in result && result.status === 'mfa_required') {
+          setMfa(result); setStage('mfa');
+        } else {
+          setIdentity(result as Identity);
+          setStage('ready');
+        }
+      } finally {
+        // Do not retain a password when login fails or an MFA challenge begins.
+        setPassword('');
       }
     });
   };
   const verify = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     void act(async () => {
-      if (mfa?.enrollment_required) {
-        const result = await authApi.confirmEnrollment(code);
-        setRecoveryCodes(result.recovery_codes);
-      } else {
-        await authApi.verifyMfa(code);
+      try {
+        if (mfa?.enrollment_required) {
+          const result = await authApi.confirmEnrollment(code);
+          setRecoveryCodes(result.recovery_codes);
+        } else {
+          await authApi.verifyMfa(code);
+        }
+        await reloadIdentity();
+      } finally {
+        setCode('');
       }
-      await reloadIdentity();
     });
   };
   const company = identity?.companies.find((item) => item.id === selectedCompany);
@@ -135,18 +146,19 @@ export default function App() {
                 <label className="grid gap-1 text-sm">Verification code<input required autoComplete="one-time-code" value={code} onChange={(e) => setCode(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-950 p-3" /></label>
                 <button disabled={busy} className="rounded-lg bg-sky-600 p-3 font-semibold disabled:opacity-50">Verify</button>
               </form>}
-            <button onClick={() => { setStage('login'); setMfa(null); setEnrollment(null); setError(''); }} className="mt-5 text-sm text-slate-300 underline">Back to sign in</button>
+            <button onClick={() => { setStage('login'); setMfa(null); setEnrollment(null); setRecoveryCodes([]); setCode(''); setPassword(''); setError(''); }} className="mt-5 text-sm text-slate-300 underline">Back to sign in</button>
           </section>
         )}
         {stage === 'ready' && identity && (
           <section className="space-y-7">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div><h2 className="text-2xl font-semibold">Welcome, {identity.user.name}</h2><p className="text-sm text-slate-400">{identity.user.email}</p></div>
-              <button disabled={busy} onClick={() => void act(async () => { await authApi.logout(); setIdentity(null); setSelectedCompany(''); setPermissions([]); setRecoveryCodes([]); setStage('login'); })} className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 disabled:opacity-50"><LogOut size={16} /> Sign out</button>
+              <button disabled={busy} onClick={() => void act(async () => { await authApi.logout(); setIdentity(null); setMfa(null); setEnrollment(null); setCode(''); setPassword(''); setSelectedCompany(''); setPermissions([]); setRecoveryCodes([]); setStage('login'); })} className="flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 disabled:opacity-50"><LogOut size={16} /> Sign out</button>
             </div>
             {recoveryCodes.length > 0 && <div role="alert" className="rounded-xl border border-amber-600 bg-amber-950 p-5"><h3 className="font-semibold">Save these recovery codes now — shown once</h3><div className="mt-3 grid grid-cols-2 gap-2 font-mono text-sm">{recoveryCodes.map((item) => <code key={item}>{item}</code>)}</div><button onClick={() => setRecoveryCodes([])} className="mt-4 underline">I have saved them</button></div>}
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
               <h3 className="mb-4 text-lg font-semibold">Company context</h3>
+              {identity.global_management && <p className="mb-3 text-sm text-slate-300">Central management: company overview granted. Consolidated reporting authorization: {identity.consolidation_authorized ? 'Granted' : 'Restricted'} (report data not yet implemented).</p>}
               {identity.companies.length === 0 ? <p role="status" className="text-slate-400">No active company access. Contact an administrator.</p> :
                 <label className="grid max-w-md gap-2 text-sm">Authorized legal company
                   <select disabled={busy} value={selectedCompany} onChange={(event) => void act(async () => { const value = event.target.value; if (!value) return; const context = await authApi.switchCompany(value); setSelectedCompany(context.company_id); setPermissions(context.permissions); })} className="rounded-lg border border-slate-600 bg-slate-950 p-3">
