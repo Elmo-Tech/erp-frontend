@@ -3,16 +3,43 @@ on:
   push:
     branches: [rebuild/erp-v2]
   pull_request:
+    branches: [rebuild/erp-v2]
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - name: Require an authentic npm lockfile
+        run: |
+          test -s package-lock.json || { echo '::error::package-lock.json missing; generate using npm 10 with registry access and commit it'; exit 1; }
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-audit --no-fund
+          cache: npm
+      - name: Use the verified npm resolver version
+        run: npm install --global npm@11.21.2
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-
+      - name: Build frontend Docker image
+        run: docker build --tag elmo-erp-frontend:p0-01 .
+      - name: Smoke-test frontend container
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --detach --rm --name erp-v2-frontend-ci --publish 18080:80 elmo-erp-frontend:p0-01
+          trap 'docker rm --force erp-v2-frontend-ci >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:18080/ | grep -q 'id="root"'; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs erp-v2-frontend-ci
+          exit 1
