@@ -10,6 +10,7 @@ export type Identity = {
   user: { id: number; name: string; email: string };
   companies: CompanyOption[];
   global_management: boolean;
+  consolidation_authorized: boolean;
 };
 export type MfaRequired = { status: 'mfa_required'; enrollment_required: boolean };
 export type AuthResult = Identity | MfaRequired;
@@ -63,5 +64,6 @@ export const authApi = {
   verifyMfa: (code: string) => api<Identity>('/auth/mfa/verify', 'POST', { code }),
   switchCompany: (company_id: string) => api<{ company_id: string; permissions: Permission[] }>('/companies/switch', 'POST', { company_id }),
   getContext: () => api<{ company_id: string; permissions: Permission[] }>('/companies/context'),
+  consolidationAccess: () => api<{ authorized: boolean; permission: 'consolidation.view' }>('/companies/consolidation/access'),
   authorize: (permission: Permission) => api<{ authorized: boolean; company_id: string; permission: Permission }>(`/companies/authorize/${encodeURIComponent(permission)}`),
 };
