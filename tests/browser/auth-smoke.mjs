@@ -1,5 +1,20 @@
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import { chromium } from 'playwright';
+
+function currentTotp(secret) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = '';
+  for (const letter of secret) bits += alphabet.indexOf(letter).toString(2).padStart(5, '0');
+  const bytes = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2));
+  const buffer = Buffer.alloc(8);
+  buffer.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)));
+  const hmac = createHmac('sha1', Buffer.from(bytes)).update(buffer).digest();
+  const offset = hmac[19] & 0xf;
+  const number = (hmac.readUInt32BE(offset) & 0x7fffffff) % 1000000;
+  return String(number).padStart(6, '0');
+}
 
 const browser = await chromium.launch({ headless: true });
 try {
@@ -52,6 +67,26 @@ try {
   );
   assert.equal(loggedOut, 401);
 
+  // Privileged account must remain outside /me until a true TOTP challenge succeeds.
+  await page.getByLabel('Work email').fill('manager-ci@example.test');
+  await page.getByLabel('Password').fill('browser-ci-only-password');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByText('Security verification').waitFor();
+  const pendingDenied = await page.evaluate(async () =>
+    (await fetch('http://localhost:8000/api/v1/auth/me', { credentials: 'include', headers: { Accept: 'application/json' } })).status
+  );
+  assert.equal(pendingDenied, 401);
+  await page.getByLabel('Verification code').fill(currentTotp('JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP'));
+  await page.getByRole('button', { name: 'Verify' }).click();
+  await page.getByText('Welcome, Browser Global Manager').waitFor();
+  assert.equal(await page.getByRole('combobox').locator('option').count(), 3);
+  await page.getByRole('combobox').selectOption({ label: 'Synthetic Italy Test Entity (CI-IT)' });
+  await page.getByText('Active context: IT · CI-IT').waitFor();
+  assert(await page.getByText('Finance · Restricted').isVisible());
+  assert(await page.getByText('Payroll · Restricted').isVisible());
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await page.getByRole('button', { name: 'Sign in' }).waitFor();
+
   const untrusted = await browser.newContext();
   const otherPage = await untrusted.newPage();
   await otherPage.goto('http://127.0.0.1:5999/');
@@ -66,7 +101,7 @@ try {
   assert.equal(corsBlocked, true, 'unlisted browser origin must not read API');
   assert.deepEqual(errors, []);
   await untrusted.close();
-  console.log('PASS: Chromium actual origins 5173/8000, CSRF 419, cookie login/me/logout, switch, role 403, untrusted origin blocked.');
+  console.log('PASS: Chromium actual origins 5173/8000, CSRF 419, cookie login/me/logout, MFA TOTP, global switch and restricted finance/payroll, role 403, untrusted origin blocked.');
 } finally {
   await browser.close();
 }
