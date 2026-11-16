@@ -1,5 +1,13 @@
 # P0-02 SPA auth integration
 
+## Latest tested integration — atomic MFA code (2026-11-16)
+
+- Workflow `.github/workflows/browser-e2e.yml` now pins **both** backend checkout and SHA verification to `ceded61c936009105b0607c022c02967e2645a6b`; workflow change committed as [frontend `85141d4`](https://github.com/Elmo-Tech/erp-frontend/commit/85141d4dab62ff13f778971fa7fd2beb28ac2de3).
+- [**Chromium browser E2E #43884430301 — SUCCESS**](https://github.com/Elmo-Tech/erp-frontend/actions/runs/43884430301): pinned exact-revision check, synthetic PostgreSQL, real Laravel/Vite localhost origins, CSRF/cookies, initial TOTP enrollment and recovery/reuse, permissions and CORS negative tests. Tested frontend SHA: `85141d4dab62ff13f778971fa7fd2beb28ac2de3`.
+- [**Frontend CI #43884430300 — SUCCESS**](https://github.com/Elmo-Tech/erp-frontend/actions/runs/43884430300) at the same frontend SHA. [Backend PostgreSQL 18 / 27 tests / 233 assertions #43881203049 — SUCCESS](https://github.com/Elmo-Tech/erp-backend/actions/runs/43881203049) for the pinned backend code.
+- **Remaining gates:** independent qualified human security review NOT COMPLETED; owner policy proposals NOT APPROVED; PRs #6 backend and #2 frontend remain Draft/unmerged, docs PR #5 draft, no production testing or deployment.
+- Canonical durable status: [P0-02 handoff](https://github.com/Elmo-Tech/erp-backend/blob/task/p0-02-auth-rbac/docs/handoffs/P0-02.md). Historical E2E evidence below describes older code and is retained for provenance.
+
 Canonical API and security policy: [backend docs/AUTH_SECURITY_CONTRACT.md](https://github.com/Elmo-Tech/erp-backend/blob/task/p0-02-auth-rbac/docs/AUTH_SECURITY_CONTRACT.md).
 
 - Set VITE_API_ORIGIN to the real Laravel origin (no /api suffix).
