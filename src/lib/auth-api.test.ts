@@ -5,7 +5,7 @@ describe('credentialed SPA authentication contract', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('loads CSRF bootstrap before sending credentialed login with XSRF token', async () => {
-    Object.defineProperty(document, 'cookie', { configurable: true, value: 'XSRF-TOKEN=test-token' });
+    vi.stubGlobal('document', { cookie: 'XSRF-TOKEN=test-token' });
     const fetcher = vi.fn()
       .mockResolvedValueOnce({ ok: true })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'mfa_required', enrollment_required: true }) });
