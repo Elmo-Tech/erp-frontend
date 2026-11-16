@@ -90,6 +90,28 @@ jobs:
               'company_id' => $id, 'membership_id' => $member,
               'role_key' => 'project_member', 'created_at' => now(), 'updated_at' => now(),
           ]);
+          // Synthetic global manager has real TOTP enabled, never a real identity or secret.
+          $manager = App\Models\User::create([
+              'name' => 'Browser Global Manager', 'email' => 'manager-ci@example.test',
+              'password' => 'browser-ci-only-password',
+          ]);
+          $manager->mfa_secret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+          $manager->save();
+          Illuminate\Support\Facades\DB::table('global_role_assignments')->insert([
+              'id' => (string) Illuminate\Support\Str::uuid7(), 'user_id' => $manager->id,
+              'role_key' => 'central_management', 'status' => 'active',
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
+          Illuminate\Support\Facades\DB::table('currencies')->insert([
+              'code' => 'EUR', 'name' => 'Euro', 'minor_units' => 2, 'active' => true,
+          ]);
+          Illuminate\Support\Facades\DB::table('companies')->insert([
+              'id' => (string) Illuminate\Support\Str::uuid7(),
+              'code' => 'CI-IT', 'legal_name' => 'Synthetic Italy Test Entity',
+              'country_code' => 'IT', 'base_currency_code' => 'EUR',
+              'timezone' => 'Europe/Rome', 'status' => 'active',
+              'created_at' => now(), 'updated_at' => now(),
+          ]);
           PHP
           php backend/e2e-seed.php
           rm backend/e2e-seed.php
