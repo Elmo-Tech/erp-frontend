@@ -42,12 +42,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: Elmo-Tech/erp-backend
-          ref: 0d2843ccb2df9c5df3629ce3f4ad0b56dfd44cea
+          ref: ceded61c936009105b0607c022c02967e2645a6b
           path: backend
       - name: Verify immutable backend revision for reproducible E2E
         working-directory: backend
         run: |
-          test "$(git rev-parse HEAD)" = "0d2843ccb2df9c5df3629ce3f4ad0b56dfd44cea"
+          test "$(git rev-parse HEAD)" = "ceded61c936009105b0607c022c02967e2645a6b"
           echo "Pinned backend SHA: $(git rev-parse HEAD)"
       - uses: shivammathur/setup-php@v2
         with:
