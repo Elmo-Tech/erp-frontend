@@ -26,3 +26,7 @@ Internal application only. API health is public; business endpoints will require
 ## Next delivery
 Authentication, authorized company switcher, shared layout/navigation, and generated API types. See `docs/ARCHITECTURE.md`.
 
+
+## Cross-chat continuity
+
+**Start every task at [docs/START_HERE.md](docs/START_HERE.md).** Product decisions, module roadmap, task ownership and handoffs are canonical in the [ERP V2 backend repository](https://github.com/Elmo-Tech/erp-backend/tree/rebuild/erp-v2/docs). Each chat = one scoped Issue, topic branch and PR; this repo contains UI-specific implementation only.

@@ -14,3 +14,7 @@ P0-01 ships health connectivity and shell only; P0-02 adds session and companies
 ## Single source of decisions
 See `Elmo-Tech/erp-backend` branch `rebuild/erp-v2` docs for business rules, ADR register and database contract.
 
+
+## Collaboration and handoff
+
+Follow [docs/START_HERE.md](START_HERE.md) and the canonical backend [WORK_PROTOCOL.md](https://github.com/Elmo-Tech/erp-backend/blob/rebuild/erp-v2/docs/WORK_PROTOCOL.md). All cross-repo UI/API decisions belong to the same task Issue and are documented with code and test evidence, not only in a chat.
